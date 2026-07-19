@@ -65,7 +65,7 @@ const authStore = useAuthStore()
 
 const menuItems = ref([
   { name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
-  { name: 'API Viewer', path: '/api', icon: 'pi-database' },
+  { name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },
   { name: 'Connection Manager', path: '/connections', icon: 'pi-users' },
   { name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
   { name: 'Network Monitoring', path: '/monitoring', icon: 'pi-chart-line' },

@@ -27,8 +27,8 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/api',
-      name: 'api',
+      path: '/data-viewer',
+      name: 'api-viewer',
       component: () => import('../views/Api.vue'),
       meta: { requiresAuth: true }
     },

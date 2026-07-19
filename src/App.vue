@@ -16,7 +16,7 @@ const route = useRoute()
 const layout = computed(() => {
   if (route.path === '/login') return AuthLayout
   // Use AppLayout for any known internal route
-  if (['/dashboard', '/settings', '/api', '/connections', '/billing', '/monitoring'].some(p => route.path.startsWith(p))) return AppLayout
+  if (['/dashboard', '/settings', '/data-viewer', '/connections', '/billing', '/monitoring'].some(p => route.path.startsWith(p))) return AppLayout
   return AuthLayout // default fallback
 })
 </script>
