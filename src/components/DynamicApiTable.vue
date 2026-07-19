@@ -15,9 +15,9 @@
       stripedRows
     >
       <Column v-for="col in columns" :key="col" :field="col" :header="col" :sortable="true">
-        <template #body="{ data }">
-          <span class="d-inline-block text-truncate" style="max-width: 200px;" :title="data[col]">
-            {{ data[col] !== null ? data[col] : '-' }}
+        <template #body="slotProps">
+          <span class="d-inline-block text-truncate" style="max-width: 200px;" :title="slotProps.data[col]">
+            {{ slotProps.data[col] !== null ? slotProps.data[col] : '-' }}
           </span>
         </template>
       </Column>
@@ -60,8 +60,10 @@ const fetchData = async () => {
   error.value = null
   try {
     const response = await apiClient.get(`/${props.endpoint}`)
+    console.log(`Response for ${props.endpoint}:`, response)
     data.value = response || []
   } catch (err) {
+    console.error(`Error for ${props.endpoint}:`, err)
     error.value = err.message || 'Failed to fetch data'
   } finally {
     loading.value = false

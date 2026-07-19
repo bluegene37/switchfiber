@@ -10,7 +10,7 @@
 
     <!-- Tabbed Data Viewer -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-      <Tabs v-model:value="activeTab">
+      <Tabs v-model:value="activeTab" lazy>
         <TabList class="bg-body-tertiary border-bottom overflow-x-auto text-nowrap p-0 m-0">
           <Tab v-for="endpoint in endpoints" :key="endpoint" :value="endpoint" class="px-4 py-3 small fw-medium">
             {{ endpoint }}
@@ -19,7 +19,7 @@
         <TabPanels class="p-0">
           <TabPanel v-for="endpoint in endpoints" :key="endpoint" :value="endpoint" class="p-0">
             <!-- Dynamic Table component fetching and rendering data only for the active tab -->
-            <DynamicApiTable v-if="activeTab === endpoint" :endpoint="endpoint" class="m-3" />
+            <DynamicApiTable :endpoint="endpoint" class="m-3" />
           </TabPanel>
         </TabPanels>
       </Tabs>
