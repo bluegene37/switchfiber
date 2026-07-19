@@ -17,9 +17,15 @@
           </Tab>
         </TabList>
         <TabPanels class="p-0">
-          <TabPanel v-for="endpoint in endpoints" :key="endpoint" :value="endpoint" class="p-0">
+          <TabPanel 
+            v-for="endpoint in endpoints" 
+            :key="endpoint" 
+            :value="endpoint" 
+            class="p-0"
+            v-show="activeTab === endpoint"
+          >
             <!-- Dynamic Table component fetching and rendering data only for the active tab -->
-            <DynamicApiTable :endpoint="endpoint" class="m-3" />
+            <DynamicApiTable v-if="activeTab === endpoint" :endpoint="endpoint" class="m-3" />
           </TabPanel>
         </TabPanels>
       </Tabs>

@@ -47,12 +47,15 @@ const data = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-// Dynamically generate column headers from the first object in the array
+import { EndpointColumns } from '../models/columns'
+
+// Dynamically generate column headers from the first object in the array,
+// or fallback to the static mapping if the table is empty.
 const columns = computed(() => {
   if (data.value && data.value.length > 0) {
     return Object.keys(data.value[0])
   }
-  return []
+  return EndpointColumns[props.endpoint] || []
 })
 
 const fetchData = async () => {
