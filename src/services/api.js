@@ -21,7 +21,24 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use((response) => {
   return response.data
 }, (error) => {
-  return Promise.reject(error)
+  console.error('API Error:', error.response?.status, error.message)
+  
+  if (error.response?.status === 401) {
+    // Handle unauthorized (e.g. redirect to login)
+    console.warn('Unauthorized access - please login again')
+  }
+
+  if (error.response?.status >= 500) {
+    console.error('Server error occurred')
+  }
+
+  // Standardize error message
+  const customError = new Error(
+    error.response?.data?.message || error.message || 'An unexpected error occurred'
+  )
+  customError.status = error.response?.status
+
+  return Promise.reject(customError)
 })
 
 export default apiClient
