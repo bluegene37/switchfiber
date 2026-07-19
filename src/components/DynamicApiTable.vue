@@ -63,8 +63,20 @@ const fetchData = async () => {
   error.value = null
   try {
     const response = await apiClient.get(`/${props.endpoint}`)
-    console.log(`Response for ${props.endpoint}:`, response)
-    data.value = response || []
+    
+    // Some endpoints return arrays directly, while others (like BillingDetails) wrap the array in an object
+    let unwrappedData = response
+    if (response && !Array.isArray(response) && typeof response === 'object') {
+      // Find the first property that is an array and use it
+      const arrayKey = Object.keys(response).find(key => Array.isArray(response[key]))
+      if (arrayKey) {
+        unwrappedData = response[arrayKey]
+      } else {
+        unwrappedData = []
+      }
+    }
+    
+    data.value = unwrappedData || []
   } catch (err) {
     console.error(`Error for ${props.endpoint}:`, err)
     error.value = err.message || 'Failed to fetch data'

@@ -10,25 +10,16 @@
 
     <!-- Tabbed Data Viewer -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-      <Tabs v-model:value="activeTab" lazy>
+      <Tabs v-model:value="activeTab">
         <TabList class="bg-body-tertiary border-bottom overflow-x-auto text-nowrap p-0 m-0">
           <Tab v-for="endpoint in endpoints" :key="endpoint" :value="endpoint" class="px-4 py-3 small fw-medium">
             {{ endpoint }}
           </Tab>
         </TabList>
-        <TabPanels class="p-0">
-          <TabPanel 
-            v-for="endpoint in endpoints" 
-            :key="endpoint" 
-            :value="endpoint" 
-            class="p-0"
-            v-show="activeTab === endpoint"
-          >
-            <!-- Dynamic Table component fetching and rendering data only for the active tab -->
-            <DynamicApiTable v-if="activeTab === endpoint" :endpoint="endpoint" class="m-3" />
-          </TabPanel>
-        </TabPanels>
       </Tabs>
+      
+      <!-- A single table that gets completely destroyed and recreated when activeTab changes -->
+      <DynamicApiTable :endpoint="activeTab" :key="activeTab" class="m-3" />
     </div>
   </div>
 </template>
