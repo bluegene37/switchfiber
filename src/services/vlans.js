@@ -7,9 +7,16 @@ export const VlanService = {
   getVlanById(id) {
     return apiClient.get(`/Vlans/${id}`)
   },
+  /**
+   * @param {import('../models/types').CreateVlanRequest} data 
+   */
   createVlan(data) {
     return apiClient.post('/Vlans', data)
   },
+  /**
+   * @param {string|number} id 
+   * @param {import('../models/types').UpdateVlanRequest} data 
+   */
   updateVlan(id, data) {
     return apiClient.put(`/Vlans/${id}`, data)
   },

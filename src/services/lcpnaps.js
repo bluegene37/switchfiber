@@ -7,9 +7,16 @@ export const LcpnapService = {
   getLcpnapById(id) {
     return apiClient.get(`/Lcpnaps/${id}`)
   },
+  /**
+   * @param {import('../models/types').CreateLcpnapRequest} data 
+   */
   createLcpnap(data) {
     return apiClient.post('/Lcpnaps', data)
   },
+  /**
+   * @param {string|number} id 
+   * @param {import('../models/types').UpdateLcpnapRequest} data 
+   */
   updateLcpnap(id, data) {
     return apiClient.put(`/Lcpnaps/${id}`, data)
   },

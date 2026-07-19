@@ -1,0 +1,3816 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "App.Api | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://103.249.198.43:8090/"
+    }
+  ],
+  "paths": {
+    "/api/Applications": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Applications/{id}": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/BillingDetails": {
+      "get": {
+        "tags": [
+          "BillingDetails"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "BillingDetails"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBillingDetailsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBillingDetailsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBillingDetailsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/BillingDetails/{id}": {
+      "get": {
+        "tags": [
+          "BillingDetails"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "BillingDetails"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBillingDetailsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBillingDetailsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBillingDetailsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "BillingDetails"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/JobOrders": {
+      "get": {
+        "tags": [
+          "JobOrders"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "JobOrders"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJobOrderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJobOrderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJobOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/JobOrders/{id}": {
+      "get": {
+        "tags": [
+          "JobOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "JobOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobOrderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobOrderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "JobOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Lcpnapports": {
+      "get": {
+        "tags": [
+          "Lcpnapports"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Lcpnapports"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpnapportRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpnapportRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpnapportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Lcpnapports/{id}": {
+      "get": {
+        "tags": [
+          "Lcpnapports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Lcpnapports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpnapportRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpnapportRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpnapportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Lcpnapports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Lcpnaps": {
+      "get": {
+        "tags": [
+          "Lcpnaps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Lcpnaps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpnapRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpnapRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpnapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Lcpnaps/{id}": {
+      "get": {
+        "tags": [
+          "Lcpnaps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Lcpnaps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpnapRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpnapRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpnapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Lcpnaps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Lcps": {
+      "get": {
+        "tags": [
+          "Lcps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Lcps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLcpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Lcps/{id}": {
+      "get": {
+        "tags": [
+          "Lcps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Lcps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLcpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Lcps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Naps": {
+      "get": {
+        "tags": [
+          "Naps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Naps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNapRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNapRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Naps/{id}": {
+      "get": {
+        "tags": [
+          "Naps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Naps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNapRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNapRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Naps"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Plans": {
+      "get": {
+        "tags": [
+          "Plans"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Plans"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Plans/{id}": {
+      "get": {
+        "tags": [
+          "Plans"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Plans"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlanRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlanRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Plans"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Ports": {
+      "get": {
+        "tags": [
+          "Ports"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Ports"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePortsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePortsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePortsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Ports/{id}": {
+      "get": {
+        "tags": [
+          "Ports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Ports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePortRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePortRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePortRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Routers": {
+      "get": {
+        "tags": [
+          "Routers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Routers"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRouterRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRouterRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRouterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Routers/{id}": {
+      "get": {
+        "tags": [
+          "Routers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Routers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRouterRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRouterRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRouterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Routers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Vlans": {
+      "get": {
+        "tags": [
+          "Vlans"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Vlans"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVlanRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVlanRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Vlans/{id}": {
+      "get": {
+        "tags": [
+          "Vlans"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Vlans"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVlanRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVlanRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Vlans"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateApplicationRequest": {
+        "required": [
+          "timestamp",
+          "emailAddress",
+          "region",
+          "city",
+          "barangay",
+          "referredBy",
+          "firstName",
+          "middleName",
+          "lastName",
+          "mobileNumber",
+          "secondaryMobileNumber",
+          "installationAddress",
+          "landmark",
+          "desiredPlan",
+          "proofOfBilling",
+          "governmentValidId",
+          "secondGovernmentValidId",
+          "houseFrontPicture",
+          "termsAndConditionsAgreement",
+          "firstNearestLandmark",
+          "secondNearestLandmark",
+          "applicablePromo",
+          "documentPicture",
+          "referrersAccountNumber",
+          "applyingFor",
+          "status",
+          "visitBy",
+          "visitWith",
+          "visitWithOther",
+          "remarks",
+          "modifiedBy",
+          "modifiedDate",
+          "userEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "emailAddress": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "barangay": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "middleName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "mobileNumber": {
+            "type": "string"
+          },
+          "secondaryMobileNumber": {
+            "type": "string"
+          },
+          "installationAddress": {
+            "type": "string"
+          },
+          "landmark": {
+            "type": "string"
+          },
+          "desiredPlan": {
+            "type": "string"
+          },
+          "proofOfBilling": {
+            "type": "string"
+          },
+          "governmentValidId": {
+            "type": "string"
+          },
+          "secondGovernmentValidId": {
+            "type": "string"
+          },
+          "houseFrontPicture": {
+            "type": "string"
+          },
+          "termsAndConditionsAgreement": {
+            "type": "string"
+          },
+          "firstNearestLandmark": {
+            "type": "string"
+          },
+          "secondNearestLandmark": {
+            "type": "string"
+          },
+          "applicablePromo": {
+            "type": "string"
+          },
+          "documentPicture": {
+            "type": "string"
+          },
+          "referrersAccountNumber": {
+            "type": "string"
+          },
+          "applyingFor": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "visitBy": {
+            "type": "string"
+          },
+          "visitWith": {
+            "type": "string"
+          },
+          "visitWithOther": {
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "modifiedDate": {
+            "type": "string"
+          },
+          "userEmail": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateBillingDetailsRequest": {
+        "required": [
+          "accountNo",
+          "dateInstalled",
+          "fullName",
+          "contactNumber",
+          "emailAddress",
+          "address",
+          "location",
+          "plan",
+          "provider",
+          "accountBalance",
+          "balanceUpdateDate",
+          "username",
+          "connectionType",
+          "routerModemSn",
+          "ip",
+          "lcp",
+          "nap",
+          "port",
+          "vlan",
+          "lcpNap",
+          "status",
+          "group",
+          "splynxId",
+          "mikrotikId",
+          "modifiedBy",
+          "modifiedDate",
+          "userEmail",
+          "billingDay",
+          "billingStatus",
+          "deliveryStatus",
+          "routerModel",
+          "barangay",
+          "city",
+          "region",
+          "lcpNapPort",
+          "usageType",
+          "renter",
+          "attachment1",
+          "attachment2",
+          "attachment3",
+          "referredBy",
+          "secondContactNumber",
+          "addressCoordinates",
+          "referrersAccountNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "accountNo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "dateInstalled": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "contactNumber": {
+            "type": "string"
+          },
+          "emailAddress": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "accountBalance": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "balanceUpdateDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "username": {
+            "type": "string"
+          },
+          "connectionType": {
+            "type": "string"
+          },
+          "routerModemSn": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "lcp": {
+            "type": "string"
+          },
+          "nap": {
+            "type": "string"
+          },
+          "port": {
+            "type": "string"
+          },
+          "vlan": {
+            "type": "string"
+          },
+          "lcpNap": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "splynxId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "mikrotikId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "userEmail": {
+            "type": "string"
+          },
+          "billingDay": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "billingStatus": {
+            "type": "string"
+          },
+          "deliveryStatus": {
+            "type": "string"
+          },
+          "routerModel": {
+            "type": "string"
+          },
+          "barangay": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "lcpNapPort": {
+            "type": "string"
+          },
+          "usageType": {
+            "type": "string"
+          },
+          "renter": {
+            "type": "string"
+          },
+          "attachment1": {
+            "type": "string"
+          },
+          "attachment2": {
+            "type": "string"
+          },
+          "attachment3": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "secondContactNumber": {
+            "type": "string"
+          },
+          "addressCoordinates": {
+            "type": "string"
+          },
+          "referrersAccountNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateJobOrderRequest": {
+        "required": [
+          "emailAddress",
+          "referredBy",
+          "firstName",
+          "middleInitial",
+          "lastName",
+          "contactNumber",
+          "applicantEmailAddress",
+          "address",
+          "location",
+          "barangay",
+          "city",
+          "region",
+          "planId",
+          "remarks",
+          "installationFee",
+          "contractTemplate",
+          "billingDay",
+          "preferredDay",
+          "joRemarks",
+          "status",
+          "verifiedBy",
+          "modemRouterSN",
+          "provider",
+          "lcpId",
+          "napId",
+          "portId",
+          "vlanId",
+          "username",
+          "visitBy",
+          "visitWith",
+          "visitWithOther",
+          "onsiteStatus",
+          "onsiteRemarks",
+          "modifiedBy",
+          "modifiedDate",
+          "contractLink",
+          "connectionType",
+          "assignedEmail",
+          "setupImage",
+          "speedtestImage",
+          "startTimeStamp",
+          "endTimeStamp",
+          "duration",
+          "externalId",
+          "lcpnapId",
+          "billingStatus",
+          "routerModel",
+          "dateInstalled",
+          "clientSignature",
+          "ip",
+          "signedContractImage",
+          "boxReadingImage",
+          "routerReadingImage",
+          "usernameStatus",
+          "lcpnapportId",
+          "itemName1",
+          "itemQuantity1",
+          "itemName2",
+          "itemQuantity2",
+          "itemName3",
+          "itemQuantity3",
+          "itemName4",
+          "itemQuantity4",
+          "itemName5",
+          "itemQuantity5",
+          "itemName6",
+          "itemQuantity6",
+          "itemName7",
+          "itemQuantity7",
+          "itemName8",
+          "itemQuantity8",
+          "itemName9",
+          "itemQuantity9",
+          "itemName10",
+          "itemQuantity10",
+          "usageType",
+          "renter",
+          "installationLandmark",
+          "statusRemarks",
+          "portLabelImage",
+          "secondContactNumber",
+          "accountNo",
+          "addressCoordinates",
+          "referrersAccountNumber",
+          "applicationId",
+          "houseFront"
+        ],
+        "type": "object",
+        "properties": {
+          "emailAddress": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "middleInitial": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "contactNumber": {
+            "type": "string"
+          },
+          "applicantEmailAddress": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "barangay": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "planId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "remarks": {
+            "type": "string"
+          },
+          "installationFee": {
+            "type": "string"
+          },
+          "contractTemplate": {
+            "type": "string"
+          },
+          "billingDay": {
+            "type": "string"
+          },
+          "preferredDay": {
+            "type": "string"
+          },
+          "joRemarks": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "verifiedBy": {
+            "type": "string"
+          },
+          "modemRouterSN": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "lcpId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "napId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "portId": {
+            "type": "string"
+          },
+          "vlanId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "username": {
+            "type": "string"
+          },
+          "visitBy": {
+            "type": "string"
+          },
+          "visitWith": {
+            "type": "string"
+          },
+          "visitWithOther": {
+            "type": "string"
+          },
+          "onsiteStatus": {
+            "type": "string"
+          },
+          "onsiteRemarks": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "contractLink": {
+            "type": "string"
+          },
+          "connectionType": {
+            "type": "string"
+          },
+          "assignedEmail": {
+            "type": "string"
+          },
+          "setupImage": {
+            "type": "string"
+          },
+          "speedtestImage": {
+            "type": "string"
+          },
+          "startTimeStamp": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "endTimeStamp": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "duration": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "lcpnapId": {
+            "type": "string"
+          },
+          "billingStatus": {
+            "type": "string"
+          },
+          "routerModel": {
+            "type": "string"
+          },
+          "dateInstalled": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "clientSignature": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "signedContractImage": {
+            "type": "string"
+          },
+          "boxReadingImage": {
+            "type": "string"
+          },
+          "routerReadingImage": {
+            "type": "string"
+          },
+          "usernameStatus": {
+            "type": "string"
+          },
+          "lcpnapportId": {
+            "type": "string"
+          },
+          "itemName1": {
+            "type": "string"
+          },
+          "itemQuantity1": {
+            "type": "string"
+          },
+          "itemName2": {
+            "type": "string"
+          },
+          "itemQuantity2": {
+            "type": "string"
+          },
+          "itemName3": {
+            "type": "string"
+          },
+          "itemQuantity3": {
+            "type": "string"
+          },
+          "itemName4": {
+            "type": "string"
+          },
+          "itemQuantity4": {
+            "type": "string"
+          },
+          "itemName5": {
+            "type": "string"
+          },
+          "itemQuantity5": {
+            "type": "string"
+          },
+          "itemName6": {
+            "type": "string"
+          },
+          "itemQuantity6": {
+            "type": "string"
+          },
+          "itemName7": {
+            "type": "string"
+          },
+          "itemQuantity7": {
+            "type": "string"
+          },
+          "itemName8": {
+            "type": "string"
+          },
+          "itemQuantity8": {
+            "type": "string"
+          },
+          "itemName9": {
+            "type": "string"
+          },
+          "itemQuantity9": {
+            "type": "string"
+          },
+          "itemName10": {
+            "type": "string"
+          },
+          "itemQuantity10": {
+            "type": "string"
+          },
+          "usageType": {
+            "type": "string"
+          },
+          "renter": {
+            "type": "string"
+          },
+          "installationLandmark": {
+            "type": "string"
+          },
+          "statusRemarks": {
+            "type": "string"
+          },
+          "portLabelImage": {
+            "type": "string"
+          },
+          "secondContactNumber": {
+            "type": "string"
+          },
+          "accountNo": {
+            "type": "string"
+          },
+          "addressCoordinates": {
+            "type": "string"
+          },
+          "referrersAccountNumber": {
+            "type": "string"
+          },
+          "applicationId": {
+            "type": "string"
+          },
+          "houseFront": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateLcpnapportRequest": {
+        "required": [
+          "name",
+          "description",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateLcpnapRequest": {
+        "required": [
+          "name",
+          "description",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateLcpRequest": {
+        "required": [
+          "name",
+          "description",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateNapRequest": {
+        "required": [
+          "name",
+          "description",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreatePlanRequest": {
+        "required": [
+          "name",
+          "description",
+          "amount",
+          "discountId",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "discountId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreatePortsRequest": {
+        "required": [
+          "name",
+          "description",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateRouterRequest": {
+        "required": [
+          "name",
+          "description",
+          "brand",
+          "model",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateVlanRequest": {
+        "required": [
+          "name",
+          "description",
+          "createdBy",
+          "createdDate",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateApplicationRequest": {
+        "required": [
+          "emailAddress",
+          "region",
+          "city",
+          "barangay",
+          "referredBy",
+          "firstName",
+          "middleName",
+          "lastName",
+          "mobileNumber",
+          "secondaryMobileNumber",
+          "installationAddress",
+          "landmark",
+          "desiredPlan",
+          "proofOfBilling",
+          "governmentValidId",
+          "secondGovernmentValidId",
+          "houseFrontPicture",
+          "termsAndConditionsAgreement",
+          "firstNearestLandmark",
+          "secondNearestLandmark",
+          "applicablePromo",
+          "documentPicture",
+          "referrersAccountNumber",
+          "applyingFor",
+          "status",
+          "visitBy",
+          "visitWith",
+          "visitWithOther",
+          "remarks",
+          "modifiedBy",
+          "modifiedDate",
+          "userEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "emailAddress": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "barangay": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "middleName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "mobileNumber": {
+            "type": "string"
+          },
+          "secondaryMobileNumber": {
+            "type": "string"
+          },
+          "installationAddress": {
+            "type": "string"
+          },
+          "landmark": {
+            "type": "string"
+          },
+          "desiredPlan": {
+            "type": "string"
+          },
+          "proofOfBilling": {
+            "type": "string"
+          },
+          "governmentValidId": {
+            "type": "string"
+          },
+          "secondGovernmentValidId": {
+            "type": "string"
+          },
+          "houseFrontPicture": {
+            "type": "string"
+          },
+          "termsAndConditionsAgreement": {
+            "type": "string"
+          },
+          "firstNearestLandmark": {
+            "type": "string"
+          },
+          "secondNearestLandmark": {
+            "type": "string"
+          },
+          "applicablePromo": {
+            "type": "string"
+          },
+          "documentPicture": {
+            "type": "string"
+          },
+          "referrersAccountNumber": {
+            "type": "string"
+          },
+          "applyingFor": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "visitBy": {
+            "type": "string"
+          },
+          "visitWith": {
+            "type": "string"
+          },
+          "visitWithOther": {
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "modifiedDate": {
+            "type": "string"
+          },
+          "userEmail": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateBillingDetailsRequest": {
+        "required": [
+          "accountNo",
+          "dateInstalled",
+          "fullName",
+          "contactNumber",
+          "emailAddress",
+          "address",
+          "location",
+          "plan",
+          "provider",
+          "accountBalance",
+          "balanceUpdateDate",
+          "username",
+          "connectionType",
+          "routerModemSn",
+          "ip",
+          "lcp",
+          "nap",
+          "port",
+          "vlan",
+          "lcpNap",
+          "status",
+          "group",
+          "splynxId",
+          "mikrotikId",
+          "modifiedBy",
+          "modifiedDate",
+          "userEmail",
+          "billingDay",
+          "billingStatus",
+          "deliveryStatus",
+          "routerModel",
+          "barangay",
+          "city",
+          "region",
+          "lcpNapPort",
+          "usageType",
+          "renter",
+          "attachment1",
+          "attachment2",
+          "attachment3",
+          "referredBy",
+          "secondContactNumber",
+          "addressCoordinates",
+          "referrersAccountNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "accountNo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "dateInstalled": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "contactNumber": {
+            "type": "string"
+          },
+          "emailAddress": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "accountBalance": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "balanceUpdateDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "username": {
+            "type": "string"
+          },
+          "connectionType": {
+            "type": "string"
+          },
+          "routerModemSn": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "lcp": {
+            "type": "string"
+          },
+          "nap": {
+            "type": "string"
+          },
+          "port": {
+            "type": "string"
+          },
+          "vlan": {
+            "type": "string"
+          },
+          "lcpNap": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "splynxId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "mikrotikId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "userEmail": {
+            "type": "string"
+          },
+          "billingDay": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "billingStatus": {
+            "type": "string"
+          },
+          "deliveryStatus": {
+            "type": "string"
+          },
+          "routerModel": {
+            "type": "string"
+          },
+          "barangay": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "lcpNapPort": {
+            "type": "string"
+          },
+          "usageType": {
+            "type": "string"
+          },
+          "renter": {
+            "type": "string"
+          },
+          "attachment1": {
+            "type": "string"
+          },
+          "attachment2": {
+            "type": "string"
+          },
+          "attachment3": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "secondContactNumber": {
+            "type": "string"
+          },
+          "addressCoordinates": {
+            "type": "string"
+          },
+          "referrersAccountNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateJobOrderRequest": {
+        "required": [
+          "emailAddress",
+          "referredBy",
+          "firstName",
+          "middleInitial",
+          "lastName",
+          "contactNumber",
+          "applicantEmailAddress",
+          "address",
+          "location",
+          "barangay",
+          "city",
+          "region",
+          "planId",
+          "remarks",
+          "installationFee",
+          "contractTemplate",
+          "billingDay",
+          "preferredDay",
+          "joRemarks",
+          "status",
+          "verifiedBy",
+          "modemRouterSN",
+          "provider",
+          "lcpId",
+          "napId",
+          "portId",
+          "vlanId",
+          "username",
+          "visitBy",
+          "visitWith",
+          "visitWithOther",
+          "onsiteStatus",
+          "onsiteRemarks",
+          "modifiedBy",
+          "modifiedDate",
+          "contractLink",
+          "connectionType",
+          "assignedEmail",
+          "setupImage",
+          "speedtestImage",
+          "startTimeStamp",
+          "endTimeStamp",
+          "duration",
+          "externalId",
+          "lcpnapId",
+          "billingStatus",
+          "routerModel",
+          "dateInstalled",
+          "clientSignature",
+          "ip",
+          "signedContractImage",
+          "boxReadingImage",
+          "routerReadingImage",
+          "usernameStatus",
+          "lcpnapportId",
+          "itemName1",
+          "itemQuantity1",
+          "itemName2",
+          "itemQuantity2",
+          "itemName3",
+          "itemQuantity3",
+          "itemName4",
+          "itemQuantity4",
+          "itemName5",
+          "itemQuantity5",
+          "itemName6",
+          "itemQuantity6",
+          "itemName7",
+          "itemQuantity7",
+          "itemName8",
+          "itemQuantity8",
+          "itemName9",
+          "itemQuantity9",
+          "itemName10",
+          "itemQuantity10",
+          "usageType",
+          "renter",
+          "installationLandmark",
+          "statusRemarks",
+          "portLabelImage",
+          "secondContactNumber",
+          "accountNo",
+          "addressCoordinates",
+          "referrersAccountNumber",
+          "applicationId",
+          "houseFront"
+        ],
+        "type": "object",
+        "properties": {
+          "emailAddress": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "middleInitial": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "contactNumber": {
+            "type": "string"
+          },
+          "applicantEmailAddress": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "barangay": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "planId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "remarks": {
+            "type": "string"
+          },
+          "installationFee": {
+            "type": "string"
+          },
+          "contractTemplate": {
+            "type": "string"
+          },
+          "billingDay": {
+            "type": "string"
+          },
+          "preferredDay": {
+            "type": "string"
+          },
+          "joRemarks": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "verifiedBy": {
+            "type": "string"
+          },
+          "modemRouterSN": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "lcpId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "napId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "portId": {
+            "type": "string"
+          },
+          "vlanId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "username": {
+            "type": "string"
+          },
+          "visitBy": {
+            "type": "string"
+          },
+          "visitWith": {
+            "type": "string"
+          },
+          "visitWithOther": {
+            "type": "string"
+          },
+          "onsiteStatus": {
+            "type": "string"
+          },
+          "onsiteRemarks": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "contractLink": {
+            "type": "string"
+          },
+          "connectionType": {
+            "type": "string"
+          },
+          "assignedEmail": {
+            "type": "string"
+          },
+          "setupImage": {
+            "type": "string"
+          },
+          "speedtestImage": {
+            "type": "string"
+          },
+          "startTimeStamp": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "endTimeStamp": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "duration": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "lcpnapId": {
+            "type": "string"
+          },
+          "billingStatus": {
+            "type": "string"
+          },
+          "routerModel": {
+            "type": "string"
+          },
+          "dateInstalled": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "clientSignature": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "signedContractImage": {
+            "type": "string"
+          },
+          "boxReadingImage": {
+            "type": "string"
+          },
+          "routerReadingImage": {
+            "type": "string"
+          },
+          "usernameStatus": {
+            "type": "string"
+          },
+          "lcpnapportId": {
+            "type": "string"
+          },
+          "itemName1": {
+            "type": "string"
+          },
+          "itemQuantity1": {
+            "type": "string"
+          },
+          "itemName2": {
+            "type": "string"
+          },
+          "itemQuantity2": {
+            "type": "string"
+          },
+          "itemName3": {
+            "type": "string"
+          },
+          "itemQuantity3": {
+            "type": "string"
+          },
+          "itemName4": {
+            "type": "string"
+          },
+          "itemQuantity4": {
+            "type": "string"
+          },
+          "itemName5": {
+            "type": "string"
+          },
+          "itemQuantity5": {
+            "type": "string"
+          },
+          "itemName6": {
+            "type": "string"
+          },
+          "itemQuantity6": {
+            "type": "string"
+          },
+          "itemName7": {
+            "type": "string"
+          },
+          "itemQuantity7": {
+            "type": "string"
+          },
+          "itemName8": {
+            "type": "string"
+          },
+          "itemQuantity8": {
+            "type": "string"
+          },
+          "itemName9": {
+            "type": "string"
+          },
+          "itemQuantity9": {
+            "type": "string"
+          },
+          "itemName10": {
+            "type": "string"
+          },
+          "itemQuantity10": {
+            "type": "string"
+          },
+          "usageType": {
+            "type": "string"
+          },
+          "renter": {
+            "type": "string"
+          },
+          "installationLandmark": {
+            "type": "string"
+          },
+          "statusRemarks": {
+            "type": "string"
+          },
+          "portLabelImage": {
+            "type": "string"
+          },
+          "secondContactNumber": {
+            "type": "string"
+          },
+          "accountNo": {
+            "type": "string"
+          },
+          "addressCoordinates": {
+            "type": "string"
+          },
+          "referrersAccountNumber": {
+            "type": "string"
+          },
+          "applicationId": {
+            "type": "string"
+          },
+          "houseFront": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateLcpnapportRequest": {
+        "required": [
+          "name",
+          "description",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateLcpnapRequest": {
+        "required": [
+          "name",
+          "description",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateLcpRequest": {
+        "required": [
+          "name",
+          "description",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateNapRequest": {
+        "required": [
+          "name",
+          "description",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdatePlanRequest": {
+        "required": [
+          "name",
+          "description",
+          "amount",
+          "discountId",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "discountId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdatePortRequest": {
+        "required": [
+          "name",
+          "description",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateRouterRequest": {
+        "required": [
+          "name",
+          "description",
+          "brand",
+          "model",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateVlanRequest": {
+        "required": [
+          "name",
+          "description",
+          "modifiedBy",
+          "modifiedDate"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Applications"
+    },
+    {
+      "name": "BillingDetails"
+    },
+    {
+      "name": "JobOrders"
+    },
+    {
+      "name": "Lcpnapports"
+    },
+    {
+      "name": "Lcpnaps"
+    },
+    {
+      "name": "Lcps"
+    },
+    {
+      "name": "Naps"
+    },
+    {
+      "name": "Plans"
+    },
+    {
+      "name": "Ports"
+    },
+    {
+      "name": "Routers"
+    },
+    {
+      "name": "Vlans"
+    }
+  ]
+}

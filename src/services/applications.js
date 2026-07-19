@@ -7,9 +7,16 @@ export const ApplicationService = {
   getApplicationById(id) {
     return apiClient.get(`/Applications/${id}`)
   },
+  /**
+   * @param {import('../models/types').CreateApplicationRequest} data 
+   */
   createApplication(data) {
     return apiClient.post('/Applications', data)
   },
+  /**
+   * @param {string|number} id 
+   * @param {import('../models/types').UpdateApplicationRequest} data 
+   */
   updateApplication(id, data) {
     return apiClient.put(`/Applications/${id}`, data)
   },

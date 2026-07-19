@@ -7,9 +7,16 @@ export const RouterService = {
   getRouterById(id) {
     return apiClient.get(`/Routers/${id}`)
   },
+  /**
+   * @param {import('../models/types').CreateRouterRequest} data 
+   */
   createRouter(data) {
     return apiClient.post('/Routers', data)
   },
+  /**
+   * @param {string|number} id 
+   * @param {import('../models/types').UpdateRouterRequest} data 
+   */
   updateRouter(id, data) {
     return apiClient.put(`/Routers/${id}`, data)
   },
