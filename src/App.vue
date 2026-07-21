@@ -12,11 +12,9 @@ import AppLayout from './layouts/AppLayout.vue'
 
 const route = useRoute()
 
-// Determine layout based on route path
+// Determine layout based on route path metadata
 const layout = computed(() => {
-  if (route.path === '/login') return AuthLayout
-  // Use AppLayout for any known internal route
-  if (['/dashboard', '/settings', '/data-viewer', '/connections', '/billing', '/monitoring'].some(p => route.path.startsWith(p))) return AppLayout
-  return AuthLayout // default fallback
+  if (route.meta.requiresAuth) return AppLayout
+  return AuthLayout // default fallback for login/public pages
 })
 </script>

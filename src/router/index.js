@@ -21,20 +21,80 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/settings',
-      name: 'settings',
-      component: () => import('../views/Settings.vue'),
+      path: '/lcp',
+      name: 'lcp',
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/data-viewer',
-      name: 'api-viewer',
-      component: () => import('../views/Api.vue'),
+      path: '/lcnap',
+      name: 'lcnap',
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/connections',
-      name: 'connections',
+      path: '/lcnap_port',
+      name: 'lcnap_port',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/nap',
+      name: 'nap',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/port',
+      name: 'port',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/vlan',
+      name: 'vlan',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/router',
+      name: 'router',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/user',
+      name: 'user',
+      component: () => import('../views/ComingSoon.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/menu',
+      name: 'menu',
+      component: () => import('../views/ComingSoon.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/access_level',
+      name: 'access_level',
+      component: () => import('../views/ComingSoon.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/access_level_menu',
+      name: 'access_level_menu',
+      component: () => import('../views/ComingSoon.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/job_order',
+      name: 'job_order',
+      component: () => import('../views/ComingSoon.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/invoice',
+      name: 'invoice',
       component: () => import('../views/ComingSoon.vue'),
       meta: { requiresAuth: true }
     },
@@ -45,18 +105,42 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/monitoring',
-      name: 'monitoring',
-      component: () => import('../views/ComingSoon.vue'),
+      path: '/data-viewer',
+      name: 'api-viewer',
+      component: () => import('../views/Api.vue'),
       meta: { requiresAuth: true }
-    }
+    },
+    // {
+    //   path: '/settings',
+    //   name: 'settings',
+    //   component: () => import('../views/Settings.vue'),
+    //   meta: { requiresAuth: true }
+    // },
+    // {
+    //   path: '/connections',
+    //   name: 'connections',
+    //   component: () => import('../views/ComingSoon.vue'),
+    //   meta: { requiresAuth: true }
+    // },
+    // {
+    //   path: '/billing',
+    //   name: 'billing',
+    //   component: () => import('../views/ComingSoon.vue'),
+    //   meta: { requiresAuth: true }
+    // },
+    // {
+    //   path: '/monitoring',
+    //   name: 'monitoring',
+    //   component: () => import('../views/ComingSoon.vue'),
+    //   meta: { requiresAuth: true }
+    // }
   ]
 })
 
 // Navigation Guard
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login' })
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
