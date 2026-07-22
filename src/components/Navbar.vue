@@ -44,7 +44,12 @@
           style="cursor: pointer; user-select: none;"
           @click="isDropdownOpen = !isDropdownOpen"
         >
-          <img class="rounded-circle border border-2 border-primary border-opacity-25" src="https://i.pravatar.cc/150?img=11" alt="User avatar" width="34" height="34" />
+          <div 
+            class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" 
+            style="width: 34px; height: 34px; font-size: 0.85rem;"
+          >
+            {{ userInitial }}
+          </div>
           <div class="ms-2 d-none d-md-block text-start">
             <div class="small fw-bold text-body lh-1">{{ userDisplayName }}</div>
             <div class="text-secondary mt-1" style="font-size: 0.7rem;">{{ userRole }}</div>
@@ -107,6 +112,10 @@ const userDisplayName = computed(() => {
   if (user.value.username) return user.value.username
   if (user.value.fname) return `${user.value.fname} ${user.value.lname || ''}`.trim()
   return user.value.email || 'Admin User'
+})
+
+const userInitial = computed(() => {
+  return (userDisplayName.value || 'A').charAt(0).toUpperCase()
 })
 
 const userRole = computed(() => {

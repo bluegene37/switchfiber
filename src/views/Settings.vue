@@ -15,7 +15,12 @@
         <!-- Profile Card -->
         <div class="card shadow-sm border-0 rounded-4 p-4 text-center mb-4 bg-body">
           <div class="position-relative d-inline-block mx-auto mb-3">
-            <img class="rounded-circle border border-3 border-primary border-opacity-25 shadow-sm" src="https://i.pravatar.cc/150?img=11" alt="User avatar" width="96" height="96" />
+            <div 
+              class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm mx-auto border border-3 border-white" 
+              style="width: 88px; height: 88px; font-size: 2.25rem;"
+            >
+              {{ userInitial }}
+            </div>
             <span class="position-absolute bottom-0 end-0 p-2 bg-success border border-light rounded-circle" title="Online"></span>
           </div>
           <h5 class="fw-bold text-body mb-1">{{ userDisplayName }}</h5>
@@ -279,6 +284,10 @@ const userDisplayName = computed(() => {
   if (user.value.username) return user.value.username
   if (user.value.fname) return `${user.value.fname} ${user.value.lname || ''}`.trim()
   return user.value.email || 'Admin User'
+})
+
+const userInitial = computed(() => {
+  return (userDisplayName.value || 'A').charAt(0).toUpperCase()
 })
 
 const userRole = computed(() => {
