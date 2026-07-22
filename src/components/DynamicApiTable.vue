@@ -130,18 +130,8 @@
             {{ formatLabel(col) }}
           </label>
 
-          <!-- Disabled Email Field -->
-          <InputText 
-            v-if="getFieldType(col) === 'disabled_email'" 
-            :id="col" 
-            v-model="formData[col]" 
-            class="w-100 p-inputtext-sm bg-body-tertiary" 
-            :disabled="true"
-            placeholder="Email (Not available yet)"
-          />
-
           <!-- Toggle Switch for Active / Boolean fields -->
-          <div v-else-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+          <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
             <ToggleSwitch :id="col" v-model="formData[col]" />
             <span class="small fw-semibold" :class="formData[col] ? 'text-success' : 'text-secondary'">
               {{ formData[col] ? 'Active' : 'Inactive' }}
@@ -355,18 +345,8 @@
             {{ formatLabel(col) }}
           </label>
 
-          <!-- Disabled Email Field -->
-          <InputText 
-            v-if="getFieldType(col) === 'disabled_email'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            class="w-100 p-inputtext-sm bg-body-tertiary" 
-            :disabled="true"
-            placeholder="Email (Not available yet)"
-          />
-
           <!-- Toggle Switch for Active / Boolean fields -->
-          <div v-else-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+          <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
             <ToggleSwitch :id="`edit-${col}`" v-model="editFormData[col]" />
             <span class="small fw-semibold" :class="editFormData[col] ? 'text-success' : 'text-secondary'">
               {{ editFormData[col] ? 'Active' : 'Inactive' }}
@@ -726,8 +706,8 @@ const formatLabel = (col) => {
     plan_id: 'Plan',
     planid: 'Plan',
     confirmpassword: 'Confirm Password',
-    email: 'Email (Disabled)',
-    useremail: 'Email (Disabled)',
+    email: 'Email',
+    useremail: 'Email Address',
     rowversion: 'Row Version'
   }
   if (customOverrides[col.toLowerCase()]) {
@@ -765,9 +745,6 @@ const formatLabel = (col) => {
 // Classify field types for smart form rendering
 const getFieldType = (col) => {
   const lower = col.toLowerCase()
-  if (lower === 'email' || lower === 'useremail' || lower === 'disabled_email') {
-    return 'disabled_email'
-  }
   if (lower.includes('email')) {
     return 'email'
   }

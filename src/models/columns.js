@@ -297,6 +297,7 @@ export const EndpointColumns = {
     "fname",
     "mname",
     "lname",
+    "email",
     "contactnumber",
     "address",
     "username",
