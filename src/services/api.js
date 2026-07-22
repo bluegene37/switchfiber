@@ -11,7 +11,10 @@ const apiClient = axios.create({
 
 // Request interceptor
 apiClient.interceptors.request.use((config) => {
-  // Can add token here if backend existed
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
   return config
 }, (error) => {
   return Promise.reject(error)
@@ -24,8 +27,14 @@ apiClient.interceptors.response.use((response) => {
   console.error('API Error:', error.response?.status, error.message)
   
   if (error.response?.status === 401) {
-    // Handle unauthorized (e.g. redirect to login)
-    console.warn('Unauthorized access - please login again')
+    console.warn('Unauthorized access - redirecting to login')
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('user')
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login'
+    }
   }
 
   if (error.response?.status >= 500) {
@@ -33,9 +42,18 @@ apiClient.interceptors.response.use((response) => {
   }
 
   // Standardize error message
-  const customError = new Error(
-    error.response?.data?.message || error.message || 'An unexpected error occurred'
-  )
+  let errorMessage = error.response?.data?.message || error.response?.data?.title
+  if (!errorMessage && error.response?.data?.errors) {
+    const errs = error.response.data.errors
+    if (typeof errs === 'object') {
+      errorMessage = Object.values(errs).flat().join(', ')
+    }
+  }
+  if (!errorMessage) {
+    errorMessage = error.message || 'An unexpected error occurred'
+  }
+
+  const customError = new Error(errorMessage)
   customError.status = error.response?.status
 
   return Promise.reject(customError)

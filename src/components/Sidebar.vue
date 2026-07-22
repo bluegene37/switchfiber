@@ -18,7 +18,7 @@
           <router-link 
             v-if="!item.children"
             :to="item.path" 
-            class="nav-link d-flex align-items-center rounded text-body opacity-75 sidebar-link"
+            class="nav-link d-flex align-items-center rounded text-body opacity-75 sidebar-link text-decoration-none px-3 py-2"
             active-class="bg-primary text-white opacity-100 active-link"
             exact-active-class="bg-primary text-white opacity-100 active-link"
             @click="$emit('close')"
@@ -30,7 +30,7 @@
           <!-- Item with children -->
           <div v-else>
             <div 
-              class="nav-link d-flex align-items-center justify-content-between rounded sidebar-link"
+              class="nav-link d-flex align-items-center justify-content-between rounded sidebar-link text-decoration-none px-3 py-2"
               :class="item.expanded ? 'text-primary fw-bold bg-body-tertiary' : 'text-body opacity-75 fw-semibold'"
               style="cursor: pointer; user-select: none;"
               @click="item.expanded = !item.expanded"
@@ -46,7 +46,7 @@
               <li class="nav-item" v-for="child in item.children" :key="child.name">
                 <router-link 
                   :to="child.path" 
-                  class="nav-link d-flex align-items-center rounded text-body opacity-75 sidebar-link py-1"
+                  class="nav-link d-flex align-items-center rounded text-body opacity-75 sidebar-link text-decoration-none py-1.5 px-2"
                   active-class="bg-primary text-white opacity-100 active-link"
                   exact-active-class="bg-primary text-white opacity-100 active-link"
                   @click="$emit('close')"
@@ -62,10 +62,14 @@
     </nav>
     
     <!-- Footer / Logout -->
-    <div class="p-3 border-top">
-      <button @click="handleLogout" class="btn btn-link nav-link w-100 d-flex align-items-center text-start text-body opacity-75 rounded sidebar-link">
-        <i class="pi pi-sign-out text-center me-3" style="width: 24px;"></i>
-        <span class="small fw-semibold">Logout</span>
+    <div class="p-3 border-top bg-body">
+      <button 
+        type="button"
+        @click="handleLogout" 
+        class="btn w-100 d-flex align-items-center justify-content-center gap-2 py-2 px-3 fw-bold rounded-3 text-decoration-none bg-danger bg-opacity-10 text-danger hover-logout"
+      >
+        <i class="pi pi-sign-out"></i>
+        <span class="small">Logout</span>
       </button>
     </div>
   </aside>
@@ -110,6 +114,8 @@ const menuItems = ref([
       { name: 'PORT', path: '/port', icon: 'pi-link' },
       { name: 'VLAN', path: '/vlan', icon: 'pi-globe' },
       { name: 'ROUTER', path: '/router', icon: 'pi-wifi' },
+      { name: 'PLAN', path: '/plan', icon: 'pi-tag' },
+      { name: 'APPLICATION', path: '/application', icon: 'pi-file' },
     ]
   },
   { 
@@ -136,7 +142,7 @@ const menuItems = ref([
   // { name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
   // { name: 'Network Monitoring', path: '/monitoring', icon: 'pi-chart-line' },
   // { name: 'Settings', path: '/settings', icon: 'pi-cog' }
-  { name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },
+  // { name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },
 ])
 
 const handleLogout = () => {
@@ -147,11 +153,23 @@ const handleLogout = () => {
 
 <style scoped>
 .sidebar-link {
-  transition: all 0.2s;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none !important;
 }
 .sidebar-link:hover:not(.active-link) {
   background-color: var(--bs-secondary-bg);
   opacity: 1 !important;
+  text-decoration: none !important;
+}
+
+.hover-logout {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid rgba(220, 53, 69, 0.2) !important;
+}
+.hover-logout:hover {
+  background-color: var(--bs-danger) !important;
+  color: #ffffff !important;
+  border-color: var(--bs-danger) !important;
 }
 
 .sidebar-wrapper {

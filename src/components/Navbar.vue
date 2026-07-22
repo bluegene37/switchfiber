@@ -39,25 +39,80 @@
         </span>
       </button>
 
-      <!-- Profile Dropdown (Dummy visual for now) -->
-      <div class="d-flex align-items-center ms-2" style="cursor: pointer;">
-        <img class="rounded-circle border" src="https://i.pravatar.cc/150?img=11" alt="User avatar" width="32" height="32" />
-        <span class="ms-2 d-none d-md-block small fw-medium text-body">
-          {{ user?.name || 'Admin User' }}
-        </span>
-        <i class="pi pi-angle-down ms-1 text-secondary small d-none d-md-block"></i>
+      <!-- Profile Dropdown Menu Trigger -->
+      <div class="position-relative">
+        <div 
+          class="d-flex align-items-center ms-2 p-1 rounded-3 hover-bg-light" 
+          style="cursor: pointer; user-select: none;"
+          @click="toggleProfileMenu"
+        >
+          <img class="rounded-circle border border-2 border-primary border-opacity-25" src="https://i.pravatar.cc/150?img=11" alt="User avatar" width="34" height="34" />
+          <div class="ms-2 d-none d-md-block text-start">
+            <div class="small fw-bold text-body lh-1">{{ userDisplayName }}</div>
+            <div class="text-secondary mt-1" style="font-size: 0.7rem;">{{ userRole }}</div>
+          </div>
+          <i class="pi pi-chevron-down ms-2 text-secondary small d-none d-md-block" style="font-size: 0.75rem;"></i>
+        </div>
+
+        <Menu ref="profileMenu" :model="menuItems" :popup="true" />
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import ThemeSwitcher from './ThemeSwitcher.vue'
+import Menu from 'primevue/menu'
 
 defineEmits(['toggle-sidebar'])
 
+const router = useRouter()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
+
+const profileMenu = ref(null)
+
+const userDisplayName = computed(() => {
+  if (!user.value) return 'Admin User'
+  if (user.value.username) return user.value.username
+  if (user.value.fname) return `${user.value.fname} ${user.value.lname || ''}`.trim()
+  return user.value.email || 'Admin User'
+})
+
+const userRole = computed(() => {
+  if (!user.value) return 'Super Admin'
+  return user.value.role || (user.value.accesslevel_id === 1 ? 'Super Admin' : 'User')
+})
+
+const toggleProfileMenu = (event) => {
+  if (profileMenu.value) {
+    profileMenu.value.toggle(event)
+  }
+}
+
+const menuItems = ref([
+  {
+    label: 'Account',
+    items: [
+      {
+        label: 'Settings',
+        icon: 'pi pi-cog',
+        command: () => {
+          router.push('/user')
+        }
+      },
+      {
+        label: 'Logout',
+        icon: 'pi pi-sign-out',
+        command: () => {
+          authStore.logout()
+          router.push('/login')
+        }
+      }
+    ]
+  }
+])
 </script>

@@ -63,45 +63,57 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/plan',
+      name: 'plan',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/application',
+      name: 'application',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/user',
       name: 'user',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/menu',
       name: 'menu',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/access_level',
       name: 'access_level',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/access_level_menu',
       name: 'access_level_menu',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/job_order',
       name: 'job_order',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/invoice',
       name: 'invoice',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/billing',
       name: 'billing',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {

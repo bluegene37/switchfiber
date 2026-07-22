@@ -13,6 +13,8 @@
     "axios": "^1.18.0",
     "bootstrap": "^5.3.8",
     "echarts": "^6.1.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "pinia": "^3.0.4",
     "primeicons": "^7.0.0",
     "primevue": "^4.5.5",

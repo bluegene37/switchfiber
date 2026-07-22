@@ -291,5 +291,42 @@ export const EndpointColumns = {
     "createdBy",
     "lastModified",
     "lastModifiedBy"
+  ],
+  "Users": [
+    "id",
+    "fname",
+    "mname",
+    "lname",
+    "contactnumber",
+    "address",
+    "username",
+    "password",
+    "active",
+    "accesslevel_id",
+    "rowVersion"
+  ],
+  "AccessLevel": [
+    "id",
+    "name",
+    "description"
+  ],
+  "Menus": [
+    "id",
+    "name",
+    "route",
+    "icon",
+    "description"
+  ],
+  "AccessLevelMenu": [
+    "id",
+    "accessLevelId",
+    "menuId"
+  ],
+  "BillingStatements": [
+    "id",
+    "accountNo",
+    "amount",
+    "dueDate",
+    "status"
   ]
 }

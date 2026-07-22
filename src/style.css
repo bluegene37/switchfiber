@@ -1,8 +1,36 @@
 @import "primeicons/primeicons.css";
 
 :root {
-  --color-primary: #0066FF;
-  --color-primary-dark: #0052cc;
+  /* Default Green Theme Palette */
+  --color-primary: #10b981;
+  --color-primary-dark: #059669;
+  
+  --bs-primary: #10b981;
+  --bs-primary-rgb: 16, 185, 129;
+  --bs-primary-hover: #059669;
+  --bs-primary-active: #047857;
+  --bs-primary-border-subtle: #a7f3d0;
+  --bs-primary-bg-subtle: #ecfdf5;
+
+  /* Errors & Deletes (Red) */
+  --bs-danger: #ef4444;
+  --bs-danger-rgb: 239, 68, 68;
+
+  /* Warnings & Alerts (Orange) */
+  --bs-warning: #f59e0b;
+  --bs-warning-rgb: 245, 158, 11;
+
+  /* Theme Dynamic Variables */
+  --theme-primary: #10b981;
+  --theme-primary-hover: #059669;
+  --theme-row-highlight: #10b981;
+  --theme-row-hover: rgba(16, 185, 129, 0.08);
+
+  /* PrimeVue Color Overrides */
+  --p-primary-color: var(--bs-primary) !important;
+  --p-primary-hover-color: var(--bs-primary-hover) !important;
+  --p-primary-active-color: var(--bs-primary-active) !important;
+  --p-primary-contrast-color: #ffffff !important;
 }
 
 body {
@@ -11,9 +39,101 @@ body {
   color: #212529;
 }
 
+/* Remove text underlines across all navigation, menus, and buttons */
+a,
+a:hover,
+a:focus,
+.nav-link,
+.p-menu .p-menuitem-link,
+.p-menu .p-menuitem-text,
+.p-menuitem-link,
+.p-menuitem-text,
+.p-menu a,
+.p-popover a,
+.p-dropdown a {
+  text-decoration: none !important;
+}
+
 html[data-bs-theme="dark"] body, .dark body {
   background-color: #212529;
   color: #f8f9fa;
+}
+
+/* Custom rounded buttons styling */
+.btn,
+.p-button {
+  border-radius: 10px !important;
+}
+
+.p-button-primary,
+.btn-primary {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #ffffff !important;
+}
+
+.p-button-primary:hover,
+.btn-primary:hover {
+  background-color: var(--bs-primary-hover) !important;
+  border-color: var(--bs-primary-hover) !important;
+}
+
+.p-button-secondary,
+.p-button-outlined {
+  border-radius: 10px !important;
+}
+
+/* Red for Delete and Danger Buttons */
+.p-button-danger,
+.btn-danger {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+}
+.p-button-danger:hover,
+.btn-danger:hover {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+/* Orange for Warnings and Alerts */
+.p-button-warning,
+.btn-warning {
+  background-color: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+}
+.p-button-warning:hover,
+.btn-warning:hover {
+  background-color: #d97706 !important;
+  border-color: #d97706 !important;
+}
+
+.alert-danger {
+  background-color: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+  color: #991b1b !important;
+  border-radius: 10px !important;
+}
+
+.alert-warning {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+  border-radius: 10px !important;
+}
+
+/* Active links & text accents */
+.active-link,
+.bg-primary {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.text-primary {
+  color: var(--bs-primary) !important;
 }
 
 /* Custom scrollbar */
