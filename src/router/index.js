@@ -122,12 +122,12 @@ const router = createRouter({
       component: () => import('../views/Api.vue'),
       meta: { requiresAuth: true }
     },
-    // {
-    //   path: '/settings',
-    //   name: 'settings',
-    //   component: () => import('../views/Settings.vue'),
-    //   meta: { requiresAuth: true }
-    // },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('../views/Settings.vue'),
+      meta: { requiresAuth: true }
+    },
     // {
     //   path: '/connections',
     //   name: 'connections',
