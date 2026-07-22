@@ -28,9 +28,6 @@
         <span class="small fw-semibold" style="font-size: 0.75rem;">Systems Operational</span>
       </div>
 
-      <!-- Theme Switcher -->
-      <ThemeSwitcher />
-
       <!-- Notifications -->
       <button class="btn btn-link text-secondary position-relative p-1 text-decoration-none">
         <i class="pi pi-bell fs-5"></i>
@@ -95,7 +92,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import ThemeSwitcher from './ThemeSwitcher.vue'
 
 defineEmits(['toggle-sidebar'])
 
