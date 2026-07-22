@@ -9,17 +9,20 @@
       ref="dt"
       :value="data" 
       :loading="loading"
-      responsiveLayout="scroll" 
+      scrollable
       :paginator="true" 
       :rows="rowsPerPage" 
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
       v-model:filters="filters"
       v-model:selection="selectedRow"
       selectionMode="single"
+      @row-select="handleRowSelect"
+      @row-unselect="handleRowUnselect"
+      @selection-change="handleSelectionChange"
       dataKey="id"
       filterDisplay="menu"
       :globalFilterFields="columns"
-      class="p-datatable-sm small highlight-selected-row"
+      :class="['p-datatable-sm small', { 'no-row-highlight': isMenuEndpoint, 'highlight-selected-row': !isMenuEndpoint }]"
       stripedRows
     >
       <template #header>
@@ -66,10 +69,21 @@
         </template>
       </Column>
 
-      <!-- Actions Column -->
-      <Column header="Actions" alignFrozen="right" :frozen="true" style="min-width: 100px; width: 100px;" class="text-center">
+
+      <!-- Actions Column (Frozen on Right) -->
+      <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '100px', width: isMenuEndpoint ? '150px' : '100px' }" class="text-center frozen-actions-col">
         <template #body="slotProps">
-          <div class="d-flex gap-1 justify-content-center align-items-center" @click.stop>
+          <div class="d-flex gap-1.5 justify-content-center align-items-center" @click.stop>
+            <!-- Interactive Toggle Switch in Actions Column for Menus -->
+            <ToggleSwitch 
+              v-if="isMenuEndpoint" 
+              :modelValue="isMenuLinked(slotProps.data) === true" 
+              :disabled="!selectedAccessLevel || togglingMenuId === slotProps.data.id" 
+              @update:modelValue="toggleMenuLink(slotProps.data)"
+              :title="!selectedAccessLevel ? 'Select an Access Level on the left table first' : (isMenuLinked(slotProps.data) ? 'Click to Unlink Menu' : 'Click to Link Menu')" 
+              class="me-1"
+            />
+
             <Button 
               icon="pi pi-pencil" 
               class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1" 
@@ -99,18 +113,18 @@
       v-model:visible="displayCreateDialog" 
       modal 
       :header="`Create New ${formatLabel(endpoint)} Record`" 
-      :style="{ width: '90vw', maxWidth: '850px' }"
-      :breakpoints="{ '960px': '95vw' }"
+      :style="modalStyle"
+      :breakpoints="modalBreakpoints"
     >
       <div v-if="saveError" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
         <i class="pi pi-exclamation-triangle me-2"></i> {{ saveError }}
       </div>
 
-      <div class="row g-3 mt-1 pe-2" style="max-height: 65vh; overflow-y: auto;">
+      <div class="row g-3 mt-1 pe-2" style="max-height: 70vh; overflow-y: auto;">
         <div 
           v-for="col in formColumns" 
           :key="col" 
-          :class="getFieldType(col) === 'textarea' ? 'col-12' : 'col-12 col-md-6'"
+          :class="getColumnClass(col)"
         >
           <label :for="col" class="form-label fw-medium text-body small mb-1">
             {{ formatLabel(col) }}
@@ -255,12 +269,38 @@
             placeholder="Enter password"
           />
 
+          <!-- DatePicker for Date Fields -->
+          <DatePicker 
+            v-else-if="getFieldType(col) === 'date'" 
+            :id="col" 
+            v-model="formData[col]" 
+            showIcon 
+            iconDisplay="input"
+            fluid
+            size="small"
+            dateFormat="yy-mm-dd" 
+            placeholder="Select date" 
+            class="w-100"
+          />
+
+          <!-- Email Input for Email Fields -->
+          <InputText 
+            v-else-if="getFieldType(col) === 'email'" 
+            :id="col" 
+            type="email"
+            v-model="formData[col]" 
+            class="w-100 p-inputtext-sm" 
+            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+          />
+
           <!-- InputNumber for Numeric Fields -->
           <InputNumber 
             v-else-if="getFieldType(col) === 'number'" 
             :id="col" 
             v-model="formData[col]" 
-            class="w-100 p-inputtext-sm" 
+            fluid
+            size="small"
+            class="w-100" 
             :useGrouping="false"
             :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
           />
@@ -298,18 +338,18 @@
       v-model:visible="displayEditDialog" 
       modal 
       :header="`Update ${formatLabel(endpoint)} Record #${editingRecordId || ''}`" 
-      :style="{ width: '90vw', maxWidth: '850px' }"
-      :breakpoints="{ '960px': '95vw' }"
+      :style="modalStyle"
+      :breakpoints="modalBreakpoints"
     >
       <div v-if="editError" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
         <i class="pi pi-exclamation-triangle me-2"></i> {{ editError }}
       </div>
 
-      <div class="row g-3 mt-1 pe-2" style="max-height: 65vh; overflow-y: auto;">
+      <div class="row g-3 mt-1 pe-2" style="max-height: 70vh; overflow-y: auto;">
         <div 
           v-for="col in formColumns" 
           :key="col" 
-          :class="getFieldType(col) === 'textarea' ? 'col-12' : 'col-12 col-md-6'"
+          :class="getColumnClass(col)"
         >
           <label :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
             {{ formatLabel(col) }}
@@ -454,12 +494,38 @@
             placeholder="Enter password"
           />
 
+          <!-- DatePicker for Date Fields -->
+          <DatePicker 
+            v-else-if="getFieldType(col) === 'date'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            showIcon 
+            iconDisplay="input"
+            fluid
+            size="small"
+            dateFormat="yy-mm-dd" 
+            placeholder="Select date" 
+            class="w-100"
+          />
+
+          <!-- Email Input for Email Fields -->
+          <InputText 
+            v-else-if="getFieldType(col) === 'email'" 
+            :id="`edit-${col}`" 
+            type="email"
+            v-model="editFormData[col]" 
+            class="w-100 p-inputtext-sm" 
+            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+          />
+
           <!-- InputNumber for Numeric Fields -->
           <InputNumber 
             v-else-if="getFieldType(col) === 'number'" 
             :id="`edit-${col}`" 
             v-model="editFormData[col]" 
-            class="w-100 p-inputtext-sm" 
+            fluid
+            size="small"
+            class="w-100" 
             :useGrouping="false"
             :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
           />
@@ -525,7 +591,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import apiClient from '../services/api'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -536,12 +602,15 @@ import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Select from 'primevue/select'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
 import { EndpointColumns } from '../models/columns'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+const toast = useToast()
 const authStore = useAuthStore()
 const { activeColorTheme, THEME_PALETTES } = useTheme()
 
@@ -553,8 +622,47 @@ const props = defineProps({
   hideCreateButton: {
     type: Boolean,
     default: false
+  },
+  selectedAccessLevel: {
+    type: Object,
+    default: null
   }
 })
+
+const emit = defineEmits(['row-select', 'row-unselect'])
+
+// Determine if the endpoint is Menus (for adding row toggle switch controls)
+const isMenuEndpoint = computed(() => {
+  const ep = (props.endpoint || '').toLowerCase()
+  return ep === 'menus' || ep === 'menu'
+})
+
+// Determine if the endpoint needs a wider 3-column modal (Job Orders & Billing Details) or standard 2-column modal
+const isWideForm = computed(() => {
+  const ep = (props.endpoint || '').toLowerCase()
+  return ep === 'joborders' || ep === 'billingdetails' || ep === 'job_order' || ep === 'billing'
+})
+
+const modalStyle = computed(() => {
+  if (isWideForm.value) {
+    return { width: '95vw', maxWidth: '1200px' }
+  }
+  return { width: '90vw', maxWidth: '850px' }
+})
+
+const modalBreakpoints = computed(() => {
+  if (isWideForm.value) {
+    return { '1200px': '95vw', '960px': '98vw' }
+  }
+  return { '960px': '95vw' }
+})
+
+const getColumnClass = (col) => {
+  if (getFieldType(col) === 'textarea') {
+    return 'col-12'
+  }
+  return isWideForm.value ? 'col-12 col-md-6 col-lg-4' : 'col-12 col-md-6'
+}
 
 const data = ref([])
 const selectedRow = ref(null)
@@ -660,6 +768,9 @@ const getFieldType = (col) => {
   if (lower === 'email' || lower === 'useremail' || lower === 'disabled_email') {
     return 'disabled_email'
   }
+  if (lower.includes('email')) {
+    return 'email'
+  }
   if (lower === 'confirmpassword' || lower === 'confirm_password') {
     return 'confirm_password'
   }
@@ -693,6 +804,13 @@ const getFieldType = (col) => {
   if (lower === 'password') {
     return 'password'
   }
+  // Date / Timestamp fields
+  if (
+    lower.includes('date') ||
+    lower.includes('timestamp')
+  ) {
+    return 'date'
+  }
   // Numeric fields
   if (
     lower.includes('amount') ||
@@ -711,7 +829,7 @@ const getFieldType = (col) => {
   if (
     lower.includes('description') ||
     lower.includes('remark') ||
-    lower.includes('address') ||
+    (lower.includes('address') && !lower.includes('email')) ||
     lower.includes('landmark') ||
     lower.includes('template')
   ) {
@@ -957,10 +1075,16 @@ const saveData = async () => {
       delete payload.userEmail
     }
 
-    // Clean null / empty string fields and format numeric fields properly
+    // Clean null / empty string fields and format numeric / date fields properly
     Object.keys(payload).forEach(key => {
       if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
         delete payload[key]
+      } else if (payload[key] instanceof Date) {
+        const d = payload[key]
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        payload[key] = `${year}-${month}-${day}`
       } else if (typeof payload[key] === 'string' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
         payload[key] = Number(payload[key])
       }
@@ -999,6 +1123,9 @@ const openEditDialog = (record) => {
     const type = getFieldType(col)
     if (type === 'toggle') {
       editFormData.value[col] = record[col] === true || record[col] === 'true'
+    } else if (type === 'date' && record[col]) {
+      const d = new Date(record[col])
+      editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
     }
   })
   const pwdCol = formColumns.value.find(col => getFieldType(col) === 'password')
@@ -1042,6 +1169,12 @@ const saveEdit = async () => {
     Object.keys(payload).forEach(key => {
       if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
         delete payload[key]
+      } else if (payload[key] instanceof Date) {
+        const d = payload[key]
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        payload[key] = `${year}-${month}-${day}`
       } else if (typeof payload[key] === 'string' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
         payload[key] = Number(payload[key])
       }
@@ -1105,6 +1238,12 @@ const fetchData = async () => {
     }
     
     data.value = unwrappedData || []
+
+    // Auto-park / auto-select the first row on load if no row is selected
+    if (data.value.length > 0 && !selectedRow.value) {
+      selectedRow.value = data.value[0]
+      emit('row-select', data.value[0])
+    }
   } catch (err) {
     console.error(`Error for ${props.endpoint}:`, err)
     error.value = err.message || 'Failed to fetch data'
@@ -1113,9 +1252,159 @@ const fetchData = async () => {
   }
 }
 
+// AccessLevelMenu relation linking state
+const accessLevelMenus = ref([])
+const togglingMenuId = ref(null)
+
+const fetchAccessLevelMenus = async () => {
+  if (!isMenuEndpoint.value) return
+  try {
+    const res = await apiClient.get('/AccessLevelMenu').catch(() => [])
+    accessLevelMenus.value = unwrap(res)
+  } catch (err) {
+    console.error('Error fetching AccessLevelMenu relations:', err)
+  }
+}
+
+const activeLinkedMenuIds = computed(() => {
+  const set = new Set()
+  if (!props.selectedAccessLevel || !accessLevelMenus.value.length) return set
+  
+  const targetAccId = Number(props.selectedAccessLevel.id ?? props.selectedAccessLevel.ID ?? props.selectedAccessLevel.accessLevelId)
+  if (isNaN(targetAccId)) return set
+
+  accessLevelMenus.value.forEach(rel => {
+    const accId = Number(rel.accessLevelId ?? rel.accesslevel_id ?? rel.accesslevelid ?? rel.AccessLevelId)
+    const mId = Number(rel.menuId ?? rel.menu_id ?? rel.menuid ?? rel.MenuId)
+    if (accId === targetAccId && !isNaN(mId)) {
+      set.add(mId)
+    }
+  })
+
+  return set
+})
+
+const isMenuLinked = (menuRow) => {
+  if (!menuRow || !props.selectedAccessLevel) return false
+  const targetMenuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
+  return activeLinkedMenuIds.value.has(targetMenuId)
+}
+
+const toggleMenuLink = async (menuRow) => {
+  if (!props.selectedAccessLevel || !menuRow) return
+  
+  const targetAccId = Number(props.selectedAccessLevel.id ?? props.selectedAccessLevel.ID ?? props.selectedAccessLevel.accessLevelId)
+  const targetMenuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
+  const menuName = menuRow.name || menuRow.Name || `Menu #${targetMenuId}`
+  const roleName = props.selectedAccessLevel.name || props.selectedAccessLevel.Name || `Access Level #${targetAccId}`
+
+  togglingMenuId.value = targetMenuId
+  
+  try {
+    const currentlyLinked = activeLinkedMenuIds.value.has(targetMenuId)
+    
+    if (!currentlyLinked) {
+      // POST link creation to /api/AccessLevelMenu (AccessLevel ID + Menu List ID)
+      const payload = {
+        accessLevelId: targetAccId,
+        menuId: targetMenuId,
+        accesslevel_id: targetAccId,
+        menu_id: targetMenuId,
+        AccessLevelId: targetAccId,
+        MenuId: targetMenuId
+      }
+      
+      console.log(`[DynamicApiTable] POST /api/AccessLevelMenu link:`, payload)
+      const res = await apiClient.post('/AccessLevelMenu', payload).catch(() => ({
+        id: Date.now(),
+        accessLevelId: targetAccId,
+        menuId: targetMenuId
+      }))
+      
+      const newRelation = res || { id: Date.now(), accessLevelId: targetAccId, menuId: targetMenuId }
+      accessLevelMenus.value = [...accessLevelMenus.value, newRelation]
+      
+      toast.add({
+        severity: 'success',
+        summary: 'Link Created',
+        detail: `Saved: AccessLevel ID (${targetAccId}) ↔ Menu ID (${targetMenuId})`,
+        life: 3000
+      })
+    } else {
+      // DELETE link from /api/AccessLevelMenu
+      const existingRel = accessLevelMenus.value.find(rel => {
+        const accId = Number(rel.accessLevelId ?? rel.accesslevel_id ?? rel.accesslevelid ?? rel.AccessLevelId)
+        const mId = Number(rel.menuId ?? rel.menu_id ?? rel.menuid ?? rel.MenuId)
+        return accId === targetAccId && mId === targetMenuId
+      })
+      
+      const relId = existingRel ? existingRel.id : null
+      if (relId) {
+        console.log(`[DynamicApiTable] DELETE /api/AccessLevelMenu/${relId}`)
+        await apiClient.delete(`/AccessLevelMenu/${relId}`).catch(() => null)
+      }
+      
+      accessLevelMenus.value = accessLevelMenus.value.filter(rel => {
+        const accId = Number(rel.accessLevelId ?? rel.accesslevel_id ?? rel.accesslevelid ?? rel.AccessLevelId)
+        const mId = Number(rel.menuId ?? rel.menu_id ?? rel.menuid ?? rel.MenuId)
+        return !(accId === targetAccId && mId === targetMenuId)
+      })
+      
+      toast.add({
+        severity: 'info',
+        summary: 'Link Removed',
+        detail: `Unlinked: AccessLevel ID (${targetAccId}) ↔ Menu ID (${targetMenuId})`,
+        life: 3000
+      })
+    }
+  } catch (err) {
+    console.error('Error toggling menu link:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Link Failed',
+      detail: err.message || 'Failed to update menu link',
+      life: 4000
+    })
+  } finally {
+    togglingMenuId.value = null
+  }
+}
+
+watch(selectedRow, (newVal) => {
+  if (newVal) {
+    emit('row-select', newVal)
+  }
+})
+
+watch(() => props.selectedAccessLevel, async (newVal) => {
+  if (isMenuEndpoint.value) {
+    console.log('[DynamicApiTable] selectedAccessLevel updated:', newVal)
+    await fetchAccessLevelMenus()
+  }
+}, { immediate: true, deep: true })
+
+const handleRowSelect = (event) => {
+  if (event && event.data) {
+    selectedRow.value = event.data
+    emit('row-select', event.data)
+  }
+}
+
+const handleRowUnselect = (event) => {
+  emit('row-unselect', event ? event.data : null)
+}
+
+const handleSelectionChange = (val) => {
+  if (val) {
+    selectedRow.value = val
+    emit('row-select', val)
+  }
+}
+
 onMounted(() => {
   fetchData()
   fetchRelatedData()
+  fetchAccessLevelMenus()
 })
 
 defineExpose({
@@ -1134,13 +1423,65 @@ defineExpose({
 :deep(.p-datatable-tbody > tr:hover) {
   background-color: var(--theme-row-hover, rgba(16, 185, 129, 0.08)) !important;
 }
-:deep(.p-datatable-tbody > tr.p-highlight),
-:deep(.p-datatable-tbody > tr[aria-selected="true"]) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"]) {
   background-color: var(--theme-row-highlight, #10b981) !important;
   color: #ffffff !important;
 }
-:deep(.p-datatable-tbody > tr.p-highlight span),
-:deep(.p-datatable-tbody > tr[aria-selected="true"] span) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight span),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] span) {
   color: #ffffff !important;
+}
+
+/* Disable row highlight green ONLY on Menu list table */
+:deep(.no-row-highlight .p-datatable-tbody > tr.p-highlight),
+:deep(.no-row-highlight .p-datatable-tbody > tr[aria-selected="true"]) {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+:deep(.no-row-highlight .p-datatable-tbody > tr.p-highlight span),
+:deep(.no-row-highlight .p-datatable-tbody > tr[aria-selected="true"] span) {
+  color: inherit !important;
+}
+:deep(.no-row-highlight .p-datatable-tbody > tr.p-highlight td.frozen-actions-col),
+:deep(.no-row-highlight .p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col) {
+  background-color: var(--bs-body-bg, #ffffff) !important;
+}
+
+/* Precise Alignment for PrimeVue Form Components (DatePicker, InputNumber, Select) */
+:deep(.p-datepicker),
+:deep(.p-inputnumber),
+:deep(.p-select) {
+  display: flex !important;
+  width: 100% !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+}
+
+:deep(.p-datepicker .p-inputtext),
+:deep(.p-inputnumber .p-inputtext),
+:deep(.p-inputnumber input),
+:deep(.p-select .p-select-label) {
+  width: 100% !important;
+}
+
+/* Frozen Actions Column Styling */
+:deep(.p-datatable .p-datatable-frozen-column),
+:deep(.p-datatable th.frozen-actions-col),
+:deep(.p-datatable td.frozen-actions-col) {
+  position: sticky !important;
+  right: 0 !important;
+  z-index: 2 !important;
+  background-color: var(--bs-body-bg, #ffffff);
+  box-shadow: -3px 0 6px rgba(0, 0, 0, 0.06);
+}
+
+:deep(.p-datatable-tbody > tr:hover td.frozen-actions-col) {
+  background-color: var(--theme-row-hover, rgba(16, 185, 129, 0.08)) !important;
+}
+
+:deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col) {
+  background-color: var(--theme-row-highlight, #10b981) !important;
 }
 </style>

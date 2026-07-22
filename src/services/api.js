@@ -2,18 +2,19 @@ import axios from 'axios'
 
 const apiClient = axios.create({
   // Using relative path '/api' so it hits our Vite proxy defined in vite.config.js
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
-  timeout: 10000,
+  timeout: 15000,
 })
 
 // Request interceptor
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  if (token && typeof token === 'string' && token.trim()) {
+    config.headers.Authorization = `Bearer ${token.trim()}`
   }
   return config
 }, (error) => {
@@ -25,9 +26,15 @@ apiClient.interceptors.response.use((response) => {
   return response.data
 }, (error) => {
   console.error('API Error:', error.response?.status, error.message)
+
+  if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+    const timeoutError = new Error('Network request timed out. Please check your internet connection or server status.')
+    timeoutError.status = 408
+    return Promise.reject(timeoutError)
+  }
   
   if (error.response?.status === 401) {
-    console.warn('Unauthorized access - redirecting to login')
+    console.warn('Unauthorized access - cleaning session and redirecting')
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     sessionStorage.removeItem('token')
@@ -38,10 +45,10 @@ apiClient.interceptors.response.use((response) => {
   }
 
   if (error.response?.status >= 500) {
-    console.error('Server error occurred')
+    console.error('Telecom Server Error (5xx):', error.response?.status)
   }
 
-  // Standardize error message
+  // Standardize error message payload
   let errorMessage = error.response?.data?.message || error.response?.data?.title
   if (!errorMessage && error.response?.data?.errors) {
     const errs = error.response.data.errors
@@ -50,7 +57,7 @@ apiClient.interceptors.response.use((response) => {
     }
   }
   if (!errorMessage) {
-    errorMessage = error.message || 'An unexpected error occurred'
+    errorMessage = error.message || 'An unexpected server error occurred.'
   }
 
   const customError = new Error(errorMessage)

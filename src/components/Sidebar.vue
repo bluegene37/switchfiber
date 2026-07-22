@@ -109,13 +109,13 @@ const menuItems = ref([
     children: [
       { name: 'LCP', path: '/lcp', icon: 'pi-server' },
       { name: 'LCNAP', path: '/lcnap', icon: 'pi-sitemap' },
-      { name: 'LCNAP PORT', path: '/lcnap_port', icon: 'pi-share-alt' },
+      { name: 'LCNAP Port', path: '/lcnap_port', icon: 'pi-share-alt' },
       { name: 'NAP', path: '/nap', icon: 'pi-box' },
-      { name: 'PORT', path: '/port', icon: 'pi-link' },
-      { name: 'VLAN', path: '/vlan', icon: 'pi-globe' },
-      { name: 'ROUTER', path: '/router', icon: 'pi-wifi' },
-      { name: 'PLAN', path: '/plan', icon: 'pi-tag' },
-      { name: 'APPLICATION', path: '/application', icon: 'pi-file' },
+      { name: 'Port', path: '/port', icon: 'pi-link' },
+      { name: 'VLan', path: '/vlan', icon: 'pi-globe' },
+      { name: 'Router', path: '/router', icon: 'pi-wifi' },
+      { name: 'Plan', path: '/plan', icon: 'pi-tag' },
+      { name: 'Application', path: '/application', icon: 'pi-file' },
     ]
   },
   { 
@@ -123,10 +123,10 @@ const menuItems = ref([
     icon: 'pi-users',
     expanded: false,
     children: [
-      { name: 'USER', path: '/user', icon: 'pi-user' },
-      { name: 'MENU', path: '/menu', icon: 'pi-list' },
-      { name: 'ACCESS LEVEL', path: '/access_level', icon: 'pi-shield' },
-      { name: 'ACCESS LEVEL MENU', path: '/access_level_menu', icon: 'pi-key' },
+      { name: 'User', path: '/user', icon: 'pi-user' },
+      { name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
+      // { name: 'Menu', path: '/menu', icon: 'pi-list' },
+      // { name: 'Access Level Menu', path: '/access_level_menu', icon: 'pi-key' },
     ]
   },
   { 
@@ -134,9 +134,9 @@ const menuItems = ref([
     icon: 'pi-wallet',
     expanded: false,
     children: [
-      { name: 'JOB ORDER', path: '/job_order', icon: 'pi-clipboard' },
-      { name: 'INVOICE', path: '/invoice', icon: 'pi-receipt' },
-      { name: 'BILLING', path: '/billing', icon: 'pi-credit-card' },
+      { name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
+      { name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
+      { name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
     ]
   },
   // { name: 'Billing', path: '/billing', icon: 'pi-credit-card' },

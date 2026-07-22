@@ -89,7 +89,7 @@ const router = createRouter({
     {
       path: '/access_level',
       name: 'access_level',
-      component: () => import('../views/FileMaintenance.vue'),
+      component: () => import('../views/AccessLevelManagement.vue'),
       meta: { requiresAuth: true }
     },
     {

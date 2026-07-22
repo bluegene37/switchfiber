@@ -1,6 +1,15 @@
 import { ref } from 'vue'
 
 export const THEME_PALETTES = {
+  red: {
+    name: 'Crimson Red',
+    primary: '#ef4444',
+    hover: '#dc2626',
+    active: '#b91c1c',
+    rgb: '239, 68, 68',
+    subtleBg: '#fef2f2',
+    pdfRgb: [239, 68, 68]
+  },
   green: {
     name: 'Emerald Green',
     primary: '#10b981',

@@ -28,6 +28,18 @@
         <span class="small fw-semibold" style="font-size: 0.75rem;">Systems Operational</span>
       </div>
 
+      <!-- Quick Light/Dark Mode Toggle -->
+      <button 
+        @click="toggleTheme" 
+        class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm border ms-1"
+        :class="isDark ? 'btn-dark' : 'btn-light'"
+        style="width: 36px; height: 36px; transition: transform 0.2s;"
+        aria-label="Toggle Dark Mode"
+        title="Toggle Dark Mode"
+      >
+        <i :class="isDark ? 'pi pi-sun text-warning' : 'pi pi-moon text-secondary'" class="fs-6"></i>
+      </button>
+
       <!-- Notifications -->
       <button class="btn btn-link text-secondary position-relative p-1 text-decoration-none">
         <i class="pi pi-bell fs-5"></i>
@@ -97,12 +109,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useTheme } from '../composables/useTheme'
 
 defineEmits(['toggle-sidebar'])
 
 const router = useRouter()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
+const { isDark, toggleTheme } = useTheme()
 
 const isDropdownOpen = ref(false)
 const dropdownContainer = ref(null)

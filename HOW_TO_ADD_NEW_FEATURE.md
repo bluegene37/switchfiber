@@ -117,3 +117,40 @@ const menuItems = ref([
   // ...
 ])
 ```
+
+---
+
+### Step 6: Using DynamicApiTable for File Maintenance / CRUD Features
+**Components involved:** `src/components/DynamicApiTable.vue`, `src/views/FileMaintenance.vue`, `src/models/columns.js`  
+**Purpose:** Automatically generate datatables with sorting, searching, pagination, export actions (CSV, PDF, Print), and a wide 3-column Create/Edit modal with smart field input types.
+
+1. **Add Fallback Schema Columns (if needed):**
+   Open `src/models/columns.js` and register the endpoint's column names under `EndpointColumns`:
+   ```javascript
+   export const EndpointColumns = {
+     "YourEndpointName": [
+       "id",
+       "name",
+       "emailAddress",
+       "dateInstalled",
+       "status"
+     ]
+   }
+   ```
+
+2. **Map Route in File Maintenance:**
+   Open `src/views/FileMaintenance.vue` and add your route mapping:
+   ```javascript
+   '/your_route': { title: 'Your Feature Title', endpoint: 'YourEndpointName' },
+   ```
+
+3. **Smart Form Field Recognition in `DynamicApiTable.vue`:**
+   `DynamicApiTable` automatically selects the best input field type for Create and Edit modals based on column naming conventions:
+   - **Date Pop-up (`DatePicker`):** Any column containing `date` or `timestamp` (e.g. `dateInstalled`, `balanceUpdateDate`).
+   - **Email Input (`InputText type="email"`):** Any column containing `email` (e.g. `emailAddress`, `applicantEmailAddress`). System audit emails (`email`, `useremail`) remain disabled.
+   - **Dropdown (`Select`):** Relational ID columns (e.g. `lcp_id`, `nap_id`, `plan_id`, `accesslevel_id`).
+   - **Numeric Input (`InputNumber`):** Amounts, fees, quantities, balances, and numerical IDs.
+   - **Toggle Switch (`ToggleSwitch`):** Boolean fields (`active`, `isActive`, `enabled`).
+   - **Multiline Text (`Textarea`):** Descriptions, remarks, landmarks, and physical addresses.
+   - **Modal Layout:** Create and Edit modals use a wide **3-column responsive grid** (`maxWidth: 1200px`, `col-12 col-md-6 col-lg-4`) to fit extensive forms comfortably.
+
