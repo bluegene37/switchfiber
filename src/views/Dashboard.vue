@@ -10,9 +10,9 @@
         <button class="btn btn-outline-secondary d-flex align-items-center shadow-sm">
           <i class="pi pi-download me-2"></i> Export Report
         </button>
-        <button class="btn btn-primary d-flex align-items-center shadow-sm">
+        <!-- <button class="btn btn-primary d-flex align-items-center shadow-sm">
           <i class="pi pi-plus me-2"></i> New Customer
-        </button>
+        </button> -->
       </div>
     </div>
 
