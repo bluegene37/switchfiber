@@ -6,7 +6,7 @@
   >
     <!-- Branding -->
     <div class="d-flex align-items-center px-4 border-bottom" style="height: 64px;">
-      <i class="pi pi-bolt text-primary fs-5 me-2"></i>
+      <img src="/favicon.svg" alt="Switch Fiber Logo" class="me-2" style="width: 24px; height: 24px;" />
       <span class="text-body fs-5 fw-bold tracking-wide">Switch Fiber</span>
     </div>
 

@@ -1,8 +1,8 @@
 <template>
   <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5" style="width: 100%; max-width: 420px;">
     <div class="text-center mb-4">
-      <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 shadow-sm" style="width: 64px; height: 64px;">
-        <i class="pi pi-bolt text-primary fs-2"></i>
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 shadow-sm p-2" style="width: 64px; height: 64px;">
+        <img src="/favicon.svg" alt="Switch Fiber Logo" style="width: 40px; height: 40px;" />
       </div>
       <h2 class="fw-bolder text-dark mb-1">Switch Fiber</h2>
       <p class="small text-secondary fw-medium">Distributed Fiber Network Management</p>
