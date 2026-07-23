@@ -1,10 +1,11 @@
 @import "primeicons/primeicons.css";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
   /* Default Green Theme Palette */
   --color-primary: #10b981;
   --color-primary-dark: #059669;
-  
+
   --bs-primary: #10b981;
   --bs-primary-rgb: 16, 185, 129;
   --bs-primary-hover: #059669;
@@ -34,7 +35,11 @@
 }
 
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  /* Previous Fonts: */
+  /* font-family: "Inter", system-ui, sans-serif; */
+  font-family: "Raleway", system-ui, -apple-system, sans-serif;
+  /* font-family: "Montserrat", system-ui, -apple-system, sans-serif; */
+  /* font-family: "Roboto", system-ui, -apple-system, sans-serif; */
   background-color: #f8f9fa;
   color: #212529;
 }
@@ -54,7 +59,8 @@ a:focus,
   text-decoration: none !important;
 }
 
-html[data-bs-theme="dark"] body, .dark body {
+html[data-bs-theme="dark"] body,
+.dark body {
   background-color: #212529;
   color: #f8f9fa;
 }
@@ -148,6 +154,7 @@ html[data-bs-theme="dark"] body, .dark body {
   color: #ffffff !important;
   border-radius: 10px !important;
 }
+
 .p-button-danger:hover,
 .btn-danger:hover {
   background-color: #dc2626 !important;
@@ -162,6 +169,7 @@ html[data-bs-theme="dark"] body, .dark body {
   color: #ffffff !important;
   border-radius: 10px !important;
 }
+
 .p-button-warning:hover,
 .btn-warning:hover {
   background-color: #d97706 !important;
@@ -198,13 +206,17 @@ html[data-bs-theme="dark"] body, .dark body {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background-color: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background-color: #dee2e6;
   border-radius: 9999px;
 }
-html[data-bs-theme="dark"] ::-webkit-scrollbar-thumb, .dark ::-webkit-scrollbar-thumb {
+
+html[data-bs-theme="dark"] ::-webkit-scrollbar-thumb,
+.dark ::-webkit-scrollbar-thumb {
   background-color: #495057;
 }
