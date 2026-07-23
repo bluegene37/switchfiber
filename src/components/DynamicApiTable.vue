@@ -27,29 +27,31 @@
       stripedRows
     >
       <template #header>
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 py-2">
-          
-          <!-- Left: Rows per page -->
-          <div class="d-flex align-items-center gap-2">
-            <span class="mb-0 fw-medium text-body">Show</span>
-            <select v-model="rowsPerPage" class="form-select form-select-sm text-center" style="width: 70px; cursor: pointer;">
-              <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-            <span class="mb-0 fw-medium text-body">entries</span>
+        <div class="d-flex flex-column gap-2.5 py-1">
+          <!-- Top Row: Show Entries (Left) & Search Input (Right) -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <!-- Left: Rows per page -->
+            <div class="d-flex align-items-center gap-2">
+              <span class="mb-0 fw-medium text-body">Show</span>
+              <select v-model="rowsPerPage" class="form-select form-select-sm text-center" style="width: 70px; cursor: pointer;">
+                <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
+              </select>
+              <span class="mb-0 fw-medium text-body">entries</span>
+            </div>
+
+            <!-- Right: Search -->
+            <div class="d-flex align-items-center gap-2">
+              <label for="global-search" class="mb-0 fw-medium text-body">Search:</label>
+              <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm" placeholder="Search..." />
+            </div>
           </div>
 
-          <!-- Center: Export Actions & Create (if not hidden) -->
-          <div class="d-flex gap-2 justify-content-center flex-wrap" style="flex: 1;">
+          <!-- Bottom Row: Action Buttons (Create, CSV, PDF, Print) -->
+          <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pt-1 border-top border-secondary border-opacity-10">
             <Button v-if="!hideCreateButton" label="Create" icon="pi pi-plus" class="p-button-primary p-button-sm" @click="openCreateDialog" />
             <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined" @click="exportCSV" />
             <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined" @click="exportPDF" />
             <Button label="Print" icon="pi pi-print" class="p-button-secondary p-button-sm p-button-outlined" @click="printTable" />
-          </div>
-          
-          <!-- Right: Search -->
-          <div class="d-flex align-items-center gap-2">
-            <label for="global-search" class="mb-0 fw-medium text-body">Search:</label>
-            <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm" placeholder="Search..." />
           </div>
         </div>
       </template>
