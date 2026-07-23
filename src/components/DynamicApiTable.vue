@@ -18,6 +18,7 @@
       selectionMode="single"
       @row-select="handleRowSelect"
       @row-unselect="handleRowUnselect"
+      @row-click="handleRowClick"
       @selection-change="handleSelectionChange"
       dataKey="id"
       filterDisplay="menu"
@@ -234,6 +235,20 @@
             class="w-100 p-inputtext-sm" 
           />
 
+          <!-- Barangay Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'barangay_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="barangaysList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            placeholder="Select or Type Barangay" 
+            class="w-100 p-inputtext-sm" 
+          />
+
           <!-- Confirm Password Field -->
           <div v-else-if="getFieldType(col) === 'confirm_password'">
             <InputText 
@@ -446,6 +461,20 @@
             optionLabel="label" 
             optionValue="value" 
             placeholder="Select Plan" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Barangay Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'barangay_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="barangaysList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            placeholder="Select or Type Barangay" 
             class="w-100 p-inputtext-sm" 
           />
 
@@ -778,6 +807,9 @@ const getFieldType = (col) => {
   if (lower === 'plan_id' || lower === 'planid') {
     return 'plan_dropdown'
   }
+  if (lower === 'barangay' || lower === 'barangayname' || lower === 'brgy') {
+    return 'barangay_dropdown'
+  }
   if (lower === 'password') {
     return 'password'
   }
@@ -917,6 +949,7 @@ const napsList = ref([])
 const portsList = ref([])
 const vlansList = ref([])
 const plansList = ref([])
+const barangaysList = ref([])
 
 const fetchRelatedData = async () => {
   try {
@@ -930,7 +963,7 @@ const fetchRelatedData = async () => {
       return []
     }
 
-    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes] = await Promise.allSettled([
+    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, brgyRes] = await Promise.allSettled([
       apiClient.get('/AccessLevel'),
       apiClient.get('/Menus'),
       apiClient.get('/Lcpnaps'),
@@ -938,7 +971,8 @@ const fetchRelatedData = async () => {
       apiClient.get('/Naps'),
       apiClient.get('/Ports'),
       apiClient.get('/Vlans'),
-      apiClient.get('/Plans')
+      apiClient.get('/Plans'),
+      apiClient.get('/Barangays')
     ])
 
     if (accRes.status === 'fulfilled') {
@@ -964,6 +998,25 @@ const fetchRelatedData = async () => {
     }
     if (planRes.status === 'fulfilled') {
       plansList.value = unwrap(planRes.value).map(item => ({ label: `${item.name || 'Plan #' + item.id}`, value: item.id }))
+    }
+
+    if (brgyRes.status === 'fulfilled' && unwrap(brgyRes.value).length > 0) {
+      barangaysList.value = unwrap(brgyRes.value).map(item => {
+        const name = typeof item === 'string' ? item : (item.name || item.barangay || item.barangayName || `Barangay ${item.id}`)
+        return { label: name, value: name }
+      })
+    } else {
+      // Fallback: Fetch from public PSGC API or distinct table values
+      try {
+        const res = await fetch('https://psgc.gitlab.io/api/barangays.json')
+        if (res.ok) {
+          const data = await res.json()
+          barangaysList.value = data.map(b => ({ label: b.name, value: b.name }))
+        }
+      } catch (e) {
+        const distinct = Array.from(new Set((tableData.value || []).map(row => row.barangay).filter(Boolean)))
+        barangaysList.value = distinct.map(b => ({ label: b, value: b }))
+      }
     }
   } catch (err) {
     console.error('Error fetching related data:', err)
@@ -999,6 +1052,8 @@ const openCreateDialog = () => {
       formData.value[col] = vlansList.value[0].value
     } else if (type === 'plan_dropdown' && plansList.value.length > 0) {
       formData.value[col] = plansList.value[0].value
+    } else if (type === 'barangay_dropdown' && barangaysList.value.length > 0) {
+      formData.value[col] = barangaysList.value[0].value
     } else {
       formData.value[col] = null
     }
@@ -1233,13 +1288,92 @@ const fetchData = async () => {
 const accessLevelMenus = ref([])
 const togglingMenuId = ref(null)
 
+const getRelAccessLevelId = (rel) => {
+  if (!rel || typeof rel !== 'object') return ''
+  for (const key of Object.keys(rel)) {
+    const lowerKey = key.toLowerCase().replace(/_/g, '')
+    if (lowerKey === 'accesslevelid' || lowerKey === 'accesslevel') {
+      const val = rel[key]
+      if (typeof val === 'object' && val !== null) return String(val.id ?? val.ID ?? '').trim()
+      if (val !== null && val !== undefined) return String(val).trim()
+    }
+  }
+  return ''
+}
+
+const getRelMenuId = (rel) => {
+  if (!rel || typeof rel !== 'object') return ''
+  for (const key of Object.keys(rel)) {
+    const lowerKey = key.toLowerCase().replace(/_/g, '')
+    if (lowerKey === 'menuid' || lowerKey === 'menu') {
+      const val = rel[key]
+      if (typeof val === 'object' && val !== null) return String(val.id ?? val.ID ?? '').trim()
+      if (val !== null && val !== undefined) return String(val).trim()
+    }
+  }
+  return ''
+}
+
+const unwrapRel = (val) => {
+  if (!val) return []
+  if (Array.isArray(val)) return val
+  if (typeof val === 'object' && val !== null) {
+    const key = Object.keys(val).find(k => Array.isArray(val[k]))
+    if (key) return val[key]
+    return [val]
+  }
+  return []
+}
+
 const fetchAccessLevelMenus = async () => {
   if (!isMenuEndpoint.value) return
   try {
-    const res = await apiClient.get('/AccessLevelMenu').catch(() => [])
-    accessLevelMenus.value = unwrap(res)
+    const targetAccId = props.selectedAccessLevel ? String(
+      props.selectedAccessLevel.id ?? 
+      props.selectedAccessLevel.ID ?? 
+      props.selectedAccessLevel.accessLevelId ?? 
+      props.selectedAccessLevel.accesslevel_id ?? ''
+    ).trim() : null
+
+    console.log('[DynamicApiTable] fetchAccessLevelMenus triggered for targetAccId:', targetAccId)
+
+    const requests = []
+    if (targetAccId) {
+      requests.push(apiClient.get(`/AccesslevelMenu/${targetAccId}`).catch(err => { console.warn(`GET /AccesslevelMenu/${targetAccId} warning:`, err); return [] }))
+      requests.push(apiClient.get(`/AccessLevelMenu/${targetAccId}`).catch(() => []))
+      requests.push(apiClient.get(`/AccesslevelMenu?accessLevelId=${targetAccId}`).catch(() => []))
+      requests.push(apiClient.get(`/AccesslevelMenu?accesslevel_id=${targetAccId}`).catch(() => []))
+    }
+    requests.push(apiClient.get('/AccesslevelMenu').catch(() => []))
+
+    const responses = await Promise.allSettled(requests)
+    const combined = []
+    responses.forEach(r => {
+      if (r.status === 'fulfilled') {
+        const unwrapped = unwrapRel(r.value)
+        if (Array.isArray(unwrapped)) {
+          combined.push(...unwrapped)
+        }
+      }
+    })
+
+    const seen = new Set()
+    const uniqueRelations = []
+    combined.forEach(rel => {
+      if (!rel || typeof rel !== 'object') return
+      const accId = getRelAccessLevelId(rel)
+      const mId = getRelMenuId(rel)
+      const key = rel.id ? `id-${rel.id}` : `${accId || 'target'}-${mId}`
+      if (mId && !seen.has(key)) {
+        seen.add(key)
+        uniqueRelations.push(rel)
+      }
+    })
+
+    accessLevelMenus.value = uniqueRelations
+    console.log(`[DynamicApiTable] Loaded ${accessLevelMenus.value.length} AccesslevelMenu relations for targetAccId ${targetAccId}:`, accessLevelMenus.value)
   } catch (err) {
-    console.error('Error fetching AccessLevelMenu relations:', err)
+    console.error('[DynamicApiTable] Error fetching AccesslevelMenu relations:', err)
   }
 }
 
@@ -1247,14 +1381,24 @@ const activeLinkedMenuIds = computed(() => {
   const set = new Set()
   if (!props.selectedAccessLevel || !accessLevelMenus.value.length) return set
   
-  const targetAccId = Number(props.selectedAccessLevel.id ?? props.selectedAccessLevel.ID ?? props.selectedAccessLevel.accessLevelId)
-  if (isNaN(targetAccId)) return set
+  const targetAccId = String(
+    props.selectedAccessLevel.id ?? 
+    props.selectedAccessLevel.ID ?? 
+    props.selectedAccessLevel.accessLevelId ?? 
+    props.selectedAccessLevel.accesslevel_id ??
+    ''
+  ).trim()
+
+  if (!targetAccId) return set
 
   accessLevelMenus.value.forEach(rel => {
-    const accId = Number(rel.accessLevelId ?? rel.accesslevel_id ?? rel.accesslevelid ?? rel.AccessLevelId)
-    const mId = Number(rel.menuId ?? rel.menu_id ?? rel.menuid ?? rel.MenuId)
-    if (accId === targetAccId && !isNaN(mId)) {
+    const accId = getRelAccessLevelId(rel)
+    const mId = getRelMenuId(rel)
+    if ((!accId || accId === targetAccId) && mId) {
       set.add(mId)
+      if (!isNaN(Number(mId))) {
+        set.add(Number(mId))
+      }
     }
   })
 
@@ -1263,8 +1407,9 @@ const activeLinkedMenuIds = computed(() => {
 
 const isMenuLinked = (menuRow) => {
   if (!menuRow || !props.selectedAccessLevel) return false
-  const targetMenuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
-  return activeLinkedMenuIds.value.has(targetMenuId)
+  const targetMenuId = String(menuRow.id ?? menuRow.ID ?? menuRow.menuId ?? '').trim()
+  if (!targetMenuId) return false
+  return activeLinkedMenuIds.value.has(targetMenuId) || activeLinkedMenuIds.value.has(Number(targetMenuId))
 }
 
 const toggleMenuLink = async (menuRow) => {
@@ -1278,10 +1423,10 @@ const toggleMenuLink = async (menuRow) => {
   togglingMenuId.value = targetMenuId
   
   try {
-    const currentlyLinked = activeLinkedMenuIds.value.has(targetMenuId)
+    const currentlyLinked = isMenuLinked(menuRow)
     
     if (!currentlyLinked) {
-      // POST link creation to /api/AccessLevelMenu (AccessLevel ID + Menu List ID)
+      // Create Link: POST to /api/AccesslevelMenu
       const payload = {
         accessLevelId: targetAccId,
         menuId: targetMenuId,
@@ -1291,46 +1436,58 @@ const toggleMenuLink = async (menuRow) => {
         MenuId: targetMenuId
       }
       
-      console.log(`[DynamicApiTable] POST /api/AccessLevelMenu link:`, payload)
-      const res = await apiClient.post('/AccessLevelMenu', payload).catch(() => ({
-        id: Date.now(),
-        accessLevelId: targetAccId,
-        menuId: targetMenuId
-      }))
+      console.log(`[DynamicApiTable] Creating link POST /api/AccesslevelMenu:`, payload)
       
-      const newRelation = res || { id: Date.now(), accessLevelId: targetAccId, menuId: targetMenuId }
-      accessLevelMenus.value = [...accessLevelMenus.value, newRelation]
+      // Optimistically add relation to state so UI flips immediately
+      accessLevelMenus.value = [...accessLevelMenus.value, payload]
+
+      const res = await apiClient.post('/AccesslevelMenu', payload).catch(async () => {
+        return await apiClient.post('/AccessLevelMenu', payload)
+      })
+      
+      // Refetch from server to sync true ID
+      await fetchAccessLevelMenus()
       
       toast.add({
         severity: 'success',
-        summary: 'Link Created',
-        detail: `Saved: AccessLevel ID (${targetAccId}) ↔ Menu ID (${targetMenuId})`,
+        summary: 'Permission Linked',
+        detail: `Linked "${menuName}" to "${roleName}"`,
         life: 3000
       })
     } else {
-      // DELETE link from /api/AccessLevelMenu
+      // Remove Link: DELETE from /api/AccesslevelMenu
+      const targetAccStr = String(targetAccId).trim()
+      const targetMenuStr = String(targetMenuId).trim()
+
       const existingRel = accessLevelMenus.value.find(rel => {
-        const accId = Number(rel.accessLevelId ?? rel.accesslevel_id ?? rel.accesslevelid ?? rel.AccessLevelId)
-        const mId = Number(rel.menuId ?? rel.menu_id ?? rel.menuid ?? rel.MenuId)
-        return accId === targetAccId && mId === targetMenuId
+        const accId = getRelAccessLevelId(rel)
+        const mId = getRelMenuId(rel)
+        return (!accId || accId === targetAccStr) && mId === targetMenuStr
       })
       
-      const relId = existingRel ? existingRel.id : null
-      if (relId) {
-        console.log(`[DynamicApiTable] DELETE /api/AccessLevelMenu/${relId}`)
-        await apiClient.delete(`/AccessLevelMenu/${relId}`).catch(() => null)
-      }
-      
+      // Optimistically remove from local state so UI flips immediately
       accessLevelMenus.value = accessLevelMenus.value.filter(rel => {
-        const accId = Number(rel.accessLevelId ?? rel.accesslevel_id ?? rel.accesslevelid ?? rel.AccessLevelId)
-        const mId = Number(rel.menuId ?? rel.menu_id ?? rel.menuid ?? rel.MenuId)
-        return !(accId === targetAccId && mId === targetMenuId)
+        const mId = getRelMenuId(rel)
+        return mId !== targetMenuStr
       })
+
+      const relId = existingRel ? (existingRel.id ?? existingRel.ID) : null
+      if (relId) {
+        console.log(`[DynamicApiTable] Removing link DELETE /api/AccesslevelMenu/${relId}`)
+        await apiClient.delete(`/AccesslevelMenu/${relId}`).catch(async () => {
+          await apiClient.delete(`/AccessLevelMenu/${relId}`)
+        })
+      } else {
+        await apiClient.delete(`/AccesslevelMenu/${targetAccId}/${targetMenuId}`).catch(() => null)
+      }
+
+      // Refetch from server to sync state
+      await fetchAccessLevelMenus()
       
       toast.add({
         severity: 'info',
-        summary: 'Link Removed',
-        detail: `Unlinked: AccessLevel ID (${targetAccId}) ↔ Menu ID (${targetMenuId})`,
+        summary: 'Permission Unlinked',
+        detail: `Unlinked "${menuName}" from "${roleName}"`,
         life: 3000
       })
     }
@@ -1338,10 +1495,11 @@ const toggleMenuLink = async (menuRow) => {
     console.error('Error toggling menu link:', err)
     toast.add({
       severity: 'error',
-      summary: 'Link Failed',
-      detail: err.message || 'Failed to update menu link',
+      summary: 'Permission Link Error',
+      detail: err.message || 'Failed to update AccesslevelMenu link',
       life: 4000
     })
+    await fetchAccessLevelMenus()
   } finally {
     togglingMenuId.value = null
   }
@@ -1359,6 +1517,13 @@ watch(() => props.selectedAccessLevel, async (newVal) => {
     await fetchAccessLevelMenus()
   }
 }, { immediate: true, deep: true })
+
+const handleRowClick = (event) => {
+  if (event && event.data) {
+    selectedRow.value = event.data
+    emit('row-select', event.data)
+  }
+}
 
 const handleRowSelect = (event) => {
   if (event && event.data) {
