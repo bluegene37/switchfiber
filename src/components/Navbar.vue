@@ -131,13 +131,23 @@
             </div>
 
             <!-- Keyboard Footer Hints -->
-            <div class="bg-body-tertiary px-3 py-1.5 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
+            <div class="bg-body-tertiary px-4 py-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.72rem;">
               <div class="d-flex align-items-center gap-3">
-                <span><kbd class="bg-body text-body border px-1 rounded">↑</kbd> <kbd class="bg-body text-body border px-1 rounded">↓</kbd> Navigate</span>
-                <span><kbd class="bg-body text-body border px-1 rounded">↵</kbd> Select</span>
-                <span><kbd class="bg-body text-body border px-1 rounded">ESC</kbd> Close</span>
+                <span class="d-inline-flex align-items-center gap-1.5">
+                  <kbd class="bg-body text-body border rounded shadow-xs" style="font-size: 0.65rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; height: 18px; min-width: 18px; padding: 0 4px;">↑</kbd>
+                  <kbd class="bg-body text-body border rounded shadow-xs" style="font-size: 0.65rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; height: 18px; min-width: 18px; padding: 0 4px;">↓</kbd>
+                  <span>&nbsp;Navigate</span>
+                </span>
+                <span class="d-inline-flex align-items-center gap-1.5">
+                  <kbd class="bg-body text-body border rounded shadow-xs" style="font-size: 0.65rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; height: 18px; min-width: 18px; padding: 0 4px;">↵</kbd>
+                  <span>&nbsp;Select</span>
+                </span>
+                <span class="d-inline-flex align-items-center gap-1.5">
+                  <kbd class="bg-body text-body border rounded shadow-xs" style="font-size: 0.65rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; height: 18px; padding: 0 6px;">ESC</kbd>
+                  <span>&nbsp;Close</span>
+                </span>
               </div>
-              <span class="fw-medium text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">SwitchFiber Omnibox</span>
+              <span class="fw-semibold text-uppercase opacity-75" style="font-size: 0.65rem; letter-spacing: 0.5px;">SwitchFiber Omnibox</span>
             </div>
           </div>
         </Transition>

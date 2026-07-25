@@ -47,7 +47,7 @@
           </div>
 
           <!-- Bottom Row: Action Buttons (Create, CSV, PDF, Print) -->
-          <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pt-1 border-top border-secondary border-opacity-10">
+          <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pt-1">
             <Button v-if="!hideCreateButton" label="Create" icon="pi pi-plus" class="p-button-primary p-button-sm" @click="openCreateDialog" />
             <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined" @click="exportCSV" />
             <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined" @click="exportPDF" />
