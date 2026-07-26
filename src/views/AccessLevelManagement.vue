@@ -46,9 +46,6 @@
             <div class="d-flex align-items-center gap-2">
               <i class="pi pi-list text-primary fs-5"></i>
               <h5 class="fw-bold text-body mb-0 me-1">Menu List</h5>
-              <span v-if="selectedAccessLevel" class="small text-secondary fw-normal">
-                Linking: <strong class="text-body">{{ getRoleDisplay(selectedAccessLevel) }}</strong>
-              </span>
             </div>
             <div class="d-flex align-items-center gap-2">
               <Button 
@@ -81,16 +78,6 @@ import DynamicApiTable from '../components/DynamicApiTable.vue'
 const selectedAccessLevel = ref(null)
 const accessLevelTableRef = ref(null)
 const menuTableRef = ref(null)
-
-const getRoleDisplay = (row) => {
-  if (!row) return ''
-  const name = row.name || row.Name || row.role || row.Role || row.accessLevel || row.AccessLevel || row.title || row.description || row.Description || ''
-  const id = row.id ?? row.ID ?? row.Id ?? row.accessLevelId ?? row.accesslevel_id ?? ''
-  if (name && id) return `${name} (ID: ${id})`
-  if (name) return name
-  if (id) return `Role #${id}`
-  return 'Selected Role'
-}
 
 const handleAccessLevelSelect = (row) => {
   if (!row) {

@@ -1086,14 +1086,32 @@ const columns = computed(() => {
   return rawCols
 })
 
-// Filter out system-generated fields (id, audit timestamps, rowVersion) from forms
+// Filter out system-generated fields (id, created/modified dates & times, createdBy/modifiedBy, rowVersion) from forms
 const formColumns = computed(() => {
   const list = columns.value.filter(col => {
     const lowerCol = col.toLowerCase()
     if (lowerCol === 'id') return false
-    if (lowerCol === 'createdat' || lowerCol === 'created_at' || lowerCol === 'createdby' || lowerCol === 'created_by') return false
-    if (lowerCol === 'modifiedat' || lowerCol === 'modified_at' || lowerCol === 'modifiedby' || lowerCol === 'modified_by') return false
-    if (lowerCol === 'updatedat' || lowerCol === 'updated_at' || lowerCol === 'updatedby' || lowerCol === 'updated_by') return false
+    
+    // Created date/time & createdBy
+    if (lowerCol.includes('createdat') || lowerCol.includes('created_at') || 
+        lowerCol.includes('createddate') || lowerCol.includes('datecreated') || 
+        lowerCol.includes('createdtime') || lowerCol.includes('timecreated') ||
+        lowerCol.includes('createdby') || lowerCol.includes('created_by')) {
+      return false
+    }
+
+    // Modified / Updated date/time & modifiedBy/updatedBy
+    if (lowerCol.includes('modifiedat') || lowerCol.includes('modified_at') || 
+        lowerCol.includes('modifieddate') || lowerCol.includes('datemodified') || 
+        lowerCol.includes('modifiedtime') || lowerCol.includes('timemodified') ||
+        lowerCol.includes('modifiedby') || lowerCol.includes('modified_by') ||
+        lowerCol.includes('updatedat') || lowerCol.includes('updated_at') || 
+        lowerCol.includes('updateddate') || lowerCol.includes('dateupdated') || 
+        lowerCol.includes('updatedtime') || lowerCol.includes('timeupdated') ||
+        lowerCol.includes('updatedby') || lowerCol.includes('updated_by')) {
+      return false
+    }
+
     if (lowerCol.includes('rowversion') || lowerCol === 'rowversion') return false
     return true
   })
@@ -1536,20 +1554,18 @@ const saveData = async () => {
       delete payload.email
     }
 
-    const currentUserId = authStore.user?.id || 1
+    const currentUser = authStore.user?.username || authStore.user?.name || authStore.user?.email || 'admin'
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
     
-    // Auto-populate user audit fields only if the schema actually includes them
-    if (columns.value.includes('createdBy')) {
-      payload.createdBy = currentUserId
-    } else {
-      delete payload.createdBy
-    }
+    // Auto-populate createdBy and modifiedBy for backend API if present in table schema
+    const createdByCol = columns.value.find(c => c.toLowerCase() === 'createdby' || c.toLowerCase() === 'created_by')
+    const modifiedByCol = columns.value.find(c => c.toLowerCase() === 'modifiedby' || c.toLowerCase() === 'modified_by' || c.toLowerCase() === 'updatedby' || c.toLowerCase() === 'updated_by')
 
-    if (columns.value.includes('modifiedBy')) {
-      payload.modifiedBy = currentUserId
-    } else {
-      delete payload.modifiedBy
+    if (createdByCol) {
+      payload[createdByCol] = currentUser
+    }
+    if (modifiedByCol) {
+      payload[modifiedByCol] = currentUser
     }
 
     if (columns.value.includes('userEmail') && !payload.userEmail) {
@@ -1650,11 +1666,11 @@ const saveEdit = async () => {
       delete payload.email
     }
 
-    const currentUserId = authStore.user?.id || 1
-    if (columns.value.includes('modifiedBy')) {
-      payload.modifiedBy = currentUserId
-    } else {
-      delete payload.modifiedBy
+    const currentUser = authStore.user?.username || authStore.user?.name || authStore.user?.email || 'admin'
+    const modifiedByCol = columns.value.find(c => c.toLowerCase() === 'modifiedby' || c.toLowerCase() === 'modified_by' || c.toLowerCase() === 'updatedby' || c.toLowerCase() === 'updated_by')
+
+    if (modifiedByCol) {
+      payload[modifiedByCol] = currentUser
     }
 
     Object.keys(payload).forEach(key => {
