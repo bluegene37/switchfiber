@@ -253,8 +253,6 @@
             <div class="row g-2">
               <div class="col-6"><strong>Application:</strong> Switch Fiber Management Platform</div>
               <div class="col-6"><strong>Version:</strong> v1.2.0-production</div>
-              <div class="col-6"><strong>Build Engine:</strong> Vite 8 + Vue 3</div>
-              <div class="col-6"><strong>UI Framework:</strong> PrimeVue + Bootstrap 5</div>
             </div>
           </div>
         </div>

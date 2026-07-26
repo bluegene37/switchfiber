@@ -237,6 +237,53 @@
             class="w-100 p-inputtext-sm" 
           />
 
+          <!-- Region Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'region_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="regionsList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            @change="onRegionChanged(formData)"
+            placeholder="Select Region" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Province Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'province_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="provincesList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            :disabled="isCityDisabled(formData)"
+            placeholder="Select Province" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- City / Municipality Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'city_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="citiesList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            :disabled="isCityDisabled(formData)"
+            @change="onCityChanged(formData)"
+            :virtualScrollerOptions="{ itemSize: 38 }"
+            :placeholder="getCityPlaceholder(formData)" 
+            class="w-100 p-inputtext-sm" 
+          />
+
           <!-- Barangay Dropdown -->
           <Select 
             v-else-if="getFieldType(col) === 'barangay_dropdown'" 
@@ -247,7 +294,57 @@
             optionValue="value" 
             :filter="true"
             :editable="true"
-            placeholder="Select or Type Barangay" 
+            :disabled="isBarangayDisabled(formData)"
+            :virtualScrollerOptions="{ itemSize: 38 }"
+            :placeholder="getBarangayPlaceholder(formData)" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Status Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'status_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="statusOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Status" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Onsite Status Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="onsiteStatusOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Onsite Status" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Billing Status Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="billingStatusOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Billing Status" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Usage Type Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
+            :id="col" 
+            v-model="formData[col]" 
+            :options="usageTypeOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Usage Type" 
             class="w-100 p-inputtext-sm" 
           />
 
@@ -466,6 +563,53 @@
             class="w-100 p-inputtext-sm" 
           />
 
+          <!-- Region Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'region_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="regionsList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            @change="onRegionChanged(editFormData)"
+            placeholder="Select Region" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Province Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'province_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="provincesList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            :disabled="isCityDisabled(editFormData)"
+            placeholder="Select Province" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- City / Municipality Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'city_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="citiesList" 
+            optionLabel="label" 
+            optionValue="value" 
+            :filter="true"
+            :editable="true"
+            :disabled="isCityDisabled(editFormData)"
+            @change="onCityChanged(editFormData)"
+            :virtualScrollerOptions="{ itemSize: 38 }"
+            :placeholder="getCityPlaceholder(editFormData)" 
+            class="w-100 p-inputtext-sm" 
+          />
+
           <!-- Barangay Dropdown -->
           <Select 
             v-else-if="getFieldType(col) === 'barangay_dropdown'" 
@@ -476,7 +620,57 @@
             optionValue="value" 
             :filter="true"
             :editable="true"
-            placeholder="Select or Type Barangay" 
+            :disabled="isBarangayDisabled(editFormData)"
+            :virtualScrollerOptions="{ itemSize: 38 }"
+            :placeholder="getBarangayPlaceholder(editFormData)" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Status Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'status_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="statusOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Status" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Onsite Status Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="onsiteStatusOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Onsite Status" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Billing Status Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="billingStatusOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Billing Status" 
+            class="w-100 p-inputtext-sm" 
+          />
+
+          <!-- Usage Type Dropdown -->
+          <Select 
+            v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
+            :id="`edit-${col}`" 
+            v-model="editFormData[col]" 
+            :options="usageTypeOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Usage Type" 
             class="w-100 p-inputtext-sm" 
           />
 
@@ -604,6 +798,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import apiClient from '../services/api'
+import phAddressService from '../services/phAddressService'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -613,6 +808,7 @@ import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Select from 'primevue/select'
+import DatePicker from 'primevue/datepicker'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { EndpointColumns } from '../models/columns'
@@ -809,8 +1005,29 @@ const getFieldType = (col) => {
   if (lower === 'plan_id' || lower === 'planid') {
     return 'plan_dropdown'
   }
+  if (lower === 'region' || lower === 'regionname' || lower === 'region_name') {
+    return 'region_dropdown'
+  }
+  if (lower === 'province' || lower === 'provincename' || lower === 'province_name') {
+    return 'province_dropdown'
+  }
+  if (lower === 'city' || lower === 'cityname' || lower === 'city_name' || lower === 'municipality') {
+    return 'city_dropdown'
+  }
   if (lower === 'barangay' || lower === 'barangayname' || lower === 'brgy') {
     return 'barangay_dropdown'
+  }
+  if (lower === 'status') {
+    return 'status_dropdown'
+  }
+  if (lower === 'onsitestatus') {
+    return 'onsitestatus_dropdown'
+  }
+  if (lower === 'billingstatus') {
+    return 'billingstatus_dropdown'
+  }
+  if (lower === 'usagetype') {
+    return 'usagetype_dropdown'
   }
   if (lower === 'password') {
     return 'password'
@@ -869,14 +1086,14 @@ const columns = computed(() => {
   return rawCols
 })
 
-// Filter out system-generated fields (id, dates, rowVersion) from forms
+// Filter out system-generated fields (id, audit timestamps, rowVersion) from forms
 const formColumns = computed(() => {
   const list = columns.value.filter(col => {
     const lowerCol = col.toLowerCase()
     if (lowerCol === 'id') return false
-    if (lowerCol.includes('created')) return false
-    if (lowerCol.includes('modified')) return false
-    if (lowerCol.includes('updated')) return false
+    if (lowerCol === 'createdat' || lowerCol === 'created_at' || lowerCol === 'createdby' || lowerCol === 'created_by') return false
+    if (lowerCol === 'modifiedat' || lowerCol === 'modified_at' || lowerCol === 'modifiedby' || lowerCol === 'modified_by') return false
+    if (lowerCol === 'updatedat' || lowerCol === 'updated_at' || lowerCol === 'updatedby' || lowerCol === 'updated_by') return false
     if (lowerCol.includes('rowversion') || lowerCol === 'rowversion') return false
     return true
   })
@@ -891,6 +1108,26 @@ const formColumns = computed(() => {
   const pwdIndex = list.findIndex(c => c.toLowerCase() === 'password')
   if (pwdIndex !== -1 && !list.includes('confirmPassword')) {
     list.splice(pwdIndex + 1, 0, 'confirmPassword')
+  }
+
+  // Strictly order address fields: Region -> Province -> City / Municipality -> Barangay
+  const regionIndex = list.findIndex(c => getFieldType(c) === 'region_dropdown')
+  const provinceIndex = list.findIndex(c => getFieldType(c) === 'province_dropdown')
+  const cityIndex = list.findIndex(c => getFieldType(c) === 'city_dropdown')
+  const barangayIndex = list.findIndex(c => getFieldType(c) === 'barangay_dropdown')
+
+  const addressIndices = [regionIndex, provinceIndex, cityIndex, barangayIndex].filter(i => i !== -1)
+  if (addressIndices.length > 1) {
+    const addressCols = []
+    if (regionIndex !== -1) addressCols.push(list[regionIndex])
+    if (provinceIndex !== -1) addressCols.push(list[provinceIndex])
+    if (cityIndex !== -1) addressCols.push(list[cityIndex])
+    if (barangayIndex !== -1) addressCols.push(list[barangayIndex])
+
+    const remaining = list.filter(c => !addressCols.includes(c))
+    const firstPos = Math.min(...addressIndices)
+    remaining.splice(firstPos, 0, ...addressCols)
+    return remaining
   }
 
   return list
@@ -951,7 +1188,34 @@ const napsList = ref([])
 const portsList = ref([])
 const vlansList = ref([])
 const plansList = ref([])
+const regionsList = ref([])
+const provincesList = ref([])
+const citiesList = ref([])
 const barangaysList = ref([])
+
+const statusOptions = ref([
+  { label: 'Drop', value: 'Drop' },
+  { label: 'Failed', value: 'Failed' },
+  { label: 'Reschedule', value: 'Reschedule' }
+])
+
+const onsiteStatusOptions = ref([
+  { label: 'Done', value: 'Done' },
+  { label: 'Failed', value: 'Failed' }
+])
+
+const billingStatusOptions = ref([
+  { label: 'Done', value: 'Done' },
+  { label: 'Pending', value: 'Pending' },
+  { label: 'Approved', value: 'Approved' }
+])
+
+const usageTypeOptions = ref([
+  { label: 'Regular Browsing', value: 'Regular Browsing' },
+  { label: 'Business', value: 'Business' },
+  { label: 'Gaming', value: 'Gaming' },
+  { label: 'Streaming', value: 'Streaming' }
+])
 
 const fetchRelatedData = async () => {
   try {
@@ -1002,18 +1266,44 @@ const fetchRelatedData = async () => {
       plansList.value = unwrap(planRes.value).map(item => ({ label: `${item.name || 'Plan #' + item.id}`, value: item.id }))
     }
 
+    // Load local PSGC data for Region, Province, City, and Barangay dropdowns
+    try {
+      const [regionsData, provincesData, citiesData] = await Promise.all([
+        phAddressService.getRegions(),
+        phAddressService.getProvinces(),
+        phAddressService.getCities()
+      ])
+      regionsList.value = (regionsData || []).map(r => ({ label: `${r.name} (${r.regionName})`, value: r.name, code: r.code }))
+      provincesList.value = (provincesData || []).map(p => ({ label: p.name, value: p.name, code: p.code, regionCode: p.regionCode }))
+      citiesList.value = (citiesData || []).map(c => ({ label: `${c.name} ${c.isCity ? '(City)' : ''}`, value: c.name, code: c.code, regionCode: c.regionCode, provinceCode: c.provinceCode }))
+      
+      allProvincesFallbackCache = provincesList.value
+      allCitiesFallbackCache = citiesList.value
+    } catch (e) {
+      console.warn('Failed to load local PSGC region/city/province data:', e)
+    }
+
     if (brgyRes.status === 'fulfilled' && unwrap(brgyRes.value).length > 0) {
       barangaysList.value = unwrap(brgyRes.value).map(item => {
         const name = typeof item === 'string' ? item : (item.name || item.barangay || item.barangayName || `Barangay ${item.id}`)
         return { label: name, value: name }
       })
     } else {
-      // Fallback: Fetch from public PSGC API or distinct table values
+      // Fallback: Fetch from fast local PSGC barangays.json dataset
       try {
-        const res = await fetch('https://psgc.gitlab.io/api/barangays.json')
+        const res = await fetch('/data/philippines/barangays.json')
         if (res.ok) {
-          const data = await res.json()
-          barangaysList.value = data.map(b => ({ label: b.name, value: b.name }))
+          const groupedData = await res.json()
+          const allBrgys = []
+          Object.values(groupedData).forEach(brgys => {
+            brgys.forEach(b => {
+              allBrgys.push(b.name)
+            })
+          })
+          const uniqueBrgyNames = Array.from(new Set(allBrgys)).sort((a, b) => a.localeCompare(b))
+          const formattedList = uniqueBrgyNames.map(name => ({ label: name, value: name }))
+          allBarangaysFallbackCache = formattedList
+          barangaysList.value = formattedList
         }
       } catch (e) {
         const distinct = Array.from(new Set((tableData.value || []).map(row => row.barangay).filter(Boolean)))
@@ -1025,6 +1315,151 @@ const fetchRelatedData = async () => {
   }
 }
 
+let allBarangaysFallbackCache = null
+let allCitiesFallbackCache = null
+let allProvincesFallbackCache = null
+
+const updateCitiesForSelectedRegion = async (regionVal) => {
+  if (!regionVal) {
+    if (allCitiesFallbackCache) citiesList.value = allCitiesFallbackCache
+    if (allProvincesFallbackCache) provincesList.value = allProvincesFallbackCache
+    return
+  }
+
+  const str = (typeof regionVal === 'string' ? regionVal : (regionVal?.value || regionVal?.name || '')).toLowerCase()
+
+  const matchedRegion = regionsList.value.find(r => 
+    (r.code && r.code === regionVal) ||
+    (r.value && r.value.toLowerCase() === str) ||
+    (r.name && r.name.toLowerCase() === str) ||
+    (r.label && r.label.toLowerCase().includes(str))
+  )
+
+  if (matchedRegion && matchedRegion.code) {
+    try {
+      const [cList, pList] = await Promise.all([
+        phAddressService.getCities(matchedRegion.code),
+        phAddressService.getProvinces(matchedRegion.code)
+      ])
+      citiesList.value = (cList || []).map(c => ({ label: `${c.name} ${c.isCity ? '(City)' : ''}`, value: c.name, code: c.code, regionCode: c.regionCode, provinceCode: c.provinceCode }))
+      provincesList.value = (pList || []).map(p => ({ label: p.name, value: p.name, code: p.code, regionCode: p.regionCode }))
+      return
+    } catch (err) {
+      console.error('Error filtering cities for region:', err)
+    }
+  }
+
+  if (allCitiesFallbackCache) {
+    citiesList.value = allCitiesFallbackCache
+  }
+}
+
+const updateBarangaysForSelectedCity = async (cityName) => {
+  if (!cityName) {
+    if (allBarangaysFallbackCache) {
+      barangaysList.value = allBarangaysFallbackCache
+    }
+    return
+  }
+
+  const str = (typeof cityName === 'string' ? cityName : (cityName?.value || cityName?.name || '')).toLowerCase()
+
+  // First try finding in currently displayed citiesList, then in allCitiesFallbackCache
+  const sourceList = (citiesList.value && citiesList.value.length > 0) ? citiesList.value : (allCitiesFallbackCache || [])
+  const matchedCity = sourceList.find(c => 
+    (c.code && c.code === cityName) ||
+    (c.value && c.value.toLowerCase() === str) ||
+    (c.label && c.label.toLowerCase().includes(str))
+  )
+
+  if (matchedCity && matchedCity.code) {
+    try {
+      const brgys = await phAddressService.getBarangays(matchedCity.code)
+      if (brgys && brgys.length > 0) {
+        barangaysList.value = brgys.map(b => ({ label: b.name, value: b.name }))
+        return
+      }
+    } catch (err) {
+      console.error('Error fetching barangays for city:', err)
+    }
+  }
+
+  if (allBarangaysFallbackCache) {
+    barangaysList.value = allBarangaysFallbackCache
+  }
+}
+
+const regionColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'region_dropdown'))
+const cityColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'city_dropdown'))
+const barangayColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'barangay_dropdown'))
+
+const isCityDisabled = (targetForm) => {
+  if (regionColName.value) {
+    return !targetForm[regionColName.value]
+  }
+  return false
+}
+
+const isBarangayDisabled = (targetForm) => {
+  if (cityColName.value) {
+    return !targetForm[cityColName.value]
+  }
+  return false
+}
+
+const getCityPlaceholder = (targetForm) => {
+  if (regionColName.value && !targetForm[regionColName.value]) {
+    return 'Select Region First'
+  }
+  return 'Select City / Town'
+}
+
+const getBarangayPlaceholder = (targetForm) => {
+  if (cityColName.value && !targetForm[cityColName.value]) {
+    return 'Select City / Town First'
+  }
+  return 'Select or Type Barangay'
+}
+
+const onRegionChanged = (targetForm) => {
+  if (cityColName.value) targetForm[cityColName.value] = ''
+  if (barangayColName.value) targetForm[barangayColName.value] = ''
+  updateCitiesForSelectedRegion(regionColName.value ? targetForm[regionColName.value] : null)
+}
+
+const onCityChanged = (targetForm) => {
+  if (barangayColName.value) targetForm[barangayColName.value] = ''
+  updateBarangaysForSelectedCity(cityColName.value ? targetForm[cityColName.value] : null)
+}
+
+watch(
+  () => formData.value.region || formData.value.regionName || formData.value.region_name,
+  (newRegion) => {
+    updateCitiesForSelectedRegion(newRegion)
+  }
+)
+
+watch(
+  () => editFormData.value.region || editFormData.value.regionName || editFormData.value.region_name,
+  (newRegion) => {
+    updateCitiesForSelectedRegion(newRegion)
+  }
+)
+
+watch(
+  () => formData.value.city || formData.value.cityName || formData.value.city_name || formData.value.municipality,
+  (newCity) => {
+    updateBarangaysForSelectedCity(newCity)
+  }
+)
+
+watch(
+  () => editFormData.value.city || editFormData.value.cityName || editFormData.value.city_name || editFormData.value.municipality,
+  (newCity) => {
+    updateBarangaysForSelectedCity(newCity)
+  }
+)
+
 const getAccessLevelLabel = (id) => {
   if (id === null || id === undefined) return '-'
   const found = accessLevels.value.find(opt => opt.value === Number(id) || opt.value === id)
@@ -1034,10 +1469,26 @@ const getAccessLevelLabel = (id) => {
 const openCreateDialog = () => {
   saveError.value = null
   formData.value = {}
+  const currentUser = authStore.user?.name || authStore.user?.username || authStore.user?.email || ''
+
   formColumns.value.forEach(col => {
     const type = getFieldType(col)
-    if (type === 'toggle') {
+    const lowerCol = col.toLowerCase()
+
+    if (lowerCol === 'modifiedby' && currentUser) {
+      formData.value[col] = currentUser
+    } else if (lowerCol === 'preferredday' && currentUser) {
+      formData.value[col] = currentUser
+    } else if (type === 'toggle') {
       formData.value[col] = true
+    } else if (type === 'status_dropdown' && statusOptions.value.length > 0) {
+      formData.value[col] = statusOptions.value[0].value
+    } else if (type === 'onsitestatus_dropdown' && onsiteStatusOptions.value.length > 0) {
+      formData.value[col] = onsiteStatusOptions.value[0].value
+    } else if (type === 'billingstatus_dropdown' && billingStatusOptions.value.length > 0) {
+      formData.value[col] = billingStatusOptions.value[0].value
+    } else if (type === 'usagetype_dropdown' && usageTypeOptions.value.length > 0) {
+      formData.value[col] = usageTypeOptions.value[0].value
     } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
       formData.value[col] = accessLevels.value[0].value
     } else if (type === 'menu_dropdown' && menusList.value.length > 0) {
@@ -1054,10 +1505,8 @@ const openCreateDialog = () => {
       formData.value[col] = vlansList.value[0].value
     } else if (type === 'plan_dropdown' && plansList.value.length > 0) {
       formData.value[col] = plansList.value[0].value
-    } else if (type === 'barangay_dropdown' && barangaysList.value.length > 0) {
-      formData.value[col] = barangaysList.value[0].value
     } else {
-      formData.value[col] = null
+      formData.value[col] = ''
     }
   })
   formData.value.confirmPassword = ''
@@ -1153,13 +1602,21 @@ const openEditDialog = (record) => {
   editError.value = null
   editingRecordId.value = getRecordId(record)
   editFormData.value = { ...record }
+  const currentUser = authStore.user?.name || authStore.user?.username || authStore.user?.email || ''
+
   formColumns.value.forEach(col => {
     const type = getFieldType(col)
-    if (type === 'toggle') {
+    const lowerCol = col.toLowerCase()
+
+    if (lowerCol === 'modifiedby' && currentUser) {
+      editFormData.value[col] = currentUser
+    } else if (type === 'toggle') {
       editFormData.value[col] = record[col] === true || record[col] === 'true'
     } else if (type === 'date' && record[col]) {
       const d = new Date(record[col])
       editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
+    } else if (record[col] === null || record[col] === undefined) {
+      editFormData.value[col] = ''
     }
   })
   const pwdCol = formColumns.value.find(col => getFieldType(col) === 'password')
