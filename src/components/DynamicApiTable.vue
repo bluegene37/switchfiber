@@ -90,22 +90,22 @@
 
             <Button 
               icon="pi pi-eye" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1 me-1" 
-              style="width: 32px; height: 32px;"
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0" 
+              style="width: 26px; height: 26px; font-size: 0.8rem;"
               title="View Details" 
               @click="openViewDialog(slotProps.data)" 
             />
             <Button 
               icon="pi pi-pencil" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1 me-1" 
-              style="width: 32px; height: 32px;"
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0" 
+              style="width: 26px; height: 26px; font-size: 0.8rem;"
               title="Edit Record" 
               @click="openEditDialog(slotProps.data)" 
             />
             <Button 
               icon="pi pi-trash" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1 text-danger" 
-              style="width: 32px; height: 32px; color: #dc3545;"
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 text-danger" 
+              style="width: 26px; height: 26px; font-size: 0.8rem; color: #dc3545;"
               title="Delete Record" 
               @click="confirmDelete(slotProps.data)" 
             />
@@ -2395,10 +2395,17 @@ defineExpose({
 }
 
 /* Compact Table Row Height & Padding */
-:deep(.p-datatable-tbody > tr > td),
-:deep(.p-datatable-thead > tr > th) {
-  padding: 0.4rem 0.65rem !important;
+:deep(.p-datatable-tbody > tr > td) {
+  padding: 0.25rem 0.65rem !important;
   font-size: 0.8125rem !important;
-  line-height: 1.35 !important;
+  line-height: 1.25 !important;
+  vertical-align: middle !important;
+}
+
+:deep(.p-datatable-tbody > tr > td.frozen-actions-col .p-button) {
+  width: 26px !important;
+  height: 26px !important;
+  padding: 0 !important;
+  min-width: 26px !important;
 }
 </style>
