@@ -1,9 +1,15 @@
 <template>
   <header class="bg-body border-bottom d-flex align-items-center justify-content-between px-3 px-md-4 shadow-sm position-relative" style="height: 64px; z-index: 1030;">
-    <!-- Left side: Mobile Menu Toggle & Production Search Box -->
+    <!-- Left side: Mobile & Desktop Menu Toggle & Production Search Box -->
     <div class="d-flex align-items-center flex-grow-1">
-      <button @click="$emit('toggle-sidebar')" class="btn btn-link text-secondary d-md-none me-3 p-0 text-decoration-none" aria-label="Toggle Sidebar">
-        <i class="pi pi-bars fs-5"></i>
+      <button 
+        @click="handleToggleSidebar" 
+        class="btn btn-link text-secondary me-3 p-1 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center" 
+        style="width: 36px; height: 36px;"
+        aria-label="Toggle Sidebar"
+        :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
+      >
+        <i :class="['pi', isCollapsed ? 'pi-bars' : 'pi-align-left', 'fs-5']"></i>
       </button>
       
       <!-- Navbar Search Container -->
@@ -248,7 +254,22 @@ import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { useSearch } from '../composables/useSearch'
 
-defineEmits(['toggle-sidebar'])
+const props = defineProps({
+  isCollapsed: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['toggle-sidebar', 'toggle-collapse'])
+
+const handleToggleSidebar = () => {
+  if (window.innerWidth < 768) {
+    emit('toggle-sidebar')
+  } else {
+    emit('toggle-collapse')
+  }
+}
 
 const router = useRouter()
 const authStore = useAuthStore()
