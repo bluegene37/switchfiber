@@ -498,3 +498,122 @@
  * @property {integer|string} modifiedBy
  * @property {string} modifiedDate
  */
+
+/**
+ * @typedef {Object} CreateAccessLevelRequest
+ * @property {string} name
+ * @property {string} description
+ * @property {integer|string} createdBy
+ * @property {string} createdDate
+ * @property {integer|string} modifiedBy
+ * @property {string} modifiedDate
+ */
+
+/**
+ * @typedef {Object} UpdateAccessLevelRequest
+ * @property {string} name
+ * @property {string} description
+ * @property {integer|string} modifiedBy
+ * @property {string} modifiedDate
+ */
+
+/**
+ * @typedef {Object} CreateAccesslevelMenuRequest
+ * @property {integer|string} menu_id
+ * @property {integer|string} accesslevel_id
+ */
+
+/**
+ * @typedef {Object} UpdateAccesslevelMenuRequest
+ * @property {integer|string} menu_id
+ * @property {integer|string} accesslevel_id
+ */
+
+/**
+ * @typedef {Object} CreateBarangayRequest
+ * @property {string} name
+ * @property {string} city
+ */
+
+/**
+ * @typedef {Object} UpdateBarangayRequest
+ * @property {string} name
+ * @property {string} city
+ */
+
+/**
+ * @typedef {Object} CreateMenuRequest
+ * @property {string} name
+ * @property {string} description
+ * @property {integer|string} createdBy
+ * @property {string} createdDate
+ * @property {integer|string} modifiedBy
+ * @property {string} modifiedDate
+ */
+
+/**
+ * @typedef {Object} UpdateMenuRequest
+ * @property {string} name
+ * @property {string} description
+ * @property {integer|string} modifiedBy
+ * @property {string} modifiedDate
+ */
+
+/**
+ * @typedef {Object} LoginRequest
+ * @property {string} username
+ * @property {string} password
+ */
+
+/**
+ * @typedef {Object} RequestPasswordResetRequest
+ * @property {string} username
+ */
+
+/**
+ * @typedef {Object} ResetPasswordRequest
+ * @property {string} token
+ * @property {string} newPassword
+ */
+
+/**
+ * @typedef {Object} BillingStatus
+ * @property {integer|string} id
+ * @property {string} statusName
+ * @property {string} modifiedDate
+ * @property {integer|string} modifiedBy
+ */
+
+/**
+ * @typedef {Object} InvoiceDto
+ * @property {integer|string} id
+ * @property {string} accountNo
+ * @property {string} invoiceNo
+ * @property {string} invoiceDate
+ * @property {string} fullName
+ * @property {string} contactNumber
+ * @property {string} emailAddress
+ * @property {string} address
+ * @property {string} location
+ * @property {string} plan
+ * @property {number|string} invoiceBalance
+ * @property {number|string} othersandBasicCharges
+ * @property {number|string} totalAmount
+ * @property {number|string} receivedPayment
+ * @property {string} dateProcessed
+ * @property {string} processedBy
+ * @property {string} dueDate
+ * @property {string} invoiceStatus
+ * @property {string} emailStatus
+ * @property {string} smsStatus
+ * @property {string} paymentMethod
+ * @property {string} referenceNo
+ * @property {string} orNo
+ * @property {string} modifiedBy
+ * @property {string} modifiedDate
+ * @property {string} userEmail
+ * @property {string} transactionID
+ * @property {string} barangay
+ * @property {string} city
+ */
+

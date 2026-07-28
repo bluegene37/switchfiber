@@ -10,6 +10,7 @@
       :value="data" 
       :loading="loading"
       scrollable
+      size="small"
       :paginator="true" 
       :rows="rowsPerPage" 
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
@@ -88,16 +89,23 @@
             />
 
             <Button 
+              icon="pi pi-eye" 
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1 me-1" 
+              style="width: 32px; height: 32px;"
+              title="View Details" 
+              @click="openViewDialog(slotProps.data)" 
+            />
+            <Button 
               icon="pi pi-pencil" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1" 
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1 me-1" 
               style="width: 32px; height: 32px;"
               title="Edit Record" 
               @click="openEditDialog(slotProps.data)" 
             />
             <Button 
               icon="pi pi-trash" 
-              class="p-button-text p-button-sm p-button-rounded p-button-danger p-1" 
-              style="width: 32px; height: 32px;"
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-1 text-danger" 
+              style="width: 32px; height: 32px; color: #dc3545;"
               title="Delete Record" 
               @click="confirmDelete(slotProps.data)" 
             />
@@ -123,316 +131,438 @@
         <i class="pi pi-exclamation-triangle me-2"></i> {{ saveError }}
       </div>
 
-      <div class="row g-3 mt-1 pe-2" style="max-height: 70vh; overflow-y: auto;">
+      <div class="pe-2 mt-2" style="max-height: 72vh; overflow-y: auto;">
         <div 
-          v-for="col in formColumns" 
-          :key="col" 
-          :class="getColumnClass(col)"
+          v-for="sec in formSections" 
+          :key="sec.key" 
+          class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
         >
-          <label :for="col" class="form-label fw-medium text-body small mb-1">
-            {{ formatLabel(col) }}
-          </label>
-
-          <!-- Toggle Switch for Active / Boolean fields -->
-          <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
-            <ToggleSwitch :id="col" v-model="formData[col]" />
-            <span class="small fw-semibold" :class="formData[col] ? 'text-success' : 'text-secondary'">
-              {{ formData[col] ? 'Active' : 'Inactive' }}
+          <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+            <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
+              <i :class="sec.icon"></i> {{ sec.title }}
+            </h6>
+            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+              {{ sec.columns.length }} {{ sec.columns.length === 1 ? 'field' : 'fields' }}
             </span>
           </div>
 
-          <!-- Access Level Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'accesslevel_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="accessLevels" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Access Level" 
-            class="w-100 p-inputtext-sm" 
-          />
+          <div class="row g-3">
+            <div 
+              v-for="col in sec.columns" 
+              :key="col" 
+              :class="getColumnClass(col)"
+            >
+              <label :for="col" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+              </label>
 
-          <!-- Menu Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'menu_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="menusList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Menu" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Toggle Switch for Active / Boolean fields -->
+              <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+                <ToggleSwitch :id="col" v-model="formData[col]" />
+                <span class="small fw-semibold" :class="formData[col] ? 'text-success' : 'text-secondary'">
+                  {{ formData[col] ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
 
-          <!-- LCNAP Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'lcpnap_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="lcpnapsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select LCNAP" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Access Level Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'accesslevel_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="accessLevels" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Access Level" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- LCP Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'lcp_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="lcpsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select LCP" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Menu Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'menu_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="menusList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Menu" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- NAP Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'nap_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="napsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select NAP" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- LCNAP Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'lcpnap_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="lcpnapsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select LCNAP" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Port Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'port_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="portsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Port" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- LCP Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'lcp_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="lcpsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select LCP" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- VLAN Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'vlan_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="vlansList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select VLAN" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- NAP Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'nap_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="napsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select NAP" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Plan Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'plan_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="plansList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Plan" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Port Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'port_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="portsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Port" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Region Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'region_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="regionsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            @change="onRegionChanged(formData)"
-            placeholder="Select Region" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- VLAN Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'vlan_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="vlansList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select VLAN" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Province Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'province_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="provincesList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            :disabled="isCityDisabled(formData)"
-            placeholder="Select Province" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Plan Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'plan_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="plansList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Plan" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- City / Municipality Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'city_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="citiesList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            :disabled="isCityDisabled(formData)"
-            @change="onCityChanged(formData)"
-            :virtualScrollerOptions="{ itemSize: 38 }"
-            :placeholder="getCityPlaceholder(formData)" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Region Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'region_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="regionsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                @change="onRegionChanged(formData)"
+                placeholder="Select Region" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Barangay Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'barangay_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="barangaysList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            :disabled="isBarangayDisabled(formData)"
-            :virtualScrollerOptions="{ itemSize: 38 }"
-            :placeholder="getBarangayPlaceholder(formData)" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Province Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'province_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="provincesList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :disabled="isCityDisabled(formData)"
+                placeholder="Select Province" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Status Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'status_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="statusOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Status" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- City / Municipality Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'city_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="citiesList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :disabled="isCityDisabled(formData)"
+                @change="onCityChanged(formData)"
+                :virtualScrollerOptions="{ itemSize: 38 }"
+                :placeholder="getCityPlaceholder(formData)" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Onsite Status Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="onsiteStatusOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Onsite Status" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Barangay Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'barangay_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="barangaysList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :disabled="isBarangayDisabled(formData)"
+                :virtualScrollerOptions="{ itemSize: 38 }"
+                :placeholder="getBarangayPlaceholder(formData)" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Billing Status Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="billingStatusOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Billing Status" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'status_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="statusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Status" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Usage Type Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
-            :id="col" 
-            v-model="formData[col]" 
-            :options="usageTypeOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Usage Type" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Onsite Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="onsiteStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Onsite Status" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Confirm Password Field -->
-          <div v-else-if="getFieldType(col) === 'confirm_password'">
-            <InputText 
-              :id="col" 
-              type="password"
-              v-model="formData[col]" 
-              class="w-100 p-inputtext-sm" 
-              :class="{ 'is-invalid': formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword }"
-              placeholder="Confirm password"
-            />
-            <div v-if="formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
-              <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
+              <!-- Billing Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="billingStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Billing Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Usage Type Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="usageTypeOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Usage Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Confirm Password Field -->
+              <div v-else-if="getFieldType(col) === 'confirm_password'">
+                <InputText 
+                  :id="col" 
+                  type="password"
+                  v-model="formData[col]" 
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 'is-invalid': formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword }"
+                  placeholder="Confirm password"
+                />
+                <div v-if="formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
+                  <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
+                </div>
+              </div>
+
+              <!-- Password Field -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'password'" 
+                :id="col" 
+                type="password"
+                v-model="formData[col]" 
+                class="w-100 p-inputtext-sm" 
+                placeholder="Enter password"
+              />
+
+              <!-- DatePicker for Date Fields -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'date'" 
+                :id="col" 
+                v-model="formData[col]" 
+                showIcon 
+                iconDisplay="input"
+                fluid
+                size="small"
+                dateFormat="yy-mm-dd" 
+                placeholder="Select date" 
+                class="w-100"
+              />
+
+              <!-- Email Input for Email Fields -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'email'" 
+                :id="col" 
+                type="email"
+                v-model="formData[col]" 
+                class="w-100 p-inputtext-sm" 
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- InputNumber for Numeric Fields -->
+              <InputNumber 
+                v-else-if="getFieldType(col) === 'number'" 
+                :id="col" 
+                v-model="formData[col]" 
+                fluid
+                size="small"
+                class="w-100" 
+                :useGrouping="false"
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- Textarea for Multiline Fields -->
+              <Textarea 
+                v-else-if="getFieldType(col) === 'textarea'" 
+                :id="col" 
+                v-model="formData[col]" 
+                rows="3" 
+                class="w-100 p-inputtext-sm" 
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- InputText for Standard / Monospace Fields -->
+              <InputText 
+                v-else 
+                :id="col" 
+                v-model="formData[col]" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 
+                  'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                  'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                }"
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
             </div>
           </div>
-
-          <!-- Password Field -->
-          <InputText 
-            v-else-if="getFieldType(col) === 'password'" 
-            :id="col" 
-            type="password"
-            v-model="formData[col]" 
-            class="w-100 p-inputtext-sm" 
-            placeholder="Enter password"
-          />
-
-          <!-- DatePicker for Date Fields -->
-          <DatePicker 
-            v-else-if="getFieldType(col) === 'date'" 
-            :id="col" 
-            v-model="formData[col]" 
-            showIcon 
-            iconDisplay="input"
-            fluid
-            size="small"
-            dateFormat="yy-mm-dd" 
-            placeholder="Select date" 
-            class="w-100"
-          />
-
-          <!-- Email Input for Email Fields -->
-          <InputText 
-            v-else-if="getFieldType(col) === 'email'" 
-            :id="col" 
-            type="email"
-            v-model="formData[col]" 
-            class="w-100 p-inputtext-sm" 
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
-
-          <!-- InputNumber for Numeric Fields -->
-          <InputNumber 
-            v-else-if="getFieldType(col) === 'number'" 
-            :id="col" 
-            v-model="formData[col]" 
-            fluid
-            size="small"
-            class="w-100" 
-            :useGrouping="false"
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
-
-          <!-- Textarea for Multiline Fields -->
-          <Textarea 
-            v-else-if="getFieldType(col) === 'textarea'" 
-            :id="col" 
-            v-model="formData[col]" 
-            rows="3" 
-            class="w-100 p-inputtext-sm" 
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
-
-          <!-- InputText for Standard Fields -->
-          <InputText 
-            v-else 
-            :id="col" 
-            v-model="formData[col]" 
-            class="w-100 p-inputtext-sm" 
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
         </div>
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2 mt-3">
           <Button label="Cancel" icon="pi pi-times" class="p-button-text p-button-secondary p-button-sm" @click="displayCreateDialog = false" />
           <Button label="Save Record" icon="pi pi-check" class="p-button-primary p-button-sm" @click="saveData" :loading="saving" />
+        </div>
+      </template>
+    </Dialog>
+
+    <!-- View Record Dialog (Read-Only) -->
+    <Dialog 
+      v-model:visible="displayViewDialog" 
+      modal 
+      :header="`View ${formatLabel(endpoint)} Record #${viewingRecordId || ''}`" 
+      :style="modalStyle"
+      :breakpoints="modalBreakpoints"
+    >
+      <div class="pe-2 mt-2" style="max-height: 72vh; overflow-y: auto;">
+        <div 
+          v-for="sec in viewFormSections" 
+          :key="sec.key" 
+          class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
+        >
+          <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+            <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
+              <i :class="sec.icon"></i> {{ sec.title }}
+            </h6>
+            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+              {{ sec.columns.length }} {{ sec.columns.length === 1 ? 'field' : 'fields' }}
+            </span>
+          </div>
+
+          <div class="row g-3">
+            <div 
+              v-for="col in sec.columns" 
+              :key="col" 
+              :class="getColumnClass(col)"
+            >
+              <label :for="`view-${col}`" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+              </label>
+
+              <!-- Toggle Switch for Active / Boolean fields -->
+              <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+                <ToggleSwitch :id="`view-${col}`" :modelValue="!!viewFormData[col]" disabled />
+                <span class="small fw-semibold" :class="viewFormData[col] ? 'text-success' : 'text-secondary'">
+                  {{ viewFormData[col] ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+
+              <!-- DatePicker for Date Fields -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'date'" 
+                :id="`view-${col}`" 
+                :modelValue="viewFormData[col]" 
+                showIcon 
+                iconDisplay="input"
+                fluid
+                size="small"
+                dateFormat="yy-mm-dd" 
+                disabled
+                class="w-100"
+              />
+
+              <!-- Textarea for Multiline Fields -->
+              <Textarea 
+                v-else-if="getFieldType(col) === 'textarea'" 
+                :id="`view-${col}`" 
+                :modelValue="viewFormData[col]" 
+                rows="3" 
+                readonly
+                disabled
+                class="w-100 p-inputtext-sm bg-light" 
+              />
+
+              <!-- InputText for Standard / Monospace Fields -->
+              <InputText 
+                v-else 
+                :id="`view-${col}`" 
+                :modelValue="viewFormData[col] !== null && viewFormData[col] !== undefined ? String(viewFormData[col]) : '-'" 
+                readonly
+                disabled
+                class="w-100 p-inputtext-sm bg-light" 
+                :class="{ 
+                  'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                  'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                }"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="d-flex justify-content-between align-items-center w-100 mt-2">
+          <Button 
+            label="Edit Record" 
+            icon="pi pi-pencil" 
+            class="p-button-outlined p-button-primary p-button-sm" 
+            @click="displayViewDialog = false; openEditDialog(viewFormData)" 
+          />
+          <Button 
+            label="Close" 
+            icon="pi pi-times" 
+            class="p-button-secondary p-button-sm" 
+            @click="displayViewDialog = false" 
+          />
         </div>
       </template>
     </Dialog>
@@ -449,310 +579,331 @@
         <i class="pi pi-exclamation-triangle me-2"></i> {{ editError }}
       </div>
 
-      <div class="row g-3 mt-1 pe-2" style="max-height: 70vh; overflow-y: auto;">
+      <div class="pe-2 mt-2" style="max-height: 72vh; overflow-y: auto;">
         <div 
-          v-for="col in formColumns" 
-          :key="col" 
-          :class="getColumnClass(col)"
+          v-for="sec in formSections" 
+          :key="sec.key" 
+          class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
         >
-          <label :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
-            {{ formatLabel(col) }}
-          </label>
-
-          <!-- Toggle Switch for Active / Boolean fields -->
-          <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
-            <ToggleSwitch :id="`edit-${col}`" v-model="editFormData[col]" />
-            <span class="small fw-semibold" :class="editFormData[col] ? 'text-success' : 'text-secondary'">
-              {{ editFormData[col] ? 'Active' : 'Inactive' }}
+          <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+            <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
+              <i :class="sec.icon"></i> {{ sec.title }}
+            </h6>
+            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+              {{ sec.columns.length }} {{ sec.columns.length === 1 ? 'field' : 'fields' }}
             </span>
           </div>
 
-          <!-- Access Level Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'accesslevel_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="accessLevels" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Access Level" 
-            class="w-100 p-inputtext-sm" 
-          />
+          <div class="row g-3">
+            <div 
+              v-for="col in sec.columns" 
+              :key="col" 
+              :class="getColumnClass(col)"
+            >
+              <label :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+              </label>
 
-          <!-- Menu Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'menu_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="menusList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Menu" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Toggle Switch for Active / Boolean fields -->
+              <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+                <ToggleSwitch :id="`edit-${col}`" v-model="editFormData[col]" />
+                <span class="small fw-semibold" :class="editFormData[col] ? 'text-success' : 'text-secondary'">
+                  {{ editFormData[col] ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
 
-          <!-- LCNAP Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'lcpnap_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="lcpnapsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select LCNAP" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Access Level Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'accesslevel_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="accessLevels" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Access Level" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- LCP Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'lcp_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="lcpsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select LCP" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Menu Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'menu_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="menusList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Menu" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- NAP Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'nap_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="napsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select NAP" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- LCNAP Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'lcpnap_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="lcpnapsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select LCNAP" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Port Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'port_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="portsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Port" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- LCP Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'lcp_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="lcpsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select LCP" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- VLAN Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'vlan_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="vlansList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select VLAN" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- NAP Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'nap_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="napsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select NAP" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Plan Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'plan_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="plansList" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Plan" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Port Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'port_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="portsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Port" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Region Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'region_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="regionsList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            @change="onRegionChanged(editFormData)"
-            placeholder="Select Region" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- VLAN Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'vlan_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="vlansList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select VLAN" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Province Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'province_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="provincesList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            :disabled="isCityDisabled(editFormData)"
-            placeholder="Select Province" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Plan Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'plan_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="plansList" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Plan" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- City / Municipality Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'city_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="citiesList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            :disabled="isCityDisabled(editFormData)"
-            @change="onCityChanged(editFormData)"
-            :virtualScrollerOptions="{ itemSize: 38 }"
-            :placeholder="getCityPlaceholder(editFormData)" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Region Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'region_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="regionsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                @change="onRegionChanged(editFormData)"
+                placeholder="Select Region" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Barangay Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'barangay_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="barangaysList" 
-            optionLabel="label" 
-            optionValue="value" 
-            :filter="true"
-            :editable="true"
-            :disabled="isBarangayDisabled(editFormData)"
-            :virtualScrollerOptions="{ itemSize: 38 }"
-            :placeholder="getBarangayPlaceholder(editFormData)" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Province Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'province_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="provincesList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :disabled="isCityDisabled(editFormData)"
+                placeholder="Select Province" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Status Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'status_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="statusOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Status" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- City / Municipality Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'city_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="citiesList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :disabled="isCityDisabled(editFormData)"
+                @change="onCityChanged(editFormData)"
+                :virtualScrollerOptions="{ itemSize: 38 }"
+                :placeholder="getCityPlaceholder(editFormData)" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Onsite Status Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="onsiteStatusOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Onsite Status" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Barangay Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'barangay_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="barangaysList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :disabled="isBarangayDisabled(editFormData)"
+                :virtualScrollerOptions="{ itemSize: 38 }"
+                :placeholder="getBarangayPlaceholder(editFormData)" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Billing Status Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="billingStatusOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Billing Status" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'status_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="statusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Status" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Usage Type Dropdown -->
-          <Select 
-            v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            :options="usageTypeOptions" 
-            optionLabel="label" 
-            optionValue="value" 
-            placeholder="Select Usage Type" 
-            class="w-100 p-inputtext-sm" 
-          />
+              <!-- Onsite Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="onsiteStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Onsite Status" 
+                class="w-100 p-inputtext-sm" 
+              />
 
-          <!-- Confirm Password Field -->
-          <div v-else-if="getFieldType(col) === 'confirm_password'">
-            <InputText 
-              :id="`edit-${col}`" 
-              type="password"
-              v-model="editFormData[col]" 
-              class="w-100 p-inputtext-sm" 
-              :class="{ 'is-invalid': editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword }"
-              placeholder="Confirm password"
-            />
-            <div v-if="editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
-              <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
+              <!-- Billing Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="billingStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Billing Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Usage Type Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="usageTypeOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Usage Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Confirm Password Field -->
+              <div v-else-if="getFieldType(col) === 'confirm_password'">
+                <InputText 
+                  :id="`edit-${col}`" 
+                  type="password"
+                  v-model="editFormData[col]" 
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 'is-invalid': editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword }"
+                  placeholder="Confirm password"
+                />
+                <div v-if="editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
+                  <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
+                </div>
+              </div>
+
+              <!-- Password Field -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'password'" 
+                :id="`edit-${col}`" 
+                type="password"
+                v-model="editFormData[col]" 
+                class="w-100 p-inputtext-sm" 
+                placeholder="Enter password"
+              />
+
+              <!-- DatePicker for Date Fields -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'date'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                showIcon 
+                iconDisplay="input"
+                fluid
+                size="small"
+                dateFormat="yy-mm-dd" 
+                placeholder="Select date" 
+                class="w-100"
+              />
+
+              <!-- Email Input for Email Fields -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'email'" 
+                :id="`edit-${col}`" 
+                type="email"
+                v-model="editFormData[col]" 
+                class="w-100 p-inputtext-sm" 
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- InputNumber for Numeric Fields -->
+              <InputNumber 
+                v-else-if="getFieldType(col) === 'number'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                fluid
+                size="small"
+                class="w-100" 
+                :useGrouping="false"
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- Textarea for Multiline Fields -->
+              <Textarea 
+                v-else-if="getFieldType(col) === 'textarea'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                rows="3" 
+                class="w-100 p-inputtext-sm" 
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- InputText for Standard / Monospace Fields -->
+              <InputText 
+                v-else 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 
+                  'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                  'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                }"
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
             </div>
           </div>
-
-          <!-- Password Field -->
-          <InputText 
-            v-else-if="getFieldType(col) === 'password'" 
-            :id="`edit-${col}`" 
-            type="password"
-            v-model="editFormData[col]" 
-            class="w-100 p-inputtext-sm" 
-            placeholder="Enter password"
-          />
-
-          <!-- DatePicker for Date Fields -->
-          <DatePicker 
-            v-else-if="getFieldType(col) === 'date'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            showIcon 
-            iconDisplay="input"
-            fluid
-            size="small"
-            dateFormat="yy-mm-dd" 
-            placeholder="Select date" 
-            class="w-100"
-          />
-
-          <!-- Email Input for Email Fields -->
-          <InputText 
-            v-else-if="getFieldType(col) === 'email'" 
-            :id="`edit-${col}`" 
-            type="email"
-            v-model="editFormData[col]" 
-            class="w-100 p-inputtext-sm" 
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
-
-          <!-- InputNumber for Numeric Fields -->
-          <InputNumber 
-            v-else-if="getFieldType(col) === 'number'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            fluid
-            size="small"
-            class="w-100" 
-            :useGrouping="false"
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
-
-          <!-- Textarea for Multiline Fields -->
-          <Textarea 
-            v-else-if="getFieldType(col) === 'textarea'" 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            rows="3" 
-            class="w-100 p-inputtext-sm" 
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
-
-          <!-- InputText for Standard Fields -->
-          <InputText 
-            v-else 
-            :id="`edit-${col}`" 
-            v-model="editFormData[col]" 
-            class="w-100 p-inputtext-sm" 
-            :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
-          />
         </div>
       </div>
       <template #footer>
@@ -883,6 +1034,11 @@ const rowOptions = ref([5, 10, 20, 50])
 const filters = ref({
   global: { value: null, matchMode: 'contains' }
 })
+
+// View State
+const displayViewDialog = ref(false)
+const viewFormData = ref({})
+const viewingRecordId = ref(null)
 
 // Dialog State
 const displayCreateDialog = ref(false)
@@ -1086,35 +1242,27 @@ const columns = computed(() => {
   return rawCols
 })
 
+const isAuditField = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase()
+  return (
+    lower === 'id' ||
+    lower.includes('createdby') || lower.includes('created_by') ||
+    lower.includes('createddate') || lower.includes('created_date') || lower.includes('datecreated') ||
+    lower.includes('createdat') || lower.includes('created_at') || lower.includes('createdtime') || lower.includes('timecreated') ||
+    lower.includes('modifiedby') || lower.includes('modified_by') ||
+    lower.includes('modifieddate') || lower.includes('modified_date') || lower.includes('datemodified') ||
+    lower.includes('modifiedat') || lower.includes('modified_at') || lower.includes('modifiedtime') || lower.includes('timemodified') ||
+    lower.includes('updatedby') || lower.includes('updated_by') ||
+    lower.includes('updateddate') || lower.includes('updated_date') || lower.includes('dateupdated') ||
+    lower.includes('updatedat') || lower.includes('updated_at') || lower.includes('updatedtime') || lower.includes('timeupdated') ||
+    lower.includes('rowversion') || lower === 'rowversion'
+  )
+}
+
 // Filter out system-generated fields (id, created/modified dates & times, createdBy/modifiedBy, rowVersion) from forms
 const formColumns = computed(() => {
-  const list = columns.value.filter(col => {
-    const lowerCol = col.toLowerCase()
-    if (lowerCol === 'id') return false
-    
-    // Created date/time & createdBy
-    if (lowerCol.includes('createdat') || lowerCol.includes('created_at') || 
-        lowerCol.includes('createddate') || lowerCol.includes('datecreated') || 
-        lowerCol.includes('createdtime') || lowerCol.includes('timecreated') ||
-        lowerCol.includes('createdby') || lowerCol.includes('created_by')) {
-      return false
-    }
-
-    // Modified / Updated date/time & modifiedBy/updatedBy
-    if (lowerCol.includes('modifiedat') || lowerCol.includes('modified_at') || 
-        lowerCol.includes('modifieddate') || lowerCol.includes('datemodified') || 
-        lowerCol.includes('modifiedtime') || lowerCol.includes('timemodified') ||
-        lowerCol.includes('modifiedby') || lowerCol.includes('modified_by') ||
-        lowerCol.includes('updatedat') || lowerCol.includes('updated_at') || 
-        lowerCol.includes('updateddate') || lowerCol.includes('dateupdated') || 
-        lowerCol.includes('updatedtime') || lowerCol.includes('timeupdated') ||
-        lowerCol.includes('updatedby') || lowerCol.includes('updated_by')) {
-      return false
-    }
-
-    if (lowerCol.includes('rowversion') || lowerCol === 'rowversion') return false
-    return true
-  })
+  const list = columns.value.filter(col => !isAuditField(col))
 
   // If username field exists, inject email immediately after username for 2-column alignment
   const usernameIndex = list.findIndex(c => c.toLowerCase() === 'username')
@@ -1149,6 +1297,151 @@ const formColumns = computed(() => {
   }
 
   return list
+})
+
+const SECTION_META = {
+  profile: { icon: 'pi pi-user', badgeClass: 'text-primary' },
+  plan: { icon: 'pi pi-credit-card', badgeClass: 'text-info' },
+  infra: { icon: 'pi pi-sitemap', badgeClass: 'text-warning' },
+  network: { icon: 'pi pi-wifi', badgeClass: 'text-success' },
+  ops: { icon: 'pi pi-check-square', badgeClass: 'text-secondary' },
+  audit: { icon: 'pi pi-history', badgeClass: 'text-purple-500 text-dark' }
+}
+
+const getSectionTitle = (key) => {
+  const ep = (props.endpoint || '').toLowerCase()
+  const formattedEp = formatLabel(props.endpoint)
+
+  if (key === 'audit') {
+    return 'System Metadata & Audit Trail'
+  }
+
+  if (key === 'profile') {
+    if (ep.includes('application') || ep.includes('joborder') || ep.includes('billingdetail') || ep.includes('customer')) {
+      return 'Subscriber & Personal Profile'
+    }
+    if (ep.includes('user')) {
+      return 'User Account & Personal Info'
+    }
+    return `${formattedEp} Details`
+  }
+
+  if (key === 'plan') {
+    if (ep.includes('plan')) return 'Plan Specifications & Pricing'
+    return 'Service Plan & Billing Details'
+  }
+
+  if (key === 'infra') {
+    if (ep.includes('router')) return 'Router Hardware & Brand Specs'
+    if (ep.includes('port')) return 'Port Allocation Details'
+    if (ep.includes('vlan')) return 'VLAN Network Assignment'
+    if (ep.includes('lcp') || ep.includes('nap')) return 'Fiber Terminal Configuration'
+    return 'Fiber Infrastructure & Provisioning'
+  }
+
+  if (key === 'network') {
+    if (ep.includes('accesslevel')) return 'Access Level & Permission Policy'
+    if (ep.includes('menu')) return 'Menu Navigation Config'
+    return 'Network & Security Credentials'
+  }
+
+  if (key === 'ops') {
+    return 'Operational Status & Sign-off'
+  }
+
+  return `${formattedEp} Information`
+}
+
+const getColumnSection = (col) => {
+  if (isAuditField(col)) {
+    return 'audit'
+  }
+  const c = col.toLowerCase()
+  if (c.includes('plan') || c.includes('amount') || c.includes('balance') || c.includes('billing') || c.includes('discount') || c.includes('installfee') || c.includes('contract')) {
+    return 'plan'
+  }
+  if (c.includes('lcp') || c.includes('nap') || c.includes('port') || c.includes('vlan') || c === 'brand' || c === 'model' || c.includes('routermodel')) {
+    return 'infra'
+  }
+  if (c.includes('connectiontype') || c.includes('username') || c.includes('password') || c === 'ip' || c.includes('sn') || c.includes('modemsn') || c.includes('provider') || c.includes('splynx') || c.includes('mikrotik') || c === 'active' || c.includes('accesslevel') || c.includes('menu')) {
+    return 'network'
+  }
+  if (c.includes('status') || c.includes('visit') || c.includes('verified') || c.includes('remark') || c.includes('timestamp') || c.includes('duration') || c.includes('image') || c.includes('signature') || c.includes('itemname') || c.includes('itemquantity') || c.includes('externalid') || c.includes('assignedemail')) {
+    return 'ops'
+  }
+  return 'profile'
+}
+
+// Columns for Create & Edit forms (excludes system audit fields completely)
+const formSections = computed(() => {
+  const groups = {
+    profile: [],
+    plan: [],
+    infra: [],
+    network: [],
+    ops: []
+  }
+
+  formColumns.value.forEach(col => {
+    const sec = getColumnSection(col)
+    if (sec !== 'audit' && groups[sec]) {
+      groups[sec].push(col)
+    }
+  })
+
+  return Object.keys(groups)
+    .filter(key => groups[key].length > 0)
+    .map(key => ({
+      key,
+      title: getSectionTitle(key),
+      icon: SECTION_META[key]?.icon || 'pi pi-file',
+      badgeClass: SECTION_META[key]?.badgeClass || 'text-secondary',
+      columns: groups[key]
+    }))
+})
+
+// Columns for View Details Modal ONLY (includes ALL fields including ID, CreatedBy/Date, ModifiedBy/Date)
+const viewFormColumns = computed(() => {
+  if (viewFormData.value && typeof viewFormData.value === 'object') {
+    const keys = Object.keys(viewFormData.value)
+    if (keys.length > 0) {
+      const idIndex = keys.findIndex(k => k.toLowerCase() === 'id')
+      if (idIndex > 0) {
+        const [idCol] = keys.splice(idIndex, 1)
+        keys.unshift(idCol)
+      }
+      return keys
+    }
+  }
+  return columns.value
+})
+
+const viewFormSections = computed(() => {
+  const groups = {
+    profile: [],
+    plan: [],
+    infra: [],
+    network: [],
+    ops: [],
+    audit: []
+  }
+
+  viewFormColumns.value.forEach(col => {
+    const sec = getColumnSection(col)
+    if (groups[sec]) {
+      groups[sec].push(col)
+    }
+  })
+
+  return Object.keys(groups)
+    .filter(key => groups[key].length > 0)
+    .map(key => ({
+      key,
+      title: getSectionTitle(key),
+      icon: SECTION_META[key]?.icon || 'pi pi-file',
+      badgeClass: SECTION_META[key]?.badgeClass || 'text-secondary',
+      columns: groups[key]
+    }))
 })
 
 const exportCSV = () => {
@@ -1247,7 +1540,7 @@ const fetchRelatedData = async () => {
       return []
     }
 
-    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, brgyRes] = await Promise.allSettled([
+    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes] = await Promise.allSettled([
       apiClient.get('/AccessLevel'),
       apiClient.get('/Menus'),
       apiClient.get('/Lcpnaps'),
@@ -1255,8 +1548,8 @@ const fetchRelatedData = async () => {
       apiClient.get('/Naps'),
       apiClient.get('/Ports'),
       apiClient.get('/Vlans'),
-      apiClient.get('/Plans'),
-      apiClient.get('/Barangays')
+      apiClient.get('/Plans')
+      // apiClient.get('/Barangays') -- Bypassed in favor of local downloaded PSGC JSON
     ])
 
     if (accRes.status === 'fulfilled') {
@@ -1301,32 +1594,25 @@ const fetchRelatedData = async () => {
       console.warn('Failed to load local PSGC region/city/province data:', e)
     }
 
-    if (brgyRes.status === 'fulfilled' && unwrap(brgyRes.value).length > 0) {
-      barangaysList.value = unwrap(brgyRes.value).map(item => {
-        const name = typeof item === 'string' ? item : (item.name || item.barangay || item.barangayName || `Barangay ${item.id}`)
-        return { label: name, value: name }
-      })
-    } else {
-      // Fallback: Fetch from fast local PSGC barangays.json dataset
-      try {
-        const res = await fetch('/data/philippines/barangays.json')
-        if (res.ok) {
-          const groupedData = await res.json()
-          const allBrgys = []
-          Object.values(groupedData).forEach(brgys => {
-            brgys.forEach(b => {
-              allBrgys.push(b.name)
-            })
+    // Fetch from fast local PSGC barangays.json dataset
+    try {
+      const res = await fetch('/data/philippines/barangays.json')
+      if (res.ok) {
+        const groupedData = await res.json()
+        const allBrgys = []
+        Object.values(groupedData).forEach(brgys => {
+          brgys.forEach(b => {
+            allBrgys.push(b.name)
           })
-          const uniqueBrgyNames = Array.from(new Set(allBrgys)).sort((a, b) => a.localeCompare(b))
-          const formattedList = uniqueBrgyNames.map(name => ({ label: name, value: name }))
-          allBarangaysFallbackCache = formattedList
-          barangaysList.value = formattedList
-        }
-      } catch (e) {
-        const distinct = Array.from(new Set((tableData.value || []).map(row => row.barangay).filter(Boolean)))
-        barangaysList.value = distinct.map(b => ({ label: b, value: b }))
+        })
+        const uniqueBrgyNames = Array.from(new Set(allBrgys)).sort((a, b) => a.localeCompare(b))
+        const formattedList = uniqueBrgyNames.map(name => ({ label: name, value: name }))
+        allBarangaysFallbackCache = formattedList
+        barangaysList.value = formattedList
       }
+    } catch (e) {
+      const distinct = Array.from(new Set((tableData.value || []).map(row => row.barangay).filter(Boolean)))
+      barangaysList.value = distinct.map(b => ({ label: b, value: b }))
     }
   } catch (err) {
     console.error('Error fetching related data:', err)
@@ -1612,6 +1898,12 @@ const getRecordId = (record) => {
   if (key && record[key] !== undefined && record[key] !== null) return record[key]
   const firstVal = Object.values(record)[0]
   return firstVal !== undefined && firstVal !== null ? firstVal : null
+}
+
+const openViewDialog = (record) => {
+  viewingRecordId.value = getRecordId(record) || ''
+  viewFormData.value = { ...record }
+  displayViewDialog.value = true
 }
 
 const openEditDialog = (record) => {
@@ -2100,5 +2392,13 @@ defineExpose({
 :deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col),
 :deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col) {
   background-color: var(--theme-row-highlight, #10b981) !important;
+}
+
+/* Compact Table Row Height & Padding */
+:deep(.p-datatable-tbody > tr > td),
+:deep(.p-datatable-thead > tr > th) {
+  padding: 0.4rem 0.65rem !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.35 !important;
 }
 </style>

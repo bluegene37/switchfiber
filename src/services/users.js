@@ -10,6 +10,12 @@ export const UserService = {
   createUser(data) {
     return apiClient.post('/Users', data)
   },
+  /**
+   * @param {import('../models/types').LoginRequest} credentials
+   */
+  loginUser(credentials) {
+    return apiClient.post('/Users/login', credentials)
+  },
   updateUser(id, data) {
     return apiClient.put(`/Users/${id}`, data)
   },
