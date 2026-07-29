@@ -8,9 +8,13 @@
     ]"
   >
     <!-- Branding Header -->
-    <div class="d-flex align-items-center justify-content-between px-3 border-bottom overflow-hidden" style="height: 64px; flex-shrink: 0;">
-      <div class="d-flex align-items-center overflow-hidden gap-2">
-        <img src="/favicon.svg" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px;" />
+    <div 
+      class="d-flex align-items-center justify-content-between border-bottom overflow-hidden" 
+      :class="isCollapsed ? 'px-2 gap-1' : 'px-3'" 
+      style="height: 64px; flex-shrink: 0;"
+    >
+      <div class="d-flex align-items-center overflow-hidden" :class="isCollapsed ? 'gap-1' : 'gap-2'">
+        <img src="/favicon.svg" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 24px; height: 24px;" />
         <span v-if="!isCollapsed" class="text-body fs-5 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
       </div>
 
@@ -18,9 +22,10 @@
       <button 
         type="button"
         @click="$emit('toggle-collapse')" 
-        class="btn btn-sm btn-link text-secondary p-1 border-0 d-none d-md-flex align-items-center justify-content-center rounded-circle hover-bg ms-auto"
+        class="btn btn-sm btn-link text-secondary p-0 border-0 d-none d-md-flex align-items-center justify-content-center rounded-circle hover-bg flex-shrink-0"
+        :class="isCollapsed ? '' : 'ms-auto'"
         :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
-        style="width: 28px; height: 28px; text-decoration: none;"
+        style="width: 26px; height: 26px; text-decoration: none;"
       >
         <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left', 'fs-6']"></i>
       </button>
@@ -41,7 +46,7 @@
             :title="isCollapsed ? item.name : ''"
             @click="$emit('close')"
           >
-            <i :class="['pi', item.icon, 'text-center', isCollapsed ? 'fs-5' : 'me-3']" style="width: 24px;"></i>
+            <i :class="['pi', item.icon, 'text-center', isCollapsed ? 'fs-5 me-0' : 'me-3']" style="width: 24px;"></i>
             <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">{{ item.name }}</span>
           </router-link>
 
@@ -57,8 +62,8 @@
               :title="isCollapsed ? item.name : ''"
               @click="handleParentClick(item)"
             >
-              <div class="d-flex align-items-center">
-                <i :class="['pi', item.icon, 'text-center', isCollapsed ? 'fs-5' : 'me-3']" style="width: 24px;"></i>
+              <div class="d-flex align-items-center" :class="{ 'justify-content-center w-100': isCollapsed }">
+                <i :class="['pi', item.icon, 'text-center', isCollapsed ? 'fs-5 me-0' : 'me-3']" style="width: 24px;"></i>
                 <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">{{ item.name }}</span>
               </div>
               <i v-if="!isCollapsed" :class="['pi', item.expanded ? 'pi-chevron-down' : 'pi-chevron-right']" style="font-size: 0.75rem;"></i>

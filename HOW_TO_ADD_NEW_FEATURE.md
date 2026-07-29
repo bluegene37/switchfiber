@@ -1,74 +1,146 @@
-# How to Add a New Feature (API to Screen Flow)
+# How to Add a New Feature in SwitchFiber
 
-Whenever you want to add a new screen that fetches data from an API, you should follow this 5-step flow. This keeps the code clean and easy to maintain.
+This guide walks you through adding new features and pages to SwitchFiber in simple, developer-friendly steps.
 
 ---
 
-### Step 1: Add the API Service
-**Folder:** `src/services/`  
-**Purpose:** Define all the backend URL endpoints for your feature in one place.
+## ⚡ Quick Decision Guide
 
-Create a file like `src/services/planService.js`:
+Choose the flow that matches your feature type:
+
+| Feature Type | What to build | Estimated Time |
+| :--- | :--- | :--- |
+| **Standard File Maintenance / Table CRUD** | Use `FileMaintenance.vue` + `DynamicApiTable` | ~2 minutes |
+| **Custom Screen / Specialized View** | Custom `.vue` View + Service + Store | ~10 minutes |
+
+---
+
+## 🚀 Flow 1: Standard File Maintenance / CRUD Page (Recommended)
+
+If your feature is a standard management page with table listing, search, export, create, and edit capabilities (e.g., Plans, Routers, VLANs, Job Orders):
+
+### Step 1: Add Route Mapping
+**File:** [FileMaintenance.vue](file:///Users/bluegene37/WebstormProjects/switchfiber/src/views/FileMaintenance.vue)  
+Add your route path, page title, and backend API endpoint name to `routeMap`:
+
 ```javascript
-import api from './api' // Assuming api.js is your configured axios client
+const routeMap = {
+  // ... existing routes
+  '/your_route': { title: 'Your Feature Title', endpoint: 'YourEndpointName' }
+}
+```
 
-export const PlanService = {
+### Step 2: Register Route
+**File:** [index.js](file:///Users/bluegene37/WebstormProjects/switchfiber/src/router/index.js)  
+Add the route object inside the `routes` array:
+
+```javascript
+{
+  path: '/your_route',
+  name: 'your_route',
+  component: () => import('../views/FileMaintenance.vue'),
+  meta: { requiresAuth: true }
+}
+```
+
+### Step 3: Add to Sidebar Menu
+**File:** [Sidebar.vue](file:///Users/bluegene37/WebstormProjects/switchfiber/src/components/Sidebar.vue)  
+Add a clickable menu item under the appropriate menu group (e.g., `File Maintenance` or `Transaction`):
+
+```javascript
+{ 
+  name: 'File Maintenance', 
+  icon: 'pi-folder',
+  expanded: false,
+  children: [
+    // ... existing items
+    { name: 'Your Feature Title', path: '/your_route', icon: 'pi-tag' }
+  ]
+}
+```
+
+### Step 4 (Optional): Add Fallback Columns
+**File:** [columns.js](file:///Users/bluegene37/WebstormProjects/switchfiber/src/models/columns.js)  
+If your backend API might return an empty array on first load, add fallback column names under `EndpointColumns`:
+
+```javascript
+export const EndpointColumns = {
+  "YourEndpointName": [
+    "id",
+    "name",
+    "description",
+    "status",
+    "created"
+  ]
+}
+```
+
+🎉 **That's it!** Your CRUD screen is fully functional with sorting, searching, pagination, export (CSV/PDF/Print), and smart Create/Edit modal forms.
+
+---
+
+## 🎨 Flow 2: Custom Screen / Specialized View
+
+If your feature requires a completely custom layout or unique dashboard:
+
+### Step 1: Add API Service
+**Folder:** `src/services/`  
+Create `src/services/yourFeatureService.js`:
+
+```javascript
+import api from './api'
+
+export const YourFeatureService = {
   getAll() {
-    return api.get('/Plans')
+    return api.get('/YourEndpoint')
   },
   create(data) {
-    return api.post('/Plans', data)
+    return api.post('/YourEndpoint', data)
   }
 }
 ```
 
----
-
-### Step 2: Add the State Store (Pinia)
+### Step 2: Add Pinia Store
 **Folder:** `src/stores/`  
-**Purpose:** Fetch the data from the service, handle loading/error states, and store the data so any component can use it.
+Create `src/stores/yourFeatureStore.js`:
 
-Create a file like `src/stores/planStore.js`:
 ```javascript
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { PlanService } from '../services/planService'
+import { YourFeatureService } from '../services/yourFeatureService'
 
-export const usePlanStore = defineStore('plans', () => {
-  const plans = ref([])
+export const useYourFeatureStore = defineStore('yourFeature', () => {
+  const items = ref([])
   const isLoading = ref(false)
 
-  const fetchPlans = async () => {
+  const fetchItems = async () => {
     isLoading.value = true
     try {
-      const response = await PlanService.getAll()
-      plans.value = response.data
+      const response = await YourFeatureService.getAll()
+      items.value = response.data
     } catch (error) {
-      console.error('Error fetching plans', error)
+      console.error('Error fetching data:', error)
     } finally {
       isLoading.value = false
     }
   }
 
-  return { plans, isLoading, fetchPlans }
+  return { items, isLoading, fetchItems }
 })
 ```
 
----
-
-### Step 3: Create the UI View (Vue Component)
+### Step 3: Create UI View Component
 **Folder:** `src/views/`  
-**Purpose:** Display the data to the user using HTML and Bootstrap classes.
+Create `src/views/YourFeature.vue`:
 
-Create a file like `src/views/Plans.vue`:
 ```vue
 <template>
   <div class="card p-4">
-    <h2>Internet Plans</h2>
-    <div v-if="planStore.isLoading">Loading...</div>
+    <h2>Your Custom Feature</h2>
+    <div v-if="store.isLoading">Loading...</div>
     <ul v-else>
-      <li v-for="plan in planStore.plans" :key="plan.id">
-        {{ plan.name }} - ₱{{ plan.amount }}
+      <li v-for="item in store.items" :key="item.id">
+        {{ item.name }}
       </li>
     </ul>
   </div>
@@ -76,81 +148,39 @@ Create a file like `src/views/Plans.vue`:
 
 <script setup>
 import { onMounted } from 'vue'
-import { usePlanStore } from '../stores/planStore'
+import { useYourFeatureStore } from '../stores/yourFeatureStore'
 
-const planStore = usePlanStore()
+const store = useYourFeatureStore()
 
 onMounted(() => {
-  planStore.fetchPlans()
+  store.fetchItems()
 })
 </script>
 ```
 
----
-
-### Step 4: Register the Route (Vue Router)
-**File to modify:** `src/router/index.js`  
-**Purpose:** Tell Vue what URL should load your new Vue component. If you skip this, the browser won't know how to reach your new page!
-
-Open `src/router/index.js` and add a new block inside the `routes` array:
-```javascript
-    {
-      path: '/plans',                     // The URL in the browser
-      name: 'plans',                      // A unique name
-      component: () => import('../views/Plans.vue'), // Points to your new file!
-      meta: { requiresAuth: true }        // Protects the route (optional)
-    },
-```
+### Step 4: Register Route & Sidebar
+Add your new view component to [index.js](file:///Users/bluegene37/WebstormProjects/switchfiber/src/router/index.js) and a link to [Sidebar.vue](file:///Users/bluegene37/WebstormProjects/switchfiber/src/components/Sidebar.vue) (same as Steps 2 & 3 in Flow 1).
 
 ---
 
-### Step 5: Add it to the Sidebar (Optional)
-**File to modify:** `src/components/Sidebar.vue`  
-**Purpose:** Give the user a clickable button to reach your new route.
+## 💡 DynamicApiTable Smart Form Controls
 
-Open `src/components/Sidebar.vue` and add your new route to the `menuItems` array:
-```javascript
-const menuItems = ref([
-  { name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
-  // ADD YOUR NEW LINK HERE:
-  { name: 'Internet Plans', path: '/plans', icon: 'pi-wifi' },
-  // ...
-])
-```
+When using `DynamicApiTable`, modal input fields are automatically rendered based on column names:
+
+| Naming Keyword | Generated Input Component | Example Columns |
+| :--- | :--- | :--- |
+| Contains `date`, `timestamp` | 📅 `DatePicker` | `dateInstalled`, `modifiedDate` |
+| Contains `email` (non-audit) | ✉️ `InputText (type="email")` | `emailAddress`, `applicantEmailAddress` |
+| Relational ID (`*_id`, `*Id`) | 🔽 `Select (Dropdown)` | `lcp_id`, `planId`, `accesslevel_id` |
+| Numeric / Amounts / Fees | 🔢 `InputNumber` | `amount`, `installationFee`, `accountBalance` |
+| Boolean flags | 🔘 `ToggleSwitch` | `active`, `isActive` |
+| Descriptions / Remarks / Address | 📝 `Textarea` | `description`, `remarks`, `address` |
 
 ---
 
-### Step 6: Using DynamicApiTable for File Maintenance / CRUD Features
-**Components involved:** `src/components/DynamicApiTable.vue`, `src/views/FileMaintenance.vue`, `src/models/columns.js`  
-**Purpose:** Automatically generate datatables with sorting, searching, pagination, export actions (CSV, PDF, Print), and a wide 3-column Create/Edit modal with smart field input types.
+## Summary Checklist
 
-1. **Add Fallback Schema Columns (if needed):**
-   Open `src/models/columns.js` and register the endpoint's column names under `EndpointColumns`:
-   ```javascript
-   export const EndpointColumns = {
-     "YourEndpointName": [
-       "id",
-       "name",
-       "emailAddress",
-       "dateInstalled",
-       "status"
-     ]
-   }
-   ```
-
-2. **Map Route in File Maintenance:**
-   Open `src/views/FileMaintenance.vue` and add your route mapping:
-   ```javascript
-   '/your_route': { title: 'Your Feature Title', endpoint: 'YourEndpointName' },
-   ```
-
-3. **Smart Form Field Recognition in `DynamicApiTable.vue`:**
-   `DynamicApiTable` automatically selects the best input field type for Create and Edit modals based on column naming conventions:
-   - **Date Pop-up (`DatePicker`):** Any column containing `date` or `timestamp` (e.g. `dateInstalled`, `balanceUpdateDate`).
-   - **Email Input (`InputText type="email"`):** Any column containing `email` (e.g. `emailAddress`, `applicantEmailAddress`). System audit emails (`email`, `useremail`) remain disabled.
-   - **Dropdown (`Select`):** Relational ID columns (e.g. `lcp_id`, `nap_id`, `plan_id`, `accesslevel_id`).
-   - **Numeric Input (`InputNumber`):** Amounts, fees, quantities, balances, and numerical IDs.
-   - **Toggle Switch (`ToggleSwitch`):** Boolean fields (`active`, `isActive`, `enabled`).
-   - **Multiline Text (`Textarea`):** Descriptions, remarks, landmarks, and physical addresses.
-   - **Modal Layout:** Create and Edit modals use a wide **3-column responsive grid** (`maxWidth: 1200px`, `col-12 col-md-6 col-lg-4`) to fit extensive forms comfortably.
-
+- [ ] Route mapped in `FileMaintenance.vue` (or custom view created)
+- [ ] Route added to `src/router/index.js`
+- [ ] Navigation link added to `src/components/Sidebar.vue`
+- [ ] Fallback schema added in `src/models/columns.js` (optional)

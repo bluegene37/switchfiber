@@ -17,22 +17,27 @@ import { provide } from 'vue'
 import VChart, { THEME_KEY } from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart, BarChart } from 'echarts/charts'
+import { LineChart, BarChart, PieChart, GaugeChart, RadarChart } from 'echarts/charts'
 import {
   GridComponent,
   TooltipComponent,
   LegendComponent,
-  TitleComponent
+  TitleComponent,
+  RadarComponent
 } from 'echarts/components'
 
 use([
   CanvasRenderer,
   LineChart,
   BarChart,
+  PieChart,
+  GaugeChart,
+  RadarChart,
   GridComponent,
   TooltipComponent,
   LegendComponent,
-  TitleComponent
+  TitleComponent,
+  RadarComponent
 ])
 
 // Provide dark theme if HTML element has .dark class (mocked statically here, can be dynamic)
