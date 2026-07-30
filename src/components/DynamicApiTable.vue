@@ -1224,7 +1224,8 @@ const getFieldType = (col) => {
 
 // Dynamically generate column headers from the first object in the array,
 // or fallback to the static mapping if the table is empty.
-const columns = computed(() => {
+// All raw keys from data or model definition
+const allRawColumns = computed(() => {
   let rawCols = []
   if (data.value && data.value.length > 0) {
     rawCols = Object.keys(data.value[0])
@@ -1242,27 +1243,37 @@ const columns = computed(() => {
   return rawCols
 })
 
+// Check if a field is a Created, Modified, or RowVersion audit field
+const isCreatedOrModifiedField = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  return (
+    lower.includes('created') ||
+    lower.includes('modified') ||
+    lower.includes('updated') ||
+    lower.includes('rowversion') ||
+    lower.includes('version')
+  )
+}
+
+// Columns for the main DataTable (filters out Created & Modified fields)
+const columns = computed(() => {
+  return allRawColumns.value.filter(col => !isCreatedOrModifiedField(col))
+})
+
 const isAuditField = (col) => {
   if (!col) return false
   const lower = col.toLowerCase()
   return (
     lower === 'id' ||
-    lower.includes('createdby') || lower.includes('created_by') ||
-    lower.includes('createddate') || lower.includes('created_date') || lower.includes('datecreated') ||
-    lower.includes('createdat') || lower.includes('created_at') || lower.includes('createdtime') || lower.includes('timecreated') ||
-    lower.includes('modifiedby') || lower.includes('modified_by') ||
-    lower.includes('modifieddate') || lower.includes('modified_date') || lower.includes('datemodified') ||
-    lower.includes('modifiedat') || lower.includes('modified_at') || lower.includes('modifiedtime') || lower.includes('timemodified') ||
-    lower.includes('updatedby') || lower.includes('updated_by') ||
-    lower.includes('updateddate') || lower.includes('updated_date') || lower.includes('dateupdated') ||
-    lower.includes('updatedat') || lower.includes('updated_at') || lower.includes('updatedtime') || lower.includes('timeupdated') ||
+    isCreatedOrModifiedField(col) ||
     lower.includes('rowversion') || lower === 'rowversion'
   )
 }
 
 // Filter out system-generated fields (id, created/modified dates & times, createdBy/modifiedBy, rowVersion) from forms
 const formColumns = computed(() => {
-  const list = columns.value.filter(col => !isAuditField(col))
+  const list = allRawColumns.value.filter(col => !isAuditField(col))
 
   // If username field exists, inject email immediately after username for 2-column alignment
   const usernameIndex = list.findIndex(c => c.toLowerCase() === 'username')
@@ -1413,7 +1424,7 @@ const viewFormColumns = computed(() => {
       return keys
     }
   }
-  return columns.value
+  return allRawColumns.value
 })
 
 const viewFormSections = computed(() => {
@@ -1553,7 +1564,11 @@ const fetchRelatedData = async () => {
     ])
 
     if (accRes.status === 'fulfilled') {
-      accessLevels.value = unwrap(accRes.value).map(item => ({ label: `${item.name} (${item.description || 'ID: ' + item.id})`, value: item.id }))
+      accessLevels.value = unwrap(accRes.value).map(item => ({ 
+        label: item.description ? `${item.name} (${item.description})` : (item.name || `ID: ${item.id}`), 
+        nameOnly: item.name || `ID: ${item.id}`,
+        value: item.id 
+      }))
     }
     if (menuRes.status === 'fulfilled') {
       menusList.value = unwrap(menuRes.value).map(item => ({ label: `${item.name} (${item.route || 'ID: ' + item.id})`, value: item.id }))
@@ -1767,7 +1782,7 @@ watch(
 const getAccessLevelLabel = (id) => {
   if (id === null || id === undefined) return '-'
   const found = accessLevels.value.find(opt => opt.value === Number(id) || opt.value === id)
-  return found ? found.label : `ID: ${id}`
+  return found ? (found.nameOnly || found.label) : `ID: ${id}`
 }
 
 const openCreateDialog = () => {

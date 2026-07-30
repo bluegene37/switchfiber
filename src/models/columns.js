@@ -303,8 +303,7 @@ export const EndpointColumns = {
     "username",
     "password",
     "active",
-    "accesslevel_id",
-    "rowVersion"
+    "accesslevel_id"
   ],
   "AccessLevel": [
     "id",
