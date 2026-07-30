@@ -104,8 +104,8 @@
             />
             <Button 
               icon="pi pi-trash" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 text-danger" 
-              style="width: 26px; height: 26px; font-size: 0.8rem; color: #dc3545;"
+              class="p-button-text p-button-sm p-button-rounded p-0 delete-btn" 
+              style="width: 26px; height: 26px; font-size: 0.8rem;"
               title="Delete Record" 
               @click="confirmDelete(slotProps.data)" 
             />
@@ -2337,9 +2337,33 @@ defineExpose({
   background-color: var(--theme-row-highlight, #10b981) !important;
   color: #ffffff !important;
 }
-:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight span),
-:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] span) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight span:not(.pi-trash):not(.delete-btn *)),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] span:not(.pi-trash):not(.delete-btn *)) {
   color: #ffffff !important;
+}
+
+/* Ensure Trashcan Icon for Delete is ALWAYS red even on highlighted/selected rows */
+:deep(.delete-btn),
+:deep(.delete-btn .pi),
+:deep(.delete-btn .pi-trash),
+:deep(.delete-btn span),
+:deep(.p-datatable-tbody > tr .delete-btn),
+:deep(.p-datatable-tbody > tr.p-highlight .delete-btn),
+:deep(.p-datatable-tbody > tr.p-highlight .delete-btn .pi),
+:deep(.p-datatable-tbody > tr.p-highlight .delete-btn .pi-trash),
+:deep(.p-datatable-tbody > tr.p-highlight .delete-btn span),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn .pi),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn .pi-trash),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn span) {
+  color: #ef4444 !important;
+}
+
+:deep(.delete-btn:hover),
+:deep(.p-datatable-tbody > tr.p-highlight .delete-btn:hover),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn:hover) {
+  color: #dc2626 !important;
+  background-color: rgba(239, 68, 68, 0.2) !important;
 }
 
 /* Disable row highlight green ONLY on Menu list table */
