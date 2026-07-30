@@ -1,23 +1,23 @@
 <template>
-  <header class="bg-body border-bottom d-flex align-items-center justify-content-between px-3 px-md-4 shadow-sm position-relative" style="height: 64px; z-index: 1030;">
+  <header class="bg-body border-bottom d-flex align-items-center justify-content-between px-3 px-md-4 shadow-sm position-relative" style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box; z-index: 1030;">
     <!-- Left side: Mobile & Desktop Menu Toggle & Production Search Box -->
     <div class="d-flex align-items-center flex-grow-1">
       <button 
         @click="handleToggleSidebar" 
         class="btn btn-link text-secondary me-3 p-1 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center" 
-        style="width: 36px; height: 36px;"
+        style="width: 42px; height: 42px;"
         aria-label="Toggle Sidebar"
         :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
       >
-        <i :class="['pi', isCollapsed ? 'pi-bars' : 'pi-align-left', 'fs-5']"></i>
+        <i :class="['pi', isCollapsed ? 'pi-bars' : 'pi-align-left', 'fs-4']"></i>
       </button>
       
       <!-- Navbar Search Container -->
-      <div class="position-relative d-none d-sm-block w-100" style="max-width: 440px;" ref="searchContainer">
+      <div class="position-relative d-none d-sm-block w-100" style="max-width: 480px;" ref="searchContainer">
         <div class="position-relative">
           <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-secondary pointer-events-none">
-            <i v-if="!isLoading" class="pi pi-search fs-6"></i>
-            <span v-else class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.9rem; height: 0.9rem;"></span>
+            <i v-if="!isLoading" class="pi pi-search fs-5"></i>
+            <span v-else class="spinner-border spinner-border-sm text-primary" role="status" style="width: 1rem; height: 1rem;"></span>
           </span>
           
           <input 
@@ -25,23 +25,24 @@
             type="text" 
             v-model="searchQuery"
             @focus="openSearch"
-            class="form-control ps-5 pe-5 bg-body-tertiary border-0 rounded-3 shadow-none search-input" 
+            class="form-control ps-5 pe-5 bg-body-tertiary border-0 rounded-3 shadow-none search-input py-2.5" 
+            style="font-size: 0.92rem;"
             placeholder="Search customers, IP addresses, job orders, pages... (Cmd+K)" 
             aria-label="Global Search"
             aria-expanded="isSearchOpen"
           />
 
           <!-- Shortcut Badge or Clear Input Button -->
-          <div class="position-absolute top-50 end-0 translate-middle-y pe-2.5 d-flex align-items-center gap-1">
+          <div class="position-absolute top-50 end-0 translate-middle-y pe-3 d-flex align-items-center gap-1">
             <button 
               v-if="searchQuery" 
               @click="searchQuery = ''" 
               class="btn btn-link text-secondary p-0 text-decoration-none border-0 me-1" 
               title="Clear search"
             >
-              <i class="pi pi-times-circle fs-6"></i>
+              <i class="pi pi-times-circle fs-5"></i>
             </button>
-            <kbd class="d-none d-lg-inline-block bg-body text-secondary border px-1.5 py-0.5 rounded shadow-xs text-uppercase" style="font-size: 0.68rem; font-family: inherit;">
+            <kbd class="d-none d-lg-inline-block bg-body text-secondary border px-2 py-1 rounded shadow-xs text-uppercase" style="font-size: 0.72rem; font-family: inherit;">
               {{ isMac ? '⌘K' : 'Ctrl+K' }}
             </kbd>
           </div>
@@ -163,11 +164,11 @@
     <!-- Right side: Network Status, Dark Mode, Notifications & Profile -->
     <div class="d-flex align-items-center ms-3 gap-3">
       <!-- Network Status -->
-      <div class="d-none d-lg-flex align-items-center gap-2 px-3 py-1 bg-success bg-opacity-10 text-success rounded-pill border border-success border-opacity-25">
-        <div class="spinner-grow spinner-grow-sm text-success" role="status" style="width: 0.5rem; height: 0.5rem;">
+      <div class="d-none d-lg-flex align-items-center gap-2 px-3 py-1.5 bg-success bg-opacity-10 text-success rounded-pill border border-success border-opacity-25">
+        <div class="spinner-grow spinner-grow-sm text-success" role="status" style="width: 0.55rem; height: 0.55rem;">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <span class="small fw-semibold" style="font-size: 0.75rem;">Systems Operational</span>
+        <span class="fw-semibold" style="font-size: 0.8rem;">Systems Operational</span>
       </div>
 
       <!-- Quick Light/Dark Mode Toggle -->
@@ -175,16 +176,16 @@
         @click="toggleTheme" 
         class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm border ms-1"
         :class="isDark ? 'btn-dark' : 'btn-light'"
-        style="width: 36px; height: 36px; transition: transform 0.2s;"
+        style="width: 42px; height: 42px; transition: transform 0.2s;"
         aria-label="Toggle Dark Mode"
         title="Toggle Dark Mode"
       >
-        <i :class="isDark ? 'pi pi-sun text-warning' : 'pi pi-moon text-secondary'" class="fs-6"></i>
+        <i :class="isDark ? 'pi pi-sun text-warning' : 'pi pi-moon text-secondary'" class="fs-5"></i>
       </button>
 
       <!-- Notifications -->
-      <button class="btn btn-link text-secondary position-relative p-1 text-decoration-none" aria-label="Notifications">
-        <i class="pi pi-bell fs-5"></i>
+      <button class="btn btn-link text-secondary position-relative p-2 text-decoration-none" aria-label="Notifications">
+        <i class="pi pi-bell fs-4"></i>
         <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
           <span class="visually-hidden">New alerts</span>
         </span>
@@ -193,22 +194,22 @@
       <!-- Attached Profile Dropdown -->
       <div class="position-relative" ref="dropdownContainer">
         <div 
-          class="d-flex align-items-center ms-2 px-2 py-1.5 rounded-3 user-chip" 
+          class="d-flex align-items-center ms-2 px-3 py-2 rounded-3 user-chip" 
           :class="{ 'active-chip': isDropdownOpen }"
           style="cursor: pointer; user-select: none;"
           @click="isDropdownOpen = !isDropdownOpen"
         >
           <div 
-            class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" 
-            style="width: 34px; height: 34px; font-size: 0.85rem;"
+            class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0" 
+            style="width: 42px; height: 42px; font-size: 1rem;"
           >
             {{ userInitial }}
           </div>
-          <div class="ms-2 d-none d-md-block text-start">
-            <div class="small fw-bold text-body lh-1">{{ userDisplayName }}</div>
-            <div class="text-secondary mt-1" style="font-size: 0.7rem;">{{ userRole }}</div>
+          <div class="ms-2.5 d-none d-md-block text-start">
+            <div class="fw-bold text-body lh-1" style="font-size: 0.9rem;">{{ userDisplayName }}</div>
+            <div class="text-secondary mt-1" style="font-size: 0.75rem;">{{ userRole }}</div>
           </div>
-          <i class="pi pi-chevron-down ms-2 text-secondary small d-none d-md-block chevron-icon" :class="{ 'rotate-180': isDropdownOpen }" style="font-size: 0.75rem;"></i>
+          <i class="pi pi-chevron-down ms-2 text-secondary small d-none d-md-block chevron-icon" :class="{ 'rotate-180': isDropdownOpen }" style="font-size: 0.8rem;"></i>
         </div>
 
         <!-- Profile Dropdown Card -->
@@ -225,7 +226,7 @@
             
             <button 
               @click="goToSettings" 
-              class="w-100 btn btn-link text-start text-body text-decoration-none d-flex align-items-center gap-2 rounded-2 py-2 px-3 hover-dropdown-item border-0"
+              class="w-100 btn btn-link text-start text-body text-decoration-none d-flex align-items-center gap-2 rounded-2 py-2 px-3 hover-dropdown-item border-0 shadow-none"
             >
               <i class="pi pi-cog text-secondary"></i>
               <span class="small fw-medium">Settings</span>
@@ -235,7 +236,7 @@
 
             <button 
               @click="handleLogout" 
-              class="w-100 btn btn-link text-start text-danger text-decoration-none d-flex align-items-center gap-2 rounded-2 py-2 px-3 hover-logout-dropdown-item border-0"
+              class="w-100 btn btn-link text-start text-danger text-decoration-none d-flex align-items-center gap-2 rounded-2 py-2 px-3 hover-logout-dropdown-item border-0 shadow-none"
             >
               <i class="pi pi-sign-out"></i>
               <span class="small fw-semibold">Logout</span>
@@ -420,9 +421,17 @@ const handleLogout = () => {
 
 .user-chip {
   transition: all 0.2s ease-in-out;
+  border: 1px solid transparent !important;
+  outline: none !important;
 }
-.user-chip:hover, .active-chip {
-  background-color: var(--bs-tertiary-bg, rgba(0,0,0,0.05));
+.user-chip:hover,
+.user-chip:focus,
+.user-chip:active,
+.active-chip {
+  background-color: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.05));
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 .chevron-icon {
   transition: transform 0.2s ease-in-out;
@@ -434,18 +443,28 @@ const handleLogout = () => {
 .hover-dropdown-item {
   transition: background-color 0.2s ease-in-out;
 }
-.hover-dropdown-item:hover {
-  background-color: var(--bs-tertiary-bg, rgba(0,0,0,0.05)) !important;
+.hover-dropdown-item:hover,
+.hover-dropdown-item:focus,
+.hover-dropdown-item:active {
+  background-color: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.05)) !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .hover-logout-dropdown-item {
   transition: all 0.2s ease-in-out;
 }
-.hover-logout-dropdown-item:hover {
+.hover-logout-dropdown-item:hover,
+.hover-logout-dropdown-item:focus,
+.hover-logout-dropdown-item:active {
   background-color: var(--bs-danger) !important;
   color: #ffffff !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
-.hover-logout-dropdown-item:hover i {
+.hover-logout-dropdown-item:hover i,
+.hover-logout-dropdown-item:focus i,
+.hover-logout-dropdown-item:active i {
   color: #ffffff !important;
 }
 

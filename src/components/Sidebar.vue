@@ -11,11 +11,11 @@
     <div 
       class="d-flex align-items-center justify-content-between border-bottom overflow-hidden" 
       :class="isCollapsed ? 'px-2 gap-1' : 'px-3'" 
-      style="height: 64px; flex-shrink: 0;"
+      style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box;"
     >
-      <div class="d-flex align-items-center overflow-hidden" :class="isCollapsed ? 'gap-1' : 'gap-2'">
-        <img src="/favicon.svg" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 24px; height: 24px;" />
-        <span v-if="!isCollapsed" class="text-body fs-5 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
+      <div class="d-flex align-items-center overflow-hidden" :class="isCollapsed ? 'gap-1' : 'gap-2.5'">
+        <img src="/favicon.svg" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px;" />
+        <span v-if="!isCollapsed" class="text-body fs-4 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
       </div>
 
       <!-- Desktop Collapse Toggle Button -->
@@ -25,9 +25,9 @@
         class="btn btn-sm btn-link text-secondary p-0 border-0 d-none d-md-flex align-items-center justify-content-center rounded-circle hover-bg flex-shrink-0"
         :class="isCollapsed ? '' : 'ms-auto'"
         :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
-        style="width: 26px; height: 26px; text-decoration: none;"
+        style="width: 32px; height: 32px; text-decoration: none;"
       >
-        <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left', 'fs-6']"></i>
+        <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left', 'fs-5']"></i>
       </button>
     </div>
 
