@@ -347,9 +347,29 @@ const userInitial = computed(() => {
   return (userDisplayName.value || 'A').charAt(0).toUpperCase()
 })
 
+const accessLevelsList = ref([])
+
+onMounted(async () => {
+  try {
+    const res = await apiClient.get('/AccessLevel').catch(() => [])
+    let unwrapped = res
+    if (res && !Array.isArray(res) && typeof res === 'object') {
+      const key = Object.keys(res).find(k => Array.isArray(res[k]))
+      if (key) unwrapped = res[key]
+    }
+    accessLevelsList.value = Array.isArray(unwrapped) ? unwrapped : []
+  } catch (e) {
+    console.warn('Failed to fetch AccessLevel in Navbar:', e)
+  }
+})
+
 const userRole = computed(() => {
   if (!user.value) return 'Super Admin'
-  return user.value.role || (user.value.accesslevel_id === 1 ? 'Super Admin' : 'User')
+  const userAccId = Number(user.value.accesslevel_id || user.value.accessLevelId || 1)
+  const found = accessLevelsList.value.find(a => Number(a.id) === userAccId)
+  if (found && found.name) return found.name
+  if (user.value.role) return user.value.role
+  return userAccId === 1 ? 'Super Admin' : `Access Level ${userAccId}`
 })
 
 const handleClickOutside = (event) => {

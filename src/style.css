@@ -243,3 +243,55 @@ html[data-bs-theme="dark"] ::-webkit-scrollbar-thumb,
 .dark ::-webkit-scrollbar-thumb {
   background-color: #495057;
 }
+
+/* Neutral Soft Row Hover & Selection Highlight (Prevents Green Toggle Collision) */
+.p-datatable .p-datatable-tbody > tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Cool Soft Blue Hover Effect */
+.p-datatable .p-datatable-tbody > tr:hover,
+.p-datatable .p-selectable-row:hover,
+.p-datatable .p-datatable-tbody > tr.p-selectable-row:hover,
+.p-datatable .p-datatable-tbody > tr:hover > td {
+  background-color: rgba(59, 130, 246, 0.06) !important;
+  cursor: pointer;
+}
+
+html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr:hover,
+.dark .p-datatable .p-datatable-tbody > tr:hover,
+html[data-bs-theme="dark"] .p-datatable .p-selectable-row:hover,
+.dark .p-datatable .p-selectable-row:hover,
+html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr:hover > td,
+.dark .p-datatable .p-datatable-tbody > tr:hover > td {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Neutral Soft Slate Blue Selection (Parked Row) */
+.p-datatable .p-datatable-tbody > tr.p-highlight,
+.p-datatable .p-selectable-row.p-highlight,
+.p-datatable .p-datatable-tbody > tr.p-selectable-row.p-highlight,
+.p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
+.p-datatable .p-datatable-tbody > tr.p-highlight > td {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  color: inherit !important;
+  font-weight: 500;
+}
+
+html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight,
+.dark .p-datatable .p-datatable-tbody > tr.p-highlight,
+html[data-bs-theme="dark"] .p-datatable .p-selectable-row.p-highlight,
+.dark .p-datatable .p-selectable-row.p-highlight,
+html[data-bs-theme="dark"] .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
+.dark .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
+html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight > td,
+.dark .p-datatable .p-datatable-tbody > tr.p-highlight > td {
+  background-color: rgba(59, 130, 246, 0.20) !important;
+  color: inherit !important;
+  font-weight: 500;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-highlight td,
+.p-datatable .p-selectable-row.p-highlight td {
+  border-color: rgba(59, 130, 246, 0.15) !important;
+}

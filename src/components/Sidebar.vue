@@ -1,7 +1,7 @@
 <template>
   <aside 
     class="sidebar-wrapper d-flex flex-column flex-shrink-0 vh-100 shadow-sm border-end bg-body position-relative" 
-    :style="{ width: isCollapsed ? '70px' : '250px', zIndex: 1050, transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }"
+    :style="{ width: isCollapsed ? '60px' : '250px', zIndex: 1050, transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }"
     :class="[
       isOpen ? 'transform-none' : 'transform-offcanvas',
       { 'is-collapsed': isCollapsed }
@@ -9,32 +9,18 @@
   >
     <!-- Branding Header -->
     <div 
-      class="d-flex align-items-center justify-content-between border-bottom overflow-hidden" 
-      :class="isCollapsed ? 'px-2 gap-1' : 'px-3'" 
+      class="d-flex align-items-center border-bottom overflow-hidden" 
+      :class="isCollapsed ? 'justify-content-center px-2' : 'px-3 gap-2.5'" 
       style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box;"
     >
-      <div class="d-flex align-items-center overflow-hidden" :class="isCollapsed ? 'gap-1' : 'gap-2.5'">
-        <img src="/favicon.svg" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px;" />
-        <span v-if="!isCollapsed" class="text-body fs-4 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
-      </div>
-
-      <!-- Desktop Collapse Toggle Button -->
-      <button 
-        type="button"
-        @click="$emit('toggle-collapse')" 
-        class="btn btn-sm btn-link text-secondary p-0 border-0 d-none d-md-flex align-items-center justify-content-center rounded-circle hover-bg flex-shrink-0"
-        :class="isCollapsed ? '' : 'ms-auto'"
-        :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
-        style="width: 32px; height: 32px; text-decoration: none;"
-      >
-        <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left', 'fs-5']"></i>
-      </button>
+      <img src="/favicon.svg" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px;" />
+      <span v-if="!isCollapsed" class="text-body fs-4 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
     </div>
 
     <!-- Navigation List -->
     <nav class="flex-grow-1 overflow-y-auto py-3 px-2">
       <ul class="nav flex-column gap-1 p-0 m-0">
-        <li class="nav-item" v-for="item in menuItems" :key="item.name">
+        <li class="nav-item" v-for="item in filteredMenuItems" :key="item.name">
           <!-- Item with NO children -->
           <router-link 
             v-if="!item.children"
@@ -55,7 +41,7 @@
             <div 
               class="nav-link d-flex align-items-center rounded sidebar-link text-decoration-none py-2"
               :class="[
-                item.expanded && !isCollapsed ? 'text-primary fw-bold bg-body-tertiary' : 'text-body opacity-75 fw-semibold',
+                isExpanded(item) && !isCollapsed ? 'text-primary fw-bold bg-body-tertiary' : 'text-body opacity-75 fw-semibold',
                 isCollapsed ? 'justify-content-center px-0' : 'justify-content-between px-2.5'
               ]"
               style="cursor: pointer; user-select: none;"
@@ -66,11 +52,11 @@
                 <i :class="['pi', item.icon, 'text-center', isCollapsed ? 'fs-5 me-0' : 'me-3']" style="width: 24px;"></i>
                 <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">{{ item.name }}</span>
               </div>
-              <i v-if="!isCollapsed" :class="['pi', item.expanded ? 'pi-chevron-down' : 'pi-chevron-right']" style="font-size: 0.75rem;"></i>
+              <i v-if="!isCollapsed" :class="['pi', isExpanded(item) ? 'pi-chevron-down' : 'pi-chevron-right']" style="font-size: 0.75rem;"></i>
             </div>
             
             <!-- Submenu Items (visible only when expanded and not collapsed) -->
-            <ul v-show="item.expanded && !isCollapsed" class="nav flex-column ps-3 ms-3 mt-1 mb-2 gap-1 border-start">
+            <ul v-show="isExpanded(item) && !isCollapsed" class="nav flex-column ps-3 ms-3 mt-1 mb-2 gap-1 border-start">
               <li class="nav-item" v-for="child in item.children" :key="child.name">
                 <router-link 
                   :to="child.path" 
@@ -89,17 +75,43 @@
       </ul>
     </nav>
     
-    <!-- Footer / Logout -->
-    <div class="p-2 border-top bg-body">
+    <!-- Footer / Collapse Toggle, Settings & Logout -->
+    <div class="p-2 border-top bg-body d-flex flex-column gap-1">
+      <!-- Desktop Collapse Toggle Button -->
+      <button 
+        type="button"
+        @click="$emit('toggle-collapse')" 
+        class="btn w-100 d-none d-md-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2"
+        :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
+        :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
+      >
+        <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left', 'text-center', isCollapsed ? 'fs-5 me-0' : 'me-3']" style="width: 24px;"></i>
+        <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">Collapse Sidebar</span>
+      </button>
+
+      <router-link 
+        v-if="allowedMenuIds.has(20)"
+        to="/settings" 
+        class="nav-link d-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2"
+        :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
+        active-class="bg-primary text-white opacity-100 active-link"
+        exact-active-class="bg-primary text-white opacity-100 active-link"
+        :title="isCollapsed ? 'System Settings' : ''"
+        @click="$emit('close')"
+      >
+        <i class="pi pi-cog text-center" :class="isCollapsed ? 'fs-5 me-0' : 'me-3'" style="width: 24px;"></i>
+        <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">Settings</span>
+      </router-link>
+
       <button 
         type="button"
         @click="handleLogout" 
-        class="btn w-100 d-flex align-items-center rounded-3 text-decoration-none bg-danger bg-opacity-10 text-danger hover-logout py-2"
-        :class="isCollapsed ? 'justify-content-center px-0' : 'justify-content-center gap-2 px-3'"
-        :title="isCollapsed ? 'Logout' : ''"
+        class="btn w-100 d-flex align-items-center rounded-3 text-decoration-none text-danger border-0 bg-danger bg-opacity-10 hover-logout py-2"
+        :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
+        :title="isCollapsed ? 'Logout Account' : ''"
       >
-        <i class="pi pi-sign-out" :class="isCollapsed ? 'fs-5' : ''"></i>
-        <span v-if="!isCollapsed" class="small fw-bold">Logout</span>
+        <i class="pi pi-sign-out text-center" :class="isCollapsed ? 'fs-5 me-0' : 'me-3'" style="width: 24px;"></i>
+        <span v-if="!isCollapsed" class="small fw-bold text-nowrap">Logout</span>
       </button>
     </div>
   </aside>
@@ -114,9 +126,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import apiClient from '../services/api'
 
 const props = defineProps({
   isOpen: {
@@ -132,60 +145,152 @@ const props = defineProps({
 const emit = defineEmits(['close', 'toggle-collapse'])
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
-const menuItems = ref([
-  { name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
+const rawMenuItems = ref([
+  { id: 5, name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
   { 
+    id: 21,
     name: 'File Maintenance', 
     icon: 'pi-folder',
-    expanded: false,
     children: [
-      { name: 'LCP', path: '/lcp', icon: 'pi-server' },
-      { name: 'LCNAP', path: '/lcnap', icon: 'pi-sitemap' },
-      { name: 'LCNAP Port', path: '/lcnap_port', icon: 'pi-share-alt' },
-      { name: 'NAP', path: '/nap', icon: 'pi-box' },
-      { name: 'Port', path: '/port', icon: 'pi-link' },
-      { name: 'VLan', path: '/vlan', icon: 'pi-globe' },
-      { name: 'Router', path: '/router', icon: 'pi-wifi' },
-      { name: 'Plan', path: '/plan', icon: 'pi-tag' },
-      { name: 'Application', path: '/application', icon: 'pi-file' },
+      { id: 6, name: 'LCP', path: '/lcp', icon: 'pi-server' },
+      { id: 7, name: 'LCNAP', path: '/lcnap', icon: 'pi-sitemap' },
+      { id: 8, name: 'LCNAP Port', path: '/lcnap_port', icon: 'pi-share-alt' },
+      { id: 9, name: 'NAP', path: '/nap', icon: 'pi-box' },
+      { id: 10, name: 'Port', path: '/port', icon: 'pi-link' },
+      { id: 11, name: 'VLan', path: '/vlan', icon: 'pi-globe' },
+      { id: 12, name: 'Router', path: '/router', icon: 'pi-wifi' },
+      { id: 13, name: 'Plan', path: '/plan', icon: 'pi-tag' },
+      { id: 14, name: 'Application', path: '/application', icon: 'pi-file' },
     ]
   },
   { 
+    id: 22,
     name: 'User', 
     icon: 'pi-users',
-    expanded: false,
     children: [
-      { name: 'User', path: '/user', icon: 'pi-user' },
-      { name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
+      { id: 15, name: 'User', path: '/user', icon: 'pi-user' },
+      { id: 16, name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
     ]
   },
   { 
+    id: 23,
     name: 'Transaction', 
     icon: 'pi-wallet',
-    expanded: false,
     children: [
-      { name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
-      { name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
-      { name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
+      { id: 17, name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
+      { id: 18, name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
+      { id: 19, name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
     ]
-  },
+  }
 ])
 
+const expandedState = ref({})
+
+const isExpanded = (item) => {
+  if (!item || !item.id) return false
+  return !!expandedState.value[item.id]
+}
+
 const handleParentClick = (item) => {
+  if (!item || !item.id) return
   if (props.isCollapsed) {
     emit('toggle-collapse')
-    item.expanded = true
+    expandedState.value[item.id] = true
   } else {
-    item.expanded = !item.expanded
+    expandedState.value[item.id] = !expandedState.value[item.id]
   }
 }
+
+const checkAutoExpand = (currentPath) => {
+  if (!currentPath) return
+  rawMenuItems.value.forEach(item => {
+    if (item.children && item.children.some(child => child.path === currentPath)) {
+      expandedState.value[item.id] = true
+    }
+  })
+}
+
+// Auto-expand parent category if current active route matches a child submenu
+watch(() => route.path, (currentPath) => {
+  checkAutoExpand(currentPath)
+}, { immediate: true })
 
 const handleLogout = () => {
   authStore.logout()
   router.push('/login')
 }
+
+const allowedMenuIds = ref(new Set())
+
+const getAllMenuIds = () => {
+  const ids = []
+  rawMenuItems.value.forEach(item => {
+    ids.push(item.id)
+    if (item.children) {
+      item.children.forEach(c => ids.push(c.id))
+    }
+  })
+  return ids
+}
+
+const fetchPermissions = async () => {
+  try {
+    const userAccessLevel = Number(authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 1)
+
+    const res = await apiClient.get('/AccesslevelMenu').catch(() => [])
+    let records = res
+    if (res && !Array.isArray(res) && typeof res === 'object') {
+      const key = Object.keys(res).find(k => Array.isArray(res[k]))
+      if (key) records = res[key]
+    }
+
+    if (Array.isArray(records) && records.length > 0) {
+      const granted = records
+        .filter(r => Number(r.accessLevelId || r.accesslevel_id) === userAccessLevel)
+        .map(r => Number(r.menuId || r.menu_id))
+      
+      allowedMenuIds.value = new Set(granted)
+    } else {
+      // Fallback if API response is empty
+      allowedMenuIds.value = new Set(getAllMenuIds())
+    }
+  } catch (err) {
+    console.error('Error fetching AccesslevelMenu permissions:', err)
+    allowedMenuIds.value = new Set(getAllMenuIds())
+  }
+}
+
+onMounted(() => {
+  fetchPermissions()
+  checkAutoExpand(route.path)
+  window.addEventListener('accesslevelmenu-updated', fetchPermissions)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('accesslevelmenu-updated', fetchPermissions)
+})
+
+watch(() => authStore.user, () => {
+  fetchPermissions()
+}, { deep: true })
+
+const filteredMenuItems = computed(() => {
+  return rawMenuItems.value
+    .map(item => {
+      if (item.children) {
+        const validChildren = item.children.filter(child => allowedMenuIds.value.has(child.id))
+        if (validChildren.length > 0) {
+          return { ...item, children: validChildren }
+        }
+        return null
+      }
+      return allowedMenuIds.value.has(item.id) ? item : null
+    })
+    .filter(Boolean)
+})
 </script>
 
 <style scoped>

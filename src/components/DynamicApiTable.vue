@@ -16,7 +16,7 @@
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
       v-model:filters="filters"
       v-model:selection="selectedRow"
-      selectionMode="single"
+      :selectionMode="isMenuEndpoint ? null : 'single'"
       @row-select="handleRowSelect"
       @row-unselect="handleRowUnselect"
       @row-click="handleRowClick"
@@ -24,7 +24,7 @@
       dataKey="id"
       filterDisplay="menu"
       :globalFilterFields="columns"
-      :class="['p-datatable-sm small', { 'no-row-highlight': isMenuEndpoint, 'highlight-selected-row': !isMenuEndpoint }]"
+      :class="['p-datatable-sm small highlight-selected-row']"
       stripedRows
     >
       <template #header>
@@ -81,15 +81,32 @@
       <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '100px', width: isMenuEndpoint ? '150px' : '100px' }" class="text-center frozen-actions-col">
         <template #body="slotProps">
           <div class="d-flex gap-1.5 justify-content-center align-items-center" @click.stop>
-            <!-- Interactive Toggle Switch in Actions Column for Menus -->
-            <ToggleSwitch 
-              v-if="isMenuEndpoint" 
-              :modelValue="isMenuLinked(slotProps.data) === true" 
-              :disabled="!selectedAccessLevel || togglingMenuId === slotProps.data.id" 
-              @update:modelValue="toggleMenuLink(slotProps.data)"
-              :title="!selectedAccessLevel ? 'Select an Access Level on the left table first' : (isMenuLinked(slotProps.data) ? 'Click to Unlink Menu' : 'Click to Link Menu')" 
-              class="me-1"
-            />
+            <!-- Interactive Toggle Switch & Status Pill in Actions Column for Menus -->
+            <div v-if="isMenuEndpoint" class="d-flex align-items-center me-1">
+              <!-- Status Badges (Preserved for future toggle indicator)
+              <span 
+                v-if="isMenuLinked(slotProps.data)" 
+                class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small fw-semibold d-inline-flex align-items-center me-2"
+                style="font-size: 0.75rem;"
+              >
+                <i class="pi pi-check me-1"></i> Granted
+              </span>
+              <span 
+                v-else 
+                class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 small fw-semibold d-inline-flex align-items-center me-2"
+                style="font-size: 0.75rem;"
+              >
+                <i class="pi pi-times me-1"></i> Hidden
+              </span>
+              -->
+
+              <ToggleSwitch 
+                :modelValue="isMenuLinked(slotProps.data) === true" 
+                :disabled="isToggleSwitchDisabled(slotProps.data)" 
+                @update:modelValue="toggleMenuLink(slotProps.data)"
+                :title="getToggleSwitchTitle(slotProps.data)" 
+              />
+            </div>
 
             <Button 
               icon="pi pi-eye" 
@@ -388,11 +405,15 @@
 
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
-                <InputText 
+                <Password 
                   :id="col" 
-                  type="password"
                   v-model="formData[col]" 
-                  class="w-100 p-inputtext-sm" 
+                  :feedback="false"
+                  toggleMask
+                  fluid
+                  size="small"
+                  class="w-100"
+                  inputClass="w-100 p-inputtext-sm"
                   :class="{ 'is-invalid': formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword }"
                   placeholder="Confirm password"
                 />
@@ -402,12 +423,16 @@
               </div>
 
               <!-- Password Field -->
-              <InputText 
+              <Password 
                 v-else-if="getFieldType(col) === 'password'" 
                 :id="col" 
-                type="password"
                 v-model="formData[col]" 
-                class="w-100 p-inputtext-sm" 
+                :feedback="false"
+                toggleMask
+                fluid
+                size="small"
+                class="w-100"
+                inputClass="w-100 p-inputtext-sm"
                 placeholder="Enter password"
               />
 
@@ -545,6 +570,17 @@
                 readonly
                 disabled
                 class="w-100 p-inputtext-sm bg-light" 
+              />
+
+              <!-- Password for Password Fields in View Modal -->
+              <InputText 
+                v-else-if="col.toLowerCase() === 'password' || col.toLowerCase() === 'pass' || col.toLowerCase() === 'pwd'" 
+                :id="`view-${col}`" 
+                type="password"
+                modelValue="••••••••" 
+                readonly
+                disabled
+                class="w-100 p-inputtext-sm bg-light font-monospace" 
               />
 
               <!-- InputText for Standard / Monospace Fields -->
@@ -848,11 +884,15 @@
 
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
-                <InputText 
+                <Password 
                   :id="`edit-${col}`" 
-                  type="password"
                   v-model="editFormData[col]" 
-                  class="w-100 p-inputtext-sm" 
+                  :feedback="false"
+                  toggleMask
+                  fluid
+                  size="small"
+                  class="w-100"
+                  inputClass="w-100 p-inputtext-sm"
                   :class="{ 'is-invalid': editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword }"
                   placeholder="Confirm password"
                 />
@@ -862,12 +902,16 @@
               </div>
 
               <!-- Password Field -->
-              <InputText 
+              <Password 
                 v-else-if="getFieldType(col) === 'password'" 
                 :id="`edit-${col}`" 
-                type="password"
                 v-model="editFormData[col]" 
-                class="w-100 p-inputtext-sm" 
+                :feedback="false"
+                toggleMask
+                fluid
+                size="small"
+                class="w-100"
+                inputClass="w-100 p-inputtext-sm"
                 placeholder="Enter password"
               />
 
@@ -987,6 +1031,7 @@ import Dialog from 'primevue/dialog'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
+import Password from 'primevue/password'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { EndpointColumns } from '../models/columns'
@@ -1828,38 +1873,35 @@ const isUserRefField = (col) => {
   )
 }
 
+const usersMap = computed(() => {
+  const map = new Map()
+  ;(usersList.value || []).forEach(u => {
+    if (!u) return
+    const name = (u.fname || u.lname) ? `${u.fname || ''} ${u.lname || ''}`.trim() : (u.username || u.email || String(u.id))
+    if (u.id !== undefined && u.id !== null) {
+      map.set(Number(u.id), name)
+      map.set(String(u.id).trim(), name)
+    }
+    if (u.username) map.set(u.username.toLowerCase(), name)
+    if (u.email) map.set(u.email.toLowerCase(), name)
+  })
+  return map
+})
+
 const getUserDisplayName = (val) => {
   if (val === null || val === undefined || val === '') return '-'
-  
   const strVal = String(val).trim()
-  
-  // Try matching numeric ID or numeric string ID
-  const idNum = Number(val)
-  if (!isNaN(idNum) && strVal !== '') {
-    const found = usersList.value.find(u => u.id === idNum)
-    if (found) {
-      if (found.fname || found.lname) return `${found.fname || ''} ${found.lname || ''}`.trim()
-      if (found.username) return found.username
-      if (found.email) return found.email
-    }
-  }
-
-  // Try matching string by username or email or ID
-  const foundByStr = usersList.value.find(u => 
-    String(u.id) === strVal ||
-    (u.username && u.username.toLowerCase() === strVal.toLowerCase()) ||
-    (u.email && u.email.toLowerCase() === strVal.toLowerCase())
-  )
-  if (foundByStr) {
-    if (foundByStr.fname || foundByStr.lname) return `${foundByStr.fname || ''} ${foundByStr.lname || ''}`.trim()
-    return foundByStr.username || foundByStr.email || strVal
-  }
-
+  if (usersMap.value.has(strVal)) return usersMap.value.get(strVal)
+  if (usersMap.value.has(Number(val))) return usersMap.value.get(Number(val))
+  if (usersMap.value.has(strVal.toLowerCase())) return usersMap.value.get(strVal.toLowerCase())
   return strVal
 }
 
 const formatViewFieldValue = (col, val) => {
   if (val === null || val === undefined || val === '') return '-'
+  if (col.toLowerCase() === 'password' || col.toLowerCase() === 'pass' || col.toLowerCase() === 'pwd') {
+    return '••••••••'
+  }
   if (isUserRefField(col)) {
     return getUserDisplayName(val)
   }
@@ -2274,8 +2316,39 @@ const activeLinkedMenuIds = computed(() => {
   return set
 })
 
+const isSuperAdminAccessLevelProtected = (menuRow) => {
+  if (!props.selectedAccessLevel || !menuRow) return false
+  const targetAccId = Number(
+    props.selectedAccessLevel.id ?? 
+    props.selectedAccessLevel.ID ?? 
+    props.selectedAccessLevel.accessLevelId ?? 
+    props.selectedAccessLevel.accesslevel_id
+  )
+  const isSuperAdminRole = targetAccId === 1 || String(props.selectedAccessLevel.name || '').toLowerCase().includes('super')
+  
+  const menuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
+  const menuName = String(menuRow.name || menuRow.Name || '').toLowerCase()
+  const isAccessLevelMenu = menuId === 16 || menuName === 'access level' || (menuRow.route || menuRow.path || '').toLowerCase() === '/access_level'
+  
+  return isSuperAdminRole && isAccessLevelMenu
+}
+
+const isToggleSwitchDisabled = (menuRow) => {
+  if (!props.selectedAccessLevel) return true
+  if (togglingMenuId.value === (menuRow.id ?? menuRow.ID ?? menuRow.menuId)) return true
+  if (isSuperAdminAccessLevelProtected(menuRow)) return true
+  return false
+}
+
+const getToggleSwitchTitle = (menuRow) => {
+  if (!props.selectedAccessLevel) return 'Select an Access Level on the left table first'
+  if (isSuperAdminAccessLevelProtected(menuRow)) return 'Access Level permission is locked and protected for Super Admin'
+  return isMenuLinked(menuRow) ? 'Click to Unlink Menu' : 'Click to Link Menu'
+}
+
 const isMenuLinked = (menuRow) => {
   if (!menuRow || !props.selectedAccessLevel) return false
+  if (isSuperAdminAccessLevelProtected(menuRow)) return true
   const targetMenuId = String(menuRow.id ?? menuRow.ID ?? menuRow.menuId ?? '').trim()
   if (!targetMenuId) return false
   return activeLinkedMenuIds.value.has(targetMenuId) || activeLinkedMenuIds.value.has(Number(targetMenuId))
@@ -2283,6 +2356,16 @@ const isMenuLinked = (menuRow) => {
 
 const toggleMenuLink = async (menuRow) => {
   if (!props.selectedAccessLevel || !menuRow) return
+  
+  if (isSuperAdminAccessLevelProtected(menuRow)) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Protected Permission',
+      detail: 'Access Level menu permission cannot be disabled for Super Admin.',
+      life: 4000
+    })
+    return
+  }
   
   const targetAccId = Number(props.selectedAccessLevel.id ?? props.selectedAccessLevel.ID ?? props.selectedAccessLevel.accessLevelId)
   const targetMenuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
@@ -2323,6 +2406,7 @@ const toggleMenuLink = async (menuRow) => {
         detail: `Linked "${menuName}" to "${roleName}"`,
         life: 3000
       })
+      window.dispatchEvent(new CustomEvent('accesslevelmenu-updated'))
     } else {
       // Remove Link: DELETE from /api/AccesslevelMenu
       const targetAccStr = String(targetAccId).trim()
@@ -2359,6 +2443,7 @@ const toggleMenuLink = async (menuRow) => {
         detail: `Unlinked "${menuName}" from "${roleName}"`,
         life: 3000
       })
+      window.dispatchEvent(new CustomEvent('accesslevelmenu-updated'))
     }
   } catch (err) {
     console.error('Error toggling menu link:', err)

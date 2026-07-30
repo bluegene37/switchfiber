@@ -13,15 +13,15 @@ export const useAuthStore = defineStore('auth', () => {
     let authToken = null
 
     try {
-      // 1. Attempt POST to /Auth/login or /Users/login if available
-      const loginEndpointRes = await apiClient.post('/Auth/login', {
+      // 1. Attempt POST to /Users/login or /Auth/login
+      const loginEndpointRes = await apiClient.post('/Users/login', {
         username: usernameOrEmail,
         password: password
       }).catch(() => null)
 
-      if (loginEndpointRes && (loginEndpointRes.token || loginEndpointRes.user)) {
+      if (loginEndpointRes && (loginEndpointRes.id || loginEndpointRes.user || loginEndpointRes.token)) {
         authUser = loginEndpointRes.user || loginEndpointRes
-        authToken = loginEndpointRes.token || loginEndpointRes.accessToken || `token-${Date.now()}`
+        authToken = loginEndpointRes.token || loginEndpointRes.accessToken || `token-user-${authUser.id || 1}-${Date.now()}`
       } else {
         // 2. Fetch users list from /Users API to authenticate against registered system users
         const usersList = await apiClient.get('/Users').catch(() => [])
@@ -75,11 +75,11 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = {
         id: authUser.id || 1,
         username: authUser.username || authUser.fname || 'User',
-        fname: authUser.fname || '',
-        lname: authUser.lname || '',
+        fname: authUser.firstName || authUser.fname || '',
+        lname: authUser.lastName || authUser.lname || '',
         email: authUser.userEmail || authUser.email || `${authUser.username || 'user'}@switchfiber.com`,
-        accesslevel_id: authUser.accesslevel_id || 1,
-        role: authUser.accesslevel_id === 1 ? 'Super Admin' : 'User'
+        accesslevel_id: authUser.accessLevelId || authUser.accesslevel_id || 1,
+        menus: authUser.menus || []
       }
 
       const storage = rememberMe ? localStorage : sessionStorage

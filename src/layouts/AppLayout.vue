@@ -26,10 +26,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
 
 const isSidebarOpen = ref(false)
-const isSidebarCollapsed = ref(false)
+const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true')
+
+watch(isSidebarCollapsed, (newVal) => {
+  localStorage.setItem('sidebar_collapsed', String(newVal))
+})
 </script>
