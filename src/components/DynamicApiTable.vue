@@ -66,6 +66,9 @@
           <span v-else-if="col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid'">
             {{ getAccessLevelLabel(slotProps.data[col]) }}
           </span>
+          <span v-else-if="isUserRefField(col)">
+            {{ getUserDisplayName(slotProps.data[col]) }}
+          </span>
           <span v-else class="d-inline-block text-truncate" style="max-width: 200px;" :title="col.toLowerCase() === 'password' ? '••••••••' : slotProps.data[col]">
             <span v-if="col.toLowerCase() === 'password'" class="text-muted">••••••••</span>
             <span v-else>{{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}</span>
@@ -536,7 +539,7 @@
               <InputText 
                 v-else 
                 :id="`view-${col}`" 
-                :modelValue="viewFormData[col] !== null && viewFormData[col] !== undefined ? String(viewFormData[col]) : '-'" 
+                :modelValue="formatViewFieldValue(col, viewFormData[col])" 
                 readonly
                 disabled
                 class="w-100 p-inputtext-sm bg-light" 
@@ -1028,8 +1031,8 @@ const loading = ref(false)
 const error = ref(null)
 const dt = ref()
 
-const rowsPerPage = ref(10)
-const rowOptions = ref([5, 10, 20, 50])
+const rowsPerPage = ref(50)
+const rowOptions = ref([5, 10, 20, 50, 100])
 
 const filters = ref({
   global: { value: null, matchMode: 'contains' }
@@ -1515,6 +1518,7 @@ const provincesList = ref([])
 const citiesList = ref([])
 const barangaysList = ref([])
 
+const usersList = ref([])
 const statusOptions = ref([
   { label: 'Drop', value: 'Drop' },
   { label: 'Failed', value: 'Failed' },
@@ -1551,7 +1555,7 @@ const fetchRelatedData = async () => {
       return []
     }
 
-    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes] = await Promise.allSettled([
+    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, userRes] = await Promise.allSettled([
       apiClient.get('/AccessLevel'),
       apiClient.get('/Menus'),
       apiClient.get('/Lcpnaps'),
@@ -1559,8 +1563,8 @@ const fetchRelatedData = async () => {
       apiClient.get('/Naps'),
       apiClient.get('/Ports'),
       apiClient.get('/Vlans'),
-      apiClient.get('/Plans')
-      // apiClient.get('/Barangays') -- Bypassed in favor of local downloaded PSGC JSON
+      apiClient.get('/Plans'),
+      apiClient.get('/Users')
     ])
 
     if (accRes.status === 'fulfilled') {
@@ -1590,6 +1594,9 @@ const fetchRelatedData = async () => {
     }
     if (planRes.status === 'fulfilled') {
       plansList.value = unwrap(planRes.value).map(item => ({ label: `${item.name || 'Plan #' + item.id}`, value: item.id }))
+    }
+    if (userRes.status === 'fulfilled') {
+      usersList.value = unwrap(userRes.value)
     }
 
     // Load local PSGC data for Region, Province, City, and Barangay dropdowns
@@ -1785,17 +1792,71 @@ const getAccessLevelLabel = (id) => {
   return found ? (found.nameOnly || found.label) : `ID: ${id}`
 }
 
+const isUserRefField = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  return (
+    lower.includes('createdby') ||
+    lower.includes('modifiedby') ||
+    lower.includes('updatedby') ||
+    lower.includes('processedby') ||
+    lower.includes('verifiedby')
+  )
+}
+
+const getUserDisplayName = (val) => {
+  if (val === null || val === undefined || val === '') return '-'
+  
+  const strVal = String(val).trim()
+  
+  // Try matching numeric ID or numeric string ID
+  const idNum = Number(val)
+  if (!isNaN(idNum) && strVal !== '') {
+    const found = usersList.value.find(u => u.id === idNum)
+    if (found) {
+      if (found.fname || found.lname) return `${found.fname || ''} ${found.lname || ''}`.trim()
+      if (found.username) return found.username
+      if (found.email) return found.email
+    }
+  }
+
+  // Try matching string by username or email or ID
+  const foundByStr = usersList.value.find(u => 
+    String(u.id) === strVal ||
+    (u.username && u.username.toLowerCase() === strVal.toLowerCase()) ||
+    (u.email && u.email.toLowerCase() === strVal.toLowerCase())
+  )
+  if (foundByStr) {
+    if (foundByStr.fname || foundByStr.lname) return `${foundByStr.fname || ''} ${foundByStr.lname || ''}`.trim()
+    return foundByStr.username || foundByStr.email || strVal
+  }
+
+  return strVal
+}
+
+const formatViewFieldValue = (col, val) => {
+  if (val === null || val === undefined || val === '') return '-'
+  if (isUserRefField(col)) {
+    return getUserDisplayName(val)
+  }
+  if (col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid') {
+    return getAccessLevelLabel(val)
+  }
+  return String(val)
+}
+
 const openCreateDialog = () => {
   saveError.value = null
   formData.value = {}
-  const currentUser = authStore.user?.name || authStore.user?.username || authStore.user?.email || ''
+  const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+  const currentUserIdOrName = authStore.user?.id || currentUser
 
   formColumns.value.forEach(col => {
     const type = getFieldType(col)
     const lowerCol = col.toLowerCase()
 
-    if (lowerCol === 'modifiedby' && currentUser) {
-      formData.value[col] = currentUser
+    if ((lowerCol.includes('modifiedby') || lowerCol.includes('createdby')) && currentUser) {
+      formData.value[col] = currentUserIdOrName
     } else if (lowerCol === 'preferredday' && currentUser) {
       formData.value[col] = currentUser
     } else if (type === 'toggle') {
@@ -1851,22 +1912,22 @@ const saveData = async () => {
   try {
     const payload = { ...formData.value }
     delete payload.confirmPassword
-    if (!columns.value.includes('email')) {
+    if (!allRawColumns.value.includes('email')) {
       delete payload.email
     }
 
-    const currentUser = authStore.user?.username || authStore.user?.name || authStore.user?.email || 'admin'
+    const loggedInUserId = authStore.user?.id || 2
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
     
     // Auto-populate createdBy and modifiedBy for backend API if present in table schema
-    const createdByCol = columns.value.find(c => c.toLowerCase() === 'createdby' || c.toLowerCase() === 'created_by')
-    const modifiedByCol = columns.value.find(c => c.toLowerCase() === 'modifiedby' || c.toLowerCase() === 'modified_by' || c.toLowerCase() === 'updatedby' || c.toLowerCase() === 'updated_by')
+    const createdByCol = allRawColumns.value.find(c => c.toLowerCase().includes('createdby'))
+    const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
 
     if (createdByCol) {
-      payload[createdByCol] = currentUser
+      payload[createdByCol] = loggedInUserId
     }
     if (modifiedByCol) {
-      payload[modifiedByCol] = currentUser
+      payload[modifiedByCol] = loggedInUserId
     }
 
     if (columns.value.includes('userEmail') && !payload.userEmail) {
@@ -1925,14 +1986,15 @@ const openEditDialog = (record) => {
   editError.value = null
   editingRecordId.value = getRecordId(record)
   editFormData.value = { ...record }
-  const currentUser = authStore.user?.name || authStore.user?.username || authStore.user?.email || ''
+  const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+  const currentUserIdOrName = authStore.user?.id || currentUser
 
   formColumns.value.forEach(col => {
     const type = getFieldType(col)
     const lowerCol = col.toLowerCase()
 
-    if (lowerCol === 'modifiedby' && currentUser) {
-      editFormData.value[col] = currentUser
+    if ((lowerCol.includes('modifiedby') || lowerCol.includes('updatedby')) && currentUser) {
+      editFormData.value[col] = currentUserIdOrName
     } else if (type === 'toggle') {
       editFormData.value[col] = record[col] === true || record[col] === 'true'
     } else if (type === 'date' && record[col]) {
@@ -1969,15 +2031,15 @@ const saveEdit = async () => {
   try {
     const payload = { ...editFormData.value }
     delete payload.confirmPassword
-    if (!columns.value.includes('email')) {
+    if (!allRawColumns.value.includes('email')) {
       delete payload.email
     }
 
-    const currentUser = authStore.user?.username || authStore.user?.name || authStore.user?.email || 'admin'
-    const modifiedByCol = columns.value.find(c => c.toLowerCase() === 'modifiedby' || c.toLowerCase() === 'modified_by' || c.toLowerCase() === 'updatedby' || c.toLowerCase() === 'updated_by')
+    const loggedInUserId = authStore.user?.id || 2
+    const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
 
     if (modifiedByCol) {
-      payload[modifiedByCol] = currentUser
+      payload[modifiedByCol] = loggedInUserId
     }
 
     Object.keys(payload).forEach(key => {
