@@ -82,6 +82,7 @@ html[data-bs-theme="dark"] body,
 .form-select {
   display: flex !important;
   align-items: center !important;
+  padding: 0 !important;
 }
 
 .p-select .p-select-label,
@@ -120,6 +121,28 @@ html[data-bs-theme="dark"] body,
 .p-select .p-select-dropdown,
 .p-dropdown .p-dropdown-trigger {
   width: 2.2rem !important;
+}
+
+/* Fix Dropdown Overlay List Indentation (Reset Bootstrap ul padding) */
+.p-select-list,
+.p-dropdown-items,
+.p-select-overlay ul,
+.p-dropdown-panel ul,
+.p-select-list-container ul,
+.p-popover ul,
+ul.p-select-list,
+ul.p-dropdown-items,
+ul.p-select-list-container {
+  padding: 0.25rem 0.375rem !important;
+  margin: 0 !important;
+  list-style: none !important;
+}
+
+.p-select-option,
+.p-dropdown-item {
+  padding: 0.45rem 0.75rem !important;
+  border-radius: 6px !important;
+  margin-bottom: 1px !important;
 }
 
 /* Custom rounded buttons styling */

@@ -175,6 +175,7 @@
                 :options="accessLevels" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Access Level" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -187,6 +188,7 @@
                 :options="menusList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Menu" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -199,6 +201,7 @@
                 :options="lcpnapsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select LCNAP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -211,6 +214,7 @@
                 :options="lcpsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select LCP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -223,6 +227,7 @@
                 :options="napsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select NAP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -235,6 +240,7 @@
                 :options="portsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Port" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -247,6 +253,7 @@
                 :options="vlansList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select VLAN" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -259,6 +266,7 @@
                 :options="plansList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Plan" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -334,6 +342,7 @@
                 :options="statusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -346,6 +355,7 @@
                 :options="onsiteStatusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Onsite Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -358,6 +368,7 @@
                 :options="billingStatusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Billing Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -370,6 +381,7 @@
                 :options="usageTypeOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Usage Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -623,6 +635,7 @@
                 :options="accessLevels" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Access Level" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -635,6 +648,7 @@
                 :options="menusList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Menu" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -647,6 +661,7 @@
                 :options="lcpnapsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select LCNAP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -659,6 +674,7 @@
                 :options="lcpsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select LCP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -671,6 +687,7 @@
                 :options="napsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select NAP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -683,6 +700,7 @@
                 :options="portsList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Port" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -695,6 +713,7 @@
                 :options="vlansList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select VLAN" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -707,6 +726,7 @@
                 :options="plansList" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Plan" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -782,6 +802,7 @@
                 :options="statusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -794,6 +815,7 @@
                 :options="onsiteStatusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Onsite Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -806,6 +828,7 @@
                 :options="billingStatusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Billing Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -818,6 +841,7 @@
                 :options="usageTypeOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :filter="true"
                 placeholder="Select Usage Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -1569,7 +1593,7 @@ const fetchRelatedData = async () => {
 
     if (accRes.status === 'fulfilled') {
       accessLevels.value = unwrap(accRes.value).map(item => ({ 
-        label: item.description ? `${item.name} (${item.description})` : (item.name || `ID: ${item.id}`), 
+        label: item.name || `ID: ${item.id}`, 
         nameOnly: item.name || `ID: ${item.id}`,
         value: item.id 
       }))
@@ -1870,7 +1894,8 @@ const openCreateDialog = () => {
     } else if (type === 'usagetype_dropdown' && usageTypeOptions.value.length > 0) {
       formData.value[col] = usageTypeOptions.value[0].value
     } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
-      formData.value[col] = accessLevels.value[0].value
+      const guestOption = accessLevels.value.find(opt => (opt.nameOnly || opt.label || '').toLowerCase().includes('guest'))
+      formData.value[col] = guestOption ? guestOption.value : accessLevels.value[0].value
     } else if (type === 'menu_dropdown' && menusList.value.length > 0) {
       formData.value[col] = menusList.value[0].value
     } else if (type === 'lcpnap_dropdown' && lcpnapsList.value.length > 0) {
