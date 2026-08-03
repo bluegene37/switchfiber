@@ -475,36 +475,61 @@
 
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
-                <Password 
-                  :id="col" 
-                  v-model="formData[col]" 
-                  :feedback="false"
-                  toggleMask
-                  fluid
-                  size="small"
-                  class="w-100"
-                  inputClass="w-100 p-inputtext-sm"
-                  :class="{ 'is-invalid': formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword }"
-                  placeholder="Confirm password"
-                />
-                <div v-if="formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
+                <div class="position-relative w-100">
+                  <input 
+                    :id="col"
+                    :type="showPasswordState['create_' + col] ? 'text' : 'password'"
+                    v-model="formData[col]"
+                    class="form-control form-control-sm pe-5"
+                    :disabled="!userPermissions.canModifyPassword"
+                    :class="{ 'is-invalid': formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword }"
+                    :placeholder="userPermissions.canModifyPassword ? 'Confirm password' : 'Password modification disabled'"
+                  />
+                  <button 
+                    v-if="userPermissions.canUnmaskPassword"
+                    type="button" 
+                    class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 eye-toggle-btn" 
+                    @click="showPasswordState['create_' + col] = !showPasswordState['create_' + col]"
+                    :title="showPasswordState['create_' + col] ? 'Hide password' : 'Show password'"
+                    style="line-height: 1; z-index: 5;"
+                  >
+                    <i :class="['pi', showPasswordState['create_' + col] ? 'pi-eye-slash' : 'pi-eye']" style="font-size: 0.9rem;"></i>
+                  </button>
+                </div>
+                <div v-if="!userPermissions.canModifyPassword" class="text-muted small mt-1" style="font-size: 0.75rem;">
+                  <i class="pi pi-lock me-1"></i> You do not have permission to modify passwords.
+                </div>
+                <div v-else-if="formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
                   <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
                 </div>
               </div>
 
               <!-- Password Field -->
-              <Password 
-                v-else-if="getFieldType(col) === 'password'" 
-                :id="col" 
-                v-model="formData[col]" 
-                :feedback="false"
-                toggleMask
-                fluid
-                size="small"
-                class="w-100"
-                inputClass="w-100 p-inputtext-sm"
-                placeholder="Enter password"
-              />
+              <div v-else-if="getFieldType(col) === 'password'">
+                <div class="position-relative w-100">
+                  <input 
+                    :id="col"
+                    :type="showPasswordState['create_' + col] ? 'text' : 'password'"
+                    v-model="formData[col]"
+                    class="form-control form-control-sm pe-5"
+                    :disabled="!userPermissions.canModifyPassword"
+                    :placeholder="userPermissions.canModifyPassword ? 'Enter password' : 'Password modification disabled'"
+                  />
+                  <button 
+                    v-if="userPermissions.canUnmaskPassword"
+                    type="button" 
+                    class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 eye-toggle-btn" 
+                    @click="showPasswordState['create_' + col] = !showPasswordState['create_' + col]"
+                    :title="showPasswordState['create_' + col] ? 'Hide password' : 'Show password'"
+                    style="line-height: 1; z-index: 5;"
+                  >
+                    <i :class="['pi', showPasswordState['create_' + col] ? 'pi-eye-slash' : 'pi-eye']" style="font-size: 0.9rem;"></i>
+                  </button>
+                </div>
+                <div v-if="!userPermissions.canModifyPassword" class="text-muted small mt-1" style="font-size: 0.75rem;">
+                  <i class="pi pi-lock me-1"></i> You do not have permission to modify passwords.
+                </div>
+              </div>
 
               <!-- DatePicker for Date Fields -->
               <DatePicker 
@@ -967,36 +992,61 @@
 
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
-                <Password 
-                  :id="`edit-${col}`" 
-                  v-model="editFormData[col]" 
-                  :feedback="false"
-                  toggleMask
-                  fluid
-                  size="small"
-                  class="w-100"
-                  inputClass="w-100 p-inputtext-sm"
-                  :class="{ 'is-invalid': editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword }"
-                  placeholder="Confirm password"
-                />
-                <div v-if="editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
+                <div class="position-relative w-100">
+                  <input 
+                    :id="`edit-${col}`"
+                    :type="showPasswordState['edit_' + col] ? 'text' : 'password'"
+                    v-model="editFormData[col]"
+                    class="form-control form-control-sm pe-5"
+                    :disabled="!userPermissions.canModifyPassword"
+                    :class="{ 'is-invalid': editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword }"
+                    :placeholder="userPermissions.canModifyPassword ? 'Confirm password' : 'Password modification disabled'"
+                  />
+                  <button 
+                    v-if="userPermissions.canUnmaskPassword"
+                    type="button" 
+                    class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 eye-toggle-btn" 
+                    @click="showPasswordState['edit_' + col] = !showPasswordState['edit_' + col]"
+                    :title="showPasswordState['edit_' + col] ? 'Hide password' : 'Show password'"
+                    style="line-height: 1; z-index: 5;"
+                  >
+                    <i :class="['pi', showPasswordState['edit_' + col] ? 'pi-eye-slash' : 'pi-eye']" style="font-size: 0.9rem;"></i>
+                  </button>
+                </div>
+                <div v-if="!userPermissions.canModifyPassword" class="text-muted small mt-1" style="font-size: 0.75rem;">
+                  <i class="pi pi-lock me-1"></i> You do not have permission to modify passwords.
+                </div>
+                <div v-else-if="editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
                   <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
                 </div>
               </div>
 
               <!-- Password Field -->
-              <Password 
-                v-else-if="getFieldType(col) === 'password'" 
-                :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
-                :feedback="false"
-                toggleMask
-                fluid
-                size="small"
-                class="w-100"
-                inputClass="w-100 p-inputtext-sm"
-                placeholder="Enter password"
-              />
+              <div v-else-if="getFieldType(col) === 'password'">
+                <div class="position-relative w-100">
+                  <input 
+                    :id="`edit-${col}`"
+                    :type="showPasswordState['edit_' + col] ? 'text' : 'password'"
+                    v-model="editFormData[col]"
+                    class="form-control form-control-sm pe-5"
+                    :disabled="!userPermissions.canModifyPassword"
+                    :placeholder="userPermissions.canModifyPassword ? 'Enter password' : 'Password modification disabled'"
+                  />
+                  <button 
+                    v-if="userPermissions.canUnmaskPassword"
+                    type="button" 
+                    class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 eye-toggle-btn" 
+                    @click="showPasswordState['edit_' + col] = !showPasswordState['edit_' + col]"
+                    :title="showPasswordState['edit_' + col] ? 'Hide password' : 'Show password'"
+                    style="line-height: 1; z-index: 5;"
+                  >
+                    <i :class="['pi', showPasswordState['edit_' + col] ? 'pi-eye-slash' : 'pi-eye']" style="font-size: 0.9rem;"></i>
+                  </button>
+                </div>
+                <div v-if="!userPermissions.canModifyPassword" class="text-muted small mt-1" style="font-size: 0.75rem;">
+                  <i class="pi pi-lock me-1"></i> You do not have permission to modify passwords.
+                </div>
+              </div>
 
               <!-- DatePicker for Date Fields -->
               <DatePicker 
@@ -1101,7 +1151,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import apiClient from '../services/api'
 import phAddressService from '../services/phAddressService'
 import DataTable from 'primevue/datatable'
@@ -1343,7 +1393,7 @@ const getFieldType = (col) => {
   if (lower === 'usagetype') {
     return 'usagetype_dropdown'
   }
-  if (lower === 'password') {
+  if (lower.includes('password') || lower === 'pass' || lower === 'pwd') {
     return 'password'
   }
   // Date / Timestamp fields
@@ -1660,6 +1710,7 @@ const printTable = () => {
   window.print()
 }
 
+const showPasswordState = ref({})
 const accessLevels = ref([])
 const menusList = ref([])
 const lcpnapsList = ref([])
@@ -2004,6 +2055,7 @@ const formatViewFieldValue = (col, val) => {
 
 const openCreateDialog = () => {
   saveError.value = null
+  showPasswordState.value = {}
   formData.value = {}
   const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
   const currentUserIdOrName = authStore.user?.id || currentUser
@@ -2144,6 +2196,7 @@ const openViewDialog = (record) => {
 
 const openEditDialog = (record) => {
   editError.value = null
+  showPasswordState.value = {}
   editingRecordId.value = getRecordId(record)
   editFormData.value = { ...record }
   const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
@@ -2185,7 +2238,7 @@ const openEditDialog = (record) => {
   })
   const pwdCol = formColumns.value.find(col => getFieldType(col) === 'password')
   if (pwdCol) {
-    editFormData.value.confirmPassword = record[pwdCol] || ''
+    editFormData.value.confirmPassword = record[pwdCol] || editFormData.value[pwdCol] || ''
   }
   displayEditDialog.value = true
 }
@@ -2292,6 +2345,20 @@ const fetchData = async () => {
       }
     }
     
+    if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
+      const menuList = unwrappedData || []
+      const hasModifyPwd = menuList.some(m => Number(m.id) === 101 || (m.name && m.name.toLowerCase().includes('modify password')))
+      const hasUnmaskPwd = menuList.some(m => Number(m.id) === 102 || (m.name && m.name.toLowerCase().includes('unmask password')))
+      
+      if (!hasModifyPwd) {
+        menuList.push({ id: 101, name: 'Modify Password', route: '/modify_password', icon: 'pi pi-key', description: 'Permission to modify password fields across forms' })
+      }
+      if (!hasUnmaskPwd) {
+        menuList.push({ id: 102, name: 'Unmask Password', route: '/unmask_password', icon: 'pi pi-eye', description: 'Permission to unmask/view saved passwords' })
+      }
+      unwrappedData = menuList
+    }
+
     data.value = unwrappedData || []
 
     // Auto-park / auto-select the first row on load if no row is selected
@@ -2609,10 +2676,59 @@ const handleSelectionChange = (val) => {
   }
 }
 
+const userPermissions = ref({
+  canModifyPassword: true,
+  canUnmaskPassword: true
+})
+
+const fetchCurrentUserPermissions = async () => {
+  try {
+    const userAccessLevel = Number(authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 1)
+
+    const res = await apiClient.get('/AccesslevelMenu').catch(() => [])
+    let records = res
+    if (res && !Array.isArray(res) && typeof res === 'object') {
+      const key = Object.keys(res).find(k => Array.isArray(res[k]))
+      if (key) records = res[key]
+    }
+
+    if (Array.isArray(records)) {
+      const userRecords = records.filter(r => Number(r.accessLevelId || r.accesslevel_id) === userAccessLevel)
+      
+      // If no permission relations exist for this role yet, default to granted
+      if (userRecords.length === 0) {
+        userPermissions.value = {
+          canModifyPassword: true,
+          canUnmaskPassword: true
+        }
+      } else {
+        const userMenuIds = new Set(userRecords.map(r => Number(r.menuId || r.menu_id)))
+        
+        userPermissions.value = {
+          canModifyPassword: userMenuIds.has(101),
+          canUnmaskPassword: userMenuIds.has(102)
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching current user permissions:', err)
+    userPermissions.value = {
+      canModifyPassword: true,
+      canUnmaskPassword: true
+    }
+  }
+}
+
 onMounted(() => {
   fetchData()
   fetchRelatedData()
   fetchAccessLevelMenus()
+  fetchCurrentUserPermissions()
+  window.addEventListener('accesslevelmenu-updated', fetchCurrentUserPermissions)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('accesslevelmenu-updated', fetchCurrentUserPermissions)
 })
 
 defineExpose({
@@ -2745,5 +2861,12 @@ defineExpose({
   100% {
     background-position: 200% 0;
   }
+}
+.eye-toggle-btn {
+  color: #6c757d;
+  transition: color 0.15s ease-in-out;
+}
+.eye-toggle-btn:hover {
+  color: var(--bs-primary, #10b981) !important;
 }
 </style>
