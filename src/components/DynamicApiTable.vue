@@ -2269,6 +2269,11 @@ const saveEdit = async () => {
 
     const loggedInUserId = authStore.user?.id || 2
     const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
+    const createdByCol = allRawColumns.value.find(c => c.toLowerCase().includes('createdby'))
+    const createdDateCol = allRawColumns.value.find(c => c.toLowerCase().includes('createddate') || c.toLowerCase().includes('created_at'))
+
+    if (createdByCol) delete payload[createdByCol]
+    if (createdDateCol) delete payload[createdDateCol]
 
     if (modifiedByCol) {
       payload[modifiedByCol] = loggedInUserId
