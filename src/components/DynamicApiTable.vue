@@ -4,11 +4,68 @@
       <i class="pi pi-exclamation-circle me-2"></i> Error loading {{ endpoint }}: {{ error }}
     </div>
     
+    <!-- Standalone Skeleton Loader View (Shown ONLY while data is loading; hides underlying table completely) -->
+    <div v-else-if="loading" class="card border-0 shadow-sm rounded-4 overflow-hidden p-3 bg-body">
+      <!-- Top Row Header Placeholder -->
+      <div class="d-flex flex-column gap-2.5 mb-3 border-bottom pb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="mb-0 fw-medium text-body">Show</span>
+            <div class="skeleton-box rounded-2" style="width: 70px; height: 31px;"></div>
+            <span class="mb-0 fw-medium text-body">entries</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="mb-0 fw-medium text-body">Search:</span>
+            <div class="skeleton-box rounded-2" style="width: 180px; height: 31px;"></div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pt-1">
+          <div v-if="!hideCreateButton" class="skeleton-box rounded-3" style="width: 80px; height: 32px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 65px; height: 32px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 65px; height: 32px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 70px; height: 32px;"></div>
+        </div>
+      </div>
+
+      <!-- Shimmer Skeleton Rows -->
+      <div class="d-flex flex-column gap-2">
+        <!-- Table Header Row Skeleton -->
+        <div class="d-flex align-items-center justify-content-between py-2 px-3 bg-body-tertiary rounded-3 border">
+          <div v-for="c in 6" :key="c" class="skeleton-box rounded-2" :style="{ width: c === 1 ? '40px' : '110px', height: '16px' }"></div>
+        </div>
+        <!-- Table Data Rows Skeleton -->
+        <div 
+          v-for="r in 6" 
+          :key="r" 
+          class="d-flex align-items-center justify-content-between py-2.5 px-3 border-bottom rounded-3 bg-body"
+        >
+          <div class="d-flex align-items-center gap-3 flex-grow-1 overflow-hidden">
+            <div class="skeleton-box rounded-2 flex-shrink-0" style="width: 32px; height: 16px;"></div>
+            <div 
+              v-for="c in Math.min((columns && columns.length > 1 ? columns.length - 1 : 5), 5)" 
+              :key="c" 
+              class="skeleton-box rounded-2 flex-grow-1"
+              :style="{ 
+                height: '16px', 
+                maxWidth: c === 1 ? '160px' : c === 2 ? '140px' : '100px',
+                opacity: 1 - (c * 0.1)
+              }"
+            ></div>
+          </div>
+          <div class="d-flex align-items-center gap-1.5 ms-3 flex-shrink-0">
+            <div class="skeleton-box rounded-circle" style="width: 26px; height: 26px;"></div>
+            <div class="skeleton-box rounded-circle" style="width: 26px; height: 26px;"></div>
+            <div class="skeleton-box rounded-circle" style="width: 26px; height: 26px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Actual DataTable (Shown ONLY when data is ready) -->
     <DataTable 
       v-else 
       ref="dt"
       :value="data" 
-      :loading="loading"
       scrollable
       size="small"
       :paginator="true" 
@@ -2673,5 +2730,20 @@ defineExpose({
   height: 26px !important;
   padding: 0 !important;
   min-width: 26px !important;
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg, var(--bs-tertiary-bg, rgba(108, 117, 125, 0.12)) 25%, var(--bs-secondary-bg, rgba(108, 117, 125, 0.28)) 50%, var(--bs-tertiary-bg, rgba(108, 117, 125, 0.12)) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 </style>
