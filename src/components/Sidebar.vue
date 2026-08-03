@@ -19,7 +19,21 @@
 
     <!-- Navigation List -->
     <nav class="flex-grow-1 overflow-y-auto py-3 px-2">
-      <ul class="nav flex-column gap-1 p-0 m-0">
+      <!-- Loading State (Modern Skeleton Shimmer) -->
+      <div v-if="isLoading" class="d-flex flex-column gap-2 px-1">
+        <div 
+          v-for="n in 5" 
+          :key="n" 
+          class="d-flex align-items-center py-2 px-2.5 rounded opacity-75"
+          :class="isCollapsed ? 'justify-content-center px-0' : 'gap-3'"
+        >
+          <div class="skeleton-box rounded-2 flex-shrink-0" style="width: 22px; height: 22px;"></div>
+          <div v-if="!isCollapsed" class="skeleton-box rounded-2 flex-grow-1" :style="{ height: '16px', maxWidth: `${70 + ((n * 9) % 25)}%` }"></div>
+        </div>
+      </div>
+
+      <!-- Navigation List -->
+      <ul v-else-if="filteredMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0">
         <li class="nav-item" v-for="item in filteredMenuItems" :key="item.name">
           <!-- Item with NO children -->
           <router-link 
@@ -73,6 +87,12 @@
           </div>
         </li>
       </ul>
+
+      <!-- Fallback Empty State -->
+      <div v-else class="text-center text-muted py-4 small">
+        <i class="pi pi-inbox fs-4 mb-2 d-block opacity-50"></i>
+        <span v-if="!isCollapsed">No menu access</span>
+      </div>
     </nav>
     
     <!-- Footer / Collapse Toggle, Settings & Logout -->
@@ -147,6 +167,8 @@ const emit = defineEmits(['close', 'toggle-collapse'])
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+
+const isLoading = ref(true)
 
 const rawMenuItems = ref([
   { id: 5, name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
@@ -237,6 +259,7 @@ const getAllMenuIds = () => {
 }
 
 const fetchPermissions = async () => {
+  isLoading.value = true
   try {
     const userAccessLevel = Number(authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 1)
 
@@ -260,6 +283,8 @@ const fetchPermissions = async () => {
   } catch (err) {
     console.error('Error fetching AccesslevelMenu permissions:', err)
     allowedMenuIds.value = new Set(getAllMenuIds())
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -334,6 +359,21 @@ const filteredMenuItems = computed(() => {
   }
   .transform-offcanvas {
     transform: none;
+  }
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg, var(--bs-tertiary-bg, rgba(108, 117, 125, 0.12)) 25%, var(--bs-secondary-bg, rgba(108, 117, 125, 0.28)) 50%, var(--bs-tertiary-bg, rgba(108, 117, 125, 0.12)) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 </style>

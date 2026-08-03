@@ -223,6 +223,19 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- LCNAP Port Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'lcpnapport_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="lcpnapportsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select LCNAP Port" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- LCP Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'lcp_dropdown'" 
@@ -699,6 +712,19 @@
                 optionValue="value" 
                 :filter="true"
                 placeholder="Select LCNAP" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- LCNAP Port Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'lcpnapport_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="lcpnapportsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select LCNAP Port" 
                 class="w-100 p-inputtext-sm" 
               />
 
@@ -1215,19 +1241,22 @@ const getFieldType = (col) => {
   if (lower === 'menu_id' || lower === 'menuid') {
     return 'menu_dropdown'
   }
-  if (lower === 'lcpnap_id' || lower === 'lcpnapid' || lower === 'lcnap_id' || lower === 'lcnapid') {
+  if (lower === 'lcpnap_id' || lower === 'lcpnapid' || lower === 'lcnap_id' || lower === 'lcnapid' || lower === 'lcpnap' || lower === 'lcnap' || lower === 'lcp_nap') {
     return 'lcpnap_dropdown'
   }
-  if (lower === 'lcp_id' || lower === 'lcpid') {
+  if (lower === 'lcpnapport_id' || lower === 'lcpnapportid' || lower === 'lcnapport_id' || lower === 'lcnap_port' || lower === 'lcpnapport' || lower === 'lcnapport' || lower === 'lcp_nap_port') {
+    return 'lcpnapport_dropdown'
+  }
+  if (lower === 'lcp_id' || lower === 'lcpid' || lower === 'lcp') {
     return 'lcp_dropdown'
   }
-  if (lower === 'nap_id' || lower === 'napid') {
+  if (lower === 'nap_id' || lower === 'napid' || lower === 'nap') {
     return 'nap_dropdown'
   }
-  if (lower === 'port_id' || lower === 'portid') {
+  if (lower === 'port_id' || lower === 'portid' || lower === 'port') {
     return 'port_dropdown'
   }
-  if (lower === 'vlan_id' || lower === 'vlanid') {
+  if (lower === 'vlan_id' || lower === 'vlanid' || lower === 'vlan') {
     return 'vlan_dropdown'
   }
   if (lower === 'plan_id' || lower === 'planid') {
@@ -1577,6 +1606,7 @@ const printTable = () => {
 const accessLevels = ref([])
 const menusList = ref([])
 const lcpnapsList = ref([])
+const lcpnapportsList = ref([])
 const lcpsList = ref([])
 const napsList = ref([])
 const portsList = ref([])
@@ -1624,7 +1654,7 @@ const fetchRelatedData = async () => {
       return []
     }
 
-    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, userRes] = await Promise.allSettled([
+    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, userRes, lcnapPortRes] = await Promise.allSettled([
       apiClient.get('/AccessLevel'),
       apiClient.get('/Menus'),
       apiClient.get('/Lcpnaps'),
@@ -1633,7 +1663,8 @@ const fetchRelatedData = async () => {
       apiClient.get('/Ports'),
       apiClient.get('/Vlans'),
       apiClient.get('/Plans'),
-      apiClient.get('/Users')
+      apiClient.get('/Users'),
+      apiClient.get('/Lcpnapports')
     ])
 
     if (accRes.status === 'fulfilled') {
@@ -1647,19 +1678,22 @@ const fetchRelatedData = async () => {
       menusList.value = unwrap(menuRes.value).map(item => ({ label: `${item.name} (${item.route || 'ID: ' + item.id})`, value: item.id }))
     }
     if (lcnapRes.status === 'fulfilled') {
-      lcpnapsList.value = unwrap(lcnapRes.value).map(item => ({ label: `${item.name || 'LCNAP #' + item.id}`, value: item.id }))
+      lcpnapsList.value = unwrap(lcnapRes.value).map(item => ({ label: `${item.name || 'LCNAP #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (lcpRes.status === 'fulfilled') {
-      lcpsList.value = unwrap(lcpRes.value).map(item => ({ label: `${item.name || 'LCP #' + item.id}`, value: item.id }))
+      lcpsList.value = unwrap(lcpRes.value).map(item => ({ label: `${item.name || 'LCP #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (napRes.status === 'fulfilled') {
-      napsList.value = unwrap(napRes.value).map(item => ({ label: `${item.name || 'NAP #' + item.id}`, value: item.id }))
+      napsList.value = unwrap(napRes.value).map(item => ({ label: `${item.name || 'NAP #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (portRes.status === 'fulfilled') {
-      portsList.value = unwrap(portRes.value).map(item => ({ label: `${item.name || 'Port #' + item.id}`, value: item.id }))
+      portsList.value = unwrap(portRes.value).map(item => ({ label: `${item.name || 'Port #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (vlanRes.status === 'fulfilled') {
-      vlansList.value = unwrap(vlanRes.value).map(item => ({ label: `${item.name || 'VLAN #' + item.id}`, value: item.id }))
+      vlansList.value = unwrap(vlanRes.value).map(item => ({ label: `${item.name || 'VLAN #' + item.id}`, value: item.name || item.id, id: item.id }))
+    }
+    if (lcnapPortRes && lcnapPortRes.status === 'fulfilled') {
+      lcpnapportsList.value = unwrap(lcnapPortRes.value).map(item => ({ label: `${item.name || 'LCNAP Port #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (planRes.status === 'fulfilled') {
       plansList.value = unwrap(planRes.value).map(item => ({ label: `${item.name || 'Plan #' + item.id}`, value: item.id }))
@@ -1942,6 +1976,8 @@ const openCreateDialog = () => {
       formData.value[col] = menusList.value[0].value
     } else if (type === 'lcpnap_dropdown' && lcpnapsList.value.length > 0) {
       formData.value[col] = lcpnapsList.value[0].value
+    } else if (type === 'lcpnapport_dropdown' && lcpnapportsList.value.length > 0) {
+      formData.value[col] = lcpnapportsList.value[0].value
     } else if (type === 'lcp_dropdown' && lcpsList.value.length > 0) {
       formData.value[col] = lcpsList.value[0].value
     } else if (type === 'nap_dropdown' && napsList.value.length > 0) {
@@ -2069,6 +2105,25 @@ const openEditDialog = (record) => {
       editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
     } else if (record[col] === null || record[col] === undefined) {
       editFormData.value[col] = ''
+    }
+
+    // Handle mapping of fiber infrastructure & provisioning fields (resolution by Name or ID)
+    const val = record[col]
+    if (val !== null && val !== undefined && val !== '') {
+      let targetList = null
+      if (type === 'lcpnap_dropdown') targetList = lcpnapsList.value
+      else if (type === 'lcpnapport_dropdown') targetList = lcpnapportsList.value
+      else if (type === 'lcp_dropdown') targetList = lcpsList.value
+      else if (type === 'nap_dropdown') targetList = napsList.value
+      else if (type === 'port_dropdown') targetList = portsList.value
+      else if (type === 'vlan_dropdown') targetList = vlansList.value
+
+      if (targetList && targetList.length > 0) {
+        const match = targetList.find(opt => opt.value === val || opt.value === String(val) || opt.id === val || opt.id === Number(val))
+        if (match) {
+          editFormData.value[col] = match.value
+        }
+      }
     }
   })
   const pwdCol = formColumns.value.find(col => getFieldType(col) === 'password')
