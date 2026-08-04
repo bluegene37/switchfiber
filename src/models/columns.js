@@ -328,5 +328,22 @@ export const EndpointColumns = {
     "amount",
     "dueDate",
     "status"
+  ],
+  "Invoices": [
+    "id",
+    "accountNo",
+    "amount",
+    "dueDate",
+    "status",
+    "created",
+    "createdBy"
+  ],
+  "Barangays": [
+    "id",
+    "code",
+    "name",
+    "regionCode",
+    "provinceCode",
+    "cityCode"
   ]
 }

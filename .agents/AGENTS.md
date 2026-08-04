@@ -12,3 +12,7 @@ When developing and integrating API calls across the codebase, strictly adhere t
 When creating or updating records across all forms:
 - **CREATE (`POST`)**: Always populate `createdBy` and `modifiedBy` columns with the **numeric ID of the currently logged-in user** (`authStore.user.id`).
 - **UPDATE (`PUT`)**: Only update the `modifiedBy` column with the **numeric ID of the currently logged-in user** (`authStore.user.id`). Do NOT overwrite `createdBy` or `createdDate` during updates.
+
+## Menu & Access Level Standards
+- **Always include new menu items in the Access Level menu list**: Whenever new routes or menu items are added to the application, ensure they are registered in the sidebar menu list and included in the Access Level permissions configuration so users can access them without being blocked by permission checks.
+

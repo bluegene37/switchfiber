@@ -206,7 +206,8 @@ const rawMenuItems = ref([
       { id: 18, name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
       { id: 19, name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
     ]
-  }
+  },
+  { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' }
 ])
 
 const expandedState = ref({})
@@ -274,7 +275,7 @@ const fetchPermissions = async () => {
       const granted = records
         .filter(r => Number(r.accessLevelId || r.accesslevel_id) === userAccessLevel)
         .map(r => Number(r.menuId || r.menu_id))
-      
+
       allowedMenuIds.value = new Set(granted)
     } else {
       // Fallback if API response is empty
