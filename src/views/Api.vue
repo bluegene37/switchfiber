@@ -24,7 +24,7 @@
           <div class="card-header bg-body border-bottom p-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="fw-bold text-body mb-0">API Endpoints</h6>
-              <span class="badge bg-secondary text-white rounded-pill small px-2.5 py-1 fw-bold">JSON Only</span>
+              <span class="badge bg-secondary text-white rounded-pill small px-2.5 py-1 fw-bold">GET Only</span>
             </div>
             <div class="position-relative">
               <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary" style="font-size: 0.85rem;"></i>
@@ -81,7 +81,7 @@
         </div>
       </div>
 
-      <!-- Right Column: API Raw JSON Response Viewer -->
+      <!-- Right Column: API Response JSON Viewer -->
       <div class="col-12 col-lg-8 col-xl-9">
         <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
           <!-- Card Header & Controls -->
@@ -101,7 +101,49 @@
               </span>
             </div>
 
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <!-- View Mode Toggle (Tree View vs Raw JSON) -->
+              <div class="btn-group btn-group-sm p-1 bg-body-tertiary rounded-3 border" role="group">
+                <button 
+                  type="button" 
+                  class="btn btn-sm rounded-2 py-1 px-2.5 text-nowrap" 
+                  :class="viewMode === 'tree' ? 'btn-primary shadow-sm fw-semibold' : 'btn-link text-body text-decoration-none border-0 opacity-75'"
+                  @click="viewMode = 'tree'"
+                >
+                  <i class="pi pi-sitemap me-1.5"></i> Tree View
+                </button>
+                <button 
+                  type="button" 
+                  class="btn btn-sm rounded-2 py-1 px-2.5 text-nowrap" 
+                  :class="viewMode === 'raw' ? 'btn-primary shadow-sm fw-semibold' : 'btn-link text-body text-decoration-none border-0 opacity-75'"
+                  @click="viewMode = 'raw'"
+                >
+                  <i class="pi pi-code me-1.5"></i> Raw JSON
+                </button>
+              </div>
+
+              <!-- Expand / Collapse All Controls (Tree Mode) -->
+              <div v-if="viewMode === 'tree'" class="btn-group btn-group-sm p-1 bg-body-tertiary rounded-3 border" role="group">
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-link text-body text-decoration-none py-1 px-2 text-nowrap d-flex align-items-center gap-1"
+                  @click="forceExpandCounter++"
+                  title="Expand All Nodes"
+                >
+                  <i class="pi pi-angle-double-down"></i>
+                  <span class="small">Expand All</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-link text-body text-decoration-none py-1 px-2 text-nowrap d-flex align-items-center gap-1"
+                  @click="forceCollapseCounter++"
+                  title="Collapse All Nodes"
+                >
+                  <i class="pi pi-angle-double-up"></i>
+                  <span class="small">Collapse All</span>
+                </button>
+              </div>
+
               <!-- Copy JSON Button -->
               <button 
                 type="button" 
@@ -127,7 +169,10 @@
           <div class="card-body p-3">
             <div class="position-relative">
               <div class="d-flex align-items-center justify-content-between bg-body-tertiary text-secondary px-3 py-2 rounded-top-3 border border-bottom-0 font-monospace small">
-                <span class="fw-semibold"><i class="pi pi-code me-1.5"></i> Response Body (JSON Payload)</span>
+                <span class="fw-semibold">
+                  <i :class="['pi', viewMode === 'tree' ? 'pi-sitemap' : 'pi-code', 'me-1.5']"></i> 
+                  Response Body ({{ viewMode === 'tree' ? 'Interactive Collapsible Tree' : 'Raw Payload' }})
+                </span>
                 <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-0.5 small">{{ rawJsonString.length }} bytes</span>
               </div>
 
@@ -137,7 +182,21 @@
                 <span>Fetching GET /api/{{ selectedEndpoint }}...</span>
               </div>
 
-              <!-- Formatted JSON viewer -->
+              <!-- Interactive Tree View -->
+              <div 
+                v-else-if="viewMode === 'tree'"
+                class="bg-body-tertiary text-body p-3.5 rounded-bottom-3 border overflow-auto custom-scrollbar"
+                style="max-height: calc(100vh - 280px); min-height: 480px;"
+              >
+                <JsonTreeNode 
+                  :data="parsedJsonData" 
+                  :depth="0"
+                  :force-expand="forceExpandCounter"
+                  :force-collapse="forceCollapseCounter"
+                />
+              </div>
+
+              <!-- Formatted Raw JSON View -->
               <pre 
                 v-else 
                 class="bg-body-tertiary text-body p-3 rounded-bottom-3 border overflow-auto font-monospace mb-0 custom-scrollbar" 
@@ -155,6 +214,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import Button from 'primevue/button'
 import apiClient from '../services/api'
+import JsonTreeNode from '../components/JsonTreeNode.vue'
 
 const apiEndpoints = ref([
   { name: 'Applications', endpoint: 'Applications', description: 'Customer application records and form data' },
@@ -178,10 +238,14 @@ const apiEndpoints = ref([
 
 const selectedEndpoint = ref(apiEndpoints.value[0].endpoint)
 const searchQuery = ref('')
+const viewMode = ref('tree') // 'tree' or 'raw'
 const isLoadingJson = ref(false)
 const rawJsonString = ref('[]')
+const parsedJsonData = ref([])
 const recordCount = ref(null)
 const copied = ref(false)
+const forceExpandCounter = ref(0)
+const forceCollapseCounter = ref(0)
 
 const activeEndpointInfo = computed(() => {
   return apiEndpoints.value.find(e => e.endpoint === selectedEndpoint.value)
@@ -211,6 +275,7 @@ const fetchRawJson = async () => {
       const arrayKey = Object.keys(res).find(k => Array.isArray(res[k]))
       if (arrayKey) data = res[arrayKey]
     }
+    parsedJsonData.value = data
     if (Array.isArray(data)) {
       recordCount.value = data.length
     } else {
@@ -219,11 +284,12 @@ const fetchRawJson = async () => {
     rawJsonString.value = JSON.stringify(data, null, 2)
   } catch (err) {
     recordCount.value = 0
-    rawJsonString.value = JSON.stringify({
+    parsedJsonData.value = {
       error: true,
       message: err.message || 'Failed to fetch data from endpoint',
       status: err.response?.status
-    }, null, 2)
+    }
+    rawJsonString.value = JSON.stringify(parsedJsonData.value, null, 2)
   } finally {
     isLoadingJson.value = false
   }

@@ -105,11 +105,11 @@
           </div>
 
           <!-- Bottom Row: Action Buttons (Create, CSV, PDF, Print) -->
-          <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pt-1">
-            <Button v-if="!hideCreateButton" label="Create" icon="pi pi-plus" class="p-button-primary p-button-sm" @click="openCreateDialog" />
-            <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined" @click="exportCSV" />
-            <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined" @click="exportPDF" />
-            <Button label="Print" icon="pi pi-print" class="p-button-secondary p-button-sm p-button-outlined" @click="printTable" />
+          <div class="d-flex align-items-center justify-content-sm-start justify-content-center gap-2 flex-wrap pt-1">
+            <Button v-if="!hideCreateButton" label="Create" icon="pi pi-plus" class="p-button-primary p-button-sm shadow-xs" @click="openCreateDialog" />
+            <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportCSV" />
+            <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportPDF" />
+            <Button label="Print" icon="pi pi-print" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="printTable" />
           </div>
         </div>
       </template>
@@ -2757,13 +2757,45 @@ defineExpose({
   background-color: var(--theme-row-hover, rgba(220, 38, 38, 0.06)) !important;
 }
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight),
-:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"]) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"]),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight td),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] td) {
   background-color: var(--theme-row-highlight, #dc2626) !important;
   color: #ffffff !important;
 }
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .text-body),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .text-body),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .text-secondary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .text-secondary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .text-muted),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .text-muted),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight a),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] a),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight i),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] i),
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight span),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] span) {
   color: #ffffff !important;
+}
+
+/* Ensure action buttons on highlighted rows are crisp white with soft white glass hover */
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-button-text),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .p-button-text),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .btn-link),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .btn-link),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-button-icon) {
+  color: #ffffff !important;
+}
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-button-text:hover),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .p-button-text:hover),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .btn-link:hover),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .btn-link:hover) {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.22) !important;
 }
 
 /* Trashcan Icon on normal unselected rows (Red) */
