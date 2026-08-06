@@ -1433,7 +1433,7 @@ const getFieldType = (col) => {
   return 'text'
 }
 
-// Filter out redundant alias duplicate keys (e.g. preferred_Day if preferredDay exists, verified_By if verifiedBy exists, EF Core navigation objects)
+// Filter out redundant alias duplicate keys (e.g. preferred_Day if preferredDay exists, verified_By if verifiedBy exists, EF Core navigation objects, paired ID vs string fields)
 const deduplicateColumns = (colList) => {
   if (!Array.isArray(colList)) return []
   const normalizedSet = new Set()
@@ -1444,10 +1444,22 @@ const deduplicateColumns = (colList) => {
     'applicationidvalue': 'applicationid'
   }
 
+  const lowerCols = colList.map(c => c.toLowerCase())
+
   colList.forEach(col => {
     const lowerNoUnderscore = col.toLowerCase().replace(/_/g, '')
     const lowerRaw = col.toLowerCase()
     
+    // Omit redundant duplicate string fields if their primary ID field exists in the array
+    if (lowerRaw === 'lcp' && lowerCols.includes('lcpid')) return
+    if (lowerRaw === 'nap' && lowerCols.includes('napid')) return
+    if (lowerRaw === 'port' && lowerCols.includes('portid')) return
+    if (lowerRaw === 'vlan' && lowerCols.includes('vlanid')) return
+    if (lowerRaw === 'lcnap' && lowerCols.includes('lcpnapid')) return
+    if (lowerRaw === 'lcpnapport' && lowerCols.includes('lcpnapportid')) return
+    if (lowerRaw === 'plan' && lowerCols.includes('planid')) return
+    if (lowerRaw === 'choose_plan' && lowerCols.includes('planid')) return
+
     if (aliasMap[lowerRaw]) {
       const primaryKeyLower = aliasMap[lowerRaw]
       if (colList.some(c => c.toLowerCase().replace(/_/g, '') === primaryKeyLower && c !== col)) {
@@ -2153,6 +2165,38 @@ const openCreateDialog = () => {
   displayCreateDialog.value = true
 }
 
+const syncPairedFields = (payload) => {
+  if (!payload) return
+  if (payload.planId) {
+    payload.choose_Plan = String(payload.planId)
+    payload.plan = String(payload.planId)
+  }
+  if (payload.lcpId) {
+    const found = lcpsList.value.find(opt => opt.value === payload.lcpId || opt.id === payload.lcpId)
+    if (found) payload.lcp = found.label
+  }
+  if (payload.napId) {
+    const found = napsList.value.find(opt => opt.value === payload.napId || opt.id === payload.napId)
+    if (found) payload.nap = found.label
+  }
+  if (payload.portId) {
+    const found = portsList.value.find(opt => opt.value === payload.portId || opt.id === payload.portId)
+    if (found) payload.port = found.label
+  }
+  if (payload.vlanId) {
+    const found = vlansList.value.find(opt => opt.value === payload.vlanId || opt.id === payload.vlanId)
+    if (found) payload.vlan = found.label
+  }
+  if (payload.lcpnapId) {
+    const found = lcpnapsList.value.find(opt => opt.value === payload.lcpnapId || opt.id === payload.lcpnapId)
+    if (found) payload.lcnap = found.label
+  }
+  if (payload.lcpnapportId) {
+    const found = lcpnapportsList.value.find(opt => opt.value === payload.lcpnapportId || opt.id === payload.lcpnapportId)
+    if (found) payload.lcpnapport = found.label
+  }
+}
+
 const saveData = async () => {
   saveError.value = null
 
@@ -2171,6 +2215,7 @@ const saveData = async () => {
   saving.value = true
   try {
     const payload = { ...formData.value }
+    syncPairedFields(payload)
     delete payload.confirmPassword
     if (!allRawColumns.value.includes('email')) {
       delete payload.email
@@ -2310,6 +2355,7 @@ const saveEdit = async () => {
   savingEdit.value = true
   try {
     const payload = { ...editFormData.value }
+    syncPairedFields(payload)
     delete payload.confirmPassword
     if (!allRawColumns.value.includes('email')) {
       delete payload.email
