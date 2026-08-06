@@ -183,13 +183,94 @@
         <i :class="isDark ? 'pi pi-sun text-warning' : 'pi pi-moon text-secondary'" class="fs-5"></i>
       </button>
 
-      <!-- Notifications -->
-      <button class="btn btn-link text-secondary position-relative p-2 text-decoration-none" aria-label="Notifications">
-        <i class="pi pi-bell fs-4"></i>
-        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-          <span class="visually-hidden">New alerts</span>
-        </span>
-      </button>
+      <!-- Interactive Notification Bell & Dropdown -->
+      <div class="position-relative" ref="notificationContainer">
+        <button 
+          @click="isNotificationOpen = !isNotificationOpen"
+          class="btn btn-link text-secondary position-relative p-2 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center"
+          style="width: 42px; height: 42px; transition: transform 0.2s;"
+          aria-label="Notifications"
+          title="System Notifications"
+        >
+          <i class="pi pi-bell fs-5" :class="{ 'text-primary': isNotificationOpen }"></i>
+          <!-- Red Badge Pulse for Unread Count -->
+          <span 
+            v-if="unreadCount > 0" 
+            class="position-absolute top-0 start-100 translate-middle p-1.5 bg-danger border border-light rounded-circle"
+            style="font-size: 0.65rem;"
+          >
+            <span class="visually-hidden">New alerts</span>
+          </span>
+        </button>
+
+        <!-- Notification Dropdown Card -->
+        <Transition name="dropdown-fade">
+          <div 
+            v-if="isNotificationOpen" 
+            class="position-absolute end-0 mt-2 shadow-lg border rounded-4 bg-body overflow-hidden"
+            style="width: 340px; z-index: 1100; top: 100%;"
+          >
+            <!-- Header -->
+            <div class="p-3 bg-body border-bottom d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <h6 class="fw-bold text-body mb-0">Notifications</h6>
+                <span v-if="unreadCount > 0" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-0.5 rounded-pill small">
+                  {{ unreadCount }} new
+                </span>
+              </div>
+              <button 
+                v-if="unreadCount > 0" 
+                @click="markAllAsRead" 
+                class="btn btn-link p-0 text-primary small text-decoration-none fw-semibold shadow-none border-0"
+                style="font-size: 0.78rem;"
+              >
+                Mark all read
+              </button>
+            </div>
+
+            <!-- Notification Item List -->
+            <div class="overflow-y-auto custom-scrollbar" style="max-height: 340px;">
+              <div 
+                v-for="item in dummyNotifications" 
+                :key="item.id" 
+                class="p-3 border-bottom transition-all cursor-pointer hover-bg-item d-flex gap-3 align-items-start"
+                :class="{ 'bg-primary bg-opacity-10': item.unread }"
+                @click="item.unread = false"
+              >
+                <!-- Icon Badge -->
+                <div 
+                  class="p-2 rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center"
+                  :class="getNotificationIconBgClass(item.severity)"
+                  style="width: 36px; height: 36px;"
+                >
+                  <i :class="['pi', item.icon, getNotificationIconColorClass(item.severity)]"></i>
+                </div>
+
+                <!-- Text Body -->
+                <div class="flex-grow-1 min-w-0">
+                  <div class="d-flex align-items-center justify-content-between gap-1 mb-1">
+                    <span class="fw-bold text-body small text-truncate">{{ item.title }}</span>
+                    <span class="text-secondary" style="font-size: 0.7rem;">{{ item.time }}</span>
+                  </div>
+                  <p class="small text-secondary mb-0" style="font-size: 0.78rem; line-height: 1.4;">
+                    {{ item.message }}
+                  </p>
+                </div>
+
+                <!-- Unread Dot Indicator -->
+                <span v-if="item.unread" class="p-1 bg-primary rounded-circle flex-shrink-0 mt-1" style="width: 8px; height: 8px;"></span>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-2 bg-body-tertiary border-top text-center">
+              <button @click="isNotificationOpen = false" class="btn btn-link text-secondary text-decoration-none small py-1 px-3 shadow-none border-0">
+                Close Notifications
+              </button>
+            </div>
+          </div>
+        </Transition>
+      </div>
 
       <!-- Attached Profile Dropdown -->
       <div class="position-relative" ref="dropdownContainer">
@@ -372,9 +453,81 @@ const userRole = computed(() => {
   return userAccId === 1 ? 'Super Admin' : `Access Level ${userAccId}`
 })
 
+// Notifications Dropdown Logic & Dummy Data
+const isNotificationOpen = ref(false)
+const notificationContainer = ref(null)
+
+const dummyNotifications = ref([
+  {
+    id: 1,
+    title: 'High Peak Load Alert',
+    message: 'Manila Core Node load reached 94% peak bandwidth capacity.',
+    time: '5m ago',
+    unread: true,
+    severity: 'danger',
+    icon: 'pi-exclamation-triangle'
+  },
+  {
+    id: 2,
+    title: 'Job Order #JO-8492 Complete',
+    message: 'Field Tech Paulo finished installation for Client #1048 (Fiber 100Mbps).',
+    time: '18m ago',
+    unread: true,
+    severity: 'success',
+    icon: 'pi-check-circle'
+  },
+  {
+    id: 3,
+    title: 'New Subscriber Connection',
+    message: 'New application verified & queued for node NAP-Laguna-04.',
+    time: '1h ago',
+    unread: true,
+    severity: 'info',
+    icon: 'pi-wifi'
+  },
+  {
+    id: 4,
+    title: 'System Backup Completed',
+    message: 'Automated database and microservice configuration backup successful.',
+    time: '3h ago',
+    unread: false,
+    severity: 'secondary',
+    icon: 'pi-server'
+  }
+])
+
+const unreadCount = computed(() => {
+  return dummyNotifications.value.filter(n => n.unread).length
+})
+
+const markAllAsRead = () => {
+  dummyNotifications.value.forEach(n => n.unread = false)
+}
+
+const getNotificationIconBgClass = (severity) => {
+  switch (severity) {
+    case 'danger': return 'bg-danger bg-opacity-10'
+    case 'success': return 'bg-success bg-opacity-10'
+    case 'info': return 'bg-info bg-opacity-10'
+    default: return 'bg-secondary bg-opacity-10'
+  }
+}
+
+const getNotificationIconColorClass = (severity) => {
+  switch (severity) {
+    case 'danger': return 'text-danger'
+    case 'success': return 'text-success'
+    case 'info': return 'text-info'
+    default: return 'text-secondary'
+  }
+}
+
 const handleClickOutside = (event) => {
   if (dropdownContainer.value && !dropdownContainer.value.contains(event.target)) {
     isDropdownOpen.value = false
+  }
+  if (notificationContainer.value && !notificationContainer.value.contains(event.target)) {
+    isNotificationOpen.value = false
   }
   if (searchContainer.value && !searchContainer.value.contains(event.target)) {
     closeSearch()
