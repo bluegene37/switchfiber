@@ -282,6 +282,43 @@ ul.p-select-list-container {
   color: var(--bs-primary) !important;
 }
 
+/* High Contrast Soft Primary Badge/Pill styling (Fixes low contrast red-on-light-red text) */
+.bg-primary.bg-opacity-10,
+.badge.bg-primary.bg-opacity-10,
+span.bg-primary.bg-opacity-10,
+div.bg-primary.bg-opacity-10 {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+
+.bg-primary.bg-opacity-10.text-primary,
+.bg-primary.bg-opacity-10 .text-primary,
+.badge.bg-primary.bg-opacity-10.text-primary,
+.badge.bg-primary.bg-opacity-10 {
+  color: #991b1b !important;
+}
+
+html[data-bs-theme="dark"] .bg-primary.bg-opacity-10,
+.dark .bg-primary.bg-opacity-10,
+html[data-bs-theme="dark"] .badge.bg-primary.bg-opacity-10,
+.dark .badge.bg-primary.bg-opacity-10,
+html[data-bs-theme="dark"] span.bg-primary.bg-opacity-10,
+.dark span.bg-primary.bg-opacity-10,
+html[data-bs-theme="dark"] div.bg-primary.bg-opacity-10,
+.dark div.bg-primary.bg-opacity-10 {
+  background-color: rgba(220, 38, 38, 0.22) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .bg-primary.bg-opacity-10.text-primary,
+.dark .bg-primary.bg-opacity-10.text-primary,
+html[data-bs-theme="dark"] .bg-primary.bg-opacity-10 .text-primary,
+.dark .bg-primary.bg-opacity-10 .text-primary,
+html[data-bs-theme="dark"] .badge.bg-primary.bg-opacity-10,
+.dark .badge.bg-primary.bg-opacity-10 {
+  color: #fca5a5 !important;
+}
+
 /* Dark Mode Text Readability & High-Contrast Muted Colors */
 html[data-bs-theme="dark"] .text-secondary,
 .dark .text-secondary {

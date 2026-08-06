@@ -96,8 +96,8 @@
               <span class="badge bg-body-tertiary text-secondary border px-2 py-1 small ms-1">
                 {{ activeEndpointInfo?.name || selectedEndpoint }}
               </span>
-              <span v-if="recordCount !== null" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 small fw-semibold">
-                {{ recordCount }} {{ recordCount === 1 ? 'item' : 'items' }}
+              <span v-if="recordCount !== null" class="badge bg-body-tertiary text-body border px-2.5 py-1 small fw-semibold">
+                <i class="pi pi-box text-primary me-1"></i> {{ recordCount }} {{ recordCount === 1 ? 'item' : 'items' }}
               </span>
             </div>
 
