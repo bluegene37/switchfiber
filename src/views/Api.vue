@@ -62,7 +62,7 @@
                   </span>
                   <span 
                     class="badge rounded-1 font-monospace px-2 py-0.5" 
-                    :class="selectedEndpoint === item.endpoint ? 'bg-white text-primary fw-bold' : 'bg-success text-white fw-bold shadow-sm'"
+                    :class="selectedEndpoint === item.endpoint ? 'get-badge-active' : 'bg-success text-white fw-bold shadow-sm'"
                     style="font-size: 0.7rem;"
                   >
                     GET
@@ -320,6 +320,13 @@ watch(selectedEndpoint, () => {
 
 .hover-bg:hover {
   background-color: var(--bs-tertiary-bg);
+}
+
+.get-badge-active {
+  background-color: #ffffff !important;
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

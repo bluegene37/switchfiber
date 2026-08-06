@@ -270,11 +270,11 @@ ul.p-select-list-container {
   color: #ffffff !important;
 }
 
-/* Ensure ALL child text & icons in primary active containers are pure white */
-.active-link *,
-.bg-primary:not(.bg-opacity-10) *,
-.list-group-item.bg-primary *,
-.list-group-item.active * {
+/* Ensure child text & icons in primary active containers are white (excluding badges/white pills) */
+.active-link *:not(.badge):not(.bg-white),
+.bg-primary:not(.bg-opacity-10) *:not(.badge):not(.bg-white),
+.list-group-item.bg-primary *:not(.badge):not(.bg-white),
+.list-group-item.active *:not(.badge):not(.bg-white) {
   color: #ffffff !important;
 }
 
