@@ -13,7 +13,7 @@
       :class="isCollapsed ? 'justify-content-center px-2' : 'px-3 gap-2.5'" 
       style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box;"
     >
-      <img src="/favicon.svg" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px;" />
+      <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px; object-fit: contain;" />
       <span v-if="!isCollapsed" class="text-body fs-4 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
     </div>
 
@@ -328,6 +328,18 @@ const filteredMenuItems = computed(() => {
   background-color: var(--bs-secondary-bg);
   opacity: 1 !important;
   text-decoration: none !important;
+}
+
+/* Explicit high-contrast white text & icons for active / parked sidebar links */
+.sidebar-link.active-link,
+.sidebar-link.router-link-active,
+.sidebar-link.router-link-exact-active,
+.active-link,
+.active-link i,
+.active-link span {
+  color: #ffffff !important;
+  background-color: var(--bs-primary) !important;
+  opacity: 1 !important;
 }
 
 .hover-logout {

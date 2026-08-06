@@ -1,5 +1,5 @@
 <template>
-  <div class="card shadow-sm border-0 rounded-4 p-4 h-100" style="transition: transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+  <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-body" style="transition: transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
     <div class="d-flex align-items-center justify-content-between">
       <div>
         <p class="small text-secondary mb-1 fw-medium">{{ title }}</p>

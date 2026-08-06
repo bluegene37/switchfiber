@@ -1,10 +1,10 @@
 <template>
-  <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5" style="width: 100%; max-width: 420px;">
+  <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5 bg-body" style="width: 100%; max-width: 420px;">
     <div class="text-center mb-4">
       <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 shadow-sm p-2" style="width: 64px; height: 64px;">
-        <img src="/favicon.svg" alt="Switch Fiber Logo" style="width: 40px; height: 40px;" />
+        <img src="/logo.png" alt="Switch Fiber Logo" style="width: 40px; height: 40px; object-fit: contain;" />
       </div>
-      <h2 class="fw-bolder text-dark mb-1">Switch Fiber</h2>
+      <h2 class="fw-bolder text-body mb-1">Switch Fiber</h2>
       <p class="small text-secondary fw-medium">Distributed Fiber Network Management</p>
     </div>
 
@@ -18,7 +18,7 @@
       <div class="mb-3">
         <label for="usernameOrEmail" class="form-label small fw-semibold text-secondary">Username or Email</label>
         <div class="input-group">
-          <span class="input-group-text bg-white border-end-0">
+          <span class="input-group-text bg-body border-end-0">
             <i class="pi pi-user text-secondary"></i>
           </span>
           <InputText 
@@ -35,7 +35,7 @@
       <div class="mb-3">
         <label for="password" class="form-label small fw-semibold text-secondary">Password</label>
         <div class="input-group flex-nowrap">
-          <span class="input-group-text bg-white border-end-0">
+          <span class="input-group-text bg-body border-end-0">
             <i class="pi pi-lock text-secondary"></i>
           </span>
           <Password 

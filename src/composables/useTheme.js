@@ -2,13 +2,13 @@ import { ref } from 'vue'
 
 export const THEME_PALETTES = {
   red: {
-    name: 'Crimson Red',
-    primary: '#ef4444',
-    hover: '#dc2626',
-    active: '#b91c1c',
-    rgb: '239, 68, 68',
+    name: 'SwitchFiber Red',
+    primary: '#dc2626',
+    hover: '#b91c1c',
+    active: '#991b1b',
+    rgb: '220, 38, 38',
     subtleBg: '#fef2f2',
-    pdfRgb: [239, 68, 68]
+    pdfRgb: [220, 38, 38]
   },
   green: {
     name: 'Emerald Green',
@@ -58,17 +58,18 @@ export const THEME_PALETTES = {
 }
 
 const isDark = ref(false)
-const activeColorTheme = ref('green')
+const activeColorTheme = ref('red')
 
 if (typeof localStorage !== 'undefined') {
-  activeColorTheme.value = localStorage.getItem('switchfiber_color_theme') || 'green'
+  activeColorTheme.value = 'red' // Fixed to SwitchFiber Logo Red theme
+  localStorage.setItem('switchfiber_color_theme', 'red')
 }
 
 function applyColorTheme(themeKey) {
-  const palette = THEME_PALETTES[themeKey] || THEME_PALETTES.green
-  activeColorTheme.value = themeKey
+  const palette = THEME_PALETTES[themeKey] || THEME_PALETTES.red
+  activeColorTheme.value = 'red'
   if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('switchfiber_color_theme', themeKey)
+    localStorage.setItem('switchfiber_color_theme', 'red')
   }
 
   if (typeof document !== 'undefined') {

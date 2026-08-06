@@ -2754,24 +2754,32 @@ defineExpose({
   transition: background-color 0.15s ease-in-out;
 }
 :deep(.p-datatable-tbody > tr:hover) {
-  background-color: var(--theme-row-hover, rgba(16, 185, 129, 0.08)) !important;
+  background-color: var(--theme-row-hover, rgba(220, 38, 38, 0.06)) !important;
 }
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"]) {
-  background-color: var(--theme-row-highlight, #10b981) !important;
+  background-color: var(--theme-row-highlight, #dc2626) !important;
   color: #ffffff !important;
 }
-:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight span:not(.pi-trash):not(.delete-btn *)),
-:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] span:not(.pi-trash):not(.delete-btn *)) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight span),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] span) {
   color: #ffffff !important;
 }
 
-/* Ensure Trashcan Icon for Delete is ALWAYS red even on highlighted/selected rows */
+/* Trashcan Icon on normal unselected rows (Red) */
 :deep(.delete-btn),
 :deep(.delete-btn .pi),
 :deep(.delete-btn .pi-trash),
-:deep(.delete-btn span),
-:deep(.p-datatable-tbody > tr .delete-btn),
+:deep(.delete-btn span) {
+  color: #ef4444 !important;
+}
+
+:deep(.delete-btn:hover) {
+  color: #dc2626 !important;
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Trashcan Icon on HIGHLIGHTED / SELECTED rows (Pure White for high contrast on red background) */
 :deep(.p-datatable-tbody > tr.p-highlight .delete-btn),
 :deep(.p-datatable-tbody > tr.p-highlight .delete-btn .pi),
 :deep(.p-datatable-tbody > tr.p-highlight .delete-btn .pi-trash),
@@ -2780,17 +2788,16 @@ defineExpose({
 :deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn .pi),
 :deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn .pi-trash),
 :deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn span) {
-  color: #ef4444 !important;
+  color: #ffffff !important;
 }
 
-:deep(.delete-btn:hover),
 :deep(.p-datatable-tbody > tr.p-highlight .delete-btn:hover),
 :deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn:hover) {
-  color: #dc2626 !important;
-  background-color: rgba(239, 68, 68, 0.2) !important;
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.25) !important;
 }
 
-/* Disable row highlight green ONLY on Menu list table */
+/* Disable row highlight red ONLY on Menu list table */
 :deep(.no-row-highlight .p-datatable-tbody > tr.p-highlight),
 :deep(.no-row-highlight .p-datatable-tbody > tr[aria-selected="true"]) {
   background-color: transparent !important;
@@ -2834,12 +2841,12 @@ defineExpose({
 }
 
 :deep(.p-datatable-tbody > tr:hover td.frozen-actions-col) {
-  background-color: var(--theme-row-hover, rgba(16, 185, 129, 0.08)) !important;
+  background-color: var(--theme-row-hover, rgba(220, 38, 38, 0.06)) !important;
 }
 
 :deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col),
 :deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col) {
-  background-color: var(--theme-row-highlight, #10b981) !important;
+  background-color: var(--theme-row-highlight, #dc2626) !important;
 }
 
 /* Compact Table Row Height & Padding */
@@ -2876,6 +2883,6 @@ defineExpose({
   transition: color 0.15s ease-in-out;
 }
 .eye-toggle-btn:hover {
-  color: var(--bs-primary, #10b981) !important;
+  color: var(--bs-primary, #dc2626) !important;
 }
 </style>

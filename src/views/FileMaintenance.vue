@@ -18,7 +18,7 @@
     </div>
 
     <!-- Data Viewer -->
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body">
       <DynamicApiTable ref="apiTableRef" v-if="endpoint" :endpoint="endpoint" :key="endpoint" class="m-3" :hide-create-button="true" />
       <div v-else class="p-4 text-center text-muted">Invalid Configuration</div>
     </div>

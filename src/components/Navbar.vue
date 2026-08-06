@@ -178,7 +178,7 @@
         :class="isDark ? 'btn-dark' : 'btn-light'"
         style="width: 42px; height: 42px; transition: transform 0.2s;"
         aria-label="Toggle Dark Mode"
-        title="Toggle Dark Mode"
+        :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
       >
         <i :class="isDark ? 'pi pi-sun text-warning' : 'pi pi-moon text-secondary'" class="fs-5"></i>
       </button>

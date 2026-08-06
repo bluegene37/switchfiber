@@ -12,7 +12,7 @@
     <div class="row g-4">
       <!-- Left Column: Access Level Table -->
       <div class="col-12 col-xl-6">
-        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
           <div class="card-header bg-body border-bottom p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2">
               <i class="pi pi-shield text-primary fs-5"></i>
@@ -41,7 +41,7 @@
 
       <!-- Right Column: Menu List Table -->
       <div class="col-12 col-xl-6">
-        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
           <div class="card-header bg-body border-bottom p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2">
               <i class="pi pi-list text-primary fs-5"></i>

@@ -106,14 +106,17 @@ export const EndpointColumns = {
     "city",
     "region",
     "planId",
+    "choose_Plan",
     "remarks",
     "installationFee",
     "contractTemplate",
     "billingDay",
     "preferredDay",
+    "preferred_Day",
     "joRemarks",
     "status",
     "verifiedBy",
+    "verified_By",
     "modemRouterSN",
     "provider",
     "lcpId",
@@ -178,63 +181,76 @@ export const EndpointColumns = {
     "addressCoordinates",
     "referrersAccountNumber",
     "applicationId",
+    "applicationIdValue",
     "houseFront",
+    "timestamp",
+    "lcnap",
+    "lcp",
+    "lcpnapport",
+    "nap",
+    "port",
+    "vlan",
+    "plan",
+    "lcpNavigation",
+    "napNavigation",
+    "vlanNavigation",
     "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Lcpnapports": [
     "id",
     "name",
     "description",
-    "createdBy",
+    "createdByUserId",
     "createdDate",
-    "modifiedBy",
+    "modifiedByUserId",
     "modifiedDate",
-    "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Lcpnaps": [
     "id",
     "name",
     "description",
-    "createdBy",
+    "createdByUserId",
     "createdDate",
-    "modifiedBy",
+    "modifiedByUserId",
     "modifiedDate",
-    "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Lcps": [
     "id",
     "name",
     "description",
-    "createdBy",
+    "createdByUserId",
     "createdDate",
-    "modifiedBy",
+    "modifiedByUserId",
     "modifiedDate",
-    "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Naps": [
     "id",
     "name",
     "description",
-    "createdBy",
+    "createdByUserId",
     "createdDate",
-    "modifiedBy",
+    "modifiedByUserId",
     "modifiedDate",
-    "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Plans": [
     "id",
@@ -246,8 +262,6 @@ export const EndpointColumns = {
     "createdDate",
     "modifiedBy",
     "modifiedDate",
-    "created",
-    "createdBy",
     "lastModified",
     "lastModifiedBy"
   ],
@@ -255,14 +269,14 @@ export const EndpointColumns = {
     "id",
     "name",
     "description",
-    "createdBy",
+    "createdByUserId",
     "createdDate",
-    "modifiedBy",
+    "modifiedByUserId",
     "modifiedDate",
-    "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Routers": [
     "id",
@@ -270,27 +284,27 @@ export const EndpointColumns = {
     "description",
     "brand",
     "model",
-    "createdBy",
+    "createdByUserId",
     "createdDate",
-    "modifiedBy",
+    "modifiedByUserId",
     "modifiedDate",
-    "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Vlans": [
     "id",
     "name",
     "description",
-    "createdBy",
+    "createdByUserId",
     "createdDate",
-    "modifiedBy",
+    "modifiedByUserId",
     "modifiedDate",
-    "created",
     "createdBy",
     "lastModified",
-    "lastModifiedBy"
+    "lastModifiedBy",
+    "rowVersion"
   ],
   "Users": [
     "id",
@@ -303,24 +317,36 @@ export const EndpointColumns = {
     "username",
     "password",
     "active",
-    "accesslevel_id"
+    "accesslevel_id",
+    "rowVersion"
   ],
   "AccessLevel": [
     "id",
     "name",
-    "description"
+    "description",
+    "createdByUserId",
+    "createdDate",
+    "modifiedByUserId",
+    "modifiedDate",
+    "rowVersion"
   ],
   "Menus": [
     "id",
     "name",
     "route",
     "icon",
-    "description"
+    "description",
+    "createdByUserId",
+    "createdDate",
+    "modifiedByUserId",
+    "modifiedDate",
+    "rowVersion"
   ],
   "AccessLevelMenu": [
     "id",
     "accessLevelId",
-    "menuId"
+    "menuId",
+    "rowVersion"
   ],
   "BillingStatements": [
     "id",

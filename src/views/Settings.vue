@@ -92,63 +92,49 @@
               <i class="pi pi-palette fs-4"></i>
             </div>
             <div>
-              <h5 class="fw-bold text-body mb-1">Theme & Color Customization</h5>
-              <p class="small text-secondary mb-0">Select your preferred color theme palette and interface appearance mode.</p>
+              <h5 class="fw-bold text-body mb-1">Theme & Interface Appearance</h5>
+              <p class="small text-secondary mb-0">Switch between Light and Dark mode for optimal viewing comfort.</p>
             </div>
           </div>
 
-          <!-- Color Palette Selection Grid -->
-          <h6 class="fw-bold text-body mb-3">Color Theme Palette</h6>
-          <div class="row g-3 mb-4">
-            <div 
-              v-for="(palette, key) in THEME_PALETTES" 
-              :key="key"
-              class="col-12 col-sm-6"
-            >
-              <div 
-                @click="setColorTheme(key)"
-                class="p-3 rounded-3 border d-flex align-items-center justify-content-between theme-card position-relative"
-                :class="{ 'border-primary border-2 bg-primary bg-opacity-10': activeColorTheme === key }"
-                style="cursor: pointer; transition: all 0.2s;"
-              >
-                <div class="d-flex align-items-center gap-3">
-                  <span 
-                    class="rounded-circle d-inline-block border border-2 border-white shadow-sm" 
-                    :style="{ width: '32px', height: '32px', backgroundColor: palette.primary }"
-                  ></span>
-                  <div>
-                    <div class="fw-bold small text-body">{{ palette.name }}</div>
-                    <div class="text-secondary small" style="font-size: 0.75rem;">{{ palette.primary }}</div>
-                  </div>
-                </div>
-                <div v-if="activeColorTheme === key" class="badge bg-primary rounded-pill">
-                  <i class="pi pi-check me-1"></i> Active
-                </div>
+          <!-- Active Brand Theme Badge -->
+          <div class="p-3 rounded-3 border bg-body-tertiary mb-4 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              <span 
+                class="rounded-circle d-inline-block border border-2 border-white shadow-sm" 
+                style="width: 32px; height: 32px; background-color: #dc2626;"
+              ></span>
+              <div>
+                <div class="fw-bold small text-body">SwitchFiber Brand Theme</div>
+                <div class="text-secondary small" style="font-size: 0.75rem;">Logo-Matched Red Palette (#dc2626)</div>
               </div>
             </div>
+            <span class="badge bg-primary rounded-pill px-3 py-2">
+              <i class="pi pi-check me-1"></i> Active Theme
+            </span>
           </div>
 
           <!-- Mode Toggle -->
-          <h6 class="fw-bold text-body mb-3 border-top pt-4">Interface Mode</h6>
+          <h6 class="fw-bold text-body mb-3 border-top pt-3">Interface Mode (Light / Dark)</h6>
           <div class="p-3 rounded-3 border bg-body-tertiary d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
               <i :class="isDark ? 'pi pi-moon text-warning fs-4' : 'pi pi-sun text-warning fs-4'"></i>
               <div>
                 <div class="fw-bold small text-body">{{ isDark ? 'Dark Mode' : 'Light Mode' }}</div>
-                <div class="text-secondary small">Switch between light and dark interface styles</div>
+                <div class="text-secondary small">Toggle between Light and Dark themes anytime</div>
               </div>
             </div>
             <button 
               @click="toggleTheme" 
-              class="btn btn-outline-secondary btn-sm px-3 fw-semibold rounded-pill"
+              class="btn btn-primary btn-sm px-4 fw-bold rounded-pill shadow-sm"
             >
-              Toggle to {{ isDark ? 'Light' : 'Dark' }}
+              Switch to {{ isDark ? 'Light Mode' : 'Dark Mode' }}
             </button>
           </div>
         </div>
 
         <!-- 2. Profile Information Section -->
-        <div v-else-if="activeSection === 'profile'" class="card shadow-sm border-0 rounded-4 p-4 bg-body">
+        <div v-if="activeSection === 'profile'" class="card shadow-sm border-0 rounded-4 p-4 bg-body">
           <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
             <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
               <i class="pi pi-user fs-4"></i>
@@ -159,15 +145,21 @@
             </div>
           </div>
 
+          <!-- Alert Notification Banner -->
+          <div v-if="profileMsg.text" :class="['alert d-flex align-items-center rounded-3 p-3 mb-3 small', profileMsg.isError ? 'alert-danger' : 'alert-success']" role="alert">
+            <i :class="['pi me-2 fs-5 flex-shrink-0', profileMsg.isError ? 'pi-exclamation-triangle' : 'pi-check-circle']"></i>
+            <div>{{ profileMsg.text }}</div>
+          </div>
+
           <form @submit.prevent="saveProfile">
             <div class="row g-3 mb-3">
               <div class="col-12 col-sm-6">
                 <label class="form-label small fw-semibold text-secondary">Username</label>
-                <InputText v-model="profileForm.username" class="w-100 p-inputtext-sm" />
+                <InputText v-model="profileForm.username" class="w-100 p-inputtext-sm" required />
               </div>
               <div class="col-12 col-sm-6">
                 <label class="form-label small fw-semibold text-secondary">Email Address</label>
-                <InputText v-model="profileForm.email" class="w-100 p-inputtext-sm" />
+                <InputText v-model="profileForm.email" type="email" class="w-100 p-inputtext-sm" required />
               </div>
             </div>
 
@@ -188,8 +180,10 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2">
-              <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
-                Save Profile Changes
+              <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm d-flex align-items-center gap-2" :disabled="isSavingProfile">
+                <span v-if="isSavingProfile" class="spinner-border spinner-border-sm" role="status"></span>
+                <i v-else class="pi pi-check"></i>
+                <span>{{ isSavingProfile ? 'Saving...' : 'Save Profile Changes' }}</span>
               </button>
             </div>
           </form>
@@ -207,26 +201,34 @@
             </div>
           </div>
 
+          <!-- Alert Notification Banner -->
+          <div v-if="securityMsg.text" :class="['alert d-flex align-items-center rounded-3 p-3 mb-3 small', securityMsg.isError ? 'alert-danger' : 'alert-success']" role="alert">
+            <i :class="['pi me-2 fs-5 flex-shrink-0', securityMsg.isError ? 'pi-exclamation-triangle' : 'pi-check-circle']"></i>
+            <div>{{ securityMsg.text }}</div>
+          </div>
+
           <form @submit.prevent="updatePassword">
             <div class="mb-3">
               <label class="form-label small fw-semibold text-secondary">Current Password</label>
-              <Password v-model="securityForm.currentPassword" :toggleMask="true" :feedback="false" class="w-100 d-flex" inputClass="w-100 p-inputtext-sm" />
+              <Password v-model="securityForm.currentPassword" :toggleMask="true" :feedback="false" class="w-100 d-flex" inputClass="w-100 p-inputtext-sm" required />
             </div>
 
             <div class="row g-3 mb-4">
               <div class="col-12 col-sm-6">
                 <label class="form-label small fw-semibold text-secondary">New Password</label>
-                <Password v-model="securityForm.newPassword" :toggleMask="true" :feedback="false" class="w-100 d-flex" inputClass="w-100 p-inputtext-sm" />
+                <Password v-model="securityForm.newPassword" :toggleMask="true" :feedback="false" class="w-100 d-flex" inputClass="w-100 p-inputtext-sm" required />
               </div>
               <div class="col-12 col-sm-6">
                 <label class="form-label small fw-semibold text-secondary">Confirm New Password</label>
-                <Password v-model="securityForm.confirmPassword" :toggleMask="true" :feedback="false" class="w-100 d-flex" inputClass="w-100 p-inputtext-sm" />
+                <Password v-model="securityForm.confirmPassword" :toggleMask="true" :feedback="false" class="w-100 d-flex" inputClass="w-100 p-inputtext-sm" required />
               </div>
             </div>
 
             <div class="d-flex justify-content-end">
-              <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
-                Update Password
+              <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm d-flex align-items-center gap-2" :disabled="isUpdatingPassword">
+                <span v-if="isUpdatingPassword" class="spinner-border spinner-border-sm" role="status"></span>
+                <i v-else class="pi pi-lock-open"></i>
+                <span>{{ isUpdatingPassword ? 'Updating...' : 'Update Password' }}</span>
               </button>
             </div>
           </form>
@@ -263,24 +265,32 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
+import apiClient from '../services/api'
+import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 
 const authStore = useAuthStore()
-const { isDark, toggleTheme, activeColorTheme, setColorTheme, THEME_PALETTES } = useTheme()
+const { isDark, toggleTheme } = useTheme()
+const toast = useToast()
 
-const activeSection = ref('theme')
+const activeSection = ref('profile')
 const user = computed(() => authStore.user)
 
 const apiUrl = ref(import.meta.env.VITE_API_URL || 'https://103.249.198.43:8090')
 
+const isSavingProfile = ref(false)
+const isUpdatingPassword = ref(false)
+const profileMsg = ref({ text: '', isError: false })
+const securityMsg = ref({ text: '', isError: false })
+
 const userDisplayName = computed(() => {
   if (!user.value) return 'Admin User'
+  if (user.value.fname || user.value.lname) return `${user.value.fname || ''} ${user.value.lname || ''}`.trim()
   if (user.value.username) return user.value.username
-  if (user.value.fname) return `${user.value.fname} ${user.value.lname || ''}`.trim()
   return user.value.email || 'Admin User'
 })
 
@@ -294,11 +304,11 @@ const userRole = computed(() => {
 })
 
 const profileForm = ref({
-  username: user.value?.username || 'admin',
-  email: user.value?.email || 'admin@switchfiber.com',
-  fname: user.value?.fname || 'Admin',
-  lname: user.value?.lname || 'User',
-  contactnumber: user.value?.contactnumber || '09171234567'
+  username: user.value?.username || '',
+  email: user.value?.email || '',
+  fname: user.value?.fname || '',
+  lname: user.value?.lname || '',
+  contactnumber: user.value?.contactnumber || ''
 })
 
 const securityForm = ref({
@@ -307,16 +317,137 @@ const securityForm = ref({
   confirmPassword: ''
 })
 
-const saveProfile = () => {
-  alert('Profile changes saved successfully!')
+// Load full user record from API on mount to sync profile details
+const loadUserProfile = async () => {
+  if (!user.value || !user.value.id) return
+  try {
+    const res = await apiClient.get(`/Users/${user.value.id}`).catch(() => null)
+    if (res && (res.id || res.username)) {
+      profileForm.value.username = res.username || user.value.username || ''
+      profileForm.value.email = res.userEmail || res.email || user.value.email || ''
+      profileForm.value.fname = res.fname || res.firstName || user.value.fname || ''
+      profileForm.value.lname = res.lname || res.lastName || user.value.lname || ''
+      profileForm.value.contactnumber = res.contactnumber || res.contactNumber || user.value.contactnumber || ''
+    }
+  } catch (err) {
+    console.warn('Could not fetch latest user details:', err)
+  }
 }
 
-const updatePassword = () => {
-  if (securityForm.value.newPassword !== securityForm.value.confirmPassword) {
-    alert('New password and confirm password do not match.')
+onMounted(() => {
+  loadUserProfile()
+})
+
+const saveProfile = async () => {
+  profileMsg.value = { text: '', isError: false }
+  if (!profileForm.value.username.trim() || !profileForm.value.email.trim()) {
+    profileMsg.value = { text: 'Username and Email address are required.', isError: true }
     return
   }
-  alert('Password updated successfully!')
+
+  isSavingProfile.value = true
+  try {
+    const userId = Number(user.value?.id || 1)
+    const existingUser = await apiClient.get(`/Users/${userId}`).catch(() => null)
+
+    const updatePayload = {
+      ...(existingUser || {}),
+      id: userId,
+      username: profileForm.value.username.trim(),
+      fname: profileForm.value.fname.trim(),
+      lname: profileForm.value.lname.trim(),
+      name: `${profileForm.value.fname.trim()} ${profileForm.value.lname.trim()}`.trim(),
+      userEmail: profileForm.value.email.trim(),
+      email: profileForm.value.email.trim(),
+      contactNumber: profileForm.value.contactnumber.trim(),
+      contactnumber: profileForm.value.contactnumber.trim(),
+      // Form Audit Trail Standard: UPDATE (PUT) populates modifiedBy with logged-in user id
+      modifiedBy: userId
+    }
+
+    await apiClient.put(`/Users/${userId}`, updatePayload).catch(async () => {
+      return await apiClient.put('/Users', updatePayload)
+    })
+
+    // Update authStore reactivity & storage for instant application UI refresh
+    if (authStore.user) {
+      authStore.user.username = updatePayload.username
+      authStore.user.fname = updatePayload.fname
+      authStore.user.lname = updatePayload.lname
+      authStore.user.email = updatePayload.email
+      authStore.user.contactnumber = updatePayload.contactnumber
+
+      const storage = localStorage.getItem('token') ? localStorage : sessionStorage
+      storage.setItem('user', JSON.stringify(authStore.user))
+    }
+
+    profileMsg.value = { text: 'Profile information updated successfully!', isError: false }
+    toast.add({ severity: 'success', summary: 'Success', detail: 'Profile updated successfully!', life: 4000 })
+  } catch (err) {
+    console.error('Error saving profile:', err)
+    profileMsg.value = { text: err.message || 'Failed to update profile. Please try again.', isError: true }
+    toast.add({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to update profile.', life: 4000 })
+  } finally {
+    isSavingProfile.value = false
+  }
+}
+
+const updatePassword = async () => {
+  securityMsg.value = { text: '', isError: false }
+
+  if (!securityForm.value.currentPassword) {
+    securityMsg.value = { text: 'Please enter your current password.', isError: true }
+    return
+  }
+  if (!securityForm.value.newPassword) {
+    securityMsg.value = { text: 'Please enter a new password.', isError: true }
+    return
+  }
+  if (securityForm.value.newPassword.length < 3) {
+    securityMsg.value = { text: 'New password must be at least 3 characters long.', isError: true }
+    return
+  }
+  if (securityForm.value.newPassword !== securityForm.value.confirmPassword) {
+    securityMsg.value = { text: 'New password and confirmation password do not match.', isError: true }
+    return
+  }
+
+  isUpdatingPassword.value = true
+  try {
+    const userId = Number(user.value?.id || 1)
+    const existingUser = await apiClient.get(`/Users/${userId}`).catch(() => null)
+
+    if (existingUser && existingUser.password && String(existingUser.password) !== String(securityForm.value.currentPassword)) {
+      securityMsg.value = { text: 'Current password entered is incorrect.', isError: true }
+      isUpdatingPassword.value = false
+      return
+    }
+
+    const passwordPayload = {
+      ...(existingUser || {}),
+      id: userId,
+      password: securityForm.value.newPassword,
+      // Form Audit Trail Standard: UPDATE (PUT) populates modifiedBy with logged-in user id
+      modifiedBy: userId
+    }
+
+    await apiClient.put(`/Users/${userId}`, passwordPayload).catch(async () => {
+      return await apiClient.put('/Users', passwordPayload)
+    })
+
+    securityForm.value.currentPassword = ''
+    securityForm.value.newPassword = ''
+    securityForm.value.confirmPassword = ''
+
+    securityMsg.value = { text: 'Password updated successfully!', isError: false }
+    toast.add({ severity: 'success', summary: 'Password Changed', detail: 'Password updated successfully!', life: 4000 })
+  } catch (err) {
+    console.error('Error updating password:', err)
+    securityMsg.value = { text: err.message || 'Failed to update password. Please try again.', isError: true }
+    toast.add({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to update password.', life: 4000 })
+  } finally {
+    isUpdatingPassword.value = false
+  }
 }
 </script>
 

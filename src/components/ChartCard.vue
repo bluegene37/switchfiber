@@ -1,19 +1,19 @@
 <template>
-  <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
+  <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-body">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h3 class="fs-5 fw-bold text-body mb-0">{{ title }}</h3>
-      <button class="btn btn-link text-secondary p-0 text-decoration-none">
+      <button class="btn btn-link text-secondary p-0 text-decoration-none" aria-label="More Options">
         <i class="pi pi-ellipsis-h"></i>
       </button>
     </div>
     <div class="w-100" style="height: 250px;">
-      <v-chart class="chart" :option="option" autoresize />
+      <v-chart class="chart" :option="computedOption" :theme="theme" autoresize />
     </div>
   </div>
 </template>
 
 <script setup>
-import { provide } from 'vue'
+import { computed, provide } from 'vue'
 import VChart, { THEME_KEY } from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -25,6 +25,7 @@ import {
   TitleComponent,
   RadarComponent
 } from 'echarts/components'
+import { useTheme } from '../composables/useTheme'
 
 use([
   CanvasRenderer,
@@ -40,12 +41,22 @@ use([
   RadarComponent
 ])
 
-// Provide dark theme if HTML element has .dark class (mocked statically here, can be dynamic)
-provide(THEME_KEY, document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+const { isDark } = useTheme()
+const theme = computed(() => (isDark.value ? 'dark' : 'light'))
 
-defineProps({
+provide(THEME_KEY, theme)
+
+const props = defineProps({
   title: { type: String, required: true },
   option: { type: Object, required: true }
+})
+
+// Ensure transparent background so ECharts canvas inherits card theme background
+const computedOption = computed(() => {
+  return {
+    backgroundColor: 'transparent',
+    ...props.option
+  }
 })
 </script>
 

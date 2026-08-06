@@ -2,16 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
-  /* Default Green Theme Palette */
-  --color-primary: #10b981;
-  --color-primary-dark: #059669;
+  /* SwitchFiber Red Theme Palette (Logo-matched, eye-friendly for 8h usage) */
+  --color-primary: #dc2626;
+  --color-primary-dark: #b91c1c;
 
-  --bs-primary: #10b981;
-  --bs-primary-rgb: 16, 185, 129;
-  --bs-primary-hover: #059669;
-  --bs-primary-active: #047857;
-  --bs-primary-border-subtle: #a7f3d0;
-  --bs-primary-bg-subtle: #ecfdf5;
+  --bs-primary: #dc2626;
+  --bs-primary-rgb: 220, 38, 38;
+  --bs-primary-hover: #b91c1c;
+  --bs-primary-active: #991b1b;
+  --bs-primary-border-subtle: #fecaca;
+  --bs-primary-bg-subtle: #fef2f2;
 
   /* Errors & Deletes (Red) */
   --bs-danger: #ef4444;
@@ -22,10 +22,10 @@
   --bs-warning-rgb: 245, 158, 11;
 
   /* Theme Dynamic Variables */
-  --theme-primary: #10b981;
-  --theme-primary-hover: #059669;
-  --theme-row-highlight: #10b981;
-  --theme-row-hover: rgba(16, 185, 129, 0.08);
+  --theme-primary: #dc2626;
+  --theme-primary-hover: #b91c1c;
+  --theme-row-highlight: #dc2626;
+  --theme-row-hover: rgba(220, 38, 38, 0.06);
 
   /* PrimeVue Color Overrides */
   --p-primary-color: var(--bs-primary) !important;
@@ -249,12 +249,12 @@ html[data-bs-theme="dark"] ::-webkit-scrollbar-thumb,
   transition: background-color 0.15s ease-in-out;
 }
 
-/* Cool Soft Blue Hover Effect */
+/* Soft Red Hover Effect */
 .p-datatable .p-datatable-tbody > tr:hover,
 .p-datatable .p-selectable-row:hover,
 .p-datatable .p-datatable-tbody > tr.p-selectable-row:hover,
 .p-datatable .p-datatable-tbody > tr:hover > td {
-  background-color: rgba(59, 130, 246, 0.06) !important;
+  background-color: rgba(220, 38, 38, 0.05) !important;
   cursor: pointer;
 }
 
@@ -267,31 +267,31 @@ html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr:hover > td,
   background-color: rgba(255, 255, 255, 0.07) !important;
 }
 
-/* Neutral Soft Slate Blue Selection (Parked Row) */
+/* Soft Red Row Selection (Parked Row) */
 .p-datatable .p-datatable-tbody > tr.p-highlight,
 .p-datatable .p-selectable-row.p-highlight,
 .p-datatable .p-datatable-tbody > tr.p-selectable-row.p-highlight,
 .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
 .p-datatable .p-datatable-tbody > tr.p-highlight > td {
-  background-color: rgba(59, 130, 246, 0.12) !important;
+  background-color: rgba(220, 38, 38, 0.10) !important;
   color: inherit !important;
   font-weight: 500;
 }
 
 html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight,
-.dark .p-datatable .p-datatable-tbody > tr.p-highlight,
+.dark .p-datatable .p-datatable-tbody > tr:hover,
 html[data-bs-theme="dark"] .p-datatable .p-selectable-row.p-highlight,
 .dark .p-datatable .p-selectable-row.p-highlight,
 html[data-bs-theme="dark"] .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
 .dark .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
 html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight > td,
 .dark .p-datatable .p-datatable-tbody > tr.p-highlight > td {
-  background-color: rgba(59, 130, 246, 0.20) !important;
+  background-color: rgba(220, 38, 38, 0.18) !important;
   color: inherit !important;
   font-weight: 500;
 }
 
 .p-datatable .p-datatable-tbody > tr.p-highlight td,
 .p-datatable .p-selectable-row.p-highlight td {
-  border-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(220, 38, 38, 0.15) !important;
 }

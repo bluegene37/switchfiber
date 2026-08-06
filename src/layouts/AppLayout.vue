@@ -22,6 +22,7 @@
         <router-view />
       </main>
     </div>
+    <Toast />
   </div>
 </template>
 
@@ -29,6 +30,7 @@
 import { ref, watch } from 'vue'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
+import Toast from 'primevue/toast'
 
 const isSidebarOpen = ref(false)
 const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true')
