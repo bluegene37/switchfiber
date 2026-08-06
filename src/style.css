@@ -260,6 +260,13 @@ ul.p-select-list-container {
   border-radius: 10px !important;
 }
 
+.alert-success {
+  background-color: #f0fdf4 !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
+  border-radius: 10px !important;
+}
+
 /* Active links, list group items & text accents */
 .active-link,
 .bg-primary,
@@ -391,7 +398,6 @@ html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr:hover > td,
 }
 
 html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight,
-.dark .p-datatable .p-datatable-tbody > tr:hover,
 html[data-bs-theme="dark"] .p-datatable .p-selectable-row.p-highlight,
 .dark .p-datatable .p-selectable-row.p-highlight,
 html[data-bs-theme="dark"] .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,

@@ -335,6 +335,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { useSearch } from '../composables/useSearch'
+import apiClient from '../services/api'
 
 const props = defineProps({
   isCollapsed: {
@@ -573,13 +574,13 @@ const handleLogout = () => {
   position: relative;
 }
 .search-item:hover, .search-item.active-item {
-  background-color: rgba(13, 110, 253, 0.12) !important;
+  background-color: rgba(220, 38, 38, 0.10) !important;
   border-left-color: var(--bs-primary) !important;
 }
 [data-bs-theme="dark"] .search-item:hover,
 [data-bs-theme="dark"] .search-item.active-item {
-  background-color: rgba(13, 110, 253, 0.26) !important;
-  border-left-color: #3b82f6 !important;
+  background-color: rgba(220, 38, 38, 0.22) !important;
+  border-left-color: var(--bs-primary) !important;
 }
 
 .search-item.active-item .enter-icon {
@@ -645,6 +646,20 @@ const handleLogout = () => {
 .dropdown-fade-leave-active {
   transition: all 0.2s ease;
 }
+.hover-bg-item {
+  transition: background-color 0.15s ease-in-out;
+}
+.hover-bg-item:hover {
+  background-color: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.05)) !important;
+}
+
+.hover-bg-icon {
+  transition: all 0.15s ease-in-out;
+}
+.hover-bg-icon:hover {
+  background-color: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.05)) !important;
+}
+
 .dropdown-fade-enter-from,
 .dropdown-fade-leave-to {
   opacity: 0;
