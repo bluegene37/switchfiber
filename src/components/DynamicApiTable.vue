@@ -1671,20 +1671,25 @@ const formSections = computed(() => {
     }))
 })
 
-// Columns for View Details Modal ONLY (includes ALL fields including ID, CreatedBy/Date, ModifiedBy/Date)
+// Columns for View Details Modal ONLY (includes ALL fields including ID, CreatedBy/Date, ModifiedBy/Date, but deduplicated)
 const viewFormColumns = computed(() => {
+  let keys = []
   if (viewFormData.value && typeof viewFormData.value === 'object') {
-    const keys = Object.keys(viewFormData.value)
-    if (keys.length > 0) {
-      const idIndex = keys.findIndex(k => k.toLowerCase() === 'id')
-      if (idIndex > 0) {
-        const [idCol] = keys.splice(idIndex, 1)
-        keys.unshift(idCol)
-      }
-      return keys
-    }
+    keys = Object.keys(viewFormData.value)
   }
-  return allRawColumns.value
+  if (!keys.length) {
+    keys = [...allRawColumns.value]
+  }
+
+  // Deduplicate redundant/paired fields and EF Core navigation objects for View Modal
+  keys = deduplicateColumns(keys)
+
+  const idIndex = keys.findIndex(k => k.toLowerCase() === 'id')
+  if (idIndex > 0) {
+    const [idCol] = keys.splice(idIndex, 1)
+    keys.unshift(idCol)
+  }
+  return keys
 })
 
 const viewFormSections = computed(() => {
