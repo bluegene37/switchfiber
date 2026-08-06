@@ -4,17 +4,42 @@
     <div class="d-flex align-items-center flex-grow-1">
       <button 
         @click="handleToggleSidebar" 
-        class="btn btn-link text-secondary me-3 p-1 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center" 
+        class="btn btn-link text-secondary me-2 me-md-3 p-1 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center flex-shrink-0" 
         style="width: 42px; height: 42px;"
         aria-label="Toggle Sidebar"
-        :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
+        :title="isOpen ? 'Close Sidebar' : (isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar')"
       >
-        <i :class="['pi', isCollapsed ? 'pi-bars' : 'pi-align-left', 'fs-4']"></i>
+        <i :class="['pi', isOpen ? 'pi-times' : (isCollapsed ? 'pi-bars' : 'pi-align-left'), 'fs-4']"></i>
+      </button>
+
+      <!-- Mobile Search Icon Trigger Button (Visible only on xs screens < 576px when search is closed) -->
+      <button 
+        v-if="!isMobileSearchActive"
+        @click="openMobileSearch" 
+        class="btn btn-link text-secondary p-1 d-sm-none border-0 text-decoration-none me-2 rounded-circle hover-bg-icon d-flex align-items-center justify-content-center" 
+        style="width: 40px; height: 40px;"
+        aria-label="Open Search"
+        title="Search"
+      >
+        <i class="pi pi-search fs-5"></i>
       </button>
       
       <!-- Navbar Search Container -->
-      <div class="position-relative d-none d-sm-block w-100" style="max-width: 480px;" ref="searchContainer">
-        <div class="position-relative">
+      <div 
+        class="position-relative w-100" 
+        :class="isMobileSearchActive ? 'mobile-search-bar d-flex align-items-center px-2 bg-body position-absolute start-0 top-0 h-100 w-100 z-3' : 'd-none d-sm-block'"
+        style="max-width: 480px;" 
+        ref="searchContainer"
+      >
+        <button 
+          v-if="isMobileSearchActive" 
+          @click="closeMobileSearch" 
+          class="btn btn-link text-secondary p-1 me-2 text-decoration-none border-0 d-sm-none"
+        >
+          <i class="pi pi-arrow-left fs-5"></i>
+        </button>
+
+        <div class="position-relative flex-grow-1">
           <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-secondary pointer-events-none">
             <i v-if="!isLoading" class="pi pi-search fs-5"></i>
             <span v-else class="spinner-border spinner-border-sm text-primary" role="status" style="width: 1rem; height: 1rem;"></span>
@@ -341,6 +366,10 @@ const props = defineProps({
   isCollapsed: {
     type: Boolean,
     default: false
+  },
+  isOpen: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -352,6 +381,21 @@ const handleToggleSidebar = () => {
   } else {
     emit('toggle-collapse')
   }
+}
+
+const isMobileSearchActive = ref(false)
+
+const openMobileSearch = () => {
+  isMobileSearchActive.value = true
+  openSearch()
+  nextTick(() => {
+    if (searchInputRef.value) searchInputRef.value.focus()
+  })
+}
+
+const closeMobileSearch = () => {
+  isMobileSearchActive.value = false
+  closeSearch()
 }
 
 const router = useRouter()

@@ -1,7 +1,7 @@
 <template>
   <aside 
-    class="sidebar-wrapper d-flex flex-column flex-shrink-0 vh-100 shadow-sm border-end bg-body position-relative" 
-    :style="{ width: isCollapsed ? '60px' : '250px', zIndex: 1050, transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }"
+    class="sidebar-wrapper d-flex flex-column flex-shrink-0 vh-100 shadow-sm border-end bg-body" 
+    :style="{ zIndex: 1050, transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }"
     :class="[
       isOpen ? 'transform-none' : 'transform-offcanvas',
       { 'is-collapsed': isCollapsed }
@@ -9,12 +9,21 @@
   >
     <!-- Branding Header -->
     <div 
-      class="d-flex align-items-center border-bottom overflow-hidden" 
-      :class="isCollapsed ? 'justify-content-center px-2' : 'px-3 gap-2.5'" 
+      class="d-flex align-items-center justify-content-between border-bottom overflow-hidden px-3" 
       style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box;"
     >
-      <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px; object-fit: contain;" />
-      <span v-if="!isCollapsed" class="text-body fs-4 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
+      <div class="d-flex align-items-center gap-2.5 overflow-hidden" :class="{ 'justify-content-center w-100 px-0': isCollapsed }">
+        <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px; object-fit: contain;" />
+        <span v-if="!isCollapsed" class="text-body fs-4 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
+      </div>
+      <button 
+        type="button" 
+        class="btn btn-sm btn-link text-secondary p-1 d-md-none border-0 shadow-none text-decoration-none" 
+        @click="$emit('close')"
+        aria-label="Close sidebar"
+      >
+        <i class="pi pi-times fs-5"></i>
+      </button>
     </div>
 
     <!-- Navigation List -->
@@ -357,7 +366,14 @@ const filteredMenuItems = computed(() => {
 }
 
 .sidebar-wrapper {
-  position: fixed;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: 100vh;
+  width: 260px;
+  z-index: 1050;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
 }
 .transform-offcanvas {
   transform: translateX(-100%);
@@ -368,10 +384,13 @@ const filteredMenuItems = computed(() => {
 
 @media (min-width: 768px) {
   .sidebar-wrapper {
-    position: static;
+    position: static !important;
+    transform: none !important;
+    box-shadow: none !important;
+    width: 250px;
   }
-  .transform-offcanvas {
-    transform: none;
+  .sidebar-wrapper.is-collapsed {
+    width: 60px;
   }
 }
 

@@ -15,6 +15,7 @@
         @toggle-sidebar="isSidebarOpen = !isSidebarOpen" 
         @toggle-collapse="isSidebarCollapsed = !isSidebarCollapsed"
         :is-collapsed="isSidebarCollapsed"
+        :is-open="isSidebarOpen"
       />
       
       <!-- Main Content -->
