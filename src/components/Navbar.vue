@@ -205,11 +205,11 @@
           >
             {{ userInitial }}
           </div>
-          <div class="ms-2.5 d-none d-md-block text-start">
+          <div class="ms-3 me-2.5 d-none d-md-block text-start">
             <div class="fw-bold text-body lh-1" style="font-size: 0.9rem;">{{ userDisplayName }}</div>
             <div class="text-secondary mt-1" style="font-size: 0.75rem;">{{ userRole }}</div>
           </div>
-          <i class="pi pi-chevron-down ms-2 text-secondary small d-none d-md-block chevron-icon" :class="{ 'rotate-180': isDropdownOpen }" style="font-size: 0.8rem;"></i>
+          <i class="pi pi-chevron-down ms-1 text-secondary small d-none d-md-block chevron-icon" :class="{ 'rotate-180': isDropdownOpen }" style="font-size: 0.8rem;"></i>
         </div>
 
         <!-- Profile Dropdown Card -->
