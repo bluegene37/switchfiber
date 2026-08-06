@@ -2,13 +2,13 @@ import { ref } from 'vue'
 
 export const THEME_PALETTES = {
   red: {
-    name: 'SwitchFiber Red',
-    primary: '#dc2626',
-    hover: '#b91c1c',
-    active: '#991b1b',
-    rgb: '220, 38, 38',
-    subtleBg: '#fef2f2',
-    pdfRgb: [220, 38, 38]
+    name: 'SwitchFiber Warm Rose',
+    primary: '#e74c5a',
+    hover: '#d63a48',
+    active: '#c02e3c',
+    rgb: '231, 76, 90',
+    subtleBg: '#fef2f3',
+    pdfRgb: [231, 76, 90]
   },
   green: {
     name: 'Emerald Green',

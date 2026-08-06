@@ -2853,13 +2853,13 @@ defineExpose({
   transition: background-color 0.15s ease-in-out;
 }
 :deep(.p-datatable-tbody > tr:hover) {
-  background-color: var(--theme-row-hover, rgba(220, 38, 38, 0.06)) !important;
+  background-color: var(--theme-row-hover, rgba(231, 76, 90, 0.06)) !important;
 }
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"]),
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight td),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] td) {
-  background-color: var(--theme-row-highlight, #dc2626) !important;
+  background-color: var(--theme-row-highlight, #e74c5a) !important;
   color: #ffffff !important;
 }
 
@@ -2906,7 +2906,7 @@ defineExpose({
 }
 
 :deep(.delete-btn:hover) {
-  color: #dc2626 !important;
+  color: #e74c5a !important;
   background-color: rgba(239, 68, 68, 0.15) !important;
 }
 
@@ -2972,12 +2972,12 @@ defineExpose({
 }
 
 :deep(.p-datatable-tbody > tr:hover td.frozen-actions-col) {
-  background-color: var(--theme-row-hover, rgba(220, 38, 38, 0.06)) !important;
+  background-color: var(--theme-row-hover, rgba(231, 76, 90, 0.06)) !important;
 }
 
 :deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col),
 :deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col) {
-  background-color: var(--theme-row-highlight, #dc2626) !important;
+  background-color: var(--theme-row-highlight, #e74c5a) !important;
 }
 
 /* Compact Table Row Height & Padding */
@@ -3014,6 +3014,6 @@ defineExpose({
   transition: color 0.15s ease-in-out;
 }
 .eye-toggle-btn:hover {
-  color: var(--bs-primary, #dc2626) !important;
+  color: var(--bs-primary, #e74c5a) !important;
 }
 </style>

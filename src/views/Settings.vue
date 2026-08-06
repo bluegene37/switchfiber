@@ -102,11 +102,11 @@
             <div class="d-flex align-items-center gap-3">
               <span 
                 class="rounded-circle d-inline-block border border-2 border-white shadow-sm" 
-                style="width: 32px; height: 32px; background-color: #dc2626;"
+                style="width: 32px; height: 32px; background-color: #e74c5a;"
               ></span>
               <div>
-                <div class="fw-bold small text-body">SwitchFiber Brand Theme</div>
-                <div class="text-secondary small" style="font-size: 0.75rem;">Logo-Matched Red Palette (#dc2626)</div>
+                <div class="fw-bold small text-body">SwitchFiber Warm Rose Theme</div>
+                <div class="text-secondary small" style="font-size: 0.75rem;">Eye-Friendly Warm Rose Palette (#e74c5a)</div>
               </div>
             </div>
             <span class="badge bg-primary rounded-pill px-3 py-2">

@@ -574,12 +574,12 @@ const handleLogout = () => {
   position: relative;
 }
 .search-item:hover, .search-item.active-item {
-  background-color: rgba(220, 38, 38, 0.10) !important;
+  background-color: rgba(231, 76, 90, 0.10) !important;
   border-left-color: var(--bs-primary) !important;
 }
 [data-bs-theme="dark"] .search-item:hover,
 [data-bs-theme="dark"] .search-item.active-item {
-  background-color: rgba(220, 38, 38, 0.22) !important;
+  background-color: rgba(231, 76, 90, 0.22) !important;
   border-left-color: var(--bs-primary) !important;
 }
 

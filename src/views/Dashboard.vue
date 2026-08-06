@@ -244,11 +244,11 @@ const bandwidthChartOption = ref({
       type: 'line', 
       smooth: true, 
       data: [18, 14, 38, 45, 40, 52, 28], 
-      itemStyle: { color: '#dc2626' },
+      itemStyle: { color: '#e74c5a' },
       areaStyle: {
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: 'rgba(220, 38, 38, 0.3)' }, { offset: 1, color: 'rgba(220, 38, 38, 0.02)' }]
+          colorStops: [{ offset: 0, color: 'rgba(231, 76, 90, 0.3)' }, { offset: 1, color: 'rgba(231, 76, 90, 0.02)' }]
         }
       }
     }

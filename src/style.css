@@ -2,16 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
-  /* SwitchFiber Red Theme Palette (Logo-matched, eye-friendly for 8h usage) */
-  --color-primary: #dc2626;
-  --color-primary-dark: #b91c1c;
+  /* SwitchFiber Warm Rose Red Theme Palette (softer, eye-friendly for 8h usage) */
+  --color-primary: #e74c5a;
+  --color-primary-dark: #d63a48;
 
-  --bs-primary: #dc2626;
-  --bs-primary-rgb: 220, 38, 38;
-  --bs-primary-hover: #b91c1c;
-  --bs-primary-active: #991b1b;
-  --bs-primary-border-subtle: #fecaca;
-  --bs-primary-bg-subtle: #fef2f2;
+  --bs-primary: #e74c5a;
+  --bs-primary-rgb: 231, 76, 90;
+  --bs-primary-hover: #d63a48;
+  --bs-primary-active: #c02e3c;
+  --bs-primary-border-subtle: #fdcfd3;
+  --bs-primary-bg-subtle: #fef2f3;
 
   /* Errors & Deletes (Red) */
   --bs-danger: #ef4444;
@@ -22,10 +22,10 @@
   --bs-warning-rgb: 245, 158, 11;
 
   /* Theme Dynamic Variables */
-  --theme-primary: #dc2626;
-  --theme-primary-hover: #b91c1c;
-  --theme-row-highlight: #dc2626;
-  --theme-row-hover: rgba(220, 38, 38, 0.06);
+  --theme-primary: #e74c5a;
+  --theme-primary-hover: #d63a48;
+  --theme-row-highlight: #e74c5a;
+  --theme-row-hover: rgba(231, 76, 90, 0.06);
 
   /* Typography Scale Tokens */
   --font-family-base: "Raleway", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -103,7 +103,7 @@ textarea:focus-visible,
 .p-select:focus-visible {
   outline: 2px solid var(--bs-primary) !important;
   outline-offset: 2px !important;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(231, 76, 90, 0.25) !important;
 }
 
 html[data-bs-theme="dark"] body,
@@ -227,8 +227,8 @@ ul.p-select-list-container {
 
 .p-button-danger:hover,
 .btn-danger:hover {
-  background-color: #dc2626 !important;
-  border-color: #dc2626 !important;
+  background-color: #e74c5a !important;
+  border-color: #e74c5a !important;
 }
 
 /* Orange for Warnings and Alerts */
@@ -249,7 +249,7 @@ ul.p-select-list-container {
 .alert-danger {
   background-color: #fef2f2 !important;
   border-color: #fca5a5 !important;
-  color: #991b1b !important;
+  color: #8b1a25 !important;
   border-radius: 10px !important;
 }
 
@@ -294,15 +294,15 @@ ul.p-select-list-container {
 .badge.bg-primary.bg-opacity-10,
 span.bg-primary.bg-opacity-10,
 div.bg-primary.bg-opacity-10 {
-  background-color: #fef2f2 !important;
-  border-color: #fecaca !important;
+  background-color: #fef2f3 !important;
+  border-color: #fdcfd3 !important;
 }
 
 .bg-primary.bg-opacity-10.text-primary,
 .bg-primary.bg-opacity-10 .text-primary,
 .badge.bg-primary.bg-opacity-10.text-primary,
 .badge.bg-primary.bg-opacity-10 {
-  color: #991b1b !important;
+  color: #8b1a25 !important;
 }
 
 html[data-bs-theme="dark"] .bg-primary.bg-opacity-10,
@@ -313,7 +313,7 @@ html[data-bs-theme="dark"] span.bg-primary.bg-opacity-10,
 .dark span.bg-primary.bg-opacity-10,
 html[data-bs-theme="dark"] div.bg-primary.bg-opacity-10,
 .dark div.bg-primary.bg-opacity-10 {
-  background-color: rgba(220, 38, 38, 0.22) !important;
+  background-color: rgba(231, 76, 90, 0.22) !important;
   border-color: rgba(239, 68, 68, 0.35) !important;
 }
 
@@ -373,7 +373,7 @@ html[data-bs-theme="dark"] ::-webkit-scrollbar-thumb,
 .p-datatable .p-selectable-row:hover,
 .p-datatable .p-datatable-tbody > tr.p-selectable-row:hover,
 .p-datatable .p-datatable-tbody > tr:hover > td {
-  background-color: rgba(220, 38, 38, 0.05) !important;
+  background-color: rgba(231, 76, 90, 0.05) !important;
   cursor: pointer;
 }
 
@@ -392,7 +392,7 @@ html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr:hover > td,
 .p-datatable .p-datatable-tbody > tr.p-selectable-row.p-highlight,
 .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
 .p-datatable .p-datatable-tbody > tr.p-highlight > td {
-  background-color: rgba(220, 38, 38, 0.10) !important;
+  background-color: rgba(231, 76, 90, 0.10) !important;
   color: inherit !important;
   font-weight: 500;
 }
@@ -404,12 +404,12 @@ html[data-bs-theme="dark"] .p-datatable.highlight-selected-row .p-datatable-tbod
 .dark .p-datatable.highlight-selected-row .p-datatable-tbody > tr.p-highlight,
 html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight > td,
 .dark .p-datatable .p-datatable-tbody > tr.p-highlight > td {
-  background-color: rgba(220, 38, 38, 0.18) !important;
+  background-color: rgba(231, 76, 90, 0.18) !important;
   color: inherit !important;
   font-weight: 500;
 }
 
 .p-datatable .p-datatable-tbody > tr.p-highlight td,
 .p-datatable .p-selectable-row.p-highlight td {
-  border-color: rgba(220, 38, 38, 0.15) !important;
+  border-color: rgba(231, 76, 90, 0.15) !important;
 }
