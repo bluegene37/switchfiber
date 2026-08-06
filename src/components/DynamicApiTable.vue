@@ -2090,6 +2090,28 @@ const formatViewFieldValue = (col, val) => {
   if (col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid') {
     return getAccessLevelLabel(val)
   }
+
+  // Lookup human-readable labels for infrastructure & dropdown fields
+  const type = getFieldType(col)
+  let targetList = null
+  if (type === 'vlan_dropdown') targetList = vlansList.value
+  else if (type === 'lcp_dropdown') targetList = lcpsList.value
+  else if (type === 'nap_dropdown') targetList = napsList.value
+  else if (type === 'port_dropdown') targetList = portsList.value
+  else if (type === 'lcpnap_dropdown') targetList = lcpnapsList.value
+  else if (type === 'lcpnapport_dropdown') targetList = lcpnapportsList.value
+  else if (type === 'plan_dropdown') targetList = plansList.value
+
+  if (targetList && targetList.length > 0) {
+    const found = targetList.find(opt => 
+      opt.value === val || 
+      opt.id === val || 
+      opt.id === Number(val) ||
+      String(opt.value).toLowerCase() === String(val).toLowerCase()
+    )
+    if (found) return found.label
+  }
+
   return String(val)
 }
 
@@ -2121,22 +2143,8 @@ const openCreateDialog = () => {
     } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
       const guestOption = accessLevels.value.find(opt => (opt.nameOnly || opt.label || '').toLowerCase().includes('guest'))
       formData.value[col] = guestOption ? guestOption.value : accessLevels.value[0].value
-    } else if (type === 'menu_dropdown' && menusList.value.length > 0) {
-      formData.value[col] = menusList.value[0].value
-    } else if (type === 'lcpnap_dropdown' && lcpnapsList.value.length > 0) {
-      formData.value[col] = lcpnapsList.value[0].value
-    } else if (type === 'lcpnapport_dropdown' && lcpnapportsList.value.length > 0) {
-      formData.value[col] = lcpnapportsList.value[0].value
-    } else if (type === 'lcp_dropdown' && lcpsList.value.length > 0) {
-      formData.value[col] = lcpsList.value[0].value
-    } else if (type === 'nap_dropdown' && napsList.value.length > 0) {
-      formData.value[col] = napsList.value[0].value
-    } else if (type === 'port_dropdown' && portsList.value.length > 0) {
-      formData.value[col] = portsList.value[0].value
-    } else if (type === 'vlan_dropdown' && vlansList.value.length > 0) {
-      formData.value[col] = vlansList.value[0].value
-    } else if (type === 'plan_dropdown' && plansList.value.length > 0) {
-      formData.value[col] = plansList.value[0].value
+    } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown') {
+      formData.value[col] = null
     } else {
       formData.value[col] = ''
     }
