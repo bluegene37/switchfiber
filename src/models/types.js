@@ -170,7 +170,23 @@
  * @property {string} addressCoordinates
  * @property {string} referrersAccountNumber
  * @property {string} applicationId
+ * @property {string} applicationIdValue
+ * @property {string} choose_Plan
+ * @property {string} preferred_Day
+ * @property {string} verified_By
  * @property {string} houseFront
+ * @property {string} timestamp
+ * @property {string} lcnap
+ * @property {string} lcp
+ * @property {string} lcpnapport
+ * @property {string} nap
+ * @property {string} port
+ * @property {string} vlan
+ * @property {string} plan
+ * @property {Object} [lcpNavigation]
+ * @property {Object} [napNavigation]
+ * @property {Object} [vlanNavigation]
+ * @property {string} [rowVersion]
  */
 
 /**

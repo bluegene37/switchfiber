@@ -128,6 +128,9 @@
           </span>
           <span v-else class="d-inline-block text-truncate" style="max-width: 200px;" :title="col.toLowerCase() === 'password' ? '••••••••' : slotProps.data[col]">
             <span v-if="col.toLowerCase() === 'password'" class="text-muted">••••••••</span>
+            <span v-else-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
+              {{ slotProps.data[col].name || slotProps.data[col].title || slotProps.data[col].label || slotProps.data[col].id || '-' }}
+            </span>
             <span v-else>{{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}</span>
           </span>
         </template>
@@ -1366,7 +1369,7 @@ const getFieldType = (col) => {
   if (lower === 'vlan_id' || lower === 'vlanid' || lower === 'vlan') {
     return 'vlan_dropdown'
   }
-  if (lower === 'plan_id' || lower === 'planid') {
+  if (lower === 'plan_id' || lower === 'planid' || lower === 'choose_plan' || lower === 'chooseplan' || lower === 'plan') {
     return 'plan_dropdown'
   }
   if (lower === 'region' || lower === 'regionname' || lower === 'region_name') {
@@ -1430,6 +1433,40 @@ const getFieldType = (col) => {
   return 'text'
 }
 
+// Filter out redundant alias duplicate keys (e.g. preferred_Day if preferredDay exists, verified_By if verifiedBy exists, EF Core navigation objects)
+const deduplicateColumns = (colList) => {
+  if (!Array.isArray(colList)) return []
+  const normalizedSet = new Set()
+  const result = []
+  const aliasMap = {
+    'preferred_day': 'preferredday',
+    'verified_by': 'verifiedby',
+    'applicationidvalue': 'applicationid'
+  }
+
+  colList.forEach(col => {
+    const lowerNoUnderscore = col.toLowerCase().replace(/_/g, '')
+    const lowerRaw = col.toLowerCase()
+    
+    if (aliasMap[lowerRaw]) {
+      const primaryKeyLower = aliasMap[lowerRaw]
+      if (colList.some(c => c.toLowerCase().replace(/_/g, '') === primaryKeyLower && c !== col)) {
+        return // Skip redundant alias
+      }
+    }
+
+    if (lowerRaw.endsWith('navigation')) {
+      return // Skip redundant EF Core navigation object properties
+    }
+
+    if (!normalizedSet.has(lowerNoUnderscore)) {
+      normalizedSet.add(lowerNoUnderscore)
+      result.push(col)
+    }
+  })
+  return result
+}
+
 // Dynamically generate column headers from the first object in the array,
 // or fallback to the static mapping if the table is empty.
 // All raw keys from data or model definition
@@ -1440,6 +1477,9 @@ const allRawColumns = computed(() => {
   } else {
     rawCols = [...(EndpointColumns[props.endpoint] || [])]
   }
+
+  // Deduplicate redundant columns & alias keys
+  rawCols = deduplicateColumns(rawCols)
 
   // Ensure 'id' or 'ID' or 'Id' is placed as the very first column if present
   const idIndex = rawCols.findIndex(c => c.toLowerCase() === 'id')
