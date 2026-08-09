@@ -122,27 +122,7 @@
                 </button>
               </div>
 
-              <!-- Expand / Collapse All Controls (Tree Mode) -->
-              <div v-if="viewMode === 'tree'" class="btn-group btn-group-sm p-1 bg-body-tertiary rounded-3 border" role="group">
-                <button 
-                  type="button" 
-                  class="btn btn-sm btn-link text-body text-decoration-none py-1 px-2 text-nowrap d-flex align-items-center gap-1"
-                  @click="forceExpandCounter++"
-                  title="Expand All Nodes"
-                >
-                  <i class="pi pi-angle-double-down"></i>
-                  <span class="small">Expand All</span>
-                </button>
-                <button 
-                  type="button" 
-                  class="btn btn-sm btn-link text-body text-decoration-none py-1 px-2 text-nowrap d-flex align-items-center gap-1"
-                  @click="forceCollapseCounter++"
-                  title="Collapse All Nodes"
-                >
-                  <i class="pi pi-angle-double-up"></i>
-                  <span class="small">Collapse All</span>
-                </button>
-              </div>
+
 
               <!-- Copy JSON Button -->
               <button 
@@ -168,12 +148,40 @@
           <!-- Card Body: JSON Viewer -->
           <div class="card-body p-3">
             <div class="position-relative">
-              <div class="d-flex align-items-center justify-content-between bg-body-tertiary text-secondary px-3 py-2 rounded-top-3 border border-bottom-0 font-monospace small">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 bg-body-tertiary text-secondary px-3 py-2 rounded-top-3 border border-bottom-0 font-monospace small">
                 <span class="fw-semibold">
                   <i :class="['pi', viewMode === 'tree' ? 'pi-sitemap' : 'pi-code', 'me-1.5']"></i> 
                   Response Body ({{ viewMode === 'tree' ? 'Interactive Collapsible Tree' : 'Raw Payload' }})
                 </span>
-                <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-0.5 small">{{ rawJsonString.length }} bytes</span>
+
+                <!-- Right Side: Expand/Collapse Controls + Bytes Badge -->
+                <div class="d-flex align-items-center gap-2">
+                  <!-- Expand / Collapse All Controls (Tree Mode) -->
+                  <div v-if="viewMode === 'tree'" class="btn-group btn-group-sm p-0.5 bg-body rounded-2 border" role="group">
+                    <button 
+                      type="button" 
+                      class="btn btn-sm rounded-2 py-0.5 px-2 text-nowrap d-flex align-items-center gap-1 transition-all"
+                      :class="treeExpandState === 'expanded' ? 'btn-primary shadow-xs fw-semibold' : 'btn-link text-body text-decoration-none border-0 opacity-75'"
+                      @click="expandAllTree"
+                      title="Expand All Nodes"
+                    >
+                      <i class="pi pi-angle-double-down" style="font-size: 0.75rem;"></i>
+                      <span style="font-size: 0.75rem;">Expand All</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-sm rounded-2 py-0.5 px-2 text-nowrap d-flex align-items-center gap-1 transition-all"
+                      :class="treeExpandState === 'collapsed' ? 'btn-primary shadow-xs fw-semibold' : 'btn-link text-body text-decoration-none border-0 opacity-75'"
+                      @click="collapseAllTree"
+                      title="Collapse All Nodes"
+                    >
+                      <i class="pi pi-angle-double-up" style="font-size: 0.75rem;"></i>
+                      <span style="font-size: 0.75rem;">Collapse All</span>
+                    </button>
+                  </div>
+
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-0.5 small">{{ rawJsonString.length }} bytes</span>
+                </div>
               </div>
 
               <!-- Loader for JSON -->
@@ -193,6 +201,7 @@
                   :depth="0"
                   :force-expand="forceExpandCounter"
                   :force-collapse="forceCollapseCounter"
+                  :expand-state="treeExpandState"
                 />
               </div>
 
@@ -246,6 +255,17 @@ const recordCount = ref(null)
 const copied = ref(false)
 const forceExpandCounter = ref(0)
 const forceCollapseCounter = ref(0)
+const treeExpandState = ref('expanded') // 'expanded' or 'collapsed'
+
+const expandAllTree = () => {
+  forceExpandCounter.value++
+  treeExpandState.value = 'expanded'
+}
+
+const collapseAllTree = () => {
+  forceCollapseCounter.value++
+  treeExpandState.value = 'collapsed'
+}
 
 const activeEndpointInfo = computed(() => {
   return apiEndpoints.value.find(e => e.endpoint === selectedEndpoint.value)

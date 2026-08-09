@@ -46,6 +46,7 @@
           :is-last="index === childEntries.length - 1"
           :force-expand="forceExpand"
           :force-collapse="forceCollapse"
+          :expand-state="expandState"
         />
       </div>
 
@@ -81,11 +82,16 @@ const props = defineProps({
   depth: { type: Number, default: 0 },
   isLast: { type: Boolean, default: true },
   forceExpand: { type: Number, default: 0 },
-  forceCollapse: { type: Number, default: 0 }
+  forceCollapse: { type: Number, default: 0 },
+  expandState: { type: String, default: 'expanded' }
 })
 
-// Auto-expand top level (depth <= 1) by default
-const isExpanded = ref(props.depth <= 1)
+// Set initial expanded state based on active expandState preference
+const isExpanded = ref(
+  props.expandState === 'collapsed' 
+    ? props.depth === 0 
+    : true
+)
 
 const isObjectOrArray = computed(() => {
   return props.data !== null && typeof props.data === 'object'
@@ -130,7 +136,13 @@ watch(() => props.forceExpand, () => {
 
 watch(() => props.forceCollapse, () => {
   if (isObjectOrArray.value) {
-    isExpanded.value = props.depth === 0 // keep root open if desired
+    isExpanded.value = props.depth === 0 // keep root open
+  }
+})
+
+watch(() => props.expandState, (newState) => {
+  if (isObjectOrArray.value) {
+    isExpanded.value = newState === 'collapsed' ? props.depth === 0 : true
   }
 })
 </script>
