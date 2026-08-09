@@ -125,14 +125,13 @@
 
 
               <!-- Copy JSON Button -->
-              <button 
-                type="button" 
-                class="btn btn-sm btn-outline-secondary rounded-3 px-3 py-1.5 d-flex align-items-center gap-1.5 shadow-sm"
-                @click="copyJsonToClipboard"
-              >
-                <i :class="['pi', copied ? 'pi-check text-success' : 'pi-copy']"></i>
-                <span class="small fw-semibold">{{ copied ? 'Copied!' : 'Copy JSON' }}</span>
-              </button>
+              <Button 
+                :label="copied ? 'Copied!' : 'Copy JSON'" 
+                :icon="copied ? 'pi pi-check' : 'pi pi-copy'" 
+                class="p-button-outlined p-button-secondary p-button-sm rounded-3 shadow-xs" 
+                :class="{ 'p-button-success': copied }"
+                @click="copyJsonToClipboard" 
+              />
 
               <!-- Refresh Button -->
               <Button 
