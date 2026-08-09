@@ -7,6 +7,9 @@ export const ApplicationService = {
   getApplicationById(id) {
     return apiClient.get(`/Applications/${id}`)
   },
+  filterApplications(params) {
+    return apiClient.get('/Applications/filter', { params })
+  },
   /**
    * @param {import('../models/types').CreateApplicationRequest} data 
    */

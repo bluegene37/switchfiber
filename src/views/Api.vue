@@ -228,7 +228,9 @@ import JsonTreeNode from '../components/JsonTreeNode.vue'
 
 const apiEndpoints = ref([
   { name: 'Applications', endpoint: 'Applications', description: 'Customer application records and form data' },
+  { name: 'Applications Filter', endpoint: 'Applications/filter', description: 'Filtered application records lookup' },
   { name: 'Billing Details', endpoint: 'BillingDetails', description: 'Subscriber billing, modem SN, & account details' },
+  { name: 'Billing Statuses', endpoint: 'BillingStatuses', description: 'Billing status master list & configuration' },
   { name: 'Job Orders', endpoint: 'JobOrders', description: 'Installation and technical service job orders' },
   { name: 'LCP', endpoint: 'Lcps', description: 'Local Convergence Point network nodes' },
   { name: 'LCNAP', endpoint: 'Lcpnaps', description: 'LCP Network Access Points mapping' },
@@ -242,7 +244,8 @@ const apiEndpoints = ref([
   { name: 'Menus', endpoint: 'Menus', description: 'Navigation menu items' },
   { name: 'Access Level', endpoint: 'AccessLevel', description: 'System user roles and security permissions' },
   { name: 'Access Level Menu', endpoint: 'AccessLevelMenu', description: 'Access level menu permission mappings' },
-  { name: 'Invoices', endpoint: 'Invoices', description: 'Customer billing invoices and statement records' },
+  { name: 'Invoice (Singular)', endpoint: 'Invoice', description: 'Single invoice entity lookup and generation' },
+  { name: 'Invoices (Plural)', endpoint: 'Invoices', description: 'Customer billing invoices and statement records' },
   { name: 'Barangays', endpoint: 'Barangays', description: 'Location barangay geographic lookup data' }
 ])
 
