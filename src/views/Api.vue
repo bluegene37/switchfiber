@@ -157,8 +157,7 @@
               <!-- Refresh Button -->
               <Button 
                 icon="pi pi-refresh" 
-                class="p-button-outlined p-button-secondary p-button-sm rounded-3 p-0 d-inline-flex align-items-center justify-content-center" 
-                style="width: 36px; height: 36px; min-width: 36px;"
+                class="p-button-outlined p-button-secondary p-button-sm rounded-3" 
                 v-tooltip.bottom="'Refresh JSON Data'"
                 :loading="isLoadingJson"
                 @click="fetchRawJson" 
