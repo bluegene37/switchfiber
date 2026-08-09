@@ -110,37 +110,43 @@
       <button 
         type="button"
         @click="$emit('toggle-collapse')" 
-        class="btn w-100 d-none d-md-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2"
+        class="nav-link w-100 d-none d-md-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start bg-transparent shadow-none border border-transparent"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
         :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
       >
-        <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left', 'text-center', isCollapsed ? 'fs-5 me-0' : 'me-3']" style="width: 24px;"></i>
+        <div class="d-inline-flex align-items-center justify-content-center" :class="isCollapsed ? 'me-0' : 'me-3'" style="width: 24px; min-width: 24px; flex-shrink: 0;">
+          <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left']" style="font-size: 1rem;"></i>
+        </div>
         <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">Collapse Sidebar</span>
       </button>
 
       <router-link 
         v-if="allowedMenuIds.has(20)"
         to="/settings" 
-        class="nav-link d-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2"
+        class="nav-link d-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start border border-transparent"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
         active-class="bg-primary text-white opacity-100 active-link"
         exact-active-class="bg-primary text-white opacity-100 active-link"
         :title="isCollapsed ? 'System Settings' : ''"
         @click="$emit('close')"
       >
-        <i class="pi pi-cog text-center" :class="isCollapsed ? 'fs-5 me-0' : 'me-3'" style="width: 24px;"></i>
+        <div class="d-inline-flex align-items-center justify-content-center" :class="isCollapsed ? 'me-0' : 'me-3'" style="width: 24px; min-width: 24px; flex-shrink: 0;">
+          <i class="pi pi-cog" style="font-size: 1rem;"></i>
+        </div>
         <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">Settings</span>
       </router-link>
 
       <button 
         type="button"
         @click="handleLogout" 
-        class="btn w-100 d-flex align-items-center rounded-3 text-decoration-none text-danger border-0 bg-danger bg-opacity-10 hover-logout py-2"
+        class="nav-link w-100 d-flex align-items-center rounded-3 text-decoration-none text-danger border bg-danger bg-opacity-10 hover-logout py-2 text-start shadow-none"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
         :title="isCollapsed ? 'Logout Account' : ''"
       >
-        <i class="pi pi-sign-out text-center" :class="isCollapsed ? 'fs-5 me-0' : 'me-3'" style="width: 24px;"></i>
-        <span v-if="!isCollapsed" class="small fw-bold text-nowrap">Logout</span>
+        <div class="d-inline-flex align-items-center justify-content-center" :class="isCollapsed ? 'me-0' : 'me-3'" style="width: 24px; min-width: 24px; flex-shrink: 0;">
+          <i class="pi pi-sign-out" style="font-size: 1rem;"></i>
+        </div>
+        <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">Logout</span>
       </button>
     </div>
   </aside>
