@@ -180,7 +180,7 @@
                     </button>
                   </div>
 
-                  <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-0.5 small">{{ rawJsonString.length }} bytes</span>
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-0.5 small">{{ formattedPayloadSize }}</span>
                 </div>
               </div>
 
@@ -266,6 +266,12 @@ const collapseAllTree = () => {
   forceCollapseCounter.value++
   treeExpandState.value = 'collapsed'
 }
+
+const formattedPayloadSize = computed(() => {
+  const bytes = rawJsonString.value ? rawJsonString.value.length : 0
+  const mb = (bytes / (1024 * 1024)).toFixed(3)
+  return `${bytes.toLocaleString()} bytes (${mb} MB)`
+})
 
 const activeEndpointInfo = computed(() => {
   return apiEndpoints.value.find(e => e.endpoint === selectedEndpoint.value)
