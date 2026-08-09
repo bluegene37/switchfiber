@@ -8,11 +8,7 @@
           Inspect live raw JSON response payloads across all backend services in real-time.
         </p>
       </div>
-      <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-primary text-white shadow-sm px-3 py-2 rounded-pill fw-bold">
-          <i class="pi pi-database me-1.5"></i> {{ apiEndpoints.length }} Live GET Endpoints
-        </span>
-      </div>
+
     </div>
 
     <!-- 2 Column Layout: Left = Endpoint List | Right = Response JSON Viewer -->
@@ -23,8 +19,13 @@
           <!-- Card Header & Search -->
           <div class="card-header bg-body border-bottom p-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="fw-bold text-body mb-0">API Endpoints</h6>
-              <span class="badge bg-secondary text-white rounded-pill small px-2.5 py-1 fw-bold">GET Only</span>
+              <div class="d-flex align-items-center gap-2">
+                <h6 class="fw-bold text-body mb-0">API Endpoints</h6>
+                <span class="badge bg-body-tertiary text-body border px-2 py-0.5 small fw-semibold">
+                  <i class="pi pi-database text-primary me-1"></i> {{ apiEndpoints.length }} items
+                </span>
+              </div>
+              <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 small fw-semibold">GET Only</span>
             </div>
             <div class="position-relative">
               <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary" style="font-size: 0.85rem;"></i>
@@ -136,7 +137,8 @@
               <!-- Refresh Button -->
               <Button 
                 icon="pi pi-refresh" 
-                class="p-button-outlined p-button-secondary p-button-sm rounded-3" 
+                class="p-button-outlined p-button-secondary p-button-sm rounded-3 p-0 d-inline-flex align-items-center justify-content-center shadow-xs" 
+                style="width: 36px; height: 36px; min-width: 36px;"
                 v-tooltip.bottom="'Refresh JSON Data'"
                 :loading="isLoadingJson"
                 @click="fetchRawJson" 
