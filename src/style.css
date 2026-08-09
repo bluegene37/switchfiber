@@ -195,7 +195,13 @@ ul.p-select-list-container {
 /* Custom rounded buttons styling */
 .btn,
 .p-button {
-  border-radius: 10px !important;
+  border-radius: 10px;
+}
+
+.btn.rounded-pill,
+.p-button.rounded-pill,
+.rounded-pill {
+  border-radius: 50rem !important;
 }
 
 .p-button-primary,
@@ -213,7 +219,7 @@ ul.p-select-list-container {
 
 .p-button-secondary,
 .p-button-outlined {
-  border-radius: 10px !important;
+  border-radius: 10px;
 }
 
 /* Red for Delete and Danger Buttons */
@@ -222,7 +228,7 @@ ul.p-select-list-container {
   background-color: #ef4444 !important;
   border-color: #ef4444 !important;
   color: #ffffff !important;
-  border-radius: 10px !important;
+  border-radius: 10px;
 }
 
 .p-button-danger:hover,

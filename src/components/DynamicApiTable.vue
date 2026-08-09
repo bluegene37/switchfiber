@@ -86,7 +86,16 @@
     >
       <template #header>
         <div class="d-flex flex-column gap-2.5 py-1">
-          <!-- Top Row: Show Entries (Left) & Search Input (Right) -->
+          <!-- Top Row: Centered Action Buttons (Create, CSV, Excel, PDF, Print) -->
+          <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pb-1">
+            <Button v-if="!hideCreateButton" label="Create" icon="pi pi-plus" class="p-button-primary p-button-sm rounded-pill px-3.5 shadow-xs" @click="openCreateDialog" />
+            <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportCSV" />
+            <Button label="Excel" icon="pi pi-file-excel" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportExcel" />
+            <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportPDF" />
+            <Button label="Print" icon="pi pi-print" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="printTable" />
+          </div>
+
+          <!-- Bottom Row: Show Entries (Left) & Search Input (Right) -->
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <!-- Left: Rows per page -->
             <div class="d-flex align-items-center gap-2">
@@ -100,16 +109,8 @@
             <!-- Right: Search -->
             <div class="d-flex align-items-center gap-2">
               <label for="global-search" class="mb-0 fw-medium text-body">Search:</label>
-              <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm" placeholder="Search..." />
+              <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm" style="width: 250px; max-width: 100%;" placeholder="Search..." />
             </div>
-          </div>
-
-          <!-- Bottom Row: Action Buttons (Create, CSV, PDF, Print) -->
-          <div class="d-flex align-items-center justify-content-sm-start justify-content-center gap-2 flex-wrap pt-1">
-            <Button v-if="!hideCreateButton" label="Create" icon="pi pi-plus" class="p-button-primary p-button-sm shadow-xs" @click="openCreateDialog" />
-            <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportCSV" />
-            <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportPDF" />
-            <Button label="Print" icon="pi pi-print" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="printTable" />
           </div>
         </div>
       </template>
@@ -1175,6 +1176,7 @@ import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 
 const toast = useToast()
 const authStore = useAuthStore()
@@ -1723,6 +1725,75 @@ const viewFormSections = computed(() => {
 const exportCSV = () => {
   if (dt.value) {
     dt.value.exportCSV()
+  }
+}
+
+const exportExcel = () => {
+  try {
+    const exportData = (data.value || []).map(row => {
+      const rowObj = {}
+      columns.value.forEach(col => {
+        const header = formatLabel(col)
+        if (col.toLowerCase() === 'password') {
+          rowObj[header] = '••••••••'
+        } else {
+          const val = row[col]
+          rowObj[header] = val !== null && val !== undefined ? String(val) : '-'
+        }
+      })
+      return rowObj
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+
+    // Enable auto-wrap and top vertical alignment on all worksheet cells
+    for (const cellAddress in worksheet) {
+      if (cellAddress.startsWith('!')) continue
+      const cell = worksheet[cellAddress]
+      if (cell && typeof cell === 'object') {
+        if (!cell.s) cell.s = {}
+        cell.s.alignment = {
+          wrapText: true,
+          vertical: 'top'
+        }
+      }
+    }
+
+    const workbook = XLSX.utils.book_new()
+    const sheetName = (formatLabel(props.endpoint) || 'ExportData').substring(0, 31)
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+
+    // Calculate smart column widths (Description & multiline text fields get a wide 45ch width for clean multi-line wrapping)
+    const maxCols = columns.value.map(col => {
+      const colLower = col.toLowerCase()
+      const isMultilineField = colLower.includes('description') || 
+                               colLower.includes('remark') || 
+                               (colLower.includes('address') && !colLower.includes('email')) ||
+                               colLower.includes('landmark') || 
+                               colLower.includes('template') || 
+                               colLower.includes('note')
+
+      if (isMultilineField) {
+        return { wch: 45 } // Generous width specifically for Description & multiline text
+      }
+
+      const headerLabel = formatLabel(col)
+      let maxLen = headerLabel.length
+      ;(data.value || []).forEach(row => {
+        const val = row[col]
+        if (val !== null && val !== undefined) {
+          const str = String(val)
+          if (str.length > maxLen) maxLen = str.length
+        }
+      })
+      return { wch: Math.min(Math.max(maxLen + 3, 14), 35) }
+    })
+    worksheet['!cols'] = maxCols
+
+    XLSX.writeFile(workbook, `${props.endpoint}_export.xlsx`)
+  } catch (err) {
+    console.error('Error generating Excel file:', err)
+    alert('Failed to generate Excel file. Please try again.')
   }
 }
 
@@ -3015,5 +3086,33 @@ defineExpose({
 }
 .eye-toggle-btn:hover {
   color: var(--bs-primary, #e74c5a) !important;
+}
+
+/* Datatable Header Styling (Enlarged & Standout Column Headers) */
+:deep(.p-datatable-header) {
+  padding: 0.85rem 1rem !important;
+  background-color: var(--bs-body-bg, #ffffff) !important;
+  border-bottom: 1px solid var(--bs-border-color, #e9ecef) !important;
+}
+
+:deep(.p-datatable-thead > tr > th) {
+  padding: 0.75rem 0.85rem !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.025em;
+  color: var(--bs-body-color, #212529) !important;
+  background-color: var(--bs-tertiary-bg, rgba(108, 117, 125, 0.06)) !important;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
+}
+
+:deep(.p-datatable-thead > tr > th .p-column-title) {
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+}
+
+:deep(.p-datatable-thead > tr > th .p-sort-icon) {
+  font-size: 0.8rem !important;
+  margin-left: 0.4rem !important;
+  opacity: 0.75;
 }
 </style>

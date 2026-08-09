@@ -93,9 +93,9 @@
               <h5 class="fw-bold text-body mb-0 font-monospace fs-6">
                 /api/{{ selectedEndpoint }}
               </h5>
-              <span class="badge bg-body-tertiary text-secondary border px-2 py-1 small ms-1">
+              <!-- <span class="badge bg-body-tertiary text-secondary border px-2 py-1 small ms-1">
                 {{ activeEndpointInfo?.name || selectedEndpoint }}
-              </span>
+              </span> -->
               <span v-if="recordCount !== null" class="badge bg-body-tertiary text-body border px-2.5 py-1 small fw-semibold">
                 <i class="pi pi-box text-primary me-1"></i> {{ recordCount }} {{ recordCount === 1 ? 'item' : 'items' }}
               </span>
@@ -157,7 +157,8 @@
               <!-- Refresh Button -->
               <Button 
                 icon="pi pi-refresh" 
-                class="p-button-outlined p-button-secondary p-button-sm rounded-3" 
+                class="p-button-outlined p-button-secondary p-button-sm rounded-3 p-0 d-inline-flex align-items-center justify-content-center" 
+                style="width: 36px; height: 36px; min-width: 36px;"
                 v-tooltip.bottom="'Refresh JSON Data'"
                 :loading="isLoadingJson"
                 @click="fetchRawJson" 

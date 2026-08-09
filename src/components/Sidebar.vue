@@ -13,8 +13,8 @@
       style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box;"
     >
       <div class="d-flex align-items-center gap-2.5 overflow-hidden" :class="{ 'justify-content-center w-100 px-0': isCollapsed }">
-        <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 28px; height: 28px; object-fit: contain;" />
-        <span v-if="!isCollapsed" class="text-body fs-4 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
+        <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 32px; height: 32px; object-fit: contain;" />
+        <span v-if="!isCollapsed" class="text-body fs-5 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
       </div>
       <button 
         type="button" 
@@ -88,7 +88,7 @@
                   exact-active-class="bg-primary text-white opacity-100 active-link"
                   @click="$emit('close')"
                 >
-                  <i :class="['pi', child.icon, 'text-center me-2.5']" style="width: 18px; font-size: 0.85rem;"></i>
+                  <i :class="['pi', child.icon, 'text-center me-1']" style="width: 20px; font-size: 0.85rem;"></i>
                   <span class="small fw-semibold text-nowrap">{{ child.name }}</span>
                 </router-link>
               </li>

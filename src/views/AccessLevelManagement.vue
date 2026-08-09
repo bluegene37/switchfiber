@@ -22,7 +22,7 @@
               <Button 
                 label="Create Access Level" 
                 icon="pi pi-plus" 
-                class="p-button-primary p-button-sm shadow-sm" 
+                class="p-button-primary p-button-sm rounded-pill px-3.5 shadow-sm" 
                 @click="openCreateAccessLevel" 
               />
             </div>
@@ -51,7 +51,7 @@
               <Button 
                 label="Create Menu" 
                 icon="pi pi-plus" 
-                class="p-button-primary p-button-sm shadow-sm" 
+                class="p-button-primary p-button-sm rounded-pill px-3.5 shadow-sm" 
                 @click="openCreateMenu" 
               />
             </div>

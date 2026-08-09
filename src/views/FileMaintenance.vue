@@ -11,7 +11,7 @@
           v-if="endpoint" 
           :label="`Create New ${title}`" 
           icon="pi pi-plus" 
-          class="p-button-primary shadow-sm" 
+          class="p-button-primary rounded-pill px-3.5 shadow-sm" 
           @click="openCreateModal" 
         />
       </div>
