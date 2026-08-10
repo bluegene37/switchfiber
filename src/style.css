@@ -349,6 +349,13 @@ html[data-bs-theme="dark"] .bg-body-tertiary,
   color: #f8f9fa !important;
 }
 
+html[data-bs-theme="dark"] .bg-light,
+.dark .bg-light {
+  background-color: #212529 !important;
+  color: #adbac7 !important;
+  border-color: #383e45 !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -367,6 +374,169 @@ html[data-bs-theme="dark"] .bg-body-tertiary,
 html[data-bs-theme="dark"] ::-webkit-scrollbar-thumb,
 .dark ::-webkit-scrollbar-thumb {
   background-color: #495057;
+}
+
+/* ==========================================================================
+   Dark Theme Cohesion Overrides (Soft Dark Slate vs Pitch Black)
+   ========================================================================== */
+html[data-bs-theme="dark"],
+.dark {
+  /* Override PrimeVue Aura Dark Theme CSS Variables */
+  --p-datatable-background: #2b3035 !important;
+  --p-datatable-header-cell-background: #2b3035 !important;
+  --p-datatable-row-background: #2b3035 !important;
+  --p-datatable-row-hover-background: rgba(255, 255, 255, 0.06) !important;
+  --p-datatable-border-color: #383e45 !important;
+  
+  --p-content-background: #2b3035 !important;
+  --p-content-border-color: #383e45 !important;
+  
+  --p-form-field-background: #25292e !important;
+  --p-form-field-border-color: #3d434a !important;
+  --p-form-field-hover-border-color: #525a64 !important;
+  --p-form-field-focus-border-color: var(--bs-primary) !important;
+  --p-form-field-color: #f8f9fa !important;
+  
+  --p-inputtext-background: #25292e !important;
+  --p-inputtext-color: #f8f9fa !important;
+  --p-inputtext-border-color: #3d434a !important;
+  
+  --p-select-background: #25292e !important;
+  --p-select-color: #f8f9fa !important;
+  --p-select-border-color: #3d434a !important;
+  --p-select-overlay-background: #2b3035 !important;
+
+  --p-dropdown-background: #25292e !important;
+  --p-dropdown-color: #f8f9fa !important;
+  
+  --p-dialog-background: #2b3035 !important;
+  --p-dialog-color: #f8f9fa !important;
+  --p-popover-background: #2b3035 !important;
+}
+
+/* Explicit Dark Mode Overrides for Tables & Headers */
+html[data-bs-theme="dark"] .p-datatable,
+html[data-bs-theme="dark"] .p-datatable-header,
+html[data-bs-theme="dark"] .p-datatable-thead > tr > th,
+html[data-bs-theme="dark"] .p-datatable-tbody > tr,
+html[data-bs-theme="dark"] .p-datatable-tfoot > tr > td,
+html[data-bs-theme="dark"] .p-datatable-footer,
+html[data-bs-theme="dark"] .p-paginator,
+.dark .p-datatable,
+.dark .p-datatable-header,
+.dark .p-datatable-thead > tr > th,
+.dark .p-datatable-tbody > tr,
+.dark .p-datatable-tfoot > tr > td,
+.dark .p-datatable-footer,
+.dark .p-paginator {
+  background-color: #2b3035 !important;
+  color: #f8f9fa !important;
+  border-color: #383e45 !important;
+}
+
+html[data-bs-theme="dark"] .p-datatable-striped .p-datatable-tbody > tr:nth-child(even),
+.dark .p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+  background-color: #25292e !important;
+}
+
+html[data-bs-theme="dark"] .p-datatable-tbody > tr > td,
+.dark .p-datatable-tbody > tr > td {
+  border-color: #383e45 !important;
+}
+
+/* Explicit Dark Mode Overrides for Inputs, Search Fields & Form Controls */
+html[data-bs-theme="dark"] .form-control,
+html[data-bs-theme="dark"] .form-select,
+html[data-bs-theme="dark"] .p-inputtext,
+html[data-bs-theme="dark"] .p-select,
+html[data-bs-theme="dark"] .p-dropdown,
+html[data-bs-theme="dark"] .p-multiselect,
+html[data-bs-theme="dark"] .p-inputnumber-input,
+html[data-bs-theme="dark"] .p-password input,
+html[data-bs-theme="dark"] textarea,
+.dark .form-control,
+.dark .form-select,
+.dark .p-inputtext,
+.dark .p-select,
+.dark .p-dropdown,
+.dark .p-multiselect,
+.dark .p-inputnumber-input,
+.dark .p-password input,
+.dark textarea {
+  background-color: #25292e !important;
+  color: #f8f9fa !important;
+  border-color: #3d434a !important;
+}
+
+/* Hover & Focus state for Form Inputs */
+html[data-bs-theme="dark"] .form-control:focus,
+html[data-bs-theme="dark"] .form-select:focus,
+html[data-bs-theme="dark"] .p-inputtext:focus,
+html[data-bs-theme="dark"] .p-select:focus,
+html[data-bs-theme="dark"] .p-dropdown:focus,
+html[data-bs-theme="dark"] .p-multiselect:focus,
+html[data-bs-theme="dark"] .p-inputnumber-input:focus,
+html[data-bs-theme="dark"] .p-password input:focus,
+html[data-bs-theme="dark"] textarea:focus,
+.dark .form-control:focus,
+.dark .form-select:focus,
+.dark .p-inputtext:focus,
+.dark .p-select:focus,
+.dark .p-dropdown:focus,
+.dark .p-multiselect:focus,
+.dark .p-inputnumber-input:focus,
+.dark .p-password input:focus,
+.dark textarea:focus {
+  background-color: #2b3035 !important;
+  color: #ffffff !important;
+  border-color: var(--bs-primary) !important;
+}
+
+/* Dark Mode Placeholders */
+html[data-bs-theme="dark"] ::placeholder,
+html[data-bs-theme="dark"] .form-control::placeholder,
+html[data-bs-theme="dark"] .p-inputtext::placeholder,
+.dark ::placeholder,
+.dark .form-control::placeholder,
+.dark .p-inputtext::placeholder {
+  color: #9ea7b0 !important;
+  opacity: 1 !important;
+}
+
+/* Dialogs, Popovers & Dropdown Overlays */
+html[data-bs-theme="dark"] .p-select-overlay,
+html[data-bs-theme="dark"] .p-dropdown-panel,
+html[data-bs-theme="dark"] .p-popover,
+html[data-bs-theme="dark"] .p-dialog,
+html[data-bs-theme="dark"] .p-dialog-header,
+html[data-bs-theme="dark"] .p-dialog-content,
+html[data-bs-theme="dark"] .p-dialog-footer,
+html[data-bs-theme="dark"] .modal-content,
+html[data-bs-theme="dark"] .modal-header,
+html[data-bs-theme="dark"] .modal-body,
+html[data-bs-theme="dark"] .modal-footer,
+.dark .p-select-overlay,
+.dark .p-dropdown-panel,
+.dark .p-popover,
+.dark .p-dialog,
+.dark .p-dialog-header,
+.dark .p-dialog-content,
+.dark .p-dialog-footer,
+.dark .modal-content,
+.dark .modal-header,
+.dark .modal-body,
+.dark .modal-footer {
+  background-color: #2b3035 !important;
+  color: #f8f9fa !important;
+  border-color: #383e45 !important;
+}
+
+html[data-bs-theme="dark"] .p-select-option:hover,
+html[data-bs-theme="dark"] .p-dropdown-item:hover,
+.dark .p-select-option:hover,
+.dark .p-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 
 /* Neutral Soft Row Hover & Selection Highlight (Prevents Green Toggle Collision) */
