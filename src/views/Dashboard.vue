@@ -26,9 +26,12 @@
           </button>
         </div>
 
-        <button @click="handleExport" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5 shadow-sm rounded-3 py-1.5 px-3">
-          <i class="pi pi-download"></i> Export Report
-        </button>
+        <Button 
+          label="Export Report" 
+          icon="pi pi-download" 
+          class="p-button-secondary p-button-sm p-button-outlined shadow-xs rounded-3" 
+          @click="handleExport" 
+        />
       </div>
     </div>
 
