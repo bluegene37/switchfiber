@@ -93,10 +93,10 @@
                   v-for="(item, idx) in recentSearches" 
                   :key="'recent-' + idx"
                   @click="selectItem(item)"
-                  class="d-flex align-items-center justify-content-between py-2 ps-3 pe-2.5 rounded-2 border-0 mb-1 cursor-pointer search-item hover-bg"
+                  class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 border-0 mb-1 cursor-pointer search-item hover-bg"
                 >
                   <div class="d-flex align-items-center gap-3 text-truncate">
-                    <i :class="item.icon" class="text-secondary small"></i>
+                    <i :class="getItemIconClass(item)" class="text-secondary small"></i>
                     <span class="small fw-medium text-body text-truncate ms-1">{{ item.title }}</span>
                   </div>
                   <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10" style="font-size: 0.68rem;">{{ item.category }}</span>
@@ -123,16 +123,16 @@
                     :key="item.id"
                     @click="selectItem(item)"
                     @mouseenter="updateSelectedIndex(item)"
-                    class="d-flex align-items-center justify-content-between py-2 ps-3 pe-2.5 rounded-2 cursor-pointer search-item transition-all mb-1"
+                    class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 cursor-pointer search-item transition-all mb-1"
                     :class="{ 'active-item': isItemSelected(item) }"
                   >
                     <div class="d-flex align-items-center gap-3 overflow-hidden me-2">
                       <div 
                         class="rounded-2 p-1.5 d-flex align-items-center justify-content-center flex-shrink-0 item-icon-wrapper transition-all" 
-                        :class="isItemSelected(item) ? 'bg-primary text-white shadow-sm' : 'bg-body-tertiary text-secondary'"
+                        :class="getItemIconWrapperClass(item)"
                         style="width: 34px; height: 34px;"
                       >
-                        <i :class="item.icon" class="fs-6"></i>
+                        <i :class="getItemIconClass(item)" class="fs-6"></i>
                       </div>
                       <div class="overflow-hidden text-start ms-1">
                         <div 
@@ -288,11 +288,13 @@
             </div>
 
             <!-- Footer -->
+            <!--
             <div class="p-2 bg-body-tertiary border-top text-center">
               <button @click="isNotificationOpen = false" class="btn btn-link text-secondary text-decoration-none small py-1 px-3 shadow-none border-0">
                 Close Notifications
               </button>
             </div>
+            -->
           </div>
         </Transition>
       </div>
@@ -456,6 +458,48 @@ const updateSelectedIndex = (item) => {
   if (index !== -1) {
     selectedIndex.value = index
   }
+}
+
+const getItemIconClass = (item) => {
+  if (!item) return 'pi pi-compass'
+  let icon = item.icon
+  const titleLower = (item.title || '').toLowerCase()
+  const subLower = (typeof item.subtitle === 'string' ? item.subtitle : '').toLowerCase()
+  const isGuest = titleLower.includes('guest') || subLower.includes('guest')
+  
+  if (!icon || typeof icon !== 'string' || !icon.trim()) {
+    if (item.category === 'Users' || isGuest) {
+      return isGuest ? 'pi pi-user-minus' : 'pi pi-user'
+    }
+    if (item.category === 'Applications') return 'pi pi-file-edit'
+    if (item.category === 'Job Orders') return 'pi pi-ticket'
+    if (item.category === 'Plans') return 'pi pi-tags'
+    return 'pi pi-compass'
+  }
+  
+  icon = icon.trim()
+  if (isGuest && (icon === 'pi pi-user' || icon === 'pi pi-user-check')) {
+    return 'pi pi-user-minus'
+  }
+  if (!icon.startsWith('pi ') && !icon.startsWith('pi-')) {
+    icon = `pi pi-${icon}`
+  } else if (!icon.startsWith('pi ')) {
+    icon = `pi ${icon}`
+  }
+  return icon
+}
+
+const getItemIconWrapperClass = (item) => {
+  const selected = isItemSelected(item)
+  if (selected) return 'bg-primary text-white shadow-sm'
+  
+  const titleLower = (item?.title || '').toLowerCase()
+  const subLower = (typeof item?.subtitle === 'string' ? item.subtitle : '').toLowerCase()
+  const isGuest = titleLower.includes('guest') || subLower.includes('guest')
+  if (isGuest) {
+    return 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25'
+  }
+  return 'bg-body-tertiary text-secondary'
 }
 
 // User Profile Dropdown logic
@@ -630,7 +674,7 @@ const handleLogout = () => {
 .search-item.active-item .enter-icon {
   opacity: 1 !important;
   color: var(--bs-primary) !important;
-  transform: translateX(2px);
+  transform: translateX(-2px);
 }
 
 .hover-bg:hover {

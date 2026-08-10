@@ -242,17 +242,22 @@ export function useSearch() {
       // Process Users
       if (usersRes.status === 'fulfilled' && Array.isArray(usersRes.value)) {
         usersRes.value.forEach(u => {
-          const uname = u.username || `${u.fname || ''} ${u.lname || ''}`.trim()
-          if (uname.toLowerCase().includes(lowerQuery) || (u.email && u.email.toLowerCase().includes(lowerQuery))) {
+          const uname = u.username || `${u.fname || ''} ${u.lname || ''}`.trim() || 'User'
+          const roleStr = String(u.role || u.access_level || u.accessLevel || '').toLowerCase()
+          const nameStr = uname.toLowerCase()
+          const emailStr = (u.email || '').toLowerCase()
+
+          if (nameStr.includes(lowerQuery) || emailStr.includes(lowerQuery) || roleStr.includes(lowerQuery)) {
+            const isGuest = roleStr.includes('guest') || nameStr.includes('guest')
             fetched.push({
               id: `user-${u.id}`,
               category: 'Users',
               title: uname,
-              subtitle: `User • ${u.email || u.role || 'System User'}`,
-              icon: 'pi pi-user-check',
+              subtitle: `User • ${u.email || u.role || (isGuest ? 'Guest Account' : 'System User')}`,
+              icon: isGuest ? 'pi pi-user-minus' : 'pi pi-user-check',
               route: '/user',
-              badge: u.role || 'User',
-              badgeClass: 'bg-info text-dark'
+              badge: u.role || (isGuest ? 'Guest' : 'User'),
+              badgeClass: isGuest ? 'bg-danger text-white' : 'bg-info text-dark'
             })
           }
         })
