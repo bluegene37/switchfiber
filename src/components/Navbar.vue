@@ -199,7 +199,7 @@
       <!-- Quick Light/Dark Mode Toggle -->
       <button 
         @click="toggleTheme" 
-        class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm border ms-1"
+        class="btn btn-sm rounded-3 d-flex align-items-center justify-content-center p-0 shadow-sm border ms-1"
         :class="isDark ? 'btn-dark' : 'btn-light'"
         style="width: 42px; height: 42px; transition: transform 0.2s;"
         aria-label="Toggle Dark Mode"
@@ -288,13 +288,7 @@
             </div>
 
             <!-- Footer -->
-            <!--
-            <div class="p-2 bg-body-tertiary border-top text-center">
-              <button @click="isNotificationOpen = false" class="btn btn-link text-secondary text-decoration-none small py-1 px-3 shadow-none border-0">
-                Close Notifications
-              </button>
-            </div>
-            -->
+            <div class="p-2 bg-body-tertiary border-top"></div>
           </div>
         </Transition>
       </div>

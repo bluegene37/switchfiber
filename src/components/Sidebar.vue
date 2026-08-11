@@ -205,7 +205,7 @@ const rawMenuItems = ref([
   },
   { 
     id: 22,
-    name: 'User', 
+    name: 'Users Management', 
     icon: 'pi-users',
     children: [
       { id: 15, name: 'User', path: '/user', icon: 'pi-user' },

@@ -3,7 +3,7 @@
     <!-- Light/Dark Mode Toggle -->
     <button 
       @click="toggleTheme" 
-      class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm border"
+      class="btn btn-sm rounded-3 d-flex align-items-center justify-content-center p-0 shadow-sm border"
       :class="isDark ? 'btn-dark' : 'btn-light'"
       style="width: 36px; height: 36px; transition: transform 0.2s;"
       aria-label="Toggle Dark Mode"

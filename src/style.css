@@ -26,6 +26,7 @@
   --theme-primary-hover: #d63a48;
   --theme-row-highlight: #e74c5a;
   --theme-row-hover: rgba(231, 76, 90, 0.06);
+  --theme-row-hover-solid: #fdf2f4;
 
   /* Typography Scale Tokens */
   --font-family-base: "Raleway", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

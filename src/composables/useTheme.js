@@ -1,76 +1,69 @@
 import { ref } from 'vue'
 
-export const THEME_PALETTES = {
-  red: {
-    name: 'SwitchFiber Warm Rose',
-    primary: '#e74c5a',
-    hover: '#d63a48',
-    active: '#c02e3c',
-    rgb: '231, 76, 90',
-    subtleBg: '#fef2f3',
-    pdfRgb: [231, 76, 90]
-  },
-  green: {
-    name: 'Emerald Green',
-    primary: '#10b981',
-    hover: '#059669',
-    active: '#047857',
-    rgb: '16, 185, 129',
-    subtleBg: '#ecfdf5',
-    pdfRgb: [16, 185, 129]
-  },
-  purple: {
-    name: 'Royal Purple',
-    primary: '#7c3aed',
-    hover: '#6d28d9',
-    active: '#5b21b6',
-    rgb: '124, 58, 237',
-    subtleBg: '#f5f3ff',
-    pdfRgb: [124, 58, 237]
-  },
-  blue: {
-    name: 'Ocean Blue',
-    primary: '#0284c7',
-    hover: '#0369a1',
-    active: '#075985',
-    rgb: '2, 132, 199',
-    subtleBg: '#f0f9ff',
-    pdfRgb: [2, 132, 199]
-  },
-  orange: {
-    name: 'Sunset Orange',
-    primary: '#ea580c',
-    hover: '#c2410c',
-    active: '#9a3412',
-    rgb: '234, 88, 12',
-    subtleBg: '#fff7ed',
-    pdfRgb: [234, 88, 12]
-  },
-  slate: {
-    name: 'Slate Gray',
-    primary: '#475569',
-    hover: '#334155',
-    active: '#1e293b',
-    rgb: '71, 85, 105',
-    subtleBg: '#f8fafc',
-    pdfRgb: [71, 85, 105]
+/**
+ * =========================================================================
+ * 🎨 MASTER THEME COLOR CONFIGURATION (SINGLE SOURCE OF TRUTH)
+ * =========================================================================
+ * Change the hex color code below to explore or update the primary theme color.
+ * Changing this single hex value automatically updates ALL buttons, icons, 
+ * highlights, tables, badges, hover states, active states, focus rings, and PDF exports!
+ */
+export const MASTER_THEME_COLOR = '#e74c5a' // SwitchFiber Primary Brand Hex Code
+// export const MASTER_THEME_COLOR = '#FFE4E6' // SwitchFiber Primary Brand Hex Code
+
+function hexToRgbValues(hex) {
+  let c = (hex || '#e74c5a').replace('#', '')
+  if (c.length === 3) c = c.split('').map(x => x + x).join('')
+  const num = parseInt(c, 16) || 0
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255]
+}
+
+function adjustColorBrightness(hex, percent) {
+  const [r, g, b] = hexToRgbValues(hex)
+  const clamp = x => Math.min(255, Math.max(0, Math.round(x)))
+  const factor = 1 + percent / 100
+  const toHex = x => clamp(x).toString(16).padStart(2, '0')
+  return `#${toHex(r * factor)}${toHex(g * factor)}${toHex(b * factor)}`
+}
+
+export function buildPaletteFromHex(hex, name = 'SwitchFiber Theme') {
+  const [r, g, b] = hexToRgbValues(hex)
+  const hover = adjustColorBrightness(hex, -10)
+  const active = adjustColorBrightness(hex, -20)
+  return {
+    name,
+    primary: hex,
+    hover,
+    active,
+    rgb: `${r}, ${g}, ${b}`,
+    subtleBg: `rgba(${r}, ${g}, ${b}, 0.08)`,
+    pdfRgb: [r, g, b]
   }
+}
+
+export const THEME_PALETTES = {
+  red: buildPaletteFromHex(MASTER_THEME_COLOR, 'SwitchFiber Warm Rose'),
+  green: buildPaletteFromHex('#10b981', 'Emerald Green'),
+  purple: buildPaletteFromHex('#7c3aed', 'Royal Purple'),
+  blue: buildPaletteFromHex('#0284c7', 'Ocean Blue'),
+  orange: buildPaletteFromHex('#ea580c', 'Sunset Orange'),
+  slate: buildPaletteFromHex('#475569', 'Slate Gray')
 }
 
 const isDark = ref(false)
 const activeColorTheme = ref('red')
 
-if (typeof localStorage !== 'undefined') {
-  activeColorTheme.value = 'red' // Fixed to SwitchFiber Logo Red theme
-  localStorage.setItem('switchfiber_color_theme', 'red')
-}
-
-function applyColorTheme(themeKey) {
-  const palette = THEME_PALETTES[themeKey] || THEME_PALETTES.red
-  activeColorTheme.value = 'red'
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('switchfiber_color_theme', 'red')
+function applyColorTheme(themeKeyOrHex) {
+  let palette
+  if (THEME_PALETTES[themeKeyOrHex]) {
+    palette = THEME_PALETTES[themeKeyOrHex]
+  } else if (typeof themeKeyOrHex === 'string' && themeKeyOrHex.startsWith('#')) {
+    palette = buildPaletteFromHex(themeKeyOrHex, 'Custom Hex Theme')
+  } else {
+    palette = buildPaletteFromHex(MASTER_THEME_COLOR, 'SwitchFiber Warm Rose')
   }
+
+  activeColorTheme.value = themeKeyOrHex || 'red'
 
   if (typeof document !== 'undefined') {
     const root = document.documentElement
@@ -91,14 +84,15 @@ function applyColorTheme(themeKey) {
     root.style.setProperty('--theme-primary-hover', palette.hover)
     root.style.setProperty('--theme-row-highlight', palette.primary)
     root.style.setProperty('--theme-row-hover', `rgba(${palette.rgb}, 0.08)`)
-    root.setAttribute('data-color-theme', themeKey)
+    root.style.setProperty('--theme-row-hover-solid', isDark.value ? '#2b2326' : '#fdf2f4')
+    root.setAttribute('data-color-theme', typeof themeKeyOrHex === 'string' ? themeKeyOrHex : 'red')
   }
 }
 
 // Initial application
 if (typeof document !== 'undefined') {
   isDark.value = document.documentElement.classList.contains('dark') || (typeof localStorage !== 'undefined' && localStorage.theme === 'dark')
-  applyColorTheme(activeColorTheme.value)
+  applyColorTheme(MASTER_THEME_COLOR)
 }
 
 export function useTheme() {
@@ -115,15 +109,17 @@ export function useTheme() {
     }
   }
 
-  const setColorTheme = (themeKey) => {
-    applyColorTheme(themeKey)
+  const setColorTheme = (themeKeyOrHex) => {
+    applyColorTheme(themeKeyOrHex)
   }
 
-  return { 
-    isDark, 
-    toggleTheme, 
-    activeColorTheme, 
-    setColorTheme, 
-    THEME_PALETTES 
+  return {
+    isDark,
+    toggleTheme,
+    activeColorTheme,
+    setColorTheme,
+    THEME_PALETTES,
+    MASTER_THEME_COLOR,
+    buildPaletteFromHex
   }
 }

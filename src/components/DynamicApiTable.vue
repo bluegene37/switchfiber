@@ -89,7 +89,6 @@
       filterDisplay="menu"
       :globalFilterFields="columns"
       :class="['p-datatable-sm small highlight-selected-row']"
-      stripedRows
     >
       <template #header>
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 py-1">
@@ -1537,9 +1536,14 @@ const isCreatedOrModifiedField = (col) => {
   )
 }
 
-// Columns for the main DataTable (filters out Created & Modified fields)
+// Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
 const columns = computed(() => {
-  return allRawColumns.value.filter(col => !isCreatedOrModifiedField(col))
+  return allRawColumns.value.filter(col => {
+    if (isCreatedOrModifiedField(col)) return false
+    const lower = col.toLowerCase()
+    if (lower === 'password' || lower === 'pass' || lower === 'pwd') return false
+    return true
+  })
 })
 
 const isAuditField = (col) => {
@@ -3143,6 +3147,59 @@ defineExpose({
   flex-wrap: wrap !important;
   gap: 0.5rem !important;
   padding: 0.6rem 0.75rem !important;
+}
+
+:deep(.p-datatable) {
+  border-left: 4px solid var(--bs-primary, #e74c5a) !important;
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+}
+
+/* Sticky / Frozen Actions Column Non-Transparent Solid Background & Elevation Shadow */
+:deep(.p-datatable-tbody > tr > td.p-frozen-column),
+:deep(.p-datatable-tbody > tr > td.frozen-actions-col),
+:deep(td.frozen-actions-col) {
+  background-color: var(--bs-body-bg, #ffffff) !important;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06) !important;
+  z-index: 2 !important;
+}
+
+:deep(.p-datatable-thead > tr > th.p-frozen-column),
+:deep(.p-datatable-thead > tr > th.frozen-actions-col),
+:deep(th.frozen-actions-col) {
+  background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06) !important;
+  z-index: 3 !important;
+}
+
+:deep(.p-datatable-tbody > tr:hover > td.p-frozen-column),
+:deep(.p-datatable-tbody > tr:hover > td.frozen-actions-col) {
+  background-color: var(--theme-row-hover-solid, var(--bs-secondary-bg, #f4f5f7)) !important;
+  opacity: 1 !important;
+}
+
+:deep(.p-datatable-tbody > tr.p-highlight > td.p-frozen-column),
+:deep(.p-datatable-tbody > tr.p-highlight > td.frozen-actions-col),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] > td.p-frozen-column),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] > td.frozen-actions-col) {
+  background-color: var(--theme-row-highlight, #e74c5a) !important;
+}
+
+:deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col .p-button),
+:deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col .p-button .pi),
+:deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col .delete-btn),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col .p-button),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col .p-button .pi),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col .delete-btn) {
+  color: #ffffff !important;
+}
+
+:deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col .p-button:hover),
+:deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col .delete-btn:hover),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col .p-button:hover),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col .delete-btn:hover) {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 :deep(.p-paginator-start) {
