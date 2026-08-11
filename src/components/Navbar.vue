@@ -52,7 +52,7 @@
             @focus="openSearch"
             class="form-control ps-5 pe-5 bg-body-tertiary border-0 rounded-3 shadow-none search-input py-2.5" 
             style="font-size: 0.92rem;"
-            placeholder="Search customers, IP addresses, job orders, pages... (Cmd+K)" 
+            placeholder="Search customers, IP addresses, job orders..." 
             aria-label="Global Search"
             aria-expanded="isSearchOpen"
           />
