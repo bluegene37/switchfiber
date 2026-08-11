@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-3">
+  <div class="w-100">
     <div v-if="error" class="alert alert-danger d-flex align-items-center rounded-3 p-3 mb-0">
       <i class="pi pi-exclamation-circle me-2"></i> Error loading {{ endpoint }}: {{ error }}
     </div>
@@ -7,23 +7,17 @@
     <!-- Standalone Skeleton Loader View (Shown ONLY while data is loading; hides underlying table completely) -->
     <div v-else-if="loading" class="card border-0 shadow-sm rounded-4 overflow-hidden p-3 bg-body">
       <!-- Top Row Header Placeholder -->
-      <div class="d-flex flex-column gap-2.5 mb-3 border-bottom pb-3">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div class="d-flex align-items-center gap-2">
-            <span class="mb-0 fw-medium text-body">Show</span>
-            <div class="skeleton-box rounded-2" style="width: 70px; height: 31px;"></div>
-            <span class="mb-0 fw-medium text-body">entries</span>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <span class="mb-0 fw-medium text-body">Search:</span>
-            <div class="skeleton-box rounded-2" style="width: 180px; height: 31px;"></div>
-          </div>
-        </div>
-        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pt-1">
-          <div v-if="!hideCreateButton" class="skeleton-box rounded-3" style="width: 80px; height: 32px;"></div>
-          <div class="skeleton-box rounded-3" style="width: 65px; height: 32px;"></div>
-          <div class="skeleton-box rounded-3" style="width: 65px; height: 32px;"></div>
-          <div class="skeleton-box rounded-3" style="width: 70px; height: 32px;"></div>
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 border-bottom pb-3">
+        <!-- Left Side: Search Skeleton -->
+        <div class="skeleton-box rounded-2" style="width: 220px; height: 31px;"></div>
+
+        <!-- Right Side: Buttons Skeleton -->
+        <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+          <div class="skeleton-box rounded-3" style="width: 60px; height: 31px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 65px; height: 31px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 60px; height: 31px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 60px; height: 31px;"></div>
+          <div v-if="!hideCreateButton" class="skeleton-box rounded-3" style="width: 110px; height: 31px;"></div>
         </div>
       </div>
 
@@ -59,6 +53,19 @@
           </div>
         </div>
       </div>
+
+      <!-- Bottom Paginator Skeleton -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3 pt-2 border-top">
+        <div class="d-flex align-items-center gap-3">
+          <div class="skeleton-box rounded-2" style="width: 130px; height: 31px;"></div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="mb-0 fw-medium text-body">Show</span>
+            <div class="skeleton-box rounded-2" style="width: 70px; height: 31px;"></div>
+            <span class="mb-0 fw-medium text-body">entries</span>
+          </div>
+        </div>
+        <div class="skeleton-box rounded-2 ms-auto" style="width: 240px; height: 31px;"></div>
+      </div>
     </div>
     
     <!-- Actual DataTable (Shown ONLY when data is ready) -->
@@ -85,32 +92,36 @@
       stripedRows
     >
       <template #header>
-        <div class="d-flex flex-column gap-2.5 py-1">
-          <!-- Top Row: Centered Action Buttons (Create, CSV, Excel, PDF, Print) -->
-          <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pb-1">
-            <Button v-if="!hideCreateButton" label="Create" icon="pi pi-plus" class="p-button-primary p-button-sm rounded-pill px-3.5 shadow-xs" @click="openCreateDialog" />
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 py-1">
+          <!-- Left Side: Search Input -->
+          <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm" style="width: 240px; max-width: 100%;" placeholder="Search..." aria-label="Search records" />
+
+          <!-- Right Side: Export Buttons (CSV, Excel, PDF, Print) & Create Button -->
+          <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
             <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportCSV" />
             <Button label="Excel" icon="pi pi-file-excel" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportExcel" />
             <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportPDF" />
             <Button label="Print" icon="pi pi-print" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="printTable" />
+            <Button v-if="!hideCreateButton" :label="createButtonLabel || 'Create'" icon="pi pi-plus" class="p-button-primary p-button-sm rounded-pill px-3.5 shadow-xs ms-1" @click="openCreateDialog" />
           </div>
+        </div>
+      </template>
 
-          <!-- Bottom Row: Show Entries (Left) & Search Input (Right) -->
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <!-- Left: Rows per page -->
-            <div class="d-flex align-items-center gap-2">
-              <span class="mb-0 fw-medium text-body">Show</span>
-              <select v-model="rowsPerPage" class="form-select form-select-sm text-center" style="width: 70px; cursor: pointer;">
-                <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
-              </select>
-              <span class="mb-0 fw-medium text-body">entries</span>
-            </div>
+      <template #paginatorstart>
+        <div class="d-flex align-items-center gap-3 my-1 flex-wrap">
+          <!-- Total Records Badge (First on Left) -->
+          <span class="badge bg-body-tertiary text-body border px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs">
+            <i class="pi pi-database text-primary"></i> 
+            <span>Total: <strong>{{ totalRecordsCount }}</strong> {{ totalRecordsCount === 1 ? 'record' : 'records' }}</span>
+          </span>
 
-            <!-- Right: Search -->
-            <div class="d-flex align-items-center gap-2">
-              <label for="global-search" class="mb-0 fw-medium text-body">Search:</label>
-              <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm" style="width: 250px; max-width: 100%;" placeholder="Search..." />
-            </div>
+          <!-- Show Entries Dropdown (Right of Total Records) -->
+          <div class="d-flex align-items-center gap-2">
+            <span class="mb-0 fw-medium text-body">Show</span>
+            <select v-model="rowsPerPage" class="form-select form-select-sm text-center" style="width: 70px; cursor: pointer;">
+              <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+            <span class="mb-0 fw-medium text-body">entries</span>
           </div>
         </div>
       </template>
@@ -1191,6 +1202,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  createButtonLabel: {
+    type: String,
+    default: 'Create'
+  },
   selectedAccessLevel: {
     type: Object,
     default: null
@@ -1243,6 +1258,10 @@ const rowOptions = ref([5, 10, 20, 50, 100])
 
 const filters = ref({
   global: { value: null, matchMode: 'contains' }
+})
+
+const totalRecordsCount = computed(() => {
+  return Array.isArray(data.value) ? data.value.length : 0
 })
 
 // View State
@@ -3114,5 +3133,25 @@ defineExpose({
   font-size: 0.8rem !important;
   margin-left: 0.4rem !important;
   opacity: 0.75;
+}
+
+/* Paginator Flex Styling: Show entries on left, pagination controls on right */
+:deep(.p-paginator) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+  padding: 0.6rem 0.75rem !important;
+}
+
+:deep(.p-paginator-start) {
+  margin-right: auto !important;
+}
+
+:deep(.p-paginator-content),
+:deep(.p-paginator-pages),
+:deep(.p-paginator-current) {
+  margin-left: auto !important;
 }
 </style>
