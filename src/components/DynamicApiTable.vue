@@ -131,15 +131,27 @@
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Active</span>
             <span v-else class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2.5 py-1">Inactive</span>
           </span>
+          <span v-else-if="col.toLowerCase().includes('status')">
+            <span 
+              v-if="slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== ''"
+              class="badge rounded-pill px-2.5 py-1 fw-semibold border"
+              :class="getStatusBadgeConfig(slotProps.data[col]).class"
+            >
+              {{ getStatusBadgeConfig(slotProps.data[col]).label }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
           <span v-else-if="col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid'">
             {{ getAccessLevelLabel(slotProps.data[col]) }}
           </span>
           <span v-else-if="isUserRefField(col)">
             {{ getUserDisplayName(slotProps.data[col]) }}
           </span>
-          <span v-else class="d-inline-block text-truncate" style="max-width: 200px;" :title="col.toLowerCase() === 'password' ? '••••••••' : slotProps.data[col]">
-            <span v-if="col.toLowerCase() === 'password'" class="text-muted">••••••••</span>
-            <span v-else-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
+          <span v-else-if="getFieldType(col) === 'textarea' || col.toLowerCase().includes('description')" class="d-inline-block text-wrap py-1" style="min-width: 250px; max-width: 480px; white-space: normal; word-break: break-word;">
+            {{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}
+          </span>
+          <span v-else class="d-inline-block text-truncate" style="max-width: 240px;" :title="slotProps.data[col]">
+            <span v-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
               {{ slotProps.data[col].name || slotProps.data[col].title || slotProps.data[col].label || slotProps.data[col].id || '-' }}
             </span>
             <span v-else>{{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}</span>
@@ -1536,12 +1548,83 @@ const isCreatedOrModifiedField = (col) => {
   )
 }
 
+// Concise column presets for complex endpoints with many fields (e.g. Job Orders)
+const CONCISE_ENDPOINT_COLUMNS = {
+  JobOrders: [
+    'id',
+    'accountNo',
+    'firstName',
+    'lastName',
+    'contactNumber',
+    'address',
+    'city',
+    'planId',
+    'status',
+    'onsiteStatus',
+    'billingStatus',
+    'dateInstalled'
+  ],
+  job_order: [
+    'id',
+    'accountNo',
+    'firstName',
+    'lastName',
+    'contactNumber',
+    'address',
+    'city',
+    'planId',
+    'status',
+    'onsiteStatus',
+    'billingStatus',
+    'dateInstalled'
+  ],
+  joborders: [
+    'id',
+    'accountNo',
+    'firstName',
+    'lastName',
+    'contactNumber',
+    'address',
+    'city',
+    'planId',
+    'status',
+    'onsiteStatus',
+    'billingStatus',
+    'dateInstalled'
+  ]
+}
+
 // Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
 const columns = computed(() => {
-  return allRawColumns.value.filter(col => {
+  const epKey = (props.endpoint || '').trim()
+  const conciseCols = CONCISE_ENDPOINT_COLUMNS[epKey] || CONCISE_ENDPOINT_COLUMNS[epKey.toLowerCase()]
+  
+  let colList = allRawColumns.value
+  if (conciseCols && Array.isArray(conciseCols)) {
+    const rawMap = new Map()
+    allRawColumns.value.forEach(c => {
+      rawMap.set(c.toLowerCase().replace(/_/g, ''), c)
+    })
+
+    const matchedList = []
+    conciseCols.forEach(col => {
+      const normKey = col.toLowerCase().replace(/_/g, '')
+      if (rawMap.has(normKey)) {
+        matchedList.push(rawMap.get(normKey))
+      }
+    })
+    if (matchedList.length > 0) colList = matchedList
+  }
+
+  return colList.filter(col => {
     if (isCreatedOrModifiedField(col)) return false
     const lower = col.toLowerCase()
     if (lower === 'password' || lower === 'pass' || lower === 'pwd') return false
+
+    // Omit address column specifically for Users table list
+    const epLower = epKey.toLowerCase()
+    if ((epLower === 'users' || epLower === 'user') && lower === 'address') return false
+
     return true
   })
 })
@@ -2152,6 +2235,26 @@ const getAccessLevelLabel = (id) => {
   if (id === null || id === undefined) return '-'
   const found = accessLevels.value.find(opt => opt.value === Number(id) || opt.value === id)
   return found ? (found.nameOnly || found.label) : `ID: ${id}`
+}
+
+const getStatusBadgeConfig = (val) => {
+  if (val === null || val === undefined || val === '') return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: '-' }
+  const str = String(val).trim()
+  const lower = str.toLowerCase()
+  
+  if (lower === 'done' || lower === 'completed' || lower === 'paid' || lower === 'approved' || lower === 'active') {
+    return { class: 'bg-success bg-opacity-10 text-success border-success border-opacity-25', label: str }
+  }
+  if (lower === 'pending' || lower === 'in progress' || lower === 'waiting' || lower === 'onsite pending') {
+    return { class: 'bg-warning bg-opacity-15 text-warning-emphasis border-warning border-opacity-25', label: str }
+  }
+  if (lower === 'unbilled' || lower === 'draft' || lower === 'inactive' || lower === 'unassigned') {
+    return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: str }
+  }
+  if (lower === 'failed' || lower === 'rejected' || lower === 'cancelled' || lower === 'denied') {
+    return { class: 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25', label: str }
+  }
+  return { class: 'bg-info bg-opacity-10 text-info border-info border-opacity-25', label: str }
 }
 
 const isUserRefField = (col) => {
