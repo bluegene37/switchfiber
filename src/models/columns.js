@@ -358,5 +358,15 @@ export const EndpointColumns = {
     "regionCode",
     "provinceCode",
     "cityCode"
+  ],
+  "RadiusUser": [
+    "id",
+    "name",
+    "password",
+    "group",
+    "disabled",
+    "otp_secret",
+    "shared_users",
+    "attributes"
   ]
 }

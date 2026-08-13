@@ -101,12 +101,26 @@ const isArray = computed(() => {
   return Array.isArray(props.data)
 })
 
+const parseValue = (val) => {
+  if (typeof val === 'string') {
+    const trimmed = val.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        return JSON.parse(trimmed)
+      } catch (e) {
+        return val
+      }
+    }
+  }
+  return val
+}
+
 const childEntries = computed(() => {
   if (!isObjectOrArray.value) return []
   if (isArray.value) {
-    return props.data.map((val, idx) => ({ key: idx, value: val }))
+    return props.data.map((val, idx) => ({ key: idx, value: parseValue(val) }))
   }
-  return Object.entries(props.data).map(([k, v]) => ({ key: k, value: v }))
+  return Object.entries(props.data).map(([k, v]) => ({ key: k, value: parseValue(v) }))
 })
 
 const toggleExpand = () => {

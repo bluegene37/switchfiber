@@ -23,7 +23,18 @@ apiClient.interceptors.request.use((config) => {
 
 // Response interceptor
 apiClient.interceptors.response.use((response) => {
-  return response.data
+  let data = response.data
+  if (typeof data === 'string') {
+    const trimmed = data.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        data = JSON.parse(trimmed)
+      } catch (e) {
+        // If parsing fails, retain original raw string
+      }
+    }
+  }
+  return data
 }, (error) => {
   console.error('API Error:', error.response?.status, error.message)
 

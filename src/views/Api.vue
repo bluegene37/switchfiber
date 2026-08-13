@@ -246,7 +246,8 @@ const apiEndpoints = ref([
   { name: 'Access Level Menu', endpoint: 'AccessLevelMenu', description: 'Access level menu permission mappings' },
   { name: 'Invoice (Singular)', endpoint: 'Invoice', description: 'Single invoice entity lookup and generation' },
   { name: 'Invoices (Plural)', endpoint: 'Invoices', description: 'Customer billing invoices and statement records' },
-  { name: 'Barangays', endpoint: 'Barangays', description: 'Location barangay geographic lookup data' }
+  { name: 'Barangays', endpoint: 'Barangays', description: 'Location barangay geographic lookup data' },
+  { name: 'Radius Users', endpoint: 'RadiusUser', description: 'RADIUS subscriber user accounts and authentication profiles' }
 ])
 
 const selectedEndpoint = ref(apiEndpoints.value[0].endpoint)
@@ -295,15 +296,28 @@ const selectEndpoint = (ep) => {
   fetchRawJson()
 }
 
+const tryParseJson = (val) => {
+  if (typeof val !== 'string') return val
+  const trimmed = val.trim()
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    try {
+      return tryParseJson(JSON.parse(trimmed))
+    } catch (e) {
+      return val
+    }
+  }
+  return val
+}
+
 const fetchRawJson = async () => {
   isLoadingJson.value = true
   recordCount.value = null
   try {
     const res = await apiClient.get(`/${selectedEndpoint.value}`)
-    let data = res
-    if (res && typeof res === 'object' && !Array.isArray(res)) {
-      const arrayKey = Object.keys(res).find(k => Array.isArray(res[k]))
-      if (arrayKey) data = res[arrayKey]
+    let data = tryParseJson(res)
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]))
+      if (arrayKey) data = data[arrayKey]
     }
     parsedJsonData.value = data
     if (Array.isArray(data)) {
