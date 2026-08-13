@@ -60,15 +60,20 @@ apiClient.interceptors.response.use((response) => {
   }
 
   // Standardize error message payload
-  let errorMessage = error.response?.data?.message || error.response?.data?.title
-  if (!errorMessage && error.response?.data?.errors) {
-    const errs = error.response.data.errors
-    if (typeof errs === 'object') {
-      errorMessage = Object.values(errs).flat().join(', ')
+  let errorMessage = error.response?.data?.message
+  if (error.response?.data?.errors && typeof error.response.data.errors === 'object') {
+    const fieldErrList = []
+    Object.entries(error.response.data.errors).forEach(([field, msgs]) => {
+      const msgStr = Array.isArray(msgs) ? msgs.join(', ') : String(msgs)
+      fieldErrList.push(`${field}: ${msgStr}`)
+    })
+    if (fieldErrList.length > 0) {
+      const detailed = fieldErrList.join(' | ')
+      errorMessage = errorMessage ? `${errorMessage} - ${detailed}` : detailed
     }
   }
   if (!errorMessage) {
-    errorMessage = error.message || 'An unexpected server error occurred.'
+    errorMessage = error.response?.data?.title || error.message || 'An unexpected server error occurred.'
   }
 
   const customError = new Error(errorMessage)

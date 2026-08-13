@@ -2423,9 +2423,15 @@ const saveData = async () => {
       delete payload.email
     }
 
-    const loggedInUserId = authStore.user?.id || 2
+    const loggedInUserId = String(authStore.user?.id || 2)
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
     
+    // Clean legacy alias audit columns
+    delete payload.lastModified
+    delete payload.last_modified
+    delete payload.lastModifiedBy
+    delete payload.last_modified_by
+
     // Auto-populate createdBy and modifiedBy for backend API if present in table schema
     const createdByCol = allRawColumns.value.find(c => c.toLowerCase().includes('createdby'))
     const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
@@ -2449,11 +2455,8 @@ const saveData = async () => {
         delete payload[key]
       } else if (payload[key] instanceof Date) {
         const d = payload[key]
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        payload[key] = `${year}-${month}-${day}`
-      } else if (typeof payload[key] === 'string' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
+        payload[key] = d.toISOString()
+      } else if (typeof payload[key] === 'string' && payload[key].trim() !== '' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
         payload[key] = Number(payload[key])
       }
     })
@@ -2563,28 +2566,36 @@ const saveEdit = async () => {
       delete payload.email
     }
 
-    const loggedInUserId = authStore.user?.id || 2
-    const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
-    const createdByCol = allRawColumns.value.find(c => c.toLowerCase().includes('createdby'))
-    const createdDateCol = allRawColumns.value.find(c => c.toLowerCase().includes('createddate') || c.toLowerCase().includes('created_at'))
+    const loggedInUserId = String(authStore.user?.id || 2)
+    
+    // Clean legacy / alias audit columns and read-only creation audit fields
+    delete payload.lastModified
+    delete payload.last_modified
+    delete payload.lastModifiedBy
+    delete payload.last_modified_by
 
-    if (createdByCol) delete payload[createdByCol]
-    if (createdDateCol) delete payload[createdDateCol]
-
-    if (modifiedByCol) {
-      payload[modifiedByCol] = loggedInUserId
-    }
+    Object.keys(payload).forEach(key => {
+      const lower = key.toLowerCase()
+      if (lower.includes('createdby') || lower.includes('createddate') || lower.includes('created_at')) {
+        delete payload[key]
+      } else if (lower.includes('modifiedby') || lower.includes('updatedby')) {
+        payload[key] = loggedInUserId
+      } else if (lower.includes('modifieddate') || lower.includes('updateddate') || lower.includes('modified_at')) {
+        // Strip or format modifiedDate so invalid date strings don't fail ASP.NET DateTime validation
+        if (!payload[key] || typeof payload[key] !== 'string' || isNaN(Date.parse(payload[key]))) {
+          delete payload[key]
+        } else {
+          payload[key] = new Date(payload[key]).toISOString()
+        }
+      }
+    })
 
     Object.keys(payload).forEach(key => {
       if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
         delete payload[key]
       } else if (payload[key] instanceof Date) {
-        const d = payload[key]
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        payload[key] = `${year}-${month}-${day}`
-      } else if (typeof payload[key] === 'string' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
+        payload[key] = payload[key].toISOString()
+      } else if (typeof payload[key] === 'string' && payload[key].trim() !== '' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
         payload[key] = Number(payload[key])
       }
     })
