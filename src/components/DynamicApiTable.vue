@@ -1349,6 +1349,14 @@ const props = defineProps({
     type: String,
     required: true
   },
+  filterEndpoint: {
+    type: String,
+    default: null
+  },
+  filterParams: {
+    type: Object,
+    default: () => ({})
+  },
   hideCreateButton: {
     type: Boolean,
     default: false
@@ -3008,7 +3016,23 @@ const fetchData = async ({ silent = false } = {}) => {
   if (!silent) loading.value = true
   error.value = null
   try {
-    const response = await apiClient.get(`/${props.endpoint}`)
+    let url = `/${props.endpoint}`
+    let params = undefined
+
+    const hasFilterParams = props.filterParams && Object.keys(props.filterParams).some(k => {
+      const v = props.filterParams[k]
+      return v !== undefined && v !== null && String(v).trim() !== ''
+    })
+
+    if (props.filterEndpoint) {
+      url = props.filterEndpoint.startsWith('/') ? props.filterEndpoint : `/${props.filterEndpoint}`
+      if (hasFilterParams) params = { ...props.filterParams }
+    } else if (hasFilterParams) {
+      url = `/${props.endpoint}/filter`
+      params = { ...props.filterParams }
+    }
+
+    const response = await apiClient.get(url, { params })
     
     let unwrappedData = response
     if (response && !Array.isArray(response) && typeof response === 'object') {
@@ -3361,6 +3385,14 @@ watch(() => props.selectedAccessLevel, async (newVal) => {
     await fetchAccessLevelMenus()
   }
 }, { immediate: true, deep: true })
+
+watch(() => props.filterParams, () => {
+  fetchData({ silent: true })
+}, { deep: true })
+
+watch(() => props.filterEndpoint, () => {
+  fetchData({ silent: false })
+})
 
 const handleRowClick = (event) => {
   if (event && event.data) {

@@ -211,7 +211,14 @@ const rawMenuItems = ref([
       { id: 11, name: 'VLan', path: '/vlan', icon: 'pi-globe' },
       { id: 12, name: 'Router', path: '/router', icon: 'pi-wifi' },
       { id: 13, name: 'Plan', path: '/plan', icon: 'pi-tag' },
-      { id: 14, name: 'Application', path: '/application', icon: 'pi-file' },
+    ]
+  },
+  {
+    id: 25,
+    name: 'Application',
+    icon: 'pi-file-edit',
+    children: [
+      { id: 14, name: 'Application List', path: '/application', icon: 'pi-list' },
     ]
   },
   { 

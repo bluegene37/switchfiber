@@ -26,7 +26,7 @@ export function useSearch() {
   // 1. Static App Navigation Scopes
   const navigationItems = [
     { id: 'nav-dashboard', category: 'Navigation', title: 'Dashboard', subtitle: 'System metrics, KPI stats, & real-time overview', icon: 'pi pi-home', route: '/dashboard' },
-    { id: 'nav-application', category: 'Navigation', title: 'Applications', subtitle: 'Customer fiber connection applications', icon: 'pi pi-file-edit', route: '/application' },
+    { id: 'nav-application', category: 'Navigation', title: 'Application List', subtitle: 'Customer fiber connection applications', icon: 'pi pi-file-edit', route: '/application' },
     { id: 'nav-job-order', category: 'Navigation', title: 'Job Orders', subtitle: 'Field installation & repair dispatch tickets', icon: 'pi pi-ticket', route: '/job_order' },
     { id: 'nav-billing', category: 'Navigation', title: 'Billing & Payments', subtitle: 'Customer billing details & invoices', icon: 'pi pi-credit-card', route: '/billing' },
     { id: 'nav-invoice', category: 'Navigation', title: 'Invoices', subtitle: 'Generated billing invoices & statements', icon: 'pi pi-receipt', route: '/invoice' },
