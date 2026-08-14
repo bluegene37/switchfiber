@@ -15,8 +15,14 @@ export default defineConfig(({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       }
     },
+    // Strip development chatter from production bundles. console.error and
+    // console.warn are kept so real failures still surface in the field.
+    esbuild: {
+      pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : []
+    },
     build: {
       chunkSizeWarningLimit: 1000,
+      sourcemap: false,
       rollupOptions: {
         output: {
           manualChunks(id) {

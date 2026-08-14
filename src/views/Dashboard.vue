@@ -3,13 +3,16 @@
     <!-- Header with Quick Timeframe Filters -->
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
       <div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <h1 class="fs-3 fw-bold text-body mb-0">Executive Dashboard</h1>
-          <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill small d-flex align-items-center gap-1">
-            <i class="pi pi-circle-fill text-success" style="font-size: 0.5rem;"></i> Systems Operational
+          <span
+            class="badge px-2.5 py-1 rounded-pill small d-flex align-items-center gap-1 border border-opacity-25"
+            :class="apiHealth.class"
+          >
+            <i class="pi pi-circle-fill" style="font-size: 0.5rem;"></i> {{ apiHealth.label }}
           </span>
         </div>
-        <p class="small text-secondary mt-1 mb-0">Real-time network traffic, subscriber analytics, and operational metrics.</p>
+        <p class="small text-secondary mt-1 mb-0">Subscriber analytics and operational metrics.</p>
       </div>
 
       <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -49,6 +52,16 @@
       </div>
     </div>
 
+    <!-- Illustrative charts notice: these series are not backed by the API yet. -->
+    <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 p-3 mb-0 small" role="note">
+      <i class="pi pi-info-circle mt-1 flex-shrink-0"></i>
+      <div>
+        <span class="fw-semibold">The six charts below use sample data.</span>
+        Bandwidth, revenue, node telemetry, and SLA figures are illustrative placeholders — the API does not expose these
+        series yet. The KPI cards and the applications table above/below are live.
+      </div>
+    </div>
+
     <!-- Main Charts Row 1: Bandwidth Traffic & Plan Distribution -->
     <div class="row g-4">
       <div class="col-12 col-xl-7">
@@ -81,39 +94,60 @@
 
     <!-- Recent Connections DataTable -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-2">
-      <div class="card-header bg-body border-bottom p-4 d-flex align-items-center justify-content-between">
+      <div class="card-header bg-body border-bottom p-3 p-md-4 d-flex align-items-center justify-content-between gap-3 flex-wrap">
         <div>
-          <h3 class="fs-5 fw-bold text-body mb-0">Recent Connections</h3>
-          <p class="small text-secondary mb-0 mt-1">Live customer fiber connections across nodes</p>
+          <h3 class="fs-5 fw-bold text-body mb-0">Recent Applications</h3>
+          <p class="small text-secondary mb-0 mt-1">Latest customer subscription applications</p>
         </div>
         <button @click="appStore.fetchApplications()" class="btn btn-sm btn-light border text-secondary shadow-xs d-flex align-items-center gap-1">
           <i class="pi pi-refresh" :class="{ 'spin-icon': appStore.isLoadingConnections }"></i> Refresh
         </button>
       </div>
-      
-      <DataTable :value="recentConnections" responsiveLayout="scroll" :paginator="true" :rows="5" class="p-datatable-sm small">
-        <Column field="name" header="Client Name" :sortable="true"></Column>
-        <Column field="node" header="Server Node" :sortable="true"></Column>
-        <Column field="type" header="Plan Type" :sortable="true"></Column>
-        <Column field="limit" header="Bandwidth" :sortable="true"></Column>
-        
-        <Column field="status" header="Status" :sortable="true">
+
+      <!-- Failure is shown rather than rendering an empty table that looks like "no records" -->
+      <div v-if="appStore.connectionsError" class="alert alert-danger d-flex align-items-start gap-2 rounded-0 mb-0 p-3 small" role="alert">
+        <i class="pi pi-exclamation-circle mt-1 flex-shrink-0"></i>
+        <div>
+          <div class="fw-semibold">Could not load applications</div>
+          <div class="opacity-75">{{ appStore.connectionsError }}</div>
+        </div>
+      </div>
+
+      <DataTable
+        v-else
+        :value="recentConnections"
+        :loading="appStore.isLoadingConnections"
+        scrollable
+        :paginator="true"
+        :rows="5"
+        class="p-datatable-sm small"
+      >
+        <template #empty>
+          <div class="text-center text-secondary py-4 small">No applications recorded yet.</div>
+        </template>
+
+        <Column field="name" header="Client Name" :sortable="true" style="min-width: 11rem"></Column>
+        <Column field="node" header="City" :sortable="true" style="min-width: 8rem"></Column>
+        <Column field="type" header="Applying For" :sortable="true" style="min-width: 9rem"></Column>
+        <Column field="limit" header="Desired Plan" :sortable="true" style="min-width: 9rem"></Column>
+
+        <Column field="status" header="Status" :sortable="true" style="min-width: 8rem">
           <template #body="{ data }">
             <Tag :severity="getSeverity(data.status)" :value="data.status" rounded></Tag>
           </template>
         </Column>
-        
-        <Column header="Actions" :exportable="false" style="min-width:8rem">
-          <template #body="{ data }">
-            <Button 
-              :icon="data.status === 'Active' ? 'pi pi-pause' : 'pi pi-play'" 
-              :severity="data.status === 'Active' ? 'danger' : 'success'" 
-              text 
-              rounded 
-              @click="toggleConnectionState(data.id)"
-              v-tooltip.top="data.status === 'Active' ? 'Disconnect' : 'Reconnect'"
+
+        <Column header="Actions" :exportable="false" style="min-width: 7rem">
+          <template #body>
+            <Button
+              icon="pi pi-external-link"
+              severity="secondary"
+              text
+              rounded
+              aria-label="Open in Applications"
+              v-tooltip.top="'Open in Applications'"
+              @click="router.push('/application')"
             />
-            <Button icon="pi pi-credit-card" severity="secondary" text rounded v-tooltip.top="'View Billing'" />
           </template>
         </Column>
       </DataTable>
@@ -123,18 +157,83 @@
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import { useAppStore } from '../stores/app'
+import apiClient from '../services/api'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const appStore = useAppStore()
+const router = useRouter()
+const toast = useToast()
+
+// Live counts pulled from the API. `null` means "not loaded / unavailable" and
+// renders as an em dash rather than an invented number.
+const liveCounts = ref({
+  applications: null,
+  plans: null,
+  activeSessions: null,
+  radiusUsers: null,
+  routers: null,
+  vlans: null
+})
+const failedSources = ref([])
+
+const countOf = (payload) => {
+  let data = payload
+  if (data && !Array.isArray(data) && typeof data === 'object') {
+    const key = Object.keys(data).find(k => Array.isArray(data[k]))
+    data = key ? data[key] : null
+  }
+  return Array.isArray(data) ? data.length : null
+}
+
+const loadCounts = async () => {
+  const sources = [
+    ['applications', '/Applications'],
+    ['plans', '/Plans'],
+    ['activeSessions', '/RadiusSession'],
+    ['radiusUsers', '/RadiusUser'],
+    ['routers', '/Routers'],
+    ['vlans', '/Vlans']
+  ]
+
+  const failures = []
+  await Promise.all(sources.map(async ([key, path]) => {
+    try {
+      liveCounts.value[key] = countOf(await apiClient.get(path))
+    } catch {
+      liveCounts.value[key] = null
+      failures.push(path)
+    }
+  }))
+  failedSources.value = failures
+}
+
+// Health badge reflects what the API actually returned on this page load.
+const apiHealth = computed(() => {
+  if (failedSources.value.length === 0 && liveCounts.value.plans !== null) {
+    return { label: 'Systems Operational', class: 'bg-success bg-opacity-10 text-success border-success' }
+  }
+  if (failedSources.value.length >= 3) {
+    return { label: 'API Unreachable', class: 'bg-danger bg-opacity-10 text-danger border-danger' }
+  }
+  if (failedSources.value.length > 0) {
+    return { label: `Degraded — ${failedSources.value.length} endpoint(s) failing`, class: 'bg-warning bg-opacity-10 text-warning border-warning' }
+  }
+  return { label: 'Checking…', class: 'bg-secondary bg-opacity-10 text-secondary border-secondary' }
+})
 
 onMounted(() => {
   appStore.fetchApplications()
+  loadCounts()
 })
 
 // Timeframe selector state
@@ -146,55 +245,52 @@ const timeframes = [
   { label: 'Year to Date', value: 'ytd' }
 ]
 
-// Extended KPI Stats
+// KPI cards — every value is a real count from the API. Unavailable sources
+// render as "—" instead of a placeholder figure.
+const fmt = (n) => (n === null || n === undefined ? '—' : n.toLocaleString())
+
 const kpiStats = computed(() => [
-  { 
-    title: 'Total Applications', 
-    value: appStore.recentConnections.length ? appStore.recentConnections.length.toString() : '248', 
-    trend: 14.2, 
-    icon: 'pi-users', 
-    iconBgClass: 'bg-primary bg-opacity-10', 
-    iconColorClass: 'text-primary' 
+  {
+    title: 'Applications',
+    value: fmt(liveCounts.value.applications),
+    icon: 'pi-users',
+    iconBgClass: 'bg-primary bg-opacity-10',
+    iconColorClass: 'text-primary'
   },
-  { 
-    title: 'Active Connections', 
-    value: '11,892', 
-    trend: 4.8, 
-    icon: 'pi-wifi', 
-    iconBgClass: 'bg-success bg-opacity-10', 
-    iconColorClass: 'text-success' 
+  {
+    title: 'Active Sessions',
+    value: fmt(liveCounts.value.activeSessions),
+    icon: 'pi-wifi',
+    iconBgClass: 'bg-success bg-opacity-10',
+    iconColorClass: 'text-success'
   },
-  { 
-    title: 'Monthly Revenue', 
-    value: '₱1,285,400', 
-    trend: 8.4, 
-    icon: 'pi-dollar', 
-    iconBgClass: 'bg-info bg-opacity-10', 
-    iconColorClass: 'text-info' 
+  {
+    title: 'RADIUS Users',
+    value: fmt(liveCounts.value.radiusUsers),
+    icon: 'pi-id-card',
+    iconBgClass: 'bg-info bg-opacity-10',
+    iconColorClass: 'text-info'
   },
-  { 
-    title: 'Avg ARPU / Month', 
-    value: '₱1,450', 
-    trend: 3.2, 
-    icon: 'pi-chart-line', 
-    iconBgClass: 'bg-warning bg-opacity-10', 
-    iconColorClass: 'text-warning' 
+  {
+    title: 'Active Plans',
+    value: fmt(liveCounts.value.plans),
+    icon: 'pi-tag',
+    iconBgClass: 'bg-warning bg-opacity-10',
+    iconColorClass: 'text-warning'
   },
-  { 
-    title: 'Pending Job Orders', 
-    value: '38', 
-    trend: -12.5, 
-    icon: 'pi-clipboard', 
-    iconBgClass: 'bg-danger bg-opacity-10', 
-    iconColorClass: 'text-danger' 
+  {
+    title: 'Routers',
+    value: fmt(liveCounts.value.routers),
+    icon: 'pi-server',
+    iconBgClass: 'bg-danger bg-opacity-10',
+    iconColorClass: 'text-danger'
   },
-  { 
-    title: 'Network Peak Load', 
-    value: '1.42 Tbps', 
-    trend: 6.1, 
-    icon: 'pi-server', 
-    iconBgClass: 'bg-secondary bg-opacity-10', 
-    iconColorClass: 'text-secondary' 
+  {
+    title: 'VLANs',
+    value: fmt(liveCounts.value.vlans),
+    icon: 'pi-globe',
+    iconBgClass: 'bg-secondary bg-opacity-10',
+    iconColorClass: 'text-secondary'
   }
 ])
 
@@ -209,12 +305,41 @@ const getSeverity = (status) => {
   }
 }
 
-const toggleConnectionState = async (id) => {
-  await appStore.toggleConnection(id)
-}
-
 const handleExport = () => {
-  alert('Generating executive PDF report... Download will begin shortly.')
+  try {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+    const generatedAt = new Date().toLocaleString()
+
+    doc.setFontSize(16)
+    doc.text('Switch Fiber — Executive Summary', 40, 46)
+    doc.setFontSize(9)
+    doc.setTextColor(120)
+    doc.text(`Generated ${generatedAt}`, 40, 62)
+    doc.setTextColor(0)
+
+    autoTable(doc, {
+      startY: 84,
+      head: [['Metric', 'Value']],
+      body: kpiStats.value.map(s => [s.title, String(s.value)]),
+      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: { fillColor: [231, 76, 90] }
+    })
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 24,
+      head: [['Client Name', 'City', 'Applying For', 'Desired Plan', 'Status']],
+      body: recentConnections.value.map(r => [r.name, r.node, r.type, r.limit, r.status]),
+      styles: { fontSize: 8, cellPadding: 4 },
+      headStyles: { fillColor: [231, 76, 90] },
+      // Keeps the export honest when the applications endpoint is unavailable.
+      ...(recentConnections.value.length ? {} : { body: [['No application records available', '', '', '', '']] })
+    })
+
+    doc.save(`switchfiber-summary-${new Date().toISOString().slice(0, 10)}.pdf`)
+    toast.add({ severity: 'success', summary: 'Report exported', detail: 'The PDF summary has been downloaded.', life: 3000 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Export failed', detail: err.message || 'Could not generate the PDF report.', life: 5000 })
+  }
 }
 
 // 1. Network Bandwidth Line Chart

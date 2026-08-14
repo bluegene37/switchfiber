@@ -1,6 +1,8 @@
 <template>
   <aside 
-    class="sidebar-wrapper d-flex flex-column flex-shrink-0 vh-100 shadow-sm border-end bg-body" 
+    class="sidebar-wrapper d-flex flex-column flex-shrink-0 shadow-sm border-end bg-body"
+    :inert="isOffscreen"
+    :aria-hidden="isOffscreen ? 'true' : null"
     :style="{ zIndex: 1050, transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }"
     :class="[
       isOpen ? 'transform-none' : 'transform-offcanvas',
@@ -185,6 +187,15 @@ const authStore = useAuthStore()
 
 const isLoading = ref(true)
 
+// Below the md breakpoint the sidebar is translated off-canvas. It is still in
+// the DOM, so without this its links stay tab-focusable and screen-reader
+// visible while invisible on screen.
+const isMobileViewport = ref(false)
+let mobileQuery = null
+const syncViewport = (e) => { isMobileViewport.value = e.matches }
+
+const isOffscreen = computed(() => isMobileViewport.value && !props.isOpen)
+
 const rawMenuItems = ref([
   { id: 5, name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
   { 
@@ -308,10 +319,15 @@ onMounted(() => {
   fetchPermissions()
   checkAutoExpand(route.path)
   window.addEventListener('accesslevelmenu-updated', fetchPermissions)
+
+  mobileQuery = window.matchMedia('(max-width: 767.98px)')
+  isMobileViewport.value = mobileQuery.matches
+  mobileQuery.addEventListener('change', syncViewport)
 })
 
 onUnmounted(() => {
   window.removeEventListener('accesslevelmenu-updated', fetchPermissions)
+  mobileQuery?.removeEventListener('change', syncViewport)
 })
 
 watch(() => authStore.user, () => {
@@ -376,10 +392,15 @@ const filteredMenuItems = computed(() => {
   top: 0;
   left: 0;
   bottom: 0;
+  /* dvh tracks the visible viewport on mobile, where the URL bar makes 100vh
+     taller than the screen and pushes the Logout footer out of reach. */
   height: 100vh;
+  height: 100dvh;
   width: 260px;
+  max-width: 85vw;
   z-index: 1050;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .transform-offcanvas {
   transform: translateX(-100%);

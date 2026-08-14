@@ -146,19 +146,34 @@ const router = createRouter({
     //   component: () => import('../views/ComingSoon.vue'),
     //   meta: { requiresAuth: true }
     // }
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFound.vue')
+    }
   ]
 })
 
-// Navigation Guard
-router.beforeEach((to, from, next) => {
+// Navigation Guard — returns values instead of calling next(), which is
+// deprecated in Vue Router 5.
+router.beforeEach((to) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' })
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next({ name: 'dashboard' })
-  } else {
-    next()
+    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
+  }
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    return { name: 'dashboard' }
+  }
+  return true
+})
+
+// A stale lazy-chunk reference after a redeploy throws on navigation; a single
+// hard reload pulls the new build instead of leaving the user on a dead screen.
+router.onError((err, to) => {
+  const message = String(err?.message || '')
+  if (/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(message)) {
+    window.location.assign(to.fullPath)
   }
 })
 

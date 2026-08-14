@@ -188,12 +188,16 @@
 
     <!-- Right side: Network Status, Dark Mode, Notifications & Profile -->
     <div class="d-flex align-items-center ms-3 gap-3">
-      <!-- Network Status -->
-      <div class="d-none d-lg-flex align-items-center gap-2 px-3 py-1.5 bg-success bg-opacity-10 text-success rounded-pill border border-success border-opacity-25">
-        <div class="spinner-grow spinner-grow-sm text-success" role="status" style="width: 0.55rem; height: 0.55rem;">
-          <span class="visually-hidden">Loading...</span>
+      <!-- Network Status — reflects the last health check, not a fixed label -->
+      <div
+        class="d-none d-lg-flex align-items-center gap-2 px-3 py-1.5 rounded-pill border border-opacity-25"
+        :class="apiDegraded ? 'bg-danger bg-opacity-10 text-danger border-danger' : 'bg-success bg-opacity-10 text-success border-success'"
+        :title="apiDegraded ? 'One or more API endpoints are failing — open notifications for details' : 'All monitored API endpoints are responding'"
+      >
+        <div class="spinner-grow spinner-grow-sm" :class="apiDegraded ? 'text-danger' : 'text-success'" role="status" style="width: 0.55rem; height: 0.55rem;">
+          <span class="visually-hidden">Status indicator</span>
         </div>
-        <span class="fw-semibold" style="font-size: 0.8rem;">Systems Operational</span>
+        <span class="fw-semibold" style="font-size: 0.8rem;">{{ apiDegraded ? 'Service Degraded' : 'Systems Operational' }}</span>
       </div>
 
       <!-- Quick Light/Dark Mode Toggle -->
@@ -211,7 +215,7 @@
       <!-- Interactive Notification Bell & Dropdown -->
       <div class="position-relative" ref="notificationContainer">
         <button 
-          @click="isNotificationOpen = !isNotificationOpen"
+          @click="toggleNotifications"
           class="btn btn-link text-secondary position-relative p-2 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center"
           style="width: 42px; height: 42px; transition: transform 0.2s;"
           aria-label="Notifications"
@@ -255,9 +259,20 @@
 
             <!-- Notification Item List -->
             <div class="overflow-y-auto custom-scrollbar" style="max-height: 340px;">
-              <div 
-                v-for="item in dummyNotifications" 
-                :key="item.id" 
+              <div v-if="isCheckingHealth && notifications.length === 0" class="p-4 text-center text-secondary small">
+                <i class="pi pi-spin pi-spinner fs-5 d-block mb-2 opacity-75"></i>
+                Checking system health…
+              </div>
+
+              <div v-else-if="notifications.length === 0" class="p-4 text-center text-secondary small">
+                <i class="pi pi-check-circle fs-4 d-block mb-2 text-success opacity-75"></i>
+                <div class="fw-semibold text-body">All systems responding</div>
+                <div class="mt-1" style="font-size: 0.78rem;">No alerts at the moment.</div>
+              </div>
+
+              <div
+                v-for="item in notifications"
+                :key="item.id"
                 class="p-3 border-bottom transition-all cursor-pointer hover-bg-item d-flex gap-3 align-items-start"
                 :class="{ 'bg-primary bg-opacity-10': item.unread }"
                 @click="item.unread = false"
@@ -323,7 +338,7 @@
           >
             <div class="px-3 py-2 border-bottom mb-1 bg-body-tertiary rounded-2">
               <div class="fw-bold small text-body">{{ userDisplayName }}</div>
-              <div class="text-secondary small text-truncate" style="font-size: 0.75rem;">{{ user?.email || 'admin@switchfiber.com' }}</div>
+              <div v-if="user?.email" class="text-secondary small text-truncate" style="font-size: 0.75rem;">{{ user.email }}</div>
             </div>
             
             <button 
@@ -525,6 +540,8 @@ onMounted(async () => {
   } catch (e) {
     console.warn('Failed to fetch AccessLevel in Navbar:', e)
   }
+
+  refreshNotifications()
 })
 
 const userRole = computed(() => {
@@ -540,51 +557,59 @@ const userRole = computed(() => {
 const isNotificationOpen = ref(false)
 const notificationContainer = ref(null)
 
-const dummyNotifications = ref([
-  {
-    id: 1,
-    title: 'High Peak Load Alert',
-    message: 'Manila Core Node load reached 94% peak bandwidth capacity.',
-    time: '5m ago',
-    unread: true,
-    severity: 'danger',
-    icon: 'pi-exclamation-triangle'
-  },
-  {
-    id: 2,
-    title: 'Job Order #JO-8492 Complete',
-    message: 'Field Tech Paulo finished installation for Client #1048 (Fiber 100Mbps).',
-    time: '18m ago',
-    unread: true,
-    severity: 'success',
-    icon: 'pi-check-circle'
-  },
-  {
-    id: 3,
-    title: 'New Subscriber Connection',
-    message: 'New application verified & queued for node NAP-Laguna-04.',
-    time: '1h ago',
-    unread: true,
-    severity: 'info',
-    icon: 'pi-wifi'
-  },
-  {
-    id: 4,
-    title: 'System Backup Completed',
-    message: 'Automated database and microservice configuration backup successful.',
-    time: '3h ago',
-    unread: false,
-    severity: 'secondary',
-    icon: 'pi-server'
-  }
-])
+// Real notifications: system-health alerts derived from the endpoints this
+// console depends on. The previous fabricated alerts (peak load, completed job
+// orders, backups) reported events that never happened.
+const notifications = ref([])
+const isCheckingHealth = ref(false)
 
-const unreadCount = computed(() => {
-  return dummyNotifications.value.filter(n => n.unread).length
-})
+const HEALTH_CHECKS = [
+  { path: '/Applications', label: 'Applications' },
+  { path: '/JobOrders', label: 'Job Orders' },
+  { path: '/BillingDetails', label: 'Billing Details' },
+  { path: '/RadiusSession', label: 'RADIUS Sessions' }
+]
+
+const apiDegraded = ref(false)
+
+const refreshNotifications = async () => {
+  isCheckingHealth.value = true
+  try {
+    const results = await Promise.all(HEALTH_CHECKS.map(async (check) => {
+      try {
+        await apiClient.get(check.path)
+        return null
+      } catch (err) {
+        return {
+          id: check.path,
+          title: `${check.label} unavailable`,
+          message: err.message || 'The endpoint returned an error.',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          unread: true,
+          severity: 'danger',
+          icon: 'pi-exclamation-triangle'
+        }
+      }
+    }))
+
+    notifications.value = results.filter(Boolean)
+    apiDegraded.value = notifications.value.length > 0
+  } finally {
+    isCheckingHealth.value = false
+  }
+}
+
+// Re-checked when the panel is opened rather than on a timer, so an idle tab
+// is not polling four endpoints forever.
+const toggleNotifications = () => {
+  isNotificationOpen.value = !isNotificationOpen.value
+  if (isNotificationOpen.value) refreshNotifications()
+}
+
+const unreadCount = computed(() => notifications.value.filter(n => n.unread).length)
 
 const markAllAsRead = () => {
-  dummyNotifications.value.forEach(n => n.unread = false)
+  notifications.value.forEach(n => { n.unread = false })
 }
 
 const getNotificationIconBgClass = (severity) => {

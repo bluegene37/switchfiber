@@ -91,17 +91,40 @@
       :class="['p-datatable-sm small highlight-selected-row']"
     >
       <template #header>
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 py-1">
-          <!-- Left Side: Search Input -->
-          <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm" style="width: 240px; max-width: 100%;" placeholder="Search..." aria-label="Search records" />
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 gap-md-3 py-1 table-toolbar">
+          <!-- Left Side: Search Input (full width on phones, fixed on desktop) -->
+          <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm toolbar-search" placeholder="Search..." aria-label="Search records" />
 
-          <!-- Right Side: Export Buttons (CSV, Excel, PDF, Print) & Create Button -->
+          <!-- Right Side: Refresh, Export Buttons (CSV, Excel, PDF, Print) & Create Button.
+               Export labels collapse to icons below the sm breakpoint so the whole
+               toolbar stays on one row on a phone. -->
           <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
-            <Button label="CSV" icon="pi pi-download" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportCSV" />
-            <Button label="Excel" icon="pi pi-file-excel" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportExcel" />
-            <Button label="PDF" icon="pi pi-file-pdf" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="exportPDF" />
-            <Button label="Print" icon="pi pi-print" class="p-button-secondary p-button-sm p-button-outlined shadow-xs" @click="printTable" />
-            <Button v-if="!hideCreateButton" :label="createButtonLabel || 'Create'" icon="pi pi-plus" class="p-button-primary p-button-sm rounded-pill px-3.5 shadow-xs ms-1" @click="openCreateDialog" />
+            <Button
+              class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn"
+              v-tooltip.bottom="'Refresh Data'"
+              :loading="refreshing"
+              aria-label="Refresh data"
+              @click="refreshData"
+            >
+              <i v-if="!refreshing" class="pi pi-refresh"></i>
+            </Button>
+            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Export CSV" v-tooltip.bottom="'Export CSV'" @click="exportCSV">
+              <i class="pi pi-download"></i><span class="d-none d-sm-inline ms-2">CSV</span>
+            </Button>
+            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Export Excel" v-tooltip.bottom="'Export Excel'" @click="exportExcel">
+              <i class="pi pi-file-excel"></i><span class="d-none d-sm-inline ms-2">Excel</span>
+            </Button>
+            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Export PDF" v-tooltip.bottom="'Export PDF'" @click="exportPDF">
+              <i class="pi pi-file-pdf"></i><span class="d-none d-sm-inline ms-2">PDF</span>
+            </Button>
+            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Print" v-tooltip.bottom="'Print'" @click="printTable">
+              <i class="pi pi-print"></i><span class="d-none d-sm-inline ms-2">Print</span>
+            </Button>
+            <Button v-if="!hideCreateButton" class="p-button-primary p-button-sm rounded-pill px-3 px-sm-3.5 shadow-xs ms-1" :aria-label="createButtonLabel || 'Create'" @click="openCreateDialog">
+              <i class="pi pi-plus"></i>
+              <span class="ms-2 d-none d-sm-inline">{{ createButtonLabel || 'Create' }}</span>
+              <span class="ms-2 d-sm-none">Create</span>
+            </Button>
           </div>
         </div>
       </template>
@@ -1261,6 +1284,7 @@ const getColumnClass = (col) => {
 const data = ref([])
 const selectedRow = ref(null)
 const loading = ref(false)
+const refreshing = ref(false)
 const error = ref(null)
 const dt = ref()
 
@@ -2641,8 +2665,9 @@ const deleteRecord = async () => {
   }
 }
 
-const fetchData = async () => {
-  loading.value = true
+// `silent` skips the full-page skeleton so the toolbar stays visible during a manual refresh
+const fetchData = async ({ silent = false } = {}) => {
+  if (!silent) loading.value = true
   error.value = null
   try {
     const response = await apiClient.get(`/${props.endpoint}`)
@@ -2686,7 +2711,39 @@ const fetchData = async () => {
     console.error(`Error for ${props.endpoint}:`, err)
     error.value = err.message || 'Failed to fetch data'
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
+  }
+}
+
+const refreshData = async () => {
+  if (refreshing.value) return
+  refreshing.value = true
+
+  const previousId = selectedRow.value?.id ?? null
+  try {
+    await fetchData({ silent: true })
+    await fetchRelatedData()
+
+    // Re-point the selection at the freshly fetched row object (same id), so the
+    // highlighted row and any parent detail panel stay in sync after the reload.
+    if (previousId !== null) {
+      const match = data.value.find(row => row.id === previousId)
+      if (match) {
+        selectedRow.value = match
+        emit('row-select', match)
+      }
+    }
+
+    if (!error.value) {
+      toast.add({
+        severity: 'success',
+        summary: 'Refreshed',
+        detail: `${formatLabel(props.endpoint)} data reloaded.`,
+        life: 2000
+      })
+    }
+  } finally {
+    refreshing.value = false
   }
 }
 
@@ -3051,7 +3108,8 @@ defineExpose({
   openCreateDialog,
   openEditDialog,
   confirmDelete,
-  fetchData
+  fetchData,
+  refreshData
 })
 </script>
 
@@ -3324,5 +3382,39 @@ defineExpose({
 :deep(.p-paginator-pages),
 :deep(.p-paginator-current) {
   margin-left: auto !important;
+}
+
+/* ---- Toolbar (responsive) ---- */
+.toolbar-search {
+  width: 240px;
+  max-width: 100%;
+}
+
+.toolbar-icon-btn {
+  width: 31px;
+  min-width: 31px;
+  height: 31px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+  /* Search takes the first row on its own, actions sit beneath it. */
+  .toolbar-search {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .table-toolbar .p-button {
+    min-height: 38px;
+  }
+
+  .toolbar-icon-btn {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+  }
 }
 </style>

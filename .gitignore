@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment overrides.
+# NOTE: every VITE_*-prefixed variable is inlined into the client bundle at
+# build time and is therefore public. Never put API keys or secrets in them.
+.env.local
+.env.*.local

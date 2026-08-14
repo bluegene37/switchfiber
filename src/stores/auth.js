@@ -2,73 +2,50 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiClient from '../services/api'
 
+// Reads a persisted value, treating the literal strings "null"/"undefined"
+// (written by older builds) as absent.
+const readStored = (key) => {
+  const raw = localStorage.getItem(key) || sessionStorage.getItem(key)
+  return raw && raw !== 'null' && raw !== 'undefined' ? raw : null
+}
+
+const readStoredUser = () => {
+  try {
+    return JSON.parse(readStored('user') || 'null')
+  } catch {
+    return null
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('token') || sessionStorage.getItem('token') || null)
-  const user = ref(JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null'))
+  const token = ref(readStored('token'))
+  const user = ref(readStoredUser())
   
   const isAuthenticated = computed(() => !!token.value || (!!user.value && (user.value.id > 0 || !!user.value.username)))
 
   const login = async ({ usernameOrEmail, password, rememberMe = false }) => {
-    let authUser = null
-    let authToken = null
-
     try {
-      // 1. Attempt POST to /Users/login or /Auth/login
-      const loginEndpointRes = await apiClient.post('/Users/login', {
+      // Credentials are verified server-side only. The client never fetches the
+      // user table to compare passwords, and there are no built-in accounts.
+      const res = await apiClient.post('/Users/login', {
         username: usernameOrEmail,
         password: password
-      }).catch(() => null)
+      })
 
-      if (loginEndpointRes && (loginEndpointRes.id || loginEndpointRes.user || loginEndpointRes.token)) {
-        authUser = loginEndpointRes.user || loginEndpointRes
-        authToken = loginEndpointRes.token || loginEndpointRes.accessToken || `token-user-${authUser.id || 1}-${Date.now()}`
-      } else {
-        // 2. Fetch users list from /Users API to authenticate against registered system users
-        const usersList = await apiClient.get('/Users').catch(() => [])
-        let users = usersList
-        if (usersList && !Array.isArray(usersList) && typeof usersList === 'object') {
-          const key = Object.keys(usersList).find(k => Array.isArray(usersList[k]))
-          if (key) users = usersList[key]
-        }
+      const authUser = res?.user || res
+      if (!authUser || typeof authUser !== 'object' || (!authUser.id && !authUser.username)) {
+        throw new Error('Login failed: unexpected response from the authentication server.')
+      }
 
-        const inputClean = (usernameOrEmail || '').trim().toLowerCase()
-        const matchedUser = (users || []).find(u => {
-          const uName = (u.username || u.userName || '').toLowerCase()
-          const uEmail = (u.userEmail || u.email || '').toLowerCase()
-          const uFname = (u.fname || u.name || '').toLowerCase()
-          const passMatch = String(u.password || '') === String(password)
-          
-          const isNameOrEmailMatch = uName === inputClean || uEmail === inputClean || uFname === inputClean || 
-                                     (inputClean.includes('@') && uEmail.startsWith(inputClean))
-          return isNameOrEmailMatch && passMatch
-        })
+      if (authUser.active === false || authUser.active === 'false') {
+        throw new Error('Your account is inactive. Please contact your system administrator.')
+      }
 
-        if (!matchedUser) {
-          // Allow fallback super-admin login if user table is empty or for admin testing
-          const isDefaultUser = ['admin', 'admin@switchfiber.com', 'paulo', 'user'].includes(inputClean)
-          const isDefaultPass = ['admin', '111', 'admin123', 'password'].includes(password)
-
-          if (isDefaultUser && isDefaultPass) {
-            authUser = {
-              id: 1,
-              username: inputClean.includes('@') ? inputClean.split('@')[0] : inputClean,
-              fname: 'Admin',
-              lname: 'User',
-              userEmail: inputClean.includes('@') ? inputClean : 'admin@switchfiber.com',
-              active: true,
-              accesslevel_id: 1
-            }
-            authToken = `admin-token-${Date.now()}`
-          } else {
-            throw new Error('Invalid username/email or password.')
-          }
-        } else {
-          if (matchedUser.active === false || matchedUser.active === 'false') {
-            throw new Error('Your account is inactive. Please contact your system administrator.')
-          }
-          authUser = matchedUser
-          authToken = `token-user-${matchedUser.id || 1}-${Date.now()}`
-        }
+      const authToken = res?.token || res?.accessToken || null
+      if (!authToken) {
+        // The API does not issue a bearer token yet; mark the session as
+        // server-verified so the guard and the request interceptor agree.
+        console.warn('Login succeeded but no token was returned by the API.')
       }
 
       token.value = authToken
@@ -77,7 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
         username: authUser.username || authUser.fname || 'User',
         fname: authUser.firstName || authUser.fname || '',
         lname: authUser.lastName || authUser.lname || '',
-        email: authUser.userEmail || authUser.email || `${authUser.username || 'user'}@switchfiber.com`,
+        email: authUser.userEmail || authUser.email || '',
         accesslevel_id: authUser.accessLevelId || authUser.accesslevel_id || 1,
         menus: authUser.menus || []
       }
@@ -89,7 +66,9 @@ export const useAuthStore = defineStore('auth', () => {
       sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
 
-      storage.setItem('token', token.value)
+      // Never persist a literal "null" — it reads back as a truthy string and
+      // would both fake an authenticated session and send `Bearer null`.
+      if (token.value) storage.setItem('token', token.value)
       storage.setItem('user', JSON.stringify(user.value))
 
       return user.value

@@ -14,6 +14,12 @@
       <div>{{ errorMessage }}</div>
     </div>
 
+    <!-- Informational Banner (password reset feedback) -->
+    <div v-if="infoMessage" class="alert alert-info d-flex align-items-center rounded-3 p-2.5 mb-3 small" role="status">
+      <i class="pi pi-info-circle me-2 fs-5 flex-shrink-0"></i>
+      <div>{{ infoMessage }}</div>
+    </div>
+
     <form @submit.prevent="handleLogin">
       <div class="mb-3">
         <label for="usernameOrEmail" class="form-label small fw-semibold text-secondary">Username or Email</label>
@@ -59,9 +65,9 @@
           </label>
         </div>
         <div class="small">
-          <a href="#" @click.prevent="alert('Please contact your administrator to reset your password.')" class="fw-semibold text-primary text-decoration-none">
-            Forgot password?
-          </a>
+          <button type="button" @click="handleForgotPassword" :disabled="isResetting" class="btn btn-link p-0 border-0 shadow-none align-baseline fw-semibold text-primary text-decoration-none small">
+            {{ isResetting ? 'Sending…' : 'Forgot password?' }}
+          </button>
         </div>
       </div>
 
@@ -85,12 +91,14 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import apiClient from '../services/api'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Checkbox from 'primevue/checkbox'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -98,25 +106,51 @@ const usernameOrEmail = ref('')
 const password = ref('')
 const rememberMe = ref(true)
 const isLoading = ref(false)
+const isResetting = ref(false)
 const errorMessage = ref(null)
+const infoMessage = ref(null)
 
 const handleLogin = async () => {
   if (!usernameOrEmail.value || !password.value) return
-  
+
   isLoading.value = true
   errorMessage.value = null
+  infoMessage.value = null
   try {
     await authStore.login({
       usernameOrEmail: usernameOrEmail.value,
       password: password.value,
       rememberMe: rememberMe.value
     })
-    router.push('/dashboard')
+    // Return the user to the screen the guard bounced them off of.
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
+    router.push(redirect.startsWith('/') ? redirect : '/dashboard')
   } catch (error) {
-    console.error('Login error:', error)
     errorMessage.value = error.message || 'Failed to authenticate. Please check your credentials.'
   } finally {
     isLoading.value = false
+  }
+}
+
+const handleForgotPassword = async () => {
+  errorMessage.value = null
+  infoMessage.value = null
+
+  const entered = usernameOrEmail.value.trim()
+  if (!entered.includes('@')) {
+    infoMessage.value = 'Enter your account email address above, then tap "Forgot password?" again.'
+    return
+  }
+
+  isResetting.value = true
+  try {
+    await apiClient.post('/Auth/request-password-reset', { email: entered })
+  } catch {
+    // Deliberately not surfaced: a per-address error would reveal which
+    // addresses have accounts.
+  } finally {
+    isResetting.value = false
+    infoMessage.value = `If an account exists for ${entered}, a reset link is on its way. Check your inbox.`
   }
 }
 </script>

@@ -138,7 +138,7 @@ const routeMap = {
   },
   '/invoice': { 
     title: 'Invoice', 
-    endpoint: 'BillingStatements', 
+    endpoint: 'Invoices',
     icon: 'pi-receipt', 
     description: 'Generate customer billing statements, track invoice payment statuses, charges, and financial transaction records.' 
   },

@@ -39,7 +39,7 @@
           </div>
 
           <!-- List of Endpoints -->
-          <div class="card-body p-2 overflow-y-auto" style="max-height: calc(100vh - 280px); min-height: 400px;">
+          <div class="card-body p-2 overflow-y-auto endpoint-list" style="max-height: calc(100dvh - 280px); min-height: 400px;">
             <div 
               v-if="filteredEndpoints.length === 0" 
               class="text-center text-muted py-5 small"
@@ -194,8 +194,8 @@
               <!-- Interactive Tree View -->
               <div 
                 v-else-if="viewMode === 'tree'"
-                class="bg-body-tertiary text-body p-3.5 rounded-bottom-3 border overflow-auto custom-scrollbar"
-                style="max-height: calc(100vh - 280px); min-height: 480px;"
+                class="bg-body-tertiary text-body p-3.5 rounded-bottom-3 border overflow-auto custom-scrollbar json-pane"
+                style="max-height: calc(100dvh - 280px); min-height: 480px;"
               >
                 <JsonTreeNode 
                   :data="parsedJsonData" 
@@ -209,8 +209,8 @@
               <!-- Formatted Raw JSON View -->
               <pre 
                 v-else 
-                class="bg-body-tertiary text-body p-3 rounded-bottom-3 border overflow-auto font-monospace mb-0 custom-scrollbar" 
-                style="max-height: calc(100vh - 280px); min-height: 480px; font-size: 0.85rem; line-height: 1.5;"
+                class="bg-body-tertiary text-body p-3 rounded-bottom-3 border overflow-auto font-monospace mb-0 custom-scrollbar json-pane"
+                style="max-height: calc(100dvh - 280px); min-height: 480px; font-size: 0.85rem; line-height: 1.5;"
               ><code>{{ rawJsonString }}</code></pre>
             </div>
           </div>
@@ -247,7 +247,8 @@ const apiEndpoints = ref([
   { name: 'Invoice (Singular)', endpoint: 'Invoice', description: 'Single invoice entity lookup and generation' },
   { name: 'Invoices (Plural)', endpoint: 'Invoices', description: 'Customer billing invoices and statement records' },
   { name: 'Barangays', endpoint: 'Barangays', description: 'Location barangay geographic lookup data' },
-  { name: 'Radius Users', endpoint: 'RadiusUser', description: 'RADIUS subscriber user accounts and authentication profiles' }
+  { name: 'Radius Users', endpoint: 'RadiusUser', description: 'RADIUS subscriber user accounts and authentication profiles' },
+  { name: 'Radius Sessions', endpoint: 'RadiusSession', description: 'Active RADIUS accounting sessions and connection state' }
 ])
 
 const selectedEndpoint = ref(apiEndpoints.value[0].endpoint)
@@ -371,6 +372,22 @@ watch(selectedEndpoint, () => {
   color: #e74c5a !important;
   font-weight: 700 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* On a phone the two panes stack. Shrinking them keeps the endpoint list from
+   filling the screen before the JSON payload comes into view. */
+@media (max-width: 991.98px) {
+  .endpoint-list {
+    min-height: 0 !important;
+    max-height: 45vh !important;
+    max-height: 45dvh !important;
+  }
+
+  .json-pane {
+    min-height: 300px !important;
+    max-height: 65vh !important;
+    max-height: 65dvh !important;
+  }
 }
 
 .custom-scrollbar::-webkit-scrollbar {

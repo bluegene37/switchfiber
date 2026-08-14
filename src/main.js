@@ -7,6 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
 import ToastService from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip'
 
 import App from './App.vue'
 import router from './router'
@@ -34,5 +35,7 @@ app.use(PrimeVue, {
         }
     }
 })
+
+app.directive('tooltip', Tooltip)
 
 app.mount('#app')

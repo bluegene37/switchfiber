@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex vh-100 bg-body-tertiary overflow-hidden position-relative">
+  <div class="app-shell d-flex bg-body-tertiary overflow-hidden position-relative">
     <!-- Sidebar -->
     <Sidebar 
       :is-open="isSidebarOpen" 
@@ -19,7 +19,7 @@
       />
       
       <!-- Main Content -->
-      <main class="flex-grow-1 overflow-y-auto p-3 p-md-4 p-lg-5">
+      <main class="flex-grow-1 overflow-y-auto p-3 p-md-4 p-lg-5 safe-area-inset">
         <router-view />
       </main>
     </div>

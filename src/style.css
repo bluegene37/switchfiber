@@ -1,5 +1,6 @@
 @import "primeicons/primeicons.css";
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+/* The Google Fonts stylesheet is loaded from index.html, which pairs it with
+   preconnect hints. A second @import here would block rendering again. */
 
 :root {
   /* SwitchFiber Warm Rose Red Theme Palette (softer, eye-friendly for 8h usage) */
@@ -589,4 +590,74 @@ html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight > td
 .p-datatable .p-datatable-tbody > tr.p-highlight td,
 .p-datatable .p-selectable-row.p-highlight td {
   border-color: rgba(231, 76, 90, 0.15) !important;
+}
+/* =========================================================================
+   MOBILE / TOUCH SUPPORT
+   Applies to phone-sized viewports. Desktop layout is unchanged.
+   ========================================================================= */
+
+/* iOS Safari zooms the whole page when a focused input renders below 16px.
+   Force 16px on touch-sized viewports so tapping a field never zooms. */
+@media (max-width: 767.98px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  .form-control,
+  .form-control-sm,
+  .form-select,
+  .form-select-sm,
+  .p-inputtext,
+  .p-inputtext.p-inputtext-sm,
+  .p-select .p-select-label,
+  .p-textarea,
+  .p-inputnumber-input,
+  .p-password-input {
+    font-size: 16px !important;
+  }
+
+  /* Comfortable touch targets (WCAG 2.5.5) for the row action buttons and
+     any icon-only button that is sized for a mouse on desktop. */
+  .p-datatable .p-datatable-tbody > tr > td .p-button.p-button-icon-only,
+  .p-datatable .p-datatable-tbody > tr > td .delete-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+
+  /* Dialog footers stay reachable with one thumb. */
+  .p-dialog .p-dialog-footer .p-button,
+  .p-dialog .p-dialog-footer .btn {
+    min-height: 44px;
+  }
+
+  /* Give scrollable regions momentum scrolling on iOS. */
+  .p-datatable-wrapper,
+  .p-datatable-table-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Honour the notch / home indicator on iPhone and Android gesture bars. */
+@supports (padding: max(0px)) {
+  .safe-area-inset {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Mobile browser chrome (the URL bar) makes 100vh taller than the visible
+   viewport, which pushes fixed footers off-screen. dvh tracks the real
+   viewport; the vh line stays as the fallback for older browsers. */
+.app-shell,
+.sidebar-wrapper {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Never let a stray wide element scroll the whole page sideways — wide
+   content (tables, code) scrolls inside its own container instead.
+   `clip` rather than `hidden`: it does not create a scroll container, so
+   sticky/frozen table columns keep working. */
+body {
+  overflow-x: clip;
 }
