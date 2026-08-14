@@ -8,16 +8,19 @@
     <div v-else-if="loading" class="card border-0 shadow-sm rounded-4 overflow-hidden p-3 bg-body">
       <!-- Top Row Header Placeholder -->
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 border-bottom pb-3">
-        <!-- Left Side: Search Skeleton -->
-        <div class="skeleton-box rounded-2" style="width: 220px; height: 31px;"></div>
+        <!-- Left Side: Search & Quick Filter Skeleton -->
+        <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 flex-md-grow-0">
+          <div class="skeleton-box rounded-3" style="width: 240px; height: 32px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 120px; height: 32px;"></div>
+        </div>
 
-        <!-- Right Side: Buttons Skeleton -->
+        <!-- Right Side: Tools, Export & Create Skeleton -->
         <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
-          <div class="skeleton-box rounded-3" style="width: 60px; height: 31px;"></div>
-          <div class="skeleton-box rounded-3" style="width: 65px; height: 31px;"></div>
-          <div class="skeleton-box rounded-3" style="width: 60px; height: 31px;"></div>
-          <div class="skeleton-box rounded-3" style="width: 60px; height: 31px;"></div>
-          <div v-if="!hideCreateButton" class="skeleton-box rounded-3" style="width: 110px; height: 31px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 32px; height: 32px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 32px; height: 32px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 32px; height: 32px;"></div>
+          <div class="skeleton-box rounded-3" style="width: 85px; height: 32px;"></div>
+          <div v-if="!hideCreateButton" class="skeleton-box rounded-3" style="width: 120px; height: 32px;"></div>
         </div>
       </div>
 
@@ -57,28 +60,25 @@
       <!-- Bottom Paginator Skeleton -->
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3 pt-2 border-top">
         <div class="d-flex align-items-center gap-3">
-          <div class="skeleton-box rounded-2" style="width: 130px; height: 31px;"></div>
-          <div class="d-flex align-items-center gap-2">
-            <span class="mb-0 fw-medium text-body">Show</span>
-            <div class="skeleton-box rounded-2" style="width: 70px; height: 31px;"></div>
-            <span class="mb-0 fw-medium text-body">entries</span>
-          </div>
+          <div class="skeleton-box rounded-2" style="width: 170px; height: 26px;"></div>
+          <div class="skeleton-box rounded-2" style="width: 110px; height: 26px;"></div>
         </div>
-        <div class="skeleton-box rounded-2 ms-auto" style="width: 240px; height: 31px;"></div>
+        <div class="skeleton-box rounded-2 ms-auto" style="width: 240px; height: 28px;"></div>
       </div>
     </div>
     
-    <!-- Actual DataTable (Shown ONLY when data is ready) -->
-    <DataTable 
-      v-else 
-      ref="dt"
-      :value="data" 
+    <!-- Main Data View (Shown when data is loaded) -->
+    <div v-else>
+      <!-- Actual DataTable -->
+      <DataTable 
+        ref="dt"
+        :value="filteredData" 
       scrollable
-      size="small"
+      :size="tableSize"
       :paginator="true" 
       :rows="rowsPerPage" 
-      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
-      v-model:filters="filters"
+      v-model:first="firstRowIndex"
+      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
       v-model:selection="selectedRow"
       :selectionMode="isMenuEndpoint ? null : 'single'"
       @row-select="handleRowSelect"
@@ -87,20 +87,67 @@
       @selection-change="handleSelectionChange"
       dataKey="id"
       filterDisplay="menu"
-      :globalFilterFields="columns"
-      :class="['p-datatable-sm small highlight-selected-row']"
+      :globalFilterFields="displayedColumns"
+      :class="['small highlight-selected-row', densityClass]"
     >
       <template #header>
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 gap-md-3 py-1 table-toolbar">
-          <!-- Left Side: Search Input (full width on phones, fixed on desktop) -->
-          <InputText id="global-search" v-model="filters['global'].value" class="p-inputtext-sm toolbar-search" placeholder="Search..." aria-label="Search records" />
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 gap-md-3 py-1.5 table-toolbar">
+          <!-- Left Zone: Search, Status Quick Filter & Reset Button -->
+          <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 flex-md-grow-0">
+            <!-- Enhanced Search Box with Inner Icon & Instant Clear -->
+            <div class="position-relative toolbar-search-wrapper">
+              <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-secondary pointer-events-none" style="font-size: 0.85rem;"></i>
+              <input 
+                id="global-search" 
+                v-model="filters['global'].value" 
+                type="text"
+                class="form-control form-control-sm ps-5 pe-4 toolbar-search-input rounded-3 shadow-none border" 
+                :placeholder="`Search ${formatLabel(endpoint)}...`" 
+                aria-label="Search records" 
+              />
+              <button 
+                v-if="filters['global'].value" 
+                type="button" 
+                class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 clear-search-btn"
+                @click="filters['global'].value = null"
+                title="Clear search"
+              >
+                <i class="pi pi-times" style="font-size: 0.75rem;"></i>
+              </button>
+            </div>
 
-          <!-- Right Side: Refresh, Export Buttons (CSV, Excel, PDF, Print) & Create Button.
-               Export labels collapse to icons below the sm breakpoint so the whole
-               toolbar stays on one row on a phone. -->
+            <!-- Quick Status Filter (when active or status column exists) -->
+            <div v-if="hasStatusFilter" class="toolbar-filter-select">
+              <select 
+                v-model="selectedStatusFilter" 
+                class="form-select form-select-sm rounded-3 fw-medium text-body bg-body shadow-xs border" 
+                aria-label="Filter by status"
+              >
+                <option value="">Status: All</option>
+                <option v-for="opt in statusFilterOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Active Filter Count Badge & Reset Button -->
+            <button 
+              v-if="activeFilterCount > 0"
+              type="button" 
+              class="btn btn-sm btn-outline-danger border-dashed rounded-3 d-inline-flex align-items-center gap-1.5 px-2.5 py-1 small shadow-xs"
+              @click="clearAllFilters"
+              title="Clear all applied filters"
+            >
+              <i class="pi pi-filter-slash" style="font-size: 0.75rem;"></i>
+              <span>Reset ({{ activeFilterCount }})</span>
+            </button>
+          </div>
+
+          <!-- Right Zone: View Controls (Refresh, Density, Columns), Consolidated Export & Primary Action -->
           <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+            <!-- Refresh Button -->
             <Button
-              class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn"
+              class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3"
               v-tooltip.bottom="'Refresh Data'"
               :loading="refreshing"
               aria-label="Refresh data"
@@ -108,47 +155,106 @@
             >
               <i v-if="!refreshing" class="pi pi-refresh"></i>
             </Button>
-            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Export CSV" v-tooltip.bottom="'Export CSV'" @click="exportCSV">
-              <i class="pi pi-download"></i><span class="d-none d-sm-inline ms-2">CSV</span>
+
+            <!-- Table Row Density Switcher -->
+            <Button 
+              class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3"
+              v-tooltip.bottom="`Density: ${densityLabel}`"
+              aria-label="Toggle Row Density"
+              @click="toggleDensity"
+            >
+              <i :class="densityIcon"></i>
             </Button>
-            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Export Excel" v-tooltip.bottom="'Export Excel'" @click="exportExcel">
-              <i class="pi pi-file-excel"></i><span class="d-none d-sm-inline ms-2">Excel</span>
+
+            <!-- Column Visibility Chooser -->
+            <Button 
+              class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3"
+              v-tooltip.bottom="'Customize Columns'"
+              aria-label="Customize Columns"
+              @click="toggleColumnPicker"
+            >
+              <i class="pi pi-sliders-h"></i>
             </Button>
-            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Export PDF" v-tooltip.bottom="'Export PDF'" @click="exportPDF">
-              <i class="pi pi-file-pdf"></i><span class="d-none d-sm-inline ms-2">PDF</span>
+
+            <Popover ref="columnPopover">
+              <div class="p-2 column-picker-panel" style="min-width: 220px; max-width: 280px;">
+                <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                  <span class="fw-bold small text-body">Visible Columns</span>
+                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small fw-medium" @click="resetColumns">Reset All</button>
+                </div>
+                <div class="d-flex flex-column gap-1.5 overflow-y-auto" style="max-height: 240px;">
+                  <label 
+                    v-for="col in columns" 
+                    :key="col" 
+                    class="d-flex align-items-center gap-2 small cursor-pointer py-1 px-1.5 rounded hover-bg mb-0"
+                  >
+                    <input 
+                      type="checkbox" 
+                      class="form-check-input mt-0" 
+                      :checked="visibleColumns.includes(col)"
+                      :disabled="visibleColumns.length === 1 && visibleColumns.includes(col)"
+                      @change="toggleColumnVisibility(col)"
+                    />
+                    <span class="text-truncate text-body">{{ formatLabel(col) }}</span>
+                  </label>
+                </div>
+              </div>
+            </Popover>
+
+            <!-- Consolidated Export Dropdown -->
+            <Button 
+              class="p-button-secondary p-button-sm p-button-outlined shadow-xs rounded-3 px-2.5 d-inline-flex align-items-center gap-1.5"
+              aria-label="Export Data"
+              aria-haspopup="true"
+              aria-controls="export_menu"
+              @click="toggleExportMenu"
+            >
+              <i class="pi pi-download text-secondary"></i>
+              <span class="d-none d-sm-inline fw-medium">Export</span>
+              <i class="pi pi-chevron-down small opacity-75"></i>
             </Button>
-            <Button class="p-button-secondary p-button-sm p-button-outlined shadow-xs" aria-label="Print" v-tooltip.bottom="'Print'" @click="printTable">
-              <i class="pi pi-print"></i><span class="d-none d-sm-inline ms-2">Print</span>
-            </Button>
-            <Button v-if="!hideCreateButton" class="p-button-primary p-button-sm rounded-pill px-3 px-sm-3.5 shadow-xs ms-1" :aria-label="createButtonLabel || 'Create'" @click="openCreateDialog">
+            <Menu ref="exportMenu" id="export_menu" :model="exportMenuItems" :popup="true" />
+
+            <!-- Primary Action: Create Button -->
+            <Button 
+              v-if="!hideCreateButton" 
+              class="p-button-primary p-button-sm rounded-3 px-3 px-sm-3.5 shadow-xs ms-1 fw-semibold d-inline-flex align-items-center gap-1.5" 
+              :aria-label="createButtonLabel || 'Create'" 
+              @click="openCreateDialog"
+            >
               <i class="pi pi-plus"></i>
-              <span class="ms-2 d-none d-sm-inline">{{ createButtonLabel || 'Create' }}</span>
-              <span class="ms-2 d-sm-none">Create</span>
+              <span class="d-none d-sm-inline">{{ createButtonLabel || 'Create' }}</span>
+              <span class="d-sm-none">Create</span>
             </Button>
           </div>
         </div>
       </template>
 
+      <!-- Paginator Start: Dynamic Record Range & Rows Per Page -->
       <template #paginatorstart>
         <div class="d-flex align-items-center gap-3 my-1 flex-wrap">
-          <!-- Total Records Badge (First on Left) -->
-          <span class="badge bg-body-tertiary text-body border px-2.5 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs">
-            <i class="pi pi-database text-primary"></i> 
-            <span>Total: <strong>{{ totalRecordsCount }}</strong> {{ totalRecordsCount === 1 ? 'record' : 'records' }}</span>
-          </span>
+          <!-- Dynamic Showing X to Y of Z Records -->
+          <div class="small text-secondary d-flex align-items-center gap-1.5">
+            <i class="pi pi-database text-primary opacity-75"></i>
+            <span>Showing <strong class="text-body">{{ recordRangeStart }}</strong> to <strong class="text-body">{{ recordRangeEnd }}</strong> of <strong class="text-body">{{ filteredRecordsCount }}</strong> {{ filteredRecordsCount === 1 ? 'record' : 'records' }}</span>
+            <span v-if="filteredRecordsCount !== totalRecordsCount" class="badge bg-secondary bg-opacity-10 text-secondary border ms-1" style="font-size: 0.72rem;">
+              Filtered from {{ totalRecordsCount }}
+            </span>
+          </div>
 
-          <!-- Show Entries Dropdown (Right of Total Records) -->
-          <div class="d-flex align-items-center gap-2">
-            <span class="mb-0 fw-medium text-body">Show</span>
-            <select v-model="rowsPerPage" class="form-select form-select-sm text-center" style="width: 70px; cursor: pointer;">
+          <!-- Show Entries Dropdown -->
+          <div class="d-flex align-items-center gap-1.5 ms-md-2">
+            <span class="mb-0 small text-secondary">Show</span>
+            <select v-model="rowsPerPage" class="form-select form-select-sm text-center rounded-2 py-0.5" style="width: 65px; height: 28px; cursor: pointer;">
               <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
             </select>
-            <span class="mb-0 fw-medium text-body">entries</span>
+            <span class="mb-0 small text-secondary">per page</span>
           </div>
         </div>
       </template>
 
-      <Column v-for="col in columns" :key="col" :field="col" :header="formatLabel(col)" :sortable="true">
+      <!-- Dynamic Visible Columns -->
+      <Column v-for="col in displayedColumns" :key="col" :field="col" :header="formatLabel(col)" :sortable="true">
         <template #body="slotProps">
           <span v-if="col.toLowerCase() === 'active'">
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Active</span>
@@ -182,30 +288,12 @@
         </template>
       </Column>
 
-
       <!-- Actions Column (Frozen on Right) -->
-      <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '100px', width: isMenuEndpoint ? '150px' : '100px' }" class="text-center frozen-actions-col">
+      <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '105px', width: isMenuEndpoint ? '150px' : '105px' }" class="text-center frozen-actions-col">
         <template #body="slotProps">
-          <div class="d-flex gap-1.5 justify-content-center align-items-center" @click.stop>
+          <div class="d-flex gap-1 justify-content-center align-items-center" @click.stop>
             <!-- Interactive Toggle Switch & Status Pill in Actions Column for Menus -->
             <div v-if="isMenuEndpoint" class="d-flex align-items-center me-1">
-              <!-- Status Badges (Preserved for future toggle indicator)
-              <span 
-                v-if="isMenuLinked(slotProps.data)" 
-                class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small fw-semibold d-inline-flex align-items-center me-2"
-                style="font-size: 0.75rem;"
-              >
-                <i class="pi pi-check me-1"></i> Granted
-              </span>
-              <span 
-                v-else 
-                class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 small fw-semibold d-inline-flex align-items-center me-2"
-                style="font-size: 0.75rem;"
-              >
-                <i class="pi pi-times me-1"></i> Hidden
-              </span>
-              -->
-
               <ToggleSwitch 
                 :modelValue="isMenuLinked(slotProps.data) === true" 
                 :disabled="isToggleSwitchDisabled(slotProps.data)" 
@@ -216,34 +304,61 @@
 
             <Button 
               icon="pi pi-eye" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0" 
-              style="width: 26px; height: 26px; font-size: 0.8rem;"
-              title="View Details" 
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 action-row-btn" 
+              v-tooltip.top="'View Details'" 
+              aria-label="View Details"
               @click="openViewDialog(slotProps.data)" 
             />
             <Button 
               icon="pi pi-pencil" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0" 
-              style="width: 26px; height: 26px; font-size: 0.8rem;"
-              title="Edit Record" 
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 action-row-btn" 
+              v-tooltip.top="'Edit Record'" 
+              aria-label="Edit Record"
               @click="openEditDialog(slotProps.data)" 
             />
             <Button 
               icon="pi pi-trash" 
-              class="p-button-text p-button-sm p-button-rounded p-0 delete-btn" 
-              style="width: 26px; height: 26px; font-size: 0.8rem;"
-              title="Delete Record" 
+              class="p-button-text p-button-sm p-button-rounded p-0 delete-btn action-row-btn" 
+              v-tooltip.top="'Delete Record'" 
+              aria-label="Delete Record"
               @click="confirmDelete(slotProps.data)" 
             />
           </div>
         </template>
       </Column>
+
+      <!-- Empty State -->
       <template #empty>
-        <div class="p-5 text-center text-secondary">
-          No data available for {{ endpoint }}.
+        <div class="p-5 text-center text-secondary d-flex flex-column align-items-center justify-content-center">
+          <div class="rounded-circle bg-body-tertiary p-3 mb-3 d-inline-flex align-items-center justify-content-center border" style="width: 56px; height: 56px;">
+            <i :class="activeFilterCount > 0 ? 'pi pi-search-minus' : 'pi pi-inbox'" class="text-secondary fs-4"></i>
+          </div>
+          <h6 class="fw-bold text-body mb-1">
+            {{ activeFilterCount > 0 ? 'No matching records found' : `No records available for ${formatLabel(endpoint)}` }}
+          </h6>
+          <p class="small text-secondary mb-3" style="max-width: 380px;">
+            {{ activeFilterCount > 0 ? 'Try modifying or clearing your search keywords and status filters to find what you are looking for.' : 'There are currently no entries recorded in this dataset.' }}
+          </p>
+          <div class="d-flex align-items-center gap-2">
+            <Button 
+              v-if="activeFilterCount > 0" 
+              label="Clear Filters" 
+              icon="pi pi-filter-slash" 
+              class="p-button-outlined p-button-sm rounded-3 shadow-xs" 
+              @click="clearAllFilters" 
+            />
+            <Button 
+              v-if="!hideCreateButton" 
+              :label="`Create ${formatLabel(endpoint)}`" 
+              icon="pi pi-plus" 
+              class="p-button-primary p-button-sm rounded-3 shadow-xs" 
+              @click="openCreateDialog" 
+            />
+          </div>
         </div>
       </template>
     </DataTable>
+    </div>
 
     <!-- Enhanced Create Record Dialog -->
     <Dialog 
@@ -1214,6 +1329,8 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
 import Password from 'primevue/password'
+import Menu from 'primevue/menu'
+import Popover from 'primevue/popover'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { EndpointColumns } from '../models/columns'
@@ -1288,43 +1405,8 @@ const refreshing = ref(false)
 const error = ref(null)
 const dt = ref()
 
-const rowsPerPage = ref(50)
-const rowOptions = ref([5, 10, 20, 50, 100])
-
-const filters = ref({
-  global: { value: null, matchMode: 'contains' }
-})
-
-const totalRecordsCount = computed(() => {
-  return Array.isArray(data.value) ? data.value.length : 0
-})
-
-// View State
-const displayViewDialog = ref(false)
-const viewFormData = ref({})
-const viewingRecordId = ref(null)
-
-// Dialog State
-const displayCreateDialog = ref(false)
-const formData = ref({})
-const saving = ref(false)
-const saveError = ref(null)
-
-// Edit State
-const displayEditDialog = ref(false)
-const editFormData = ref({})
-const editingRecordId = ref(null)
-const savingEdit = ref(false)
-const editError = ref(null)
-
-// Delete State
-const displayDeleteDialog = ref(false)
-const recordToDelete = ref(null)
-const deleting = ref(false)
-const deleteError = ref(null)
-
 // Format camelCase and underscore properties into human-readable Title Case
-const formatLabel = (col) => {
+function formatLabel(col) {
   if (!col) return ''
   
   const customOverrides = {
@@ -1390,7 +1472,8 @@ const formatLabel = (col) => {
 }
 
 // Classify field types for smart form rendering
-const getFieldType = (col) => {
+function getFieldType(col) {
+  if (!col) return 'text'
   const lower = col.toLowerCase()
   if (lower.includes('email')) {
     return 'email'
@@ -1490,7 +1573,7 @@ const getFieldType = (col) => {
 }
 
 // Filter out redundant alias duplicate keys (e.g. preferred_Day if preferredDay exists, verified_By if verifiedBy exists, EF Core navigation objects, paired ID vs string fields)
-const deduplicateColumns = (colList) => {
+function deduplicateColumns(colList) {
   if (!Array.isArray(colList)) return []
   const normalizedSet = new Set()
   const result = []
@@ -1537,7 +1620,6 @@ const deduplicateColumns = (colList) => {
 
 // Dynamically generate column headers from the first object in the array,
 // or fallback to the static mapping if the table is empty.
-// All raw keys from data or model definition
 const allRawColumns = computed(() => {
   let rawCols = []
   if (data.value && data.value.length > 0) {
@@ -1560,7 +1642,7 @@ const allRawColumns = computed(() => {
 })
 
 // Check if a field is a Created, Modified, or RowVersion audit field
-const isCreatedOrModifiedField = (col) => {
+function isCreatedOrModifiedField(col) {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
   return (
@@ -1653,7 +1735,7 @@ const columns = computed(() => {
   })
 })
 
-const isAuditField = (col) => {
+function isAuditField(col) {
   if (!col) return false
   const lower = col.toLowerCase()
   return (
@@ -1662,6 +1744,256 @@ const isAuditField = (col) => {
     lower.includes('rowversion') || lower === 'rowversion'
   )
 }
+
+const exportMenu = ref(null)
+const columnPopover = ref(null)
+const density = ref('default') // 'compact' | 'default' | 'comfortable'
+const visibleColumns = ref([])
+const selectedStatusFilter = ref('')
+const firstRowIndex = ref(0)
+
+const rowsPerPage = ref(50)
+const rowOptions = ref([5, 10, 20, 50, 100])
+
+const filters = ref({
+  global: { value: null, matchMode: 'contains' }
+})
+
+const densityClass = computed(() => `density-${density.value}`)
+const densityLabel = computed(() => {
+  if (density.value === 'compact') return 'Compact (Dense)'
+  if (density.value === 'comfortable') return 'Comfortable (Spacious)'
+  return 'Default'
+})
+const densityIcon = computed(() => {
+  if (density.value === 'compact') return 'pi pi-align-justify'
+  if (density.value === 'comfortable') return 'pi pi-bars'
+  return 'pi pi-list'
+})
+const tableSize = computed(() => {
+  if (density.value === 'compact') return 'small'
+  if (density.value === 'comfortable') return 'large'
+  return 'small'
+})
+
+const toggleDensity = () => {
+  if (density.value === 'default') density.value = 'compact'
+  else if (density.value === 'compact') density.value = 'comfortable'
+  else density.value = 'default'
+}
+
+const toggleExportMenu = (event) => {
+  if (exportMenu.value) {
+    exportMenu.value.toggle(event)
+  }
+}
+
+const toggleColumnPicker = (event) => {
+  if (columnPopover.value) {
+    columnPopover.value.toggle(event)
+  }
+}
+
+const resetColumns = () => {
+  visibleColumns.value = [...columns.value]
+}
+
+const toggleColumnVisibility = (col) => {
+  const idx = visibleColumns.value.indexOf(col)
+  if (idx > -1) {
+    if (visibleColumns.value.length > 1) {
+      visibleColumns.value.splice(idx, 1)
+    }
+  } else {
+    visibleColumns.value.push(col)
+  }
+}
+
+// Watch columns and maintain visibleColumns
+watch(columns, (newCols) => {
+  if (Array.isArray(newCols) && newCols.length > 0) {
+    if (visibleColumns.value.length === 0) {
+      visibleColumns.value = [...newCols]
+    } else {
+      const valid = visibleColumns.value.filter(c => newCols.includes(c))
+      visibleColumns.value = valid.length > 0 ? valid : [...newCols]
+    }
+  }
+}, { immediate: true })
+
+const displayedColumns = computed(() => {
+  if (!Array.isArray(columns.value)) return []
+  if (visibleColumns.value.length === 0) return columns.value
+  return columns.value.filter(col => visibleColumns.value.includes(col))
+})
+
+const hasActiveColumn = computed(() => {
+  return (columns.value || []).some(c => {
+    const l = c.toLowerCase()
+    return l === 'active' || l === 'isactive' || l === 'enabled'
+  })
+})
+
+const hasStatusColumn = computed(() => {
+  return (columns.value || []).some(c => c.toLowerCase().includes('status'))
+})
+
+const hasStatusFilter = computed(() => {
+  return hasActiveColumn.value || hasStatusColumn.value
+})
+
+const statusFilterOptions = computed(() => {
+  if (hasActiveColumn.value) {
+    return [
+      { label: 'Active', value: 'active' },
+      { label: 'Inactive', value: 'inactive' }
+    ]
+  }
+  if (hasStatusColumn.value) {
+    const rawStatuses = new Set()
+    ;(data.value || []).forEach(row => {
+      const col = columns.value.find(c => c.toLowerCase().includes('status'))
+      if (col && row[col] !== null && row[col] !== undefined && row[col] !== '') {
+        rawStatuses.add(String(row[col]))
+      }
+    })
+    if (rawStatuses.size > 0) {
+      return Array.from(rawStatuses).map(s => ({ label: s, value: s }))
+    }
+    return statusOptions.value
+  }
+  return []
+})
+
+const filteredData = computed(() => {
+  if (!Array.isArray(data.value)) return []
+  let list = data.value
+
+  // Status Filter
+  if (selectedStatusFilter.value) {
+    const filterVal = selectedStatusFilter.value.toLowerCase()
+    list = list.filter(row => {
+      if (hasActiveColumn.value) {
+        const activeCol = columns.value.find(c => {
+          const l = c.toLowerCase()
+          return l === 'active' || l === 'isactive' || l === 'enabled'
+        })
+        if (activeCol) {
+          const rowVal = row[activeCol]
+          if (filterVal === 'active') return rowVal === true || rowVal === 'true' || rowVal === 1
+          if (filterVal === 'inactive') return rowVal === false || rowVal === 'false' || rowVal === 0 || rowVal === null
+        }
+      }
+      if (hasStatusColumn.value) {
+        const statusCol = columns.value.find(c => c.toLowerCase().includes('status'))
+        if (statusCol) {
+          return String(row[statusCol] || '').toLowerCase() === filterVal
+        }
+      }
+      return true
+    })
+  }
+
+  // Global Search Filter
+  const q = (filters.value.global?.value || '').trim().toLowerCase()
+  if (q) {
+    list = list.filter(row => {
+      return columns.value.some(col => {
+        const val = row[col]
+        if (val === null || val === undefined) return false
+        if (typeof val === 'object') {
+          return Object.values(val).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q))
+        }
+        return String(val).toLowerCase().includes(q)
+      })
+    })
+  }
+
+  return list
+})
+
+const filteredRecordsCount = computed(() => filteredData.value.length)
+
+const activeFilterCount = computed(() => {
+  let count = 0
+  if (filters.value.global?.value && String(filters.value.global.value).trim().length > 0) count++
+  if (selectedStatusFilter.value && String(selectedStatusFilter.value).trim().length > 0) count++
+  return count
+})
+
+const clearAllFilters = () => {
+  filters.value.global.value = null
+  selectedStatusFilter.value = ''
+  firstRowIndex.value = 0
+}
+
+const recordRangeStart = computed(() => {
+  if (filteredRecordsCount.value === 0) return 0
+  return firstRowIndex.value + 1
+})
+
+const recordRangeEnd = computed(() => {
+  if (filteredRecordsCount.value === 0) return 0
+  return Math.min(firstRowIndex.value + rowsPerPage.value, filteredRecordsCount.value)
+})
+
+watch([() => filters.value.global?.value, selectedStatusFilter, rowsPerPage], () => {
+  firstRowIndex.value = 0
+})
+
+const exportMenuItems = computed(() => [
+  {
+    label: 'Export CSV',
+    icon: 'pi pi-download',
+    command: () => exportCSV()
+  },
+  {
+    label: 'Export Excel (.xlsx)',
+    icon: 'pi pi-file-excel',
+    command: () => exportExcel()
+  },
+  {
+    label: 'Export PDF Document',
+    icon: 'pi pi-file-pdf',
+    command: () => exportPDF()
+  },
+  {
+    separator: true
+  },
+  {
+    label: 'Print Table',
+    icon: 'pi pi-print',
+    command: () => printTable()
+  }
+])
+
+const totalRecordsCount = computed(() => {
+  return Array.isArray(data.value) ? data.value.length : 0
+})
+
+// View State
+const displayViewDialog = ref(false)
+const viewFormData = ref({})
+const viewingRecordId = ref(null)
+
+// Dialog State
+const displayCreateDialog = ref(false)
+const formData = ref({})
+const saving = ref(false)
+const saveError = ref(null)
+
+// Edit State
+const displayEditDialog = ref(false)
+const editFormData = ref({})
+const editingRecordId = ref(null)
+const savingEdit = ref(false)
+const editError = ref(null)
+
+// Delete State
+const displayDeleteDialog = ref(false)
+const recordToDelete = ref(null)
+const deleting = ref(false)
+const deleteError = ref(null)
 
 // Filter out system-generated fields (id, created/modified dates & times, createdBy/modifiedBy, rowVersion) from forms
 const formColumns = computed(() => {
@@ -1860,9 +2192,12 @@ const exportCSV = () => {
 
 const exportExcel = () => {
   try {
-    const exportData = (data.value || []).map(row => {
+    const targetData = filteredData.value && filteredData.value.length > 0 ? filteredData.value : data.value
+    const targetCols = displayedColumns.value && displayedColumns.value.length > 0 ? displayedColumns.value : columns.value
+
+    const exportData = (targetData || []).map(row => {
       const rowObj = {}
-      columns.value.forEach(col => {
+      targetCols.forEach(col => {
         const header = formatLabel(col)
         if (col.toLowerCase() === 'password') {
           rowObj[header] = '••••••••'
@@ -1894,7 +2229,7 @@ const exportExcel = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
 
     // Calculate smart column widths (Description & multiline text fields get a wide 45ch width for clean multi-line wrapping)
-    const maxCols = columns.value.map(col => {
+    const maxCols = targetCols.map(col => {
       const colLower = col.toLowerCase()
       const isMultilineField = colLower.includes('description') || 
                                colLower.includes('remark') || 
@@ -1909,7 +2244,7 @@ const exportExcel = () => {
 
       const headerLabel = formatLabel(col)
       let maxLen = headerLabel.length
-      ;(data.value || []).forEach(row => {
+      ;(targetData || []).forEach(row => {
         const val = row[col]
         if (val !== null && val !== undefined) {
           const str = String(val)
@@ -1929,14 +2264,17 @@ const exportExcel = () => {
 
 const exportPDF = () => {
   try {
+    const targetData = filteredData.value && filteredData.value.length > 0 ? filteredData.value : data.value
+    const targetCols = displayedColumns.value && displayedColumns.value.length > 0 ? displayedColumns.value : columns.value
+
     const doc = new jsPDF('landscape')
     const currentPalette = THEME_PALETTES[activeColorTheme.value] || THEME_PALETTES.green
     const pdfHeaderColor = currentPalette.pdfRgb || [16, 185, 129]
 
-    const head = [columns.value.map(col => formatLabel(col))]
+    const head = [targetCols.map(col => formatLabel(col))]
     
-    const body = (data.value || []).map(row => {
-      return columns.value.map(col => {
+    const body = (targetData || []).map(row => {
+      return targetCols.map(col => {
         if (col.toLowerCase() === 'password') {
           return '••••••••'
         }
@@ -3321,12 +3659,6 @@ defineExpose({
   padding: 0.6rem 0.75rem !important;
 }
 
-:deep(.p-datatable) {
-  border-left: 4px solid var(--bs-primary, #e74c5a) !important;
-  border-top-left-radius: 0.5rem;
-  border-bottom-left-radius: 0.5rem;
-}
-
 /* Sticky / Frozen Actions Column Non-Transparent Solid Background & Elevation Shadow */
 :deep(.p-datatable-tbody > tr > td.p-frozen-column),
 :deep(.p-datatable-tbody > tr > td.frozen-actions-col),
@@ -3374,6 +3706,22 @@ defineExpose({
   background-color: rgba(255, 255, 255, 0.25) !important;
 }
 
+/* Density Variants */
+:deep(.density-compact .p-datatable-tbody > tr > td) {
+  padding: 0.15rem 0.5rem !important;
+  font-size: 0.78rem !important;
+}
+
+:deep(.density-default .p-datatable-tbody > tr > td) {
+  padding: 0.3rem 0.65rem !important;
+  font-size: 0.8125rem !important;
+}
+
+:deep(.density-comfortable .p-datatable-tbody > tr > td) {
+  padding: 0.65rem 0.95rem !important;
+  font-size: 0.875rem !important;
+}
+
 :deep(.p-paginator-start) {
   margin-right: auto !important;
 }
@@ -3385,36 +3733,75 @@ defineExpose({
 }
 
 /* ---- Toolbar (responsive) ---- */
-.toolbar-search {
+.toolbar-search-wrapper {
   width: 240px;
   max-width: 100%;
 }
 
+.toolbar-search-input {
+  font-size: 0.84rem;
+  height: 33px;
+}
+
+.toolbar-filter-select {
+  width: 135px;
+}
+
+.toolbar-filter-select select {
+  height: 33px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.clear-search-btn {
+  color: #6c757d;
+  transition: color 0.15s ease-in-out;
+}
+.clear-search-btn:hover {
+  color: #ef4444 !important;
+}
+
+.action-row-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  font-size: 0.82rem !important;
+}
+
 .toolbar-icon-btn {
-  width: 31px;
-  min-width: 31px;
-  height: 31px;
+  width: 33px;
+  min-width: 33px;
+  height: 33px;
   padding: 0 !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-@media (max-width: 575.98px) {
-  /* Search takes the first row on its own, actions sit beneath it. */
-  .toolbar-search {
+.column-picker-panel .hover-bg:hover {
+  background-color: var(--bs-secondary-bg, rgba(108, 117, 125, 0.1));
+}
+
+@media (max-width: 767.98px) {
+  .toolbar-search-wrapper {
     width: 100%;
     flex: 1 1 100%;
   }
 
+  .toolbar-filter-select {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
   .table-toolbar .p-button {
-    min-height: 38px;
+    min-height: 36px;
   }
 
   .toolbar-icon-btn {
-    width: 38px;
-    min-width: 38px;
-    height: 38px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
   }
 }
 </style>

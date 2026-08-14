@@ -99,9 +99,40 @@
           <h3 class="fs-5 fw-bold text-body mb-0">Recent Applications</h3>
           <p class="small text-secondary mb-0 mt-1">Latest customer subscription applications</p>
         </div>
-        <button @click="appStore.fetchApplications()" class="btn btn-sm btn-light border text-secondary shadow-xs d-flex align-items-center gap-1">
-          <i class="pi pi-refresh" :class="{ 'spin-icon': appStore.isLoadingConnections }"></i> Refresh
-        </button>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <!-- Search Box -->
+          <div class="position-relative" style="width: 200px;">
+            <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-secondary pointer-events-none" style="font-size: 0.8rem;"></i>
+            <input 
+              v-model="recentSearchQuery" 
+              type="text" 
+              class="form-control form-control-sm ps-5 pe-4 rounded-3 shadow-none border" 
+              placeholder="Search..." 
+              style="font-size: 0.82rem; height: 32px;"
+            />
+            <button 
+              v-if="recentSearchQuery" 
+              type="button" 
+              class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-1 p-0 text-secondary text-decoration-none shadow-none border-0"
+              @click="recentSearchQuery = ''"
+            >
+              <i class="pi pi-times" style="font-size: 0.7rem;"></i>
+            </button>
+          </div>
+          <!-- Refresh Button -->
+          <button @click="appStore.fetchApplications()" class="btn btn-sm btn-light border text-secondary shadow-xs d-flex align-items-center gap-1 rounded-3 px-2.5" style="height: 32px;">
+            <i class="pi pi-refresh" :class="{ 'spin-icon': appStore.isLoadingConnections }"></i> <span class="d-none d-sm-inline">Refresh</span>
+          </button>
+          <!-- View All Button -->
+          <Button
+            label="View All"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            class="p-button-secondary p-button-sm p-button-outlined shadow-xs rounded-3"
+            style="height: 32px; font-size: 0.82rem;"
+            @click="router.push('/application')"
+          />
+        </div>
       </div>
 
       <!-- Failure is shown rather than rendering an empty table that looks like "no records" -->
@@ -115,7 +146,7 @@
 
       <DataTable
         v-else
-        :value="recentConnections"
+        :value="filteredRecentConnections"
         :loading="appStore.isLoadingConnections"
         scrollable
         :paginator="true"
@@ -123,7 +154,10 @@
         class="p-datatable-sm small"
       >
         <template #empty>
-          <div class="text-center text-secondary py-4 small">No applications recorded yet.</div>
+          <div class="text-center text-secondary py-4 small d-flex flex-column align-items-center gap-1">
+            <i class="pi pi-inbox fs-4 opacity-50 mb-1"></i>
+            <span>{{ recentSearchQuery ? `No applications matching "${recentSearchQuery}"` : 'No applications recorded yet.' }}</span>
+          </div>
         </template>
 
         <Column field="name" header="Client Name" :sortable="true" style="min-width: 11rem"></Column>
@@ -137,7 +171,7 @@
           </template>
         </Column>
 
-        <Column header="Actions" :exportable="false" style="min-width: 7rem">
+        <Column header="Actions" :exportable="false" style="min-width: 7rem" class="text-center">
           <template #body>
             <Button
               icon="pi pi-external-link"
@@ -295,6 +329,22 @@ const kpiStats = computed(() => [
 ])
 
 const recentConnections = computed(() => appStore.recentConnections)
+const recentSearchQuery = ref('')
+
+const filteredRecentConnections = computed(() => {
+  const list = recentConnections.value || []
+  const q = recentSearchQuery.value.trim().toLowerCase()
+  if (!q) return list
+  return list.filter(item => {
+    return (
+      (item.name && item.name.toLowerCase().includes(q)) ||
+      (item.node && item.node.toLowerCase().includes(q)) ||
+      (item.type && item.type.toLowerCase().includes(q)) ||
+      (item.limit && item.limit.toLowerCase().includes(q)) ||
+      (item.status && item.status.toLowerCase().includes(q))
+    )
+  })
+})
 
 const getSeverity = (status) => {
   switch (status) {

@@ -23,16 +23,14 @@
     <form @submit.prevent="handleLogin">
       <div class="mb-3">
         <label for="usernameOrEmail" class="form-label small fw-semibold text-secondary">Username or Email</label>
-        <div class="input-group">
-          <span class="input-group-text bg-body border-end-0">
-            <i class="pi pi-user text-secondary"></i>
-          </span>
+        <div class="login-field-group border rounded-3 bg-body d-flex align-items-center px-3">
+          <i class="pi pi-user text-secondary flex-shrink-0 me-2" style="font-size: 0.95rem;"></i>
           <InputText 
             v-model="usernameOrEmail" 
             id="usernameOrEmail" 
             type="text" 
             required 
-            class="form-control border-start-0 ps-0" 
+            class="form-control border-0 shadow-none bg-transparent ps-0 py-2 w-100" 
             placeholder="Enter username or email" 
           />
         </div>
@@ -40,18 +38,16 @@
 
       <div class="mb-3">
         <label for="password" class="form-label small fw-semibold text-secondary">Password</label>
-        <div class="input-group flex-nowrap">
-          <span class="input-group-text bg-body border-end-0">
-            <i class="pi pi-lock text-secondary"></i>
-          </span>
+        <div class="login-field-group border rounded-3 bg-body d-flex align-items-center px-3">
+          <i class="pi pi-lock text-secondary flex-shrink-0 me-2" style="font-size: 0.95rem;"></i>
           <Password 
             v-model="password" 
             inputId="password"
             :toggleMask="true" 
             :feedback="false"
             required 
-            class="flex-grow-1"
-            inputClass="form-control border-start-0 ps-0 rounded-start-0 w-100"
+            class="flex-grow-1 border-0 shadow-none bg-transparent"
+            inputClass="form-control border-0 shadow-none bg-transparent ps-0 py-2 w-100"
             placeholder="••••••••" 
           />
         </div>
@@ -154,3 +150,35 @@ const handleForgotPassword = async () => {
   }
 }
 </script>
+
+<style scoped>
+.login-field-group {
+  height: 44px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.login-field-group:focus-within {
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 3px rgba(231, 76, 90, 0.18) !important;
+}
+
+:deep(.login-field-group .p-password),
+:deep(.login-field-group .p-password-input) {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.login-field-group .form-control,
+.login-field-group .form-control:focus,
+.login-field-group .p-inputtext,
+.login-field-group .p-inputtext:focus,
+.login-field-group input,
+.login-field-group input:focus {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+</style>

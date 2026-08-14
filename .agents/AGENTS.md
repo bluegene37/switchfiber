@@ -16,3 +16,9 @@ When creating or updating records across all forms:
 ## Menu & Access Level Standards
 - **Always include new menu items in the Access Level menu list**: Whenever new routes or menu items are added to the application, ensure they are registered in the sidebar menu list and included in the Access Level permissions configuration so users can access them without being blocked by permission checks.
 
+## Development & Testing Credentials
+- **SuperAdmin Test Account**:
+  - **Username / Email**: `bluegene37`
+  - **Password**: `1234`
+  - Use these credentials when authenticating for browser verification, testing protected routes, or debugging permissions.
+

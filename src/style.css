@@ -30,7 +30,8 @@
   --theme-row-hover-solid: #fdf2f4;
 
   /* Typography Scale Tokens */
-  --font-family-base: "Raleway", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-heading: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-size-xs: 0.75rem;    /* 12px */
   --font-size-sm: 0.875rem;   /* 14px */
   --font-size-base: 1rem;     /* 16px */
@@ -73,9 +74,23 @@
 
 body {
   font-family: var(--font-family-base);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background-color: #f8f9fa;
   color: #212529;
   line-height: var(--line-height-normal);
+  letter-spacing: -0.011em;
+}
+
+h1, h2, h3, h4, h5, h6, .brand-text {
+  font-family: var(--font-family-heading);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+button, input, select, textarea, .p-component {
+  font-family: var(--font-family-base) !important;
 }
 
 /* Remove text underlines across all navigation, menus, and buttons */
@@ -93,19 +108,76 @@ a:focus,
   text-decoration: none !important;
 }
 
-/* Focus Ring Accessibility (WCAG 2.1 AA) */
+/* Focus Ring Accessibility (WCAG 2.1 AA) for Interactive Buttons & Links */
 button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-.btn:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--bs-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Clean, Seamless Focus State for Form Controls & Inputs */
+.form-control:focus,
+.form-select:focus,
+.p-inputtext:focus,
+.p-select:focus,
+.p-dropdown:focus,
+.p-multiselect:focus,
+.p-inputnumber-input:focus,
+.p-password input:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="search"]:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 90, 0.18) !important;
+}
+
 .form-control:focus-visible,
 .form-select:focus-visible,
 .p-inputtext:focus-visible,
-.p-select:focus-visible {
-  outline: 2px solid var(--bs-primary) !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 0 0 3px rgba(231, 76, 90, 0.25) !important;
+.p-select:focus-visible,
+.p-dropdown:focus-visible,
+.p-multiselect:focus-visible,
+.p-inputnumber-input:focus-visible,
+.p-password input:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+}
+
+/* Input Groups: Unified Seamless Focus State */
+.input-group {
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.input-group:focus-within {
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 90, 0.18) !important;
+  border-radius: 8px;
+}
+
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control,
+.input-group:focus-within .p-inputtext,
+.input-group:focus-within .p-password,
+.input-group:focus-within .p-password input {
+  border-color: var(--bs-primary) !important;
+}
+
+.input-group .p-password {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.input-group .form-control:focus,
+.input-group .p-inputtext:focus,
+.input-group .p-password input:focus,
+.input-group input:focus {
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 html[data-bs-theme="dark"] body,
@@ -505,10 +577,11 @@ html[data-bs-theme="dark"] .p-inputtext::placeholder,
   opacity: 1 !important;
 }
 
-/* Dialogs, Popovers & Dropdown Overlays */
+/* Dialogs, Popovers, Menus & Dropdown Overlays */
 html[data-bs-theme="dark"] .p-select-overlay,
 html[data-bs-theme="dark"] .p-dropdown-panel,
 html[data-bs-theme="dark"] .p-popover,
+html[data-bs-theme="dark"] .p-menu,
 html[data-bs-theme="dark"] .p-dialog,
 html[data-bs-theme="dark"] .p-dialog-header,
 html[data-bs-theme="dark"] .p-dialog-content,
@@ -520,6 +593,7 @@ html[data-bs-theme="dark"] .modal-footer,
 .dark .p-select-overlay,
 .dark .p-dropdown-panel,
 .dark .p-popover,
+.dark .p-menu,
 .dark .p-dialog,
 .dark .p-dialog-header,
 .dark .p-dialog-content,
@@ -535,8 +609,12 @@ html[data-bs-theme="dark"] .modal-footer,
 
 html[data-bs-theme="dark"] .p-select-option:hover,
 html[data-bs-theme="dark"] .p-dropdown-item:hover,
+html[data-bs-theme="dark"] .p-menu-item-link:hover,
+html[data-bs-theme="dark"] .p-menuitem-link:hover,
 .dark .p-select-option:hover,
-.dark .p-dropdown-item:hover {
+.dark .p-dropdown-item:hover,
+.dark .p-menu-item-link:hover,
+.dark .p-menuitem-link:hover {
   background-color: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
 }
