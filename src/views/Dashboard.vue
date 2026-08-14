@@ -101,14 +101,14 @@
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <!-- Search Box -->
-          <div class="position-relative" style="width: 200px;">
-            <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-secondary pointer-events-none" style="font-size: 0.8rem;"></i>
+          <div class="position-relative" style="width: 210px;">
+            <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary pointer-events-none" style="left: 0.7rem; font-size: 0.8rem; z-index: 2;"></i>
             <input 
               v-model="recentSearchQuery" 
               type="text" 
-              class="form-control form-control-sm ps-5 pe-4 rounded-3 shadow-none border" 
-              placeholder="Search..." 
-              style="font-size: 0.82rem; height: 32px;"
+              class="form-control form-control-sm pe-4 rounded-3 shadow-none border" 
+              placeholder="Search applications..." 
+              style="padding-left: 2.1rem; font-size: 0.82rem; height: 32px;"
             />
             <button 
               v-if="recentSearchQuery" 

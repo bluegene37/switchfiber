@@ -28,12 +28,13 @@
               <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 small fw-semibold">GET Only</span>
             </div>
             <div class="position-relative">
-              <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary" style="font-size: 0.85rem;"></i>
+              <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary pointer-events-none" style="left: 0.75rem; font-size: 0.85rem; z-index: 2;"></i>
               <input 
                 v-model="searchQuery"
                 type="text" 
-                class="form-control form-control-sm ps-5 bg-body-tertiary border-0 shadow-none rounded-3" 
+                class="form-control form-control-sm bg-body-tertiary border-0 shadow-none rounded-3" 
                 placeholder="Search endpoints..." 
+                style="padding-left: 2.2rem; height: 34px;"
               />
             </div>
           </div>

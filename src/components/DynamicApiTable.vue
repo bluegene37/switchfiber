@@ -96,12 +96,12 @@
           <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 flex-md-grow-0">
             <!-- Enhanced Search Box with Inner Icon & Instant Clear -->
             <div class="position-relative toolbar-search-wrapper">
-              <i class="pi pi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-secondary pointer-events-none" style="font-size: 0.85rem;"></i>
+              <i class="pi pi-search search-icon text-secondary pointer-events-none"></i>
               <input 
                 id="global-search" 
                 v-model="filters['global'].value" 
                 type="text"
-                class="form-control form-control-sm ps-5 pe-4 toolbar-search-input rounded-3 shadow-none border" 
+                class="form-control form-control-sm toolbar-search-input rounded-3 shadow-none border" 
                 :placeholder="`Search ${formatLabel(endpoint)}...`" 
                 aria-label="Search records" 
               />
@@ -180,7 +180,7 @@
               <div class="p-2 column-picker-panel" style="min-width: 220px; max-width: 280px;">
                 <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
                   <span class="fw-bold small text-body">Visible Columns</span>
-                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small fw-medium" @click="resetColumns">Reset All</button>
+                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small fw-medium reset-columns-btn" @click="resetColumns">Reset All</button>
                 </div>
                 <div class="d-flex flex-column gap-1.5 overflow-y-auto" style="max-height: 240px;">
                   <label 
@@ -245,7 +245,7 @@
           <!-- Show Entries Dropdown -->
           <div class="d-flex align-items-center gap-1.5 ms-md-2">
             <span class="mb-0 small text-secondary">Show</span>
-            <select v-model="rowsPerPage" class="form-select form-select-sm text-center rounded-2 py-0.5" style="width: 65px; height: 28px; cursor: pointer;">
+            <select v-model="rowsPerPage" class="form-select form-select-sm paginator-rows-select shadow-xs" aria-label="Rows per page">
               <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
             </select>
             <span class="mb-0 small text-secondary">per page</span>
@@ -3734,13 +3734,30 @@ defineExpose({
 
 /* ---- Toolbar (responsive) ---- */
 .toolbar-search-wrapper {
+  position: relative;
   width: 240px;
   max-width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-search-wrapper .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  color: #6c757d;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .toolbar-search-input {
+  padding-left: 2.2rem !important;
+  padding-right: 2rem !important;
   font-size: 0.84rem;
-  height: 33px;
+  height: 33px !important;
+  min-height: 33px !important;
 }
 
 .toolbar-filter-select {
@@ -3748,9 +3765,29 @@ defineExpose({
 }
 
 .toolbar-filter-select select {
-  height: 33px;
+  height: 33px !important;
+  min-height: 33px !important;
   font-size: 0.82rem;
   cursor: pointer;
+}
+
+.paginator-rows-select {
+  width: 78px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding-top: 0.15rem !important;
+  padding-bottom: 0.15rem !important;
+  padding-left: 0.65rem !important;
+  padding-right: 1.6rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  border-radius: 6px !important;
+  background-size: 10px 8px !important;
+  background-position: right 0.5rem center !important;
+  text-align: left !important;
+  line-height: 24px !important;
 }
 
 .clear-search-btn {
@@ -3781,6 +3818,41 @@ defineExpose({
 
 .column-picker-panel .hover-bg:hover {
   background-color: var(--bs-secondary-bg, rgba(108, 117, 125, 0.1));
+}
+
+.reset-columns-btn {
+  color: var(--bs-primary, #e74c5a) !important;
+}
+.reset-columns-btn:hover {
+  color: var(--bs-primary-hover, #d63a48) !important;
+  text-decoration: underline !important;
+}
+
+/* Ensure PrimeVue Export Menu has clean dark/neutral text and theme styling */
+:deep(.p-menu .p-menu-item-link),
+:deep(.p-menu .p-menuitem-link),
+:deep(.p-menu-item-link),
+:deep(.p-menuitem-link) {
+  color: var(--bs-body-color, #212529) !important;
+  text-decoration: none !important;
+}
+
+:deep(.p-menu .p-menu-item-icon),
+:deep(.p-menu .p-menuitem-icon) {
+  color: var(--bs-secondary-color, #6c757d) !important;
+}
+
+:deep(.p-menu .p-menu-item-link:hover),
+:deep(.p-menu .p-menuitem-link:hover) {
+  background-color: rgba(231, 76, 90, 0.08) !important;
+  color: var(--bs-primary, #e74c5a) !important;
+}
+
+:deep(.p-menu .p-menu-item-link:hover .p-menu-item-icon),
+:deep(.p-menu .p-menuitem-link:hover .p-menuitem-icon),
+:deep(.p-menu .p-menu-item-link:hover .p-menu-item-label),
+:deep(.p-menu .p-menuitem-link:hover .p-menuitem-text) {
+  color: var(--bs-primary, #e74c5a) !important;
 }
 
 @media (max-width: 767.98px) {

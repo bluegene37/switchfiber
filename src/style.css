@@ -14,6 +14,14 @@
   --bs-primary-border-subtle: #fdcfd3;
   --bs-primary-bg-subtle: #fef2f3;
 
+  /* Bootstrap Link & Component Color Overrides (Replaces Bootstrap Default Blue) */
+  --bs-link-color: var(--bs-primary);
+  --bs-link-hover-color: var(--bs-primary-hover);
+  --bs-link-color-rgb: 231, 76, 90;
+  --bs-form-check-bg-checked-color: #ffffff;
+  --bs-form-check-bg-checked: var(--bs-primary);
+  --bs-form-check-border-checked: var(--bs-primary);
+
   /* Errors & Deletes (Red) */
   --bs-danger: #ef4444;
   --bs-danger-rgb: 239, 68, 68;
@@ -93,19 +101,90 @@ button, input, select, textarea, .p-component {
   font-family: var(--font-family-base) !important;
 }
 
-/* Remove text underlines across all navigation, menus, and buttons */
+/* Remove text underlines and enforce clean neutral colors on menus & popovers */
 a,
 a:hover,
 a:focus,
 .nav-link,
 .p-menu .p-menuitem-link,
 .p-menu .p-menuitem-text,
+.p-menu .p-menu-item-link,
+.p-menu .p-menu-item-label,
 .p-menuitem-link,
 .p-menuitem-text,
+.p-menu-item-link,
+.p-menu-item-label,
 .p-menu a,
 .p-popover a,
 .p-dropdown a {
   text-decoration: none !important;
+}
+
+/* Global Checkbox Primary Color Override (Replaces Bootstrap Default Blue) */
+.form-check-input:checked,
+.form-check-input[type="checkbox"]:checked,
+.p-checkbox.p-checkbox-checked .p-checkbox-box {
+  background-color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.form-check-input:focus,
+.p-checkbox:not(.p-disabled):has(.p-checkbox-input:focus-visible) .p-checkbox-box {
+  border-color: var(--bs-primary, #e74c5a) !important;
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 90, 0.18) !important;
+}
+
+/* PrimeVue Menu Component Styling (Clean Neutral Items with Rose Hover) */
+.p-menu,
+.p-menu-overlay {
+  border-radius: 8px !important;
+  padding: 0.35rem !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.p-menu .p-menuitem-link,
+.p-menu .p-menu-item-link,
+.p-menuitem-link,
+.p-menu-item-link {
+  color: var(--bs-body-color, #212529) !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 6px !important;
+  font-size: 0.84rem !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.p-menu .p-menuitem-link:hover,
+.p-menu .p-menu-item-link:hover,
+.p-menuitem-link:hover,
+.p-menu-item-link:hover {
+  background-color: rgba(231, 76, 90, 0.08) !important;
+  color: var(--bs-primary, #e74c5a) !important;
+}
+
+.p-menu .p-menuitem-icon,
+.p-menu .p-menu-item-icon,
+.p-menuitem-icon,
+.p-menu-item-icon {
+  color: var(--bs-secondary-color, #6c757d) !important;
+  font-size: 0.875rem !important;
+  margin-right: 0.25rem !important;
+  transition: color 0.15s ease-in-out !important;
+}
+
+.p-menu .p-menuitem-link:hover .p-menuitem-icon,
+.p-menu .p-menu-item-link:hover .p-menu-item-icon {
+  color: var(--bs-primary, #e74c5a) !important;
+}
+
+.p-menu .p-menuitem-text,
+.p-menu .p-menu-item-label,
+.p-menuitem-text,
+.p-menu-item-label {
+  color: inherit !important;
 }
 
 /* Focus Ring Accessibility (WCAG 2.1 AA) for Interactive Buttons & Links */
