@@ -176,7 +176,7 @@
           </div>
 
           <!-- 2. Table & Interaction Highlights Palette -->
-          <div class="mb-4 pt-3 border-top">
+          <div class="mb-5 pt-4 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
                 <i class="pi pi-table text-primary me-2 fs-6"></i>
@@ -214,7 +214,7 @@
           </div>
 
           <!-- 3. Live Component Visual Preview -->
-          <div class="mb-4 pt-3 border-top">
+          <div class="mb-5 pt-4 border-top">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
               <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
                 <i class="pi pi-eye text-primary me-2 fs-6"></i>
@@ -222,15 +222,15 @@
               </h6>
               <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">Interactive Token Preview</span>
             </div>
-            <p class="small text-secondary mb-3">Real-time simulation of table interaction states, pagination controls, and interface elements using the current theme token palette.</p>
+            <p class="small text-secondary mb-4">Real-time simulation of table interaction states, pagination controls, and interface elements using the current theme token palette.</p>
             
             <!-- Table Row Interaction States -->
-            <div class="mb-3 px-1 px-md-2">
-              <div class="small fw-semibold text-secondary text-uppercase tracking-wider mb-2.5" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+            <div class="mb-4 px-1 px-md-2">
+              <div class="small fw-semibold text-secondary text-uppercase tracking-wider mb-3" style="font-size: 0.72rem; letter-spacing: 0.5px;">
                 Table Row State Progression
               </div>
               
-              <div class="d-flex flex-column gap-2.5">
+              <div class="d-flex flex-column gap-3">
                 <!-- Normal Row -->
                 <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 bg-body border shadow-xs flex-wrap gap-3">
                   <div class="d-flex align-items-center gap-3">
@@ -269,9 +269,12 @@
               </div>
             </div>
 
+            <!-- Visual Spacing Break -->
+            <div class="my-4 pt-1"></div>
+
             <!-- Paginator Component Preview -->
-            <div class="px-1 px-md-2">
-              <div class="p-3.5 rounded-3 bg-body border shadow-xs">
+            <div class="px-1 px-md-2 mb-2">
+              <div class="p-4 rounded-3 bg-body border shadow-xs">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                   <div>
                     <div class="small fw-semibold text-body">Paginator Button States</div>
@@ -291,7 +294,7 @@
           </div>
 
           <!-- 4. Status & Functional Colors -->
-          <div class="mb-4 pt-3 border-top">
+          <div class="mb-5 pt-4 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
                 <i class="pi pi-check-circle text-success me-2 fs-6"></i>
@@ -325,7 +328,7 @@
           </div>
 
           <!-- 5. Surface, Neutral & Canvas Palette -->
-          <div class="mb-4 pt-3 border-top">
+          <div class="mb-5 pt-4 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
                 <i class="pi pi-box text-secondary me-2 fs-6"></i>
@@ -359,7 +362,7 @@
           </div>
 
           <!-- 6. Typography System & Font Stack -->
-          <div class="pt-3 border-top">
+          <div class="pt-4 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
                 <i class="pi pi-align-left text-primary me-2 fs-6"></i>
