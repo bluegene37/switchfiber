@@ -205,7 +205,10 @@ const rawMenuItems = ref([
     name: 'Application',
     icon: 'pi-file-edit',
     children: [
-      { id: 14, name: 'Application List', path: '/application', icon: 'pi-list' },
+      { id: 14, name: 'All Application', path: '/application', icon: 'pi-list' },
+      { id: 26, name: 'In Progress', path: '/application/in-progress', icon: 'pi-clock' },
+      { id: 27, name: 'Done', path: '/application/done', icon: 'pi-check-circle' },
+      { id: 28, name: 'Approved', path: '/application/approved', icon: 'pi-verified' },
     ]
   },
   { 
@@ -245,7 +248,7 @@ const rawMenuItems = ref([
   { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' }
 ])
 
-const expandedState = ref({})
+const expandedState = ref({ 25: true })
 
 const isExpanded = (item) => {
   if (!item || !item.id) return false

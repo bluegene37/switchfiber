@@ -4,6 +4,7 @@ import apiClient from '../services/api'
 
 // Shared reactive state across all components
 const allowedMenuIds = ref(new Set())
+const unlinkedMenuIds = new Set()
 const isLoadingPermissions = ref(false)
 const hasLoadedOnce = ref(false)
 
@@ -65,16 +66,24 @@ export function usePermissions() {
         .filter(id => !isNaN(id) && id > 0)
 
       if (granted.length > 0) {
+        // Inherit sub-menus 26 (In Progress), 27 (Done), 28 (Approved) if parent Application is granted
+        if (granted.includes(14) || granted.includes(25)) {
+          if (!unlinkedMenuIds.has(26)) granted.push(26)
+          if (!unlinkedMenuIds.has(27)) granted.push(27)
+          if (!unlinkedMenuIds.has(28)) granted.push(28)
+        }
+        // Inherit 103 (Theme) if Settings is granted
+        if (granted.includes(20) && !unlinkedMenuIds.has(103)) {
+          granted.push(103)
+        }
+
         allowedMenuIds.value = new Set(granted)
-      } else if (!hasLoadedOnce.value) {
-        // Fallback default full access only on first load if no relations exist yet
-        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 101, 102, 103])
+      } else {
+        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 101, 102, 103])
       }
     } catch (err) {
       console.warn('[usePermissions] Error fetching access level permissions:', err)
-      if (!hasLoadedOnce.value) {
-        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 101, 102, 103])
-      }
+      allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 101, 102, 103])
     } finally {
       isLoadingPermissions.value = false
       hasLoadedOnce.value = true
@@ -101,16 +110,18 @@ export function usePermissions() {
     if (event?.detail && typeof event.detail === 'object') {
       const { accessLevelId, menuId, linked } = event.detail
       if (Number(accessLevelId) === userAccessLevel.value) {
+        const idNum = Number(menuId)
         const nextSet = new Set(allowedMenuIds.value)
         if (linked) {
-          nextSet.add(Number(menuId))
+          nextSet.add(idNum)
+          unlinkedMenuIds.delete(idNum)
         } else {
-          nextSet.delete(Number(menuId))
+          nextSet.delete(idNum)
+          unlinkedMenuIds.add(idNum)
         }
         allowedMenuIds.value = nextSet
       }
     }
-    fetchPermissions()
   }
 
   onMounted(() => {

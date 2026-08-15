@@ -1903,6 +1903,35 @@ const filteredData = computed(() => {
     })
   }
 
+  // Client-side FilterParams Status & Date/Timestamp Filtering
+  if (props.filterParams && typeof props.filterParams === 'object') {
+    const pStatus = props.filterParams.status ? String(props.filterParams.status).trim().toLowerCase() : ''
+    const pFrom = props.filterParams.fromDate ? new Date(props.filterParams.fromDate).getTime() : null
+    const pTo = props.filterParams.toDate ? new Date(props.filterParams.toDate).getTime() : null
+
+    if (pStatus) {
+      list = list.filter(row => {
+        const rowStatus = String(row.status || row.Status || '').trim().toLowerCase()
+        return !rowStatus || rowStatus === pStatus
+      })
+    }
+
+    if (pFrom || pTo) {
+      list = list.filter(row => {
+        const dateKey = Object.keys(row).find(k => {
+          const l = k.toLowerCase()
+          return l === 'timestamp' || l === 'createddate' || l === 'created_date' || l === 'createdat' || l === 'date' || l === 'applicationdate' || l === 'modifieddate'
+        })
+        if (!dateKey || !row[dateKey]) return true
+        const rowTime = new Date(row[dateKey]).getTime()
+        if (isNaN(rowTime)) return true
+        if (pFrom && rowTime < pFrom) return false
+        if (pTo && rowTime > pTo) return false
+        return true
+      })
+    }
+  }
+
   // Global Search Filter
   const q = (filters.value.global?.value || '').trim().toLowerCase()
   if (q) {
@@ -3025,12 +3054,16 @@ const fetchData = async ({ silent = false } = {}) => {
       return v !== undefined && v !== null && String(v).trim() !== ''
     })
 
-    if (props.filterEndpoint) {
-      url = props.filterEndpoint.startsWith('/') ? props.filterEndpoint : `/${props.filterEndpoint}`
-      if (hasFilterParams) params = { ...props.filterParams }
-    } else if (hasFilterParams) {
-      url = `/${props.endpoint}/filter`
+    if (hasFilterParams) {
+      if (props.filterEndpoint) {
+        url = props.filterEndpoint.startsWith('/') ? props.filterEndpoint : `/${props.filterEndpoint}`
+      } else {
+        url = `/${props.endpoint}/filter`
+      }
       params = { ...props.filterParams }
+    } else {
+      url = `/${props.endpoint}`
+      params = undefined
     }
 
     const response = await apiClient.get(url, { params })
@@ -3047,6 +3080,29 @@ const fetchData = async ({ silent = false } = {}) => {
     
     if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
       const menuList = unwrappedData || []
+      
+      const appItem = menuList.find(m => Number(m.id) === 14)
+      if (appItem) {
+        appItem.name = 'All Application'
+        appItem.route = '/application'
+      } else {
+        menuList.push({ id: 14, name: 'All Application', route: '/application', icon: 'pi pi-list', description: 'View all customer fiber connection applications' })
+      }
+
+      const hasInProgress = menuList.some(m => Number(m.id) === 26 || (m.name && m.name.toLowerCase().includes('in progress')))
+      const hasDone = menuList.some(m => Number(m.id) === 27 || (m.name && m.name.toLowerCase() === 'done'))
+      const hasApproved = menuList.some(m => Number(m.id) === 28 || (m.name && m.name.toLowerCase() === 'approved'))
+
+      if (!hasInProgress) {
+        menuList.push({ id: 26, name: 'In Progress', route: '/application/in-progress', icon: 'pi pi-clock', description: 'View and process in-progress customer applications' })
+      }
+      if (!hasDone) {
+        menuList.push({ id: 27, name: 'Done', route: '/application/done', icon: 'pi pi-check-circle', description: 'View completed customer applications' })
+      }
+      if (!hasApproved) {
+        menuList.push({ id: 28, name: 'Approved', route: '/application/approved', icon: 'pi pi-verified', description: 'View verified and approved customer applications' })
+      }
+
       const hasApiViewer = menuList.some(m => Number(m.id) === 24 || (m.name && m.name.toLowerCase().includes('api viewer')))
       const hasSettings = menuList.some(m => Number(m.id) === 20 || (m.name && m.name.toLowerCase().includes('settings')))
       const hasTheme = menuList.some(m => Number(m.id) === 103 || (m.name && m.name.toLowerCase().includes('theme')))

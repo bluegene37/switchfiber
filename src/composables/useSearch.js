@@ -26,7 +26,10 @@ export function useSearch() {
   // 1. Static App Navigation Scopes
   const navigationItems = [
     { id: 'nav-dashboard', category: 'Navigation', title: 'Dashboard', subtitle: 'System metrics, KPI stats, & real-time overview', icon: 'pi pi-home', route: '/dashboard' },
-    { id: 'nav-application', category: 'Navigation', title: 'Application List', subtitle: 'Customer fiber connection applications', icon: 'pi pi-file-edit', route: '/application' },
+    { id: 'nav-application', category: 'Navigation', title: 'All Application', subtitle: 'Customer fiber connection applications', icon: 'pi pi-file-edit', route: '/application' },
+    { id: 'nav-application-inprogress', category: 'Navigation', title: 'In Progress Applications', subtitle: 'Processing customer applications', icon: 'pi pi-clock', route: '/application/in-progress' },
+    { id: 'nav-application-done', category: 'Navigation', title: 'Done Applications', subtitle: 'Completed customer applications', icon: 'pi pi-check-circle', route: '/application/done' },
+    { id: 'nav-application-approved', category: 'Navigation', title: 'Approved Applications', subtitle: 'Verified & approved customer applications', icon: 'pi pi-verified', route: '/application/approved' },
     { id: 'nav-job-order', category: 'Navigation', title: 'Job Orders', subtitle: 'Field installation & repair dispatch tickets', icon: 'pi pi-ticket', route: '/job_order' },
     { id: 'nav-billing', category: 'Navigation', title: 'Billing & Payments', subtitle: 'Customer billing details & invoices', icon: 'pi pi-credit-card', route: '/billing' },
     { id: 'nav-invoice', category: 'Navigation', title: 'Invoices', subtitle: 'Generated billing invoices & statements', icon: 'pi pi-receipt', route: '/invoice' },

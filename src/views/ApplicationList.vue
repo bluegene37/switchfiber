@@ -3,15 +3,15 @@
     <!-- Header -->
     <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
       <div>
-        <h1 class="fs-3 fw-bold text-body mb-0">Application List</h1>
-        <p class="small text-secondary mt-1 mb-0">Process customer subscription applications, track status updates, and filter records.</p>
+        <h1 class="fs-3 fw-bold text-body mb-0">{{ pageTitle }}</h1>
+        <p class="small text-secondary mt-1 mb-0">{{ pageDescription }}</p>
       </div>
     </div>
 
     <!-- Main Card Container: Filter Tabs & Data Table -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
-      <!-- Status Filter Tabs -->
-      <div class="d-flex align-items-center gap-2 overflow-x-auto pb-2 border-bottom filter-tabs-scrollable">
+      <!-- Status Filter Tabs (Shown only on All Application page) -->
+      <div v-if="!isDedicatedStatusRoute" class="d-flex align-items-center gap-2 overflow-x-auto pb-2 border-bottom filter-tabs-scrollable">
         <button
           v-for="tab in statusTabs"
           :key="tab.id"
@@ -109,7 +109,7 @@
       <DynamicApiTable 
         ref="apiTableRef" 
         endpoint="Applications" 
-        filter-endpoint="/Applications/filter"
+        :filter-endpoint="isDedicatedStatusRoute ? '/Applications/filter' : null"
         :filter-params="activeFilterParams"
         :hide-create-button="false"
         create-button-label="Create Application"
@@ -119,41 +119,109 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 
+const route = useRoute()
+const router = useRouter()
 const apiTableRef = ref(null)
 
+const getInitialThisWeekRange = () => {
+  const today = new Date()
+  const day = today.getDay()
+  const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
+  const monday = new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0)
+  const now = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
+  return { from: monday, to: now }
+}
+
+const initialRange = getInitialThisWeekRange()
 const selectedStatus = ref('')
-const fromDate = ref(null)
-const toDate = ref(null)
-const selectedDatePreset = ref('')
+const fromDate = ref(initialRange.from)
+const toDate = ref(initialRange.to)
+const selectedDatePreset = ref('this_week')
 
 const statusTabs = [
-  { id: 'all', label: 'All Applications', value: '', icon: 'pi-list' },
-  { id: 'in_progress', label: 'In Progress', value: 'In Progress', icon: 'pi-clock' },
-  { id: 'done', label: 'Done', value: 'Done', icon: 'pi-check-circle' },
-  { id: 'approved', label: 'Approved', value: 'Approved', icon: 'pi-verified' }
+  { id: 'all', label: 'All Application', value: '', routePath: '/application', icon: 'pi-list' },
+  { id: 'in_progress', label: 'In Progress', value: 'In Progress', routePath: '/application/in-progress', icon: 'pi-clock' },
+  { id: 'done', label: 'Done', value: 'Done', routePath: '/application/done', icon: 'pi-check-circle' },
+  { id: 'approved', label: 'Approved', value: 'Approved', routePath: '/application/approved', icon: 'pi-verified' }
 ]
+
+const isDedicatedStatusRoute = computed(() => {
+  const p = route.path.toLowerCase()
+  return p.includes('/in-progress') || p.includes('/done') || p.includes('/approved')
+})
+
+const pageTitle = computed(() => {
+  if (selectedStatus.value === 'In Progress') return 'In Progress Applications'
+  if (selectedStatus.value === 'Done') return 'Done Applications'
+  if (selectedStatus.value === 'Approved') return 'Approved Applications'
+  return 'All Application'
+})
+
+const pageDescription = computed(() => {
+  if (selectedStatus.value === 'In Progress') return 'View and process customer subscription applications currently in progress.'
+  if (selectedStatus.value === 'Done') return 'View completed customer subscription applications.'
+  if (selectedStatus.value === 'Approved') return 'View verified and approved customer subscription applications.'
+  return 'Process customer subscription applications, track status updates, and filter records.'
+})
+
+const syncStatusFromRoute = () => {
+  const p = route.path.toLowerCase()
+  const qStatus = String(route.query.status || '').toLowerCase()
+  if (p.includes('/in-progress') || qStatus === 'in-progress' || qStatus === 'in progress') {
+    selectedStatus.value = 'In Progress'
+  } else if (p.includes('/done') || qStatus === 'done') {
+    selectedStatus.value = 'Done'
+  } else if (p.includes('/approved') || qStatus === 'approved') {
+    selectedStatus.value = 'Approved'
+  } else {
+    selectedStatus.value = ''
+  }
+}
+
+watch(() => route.path, () => {
+  syncStatusFromRoute()
+}, { immediate: true })
 
 const setStatusFilter = (status) => {
   selectedStatus.value = status
 }
 
-const formatDateParam = (dateVal) => {
+const formatDateParam = (dateVal, isEnd = false) => {
   if (!dateVal) return undefined
+  let d = dateVal
   if (typeof dateVal === 'string') {
     const trimmed = dateVal.trim()
-    return trimmed ? trimmed : undefined
+    if (!trimmed) return undefined
+    if (trimmed.includes('T')) return trimmed
+    d = new Date(trimmed)
   }
-  if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
-    const y = dateVal.getFullYear()
-    const m = String(dateVal.getMonth() + 1).padStart(2, '0')
-    const d = String(dateVal.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
+  if (d instanceof Date && !isNaN(d.getTime())) {
+    if (isEnd) {
+      const endDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+      return endDay.toISOString()
+    } else {
+      const startDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
+      return startDay.toISOString()
+    }
   }
   return undefined
+}
+
+const formatDisplayDate = (dateVal) => {
+  if (!dateVal) return ''
+  const d = dateVal instanceof Date ? dateVal : new Date(dateVal)
+  if (d instanceof Date && !isNaN(d.getTime())) {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+  return String(dateVal)
 }
 
 const activeFilterParams = computed(() => {
@@ -161,22 +229,27 @@ const activeFilterParams = computed(() => {
   if (selectedStatus.value && selectedStatus.value.trim() !== '') {
     params.status = selectedStatus.value.trim()
   }
-  const f = formatDateParam(fromDate.value)
+  const f = formatDateParam(fromDate.value, false)
   if (f) params.fromDate = f
-  const t = formatDateParam(toDate.value)
+  const t = formatDateParam(toDate.value, true)
   if (t) params.toDate = t
   return params
 })
 
 const hasActiveFilter = computed(() => {
+  if (isDedicatedStatusRoute.value) {
+    return !!fromDate.value || !!toDate.value
+  }
   return !!selectedStatus.value || !!fromDate.value || !!toDate.value
 })
 
 const activeFilterSummary = computed(() => {
   const parts = []
-  if (selectedStatus.value) parts.push(`Status: ${selectedStatus.value}`)
-  if (fromDate.value) parts.push(`From: ${formatDateParam(fromDate.value)}`)
-  if (toDate.value) parts.push(`To: ${formatDateParam(toDate.value)}`)
+  if (!isDedicatedStatusRoute.value && selectedStatus.value) {
+    parts.push(`Status: ${selectedStatus.value}`)
+  }
+  if (fromDate.value) parts.push(`From: ${formatDisplayDate(fromDate.value)}`)
+  if (toDate.value) parts.push(`To: ${formatDisplayDate(toDate.value)}`)
   return parts.join(' | ')
 })
 
@@ -191,21 +264,23 @@ const applyDatePreset = (preset) => {
   selectedDatePreset.value = preset
   const today = new Date()
   if (preset === 'today') {
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
+    toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
   } else if (preset === 'this_week') {
     const day = today.getDay()
     const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
-    fromDate.value = new Date(today.setDate(diffToMonday))
-    toDate.value = new Date()
+    fromDate.value = new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0)
+    toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
   } else if (preset === 'this_month') {
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1)
-    toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0)
+    toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
   }
 }
 
 const clearAllFilters = () => {
-  selectedStatus.value = ''
+  if (!isDedicatedStatusRoute.value) {
+    selectedStatus.value = ''
+  }
   selectedDatePreset.value = ''
   fromDate.value = null
   toDate.value = null

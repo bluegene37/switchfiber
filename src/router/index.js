@@ -75,6 +75,24 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/application/in-progress',
+      name: 'application-in-progress',
+      component: () => import('../views/ApplicationList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/application/done',
+      name: 'application-done',
+      component: () => import('../views/ApplicationList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/application/approved',
+      name: 'application-approved',
+      component: () => import('../views/ApplicationList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/application_list',
       name: 'application_list',
       component: () => import('../views/ApplicationList.vue'),

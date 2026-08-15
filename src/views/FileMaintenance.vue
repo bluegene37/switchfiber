@@ -89,19 +89,19 @@ const routeMap = {
     description: 'Define subscriber broadband Internet packages, download/upload bandwidth speeds, and monthly pricing tiers.' 
   },
   '/application': { 
-    title: 'Application List', 
+    title: 'All Application', 
     endpoint: 'Applications', 
     icon: 'pi-file', 
     description: 'Process customer subscription applications, service installation requests, and subscriber onboarding documents.' 
   },
   '/applications': { 
-    title: 'Application List', 
+    title: 'All Application', 
     endpoint: 'Applications', 
     icon: 'pi-file', 
     description: 'Process customer subscription applications, service installation requests, and subscriber onboarding documents.' 
   },
   '/application_list': { 
-    title: 'Application List', 
+    title: 'All Application', 
     endpoint: 'Applications', 
     icon: 'pi-file', 
     description: 'Process customer subscription applications, service installation requests, and subscriber onboarding documents.' 
