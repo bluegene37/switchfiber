@@ -140,8 +140,9 @@
           <!-- 1. Primary & Brand Color Palette -->
           <div class="mb-4">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                <i class="pi pi-bookmark text-primary"></i> Primary & Brand Colors
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
+                <i class="pi pi-bookmark text-primary me-2 fs-6"></i>
+                <span>Primary & Brand Colors</span>
               </h6>
               <span class="small text-secondary" style="font-size: 0.75rem;">Click any card to copy HEX</span>
             </div>
@@ -167,7 +168,7 @@
                   <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
                   <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
                     <span class="font-monospace text-truncate">{{ c.token }}</span>
-                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.75rem;"></i>
+                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" class="ms-2" style="font-size: 0.75rem;"></i>
                   </div>
                 </div>
               </div>
@@ -177,14 +178,15 @@
           <!-- 2. Table & Interaction Highlights Palette -->
           <div class="mb-4 pt-3 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                <i class="pi pi-table text-primary"></i> Table & Paginator Highlights
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
+                <i class="pi pi-table text-primary me-2 fs-6"></i>
+                <span>Table & Paginator Highlights</span>
               </h6>
               <span class="small text-secondary" style="font-size: 0.75rem;">Active selection & hover tokens</span>
             </div>
             <p class="small text-secondary mb-3">Highlight rules applied to data table row selections, row hover feedback, and pagination buttons.</p>
 
-            <div class="row g-3 mb-3 px-1 px-md-2">
+            <div class="row g-3 px-1 px-md-2">
               <div v-for="c in tableHighlightColors" :key="c.name" class="col-12 col-sm-6 col-xl-4">
                 <div 
                   class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
@@ -204,70 +206,72 @@
                   <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
                   <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
                     <span class="font-monospace text-truncate">{{ c.token }}</span>
-                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.75rem;"></i>
+                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" class="ms-2" style="font-size: 0.75rem;"></i>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Live Interactive Component Preview Box -->
-            <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary mt-4 shadow-xs">
-              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-3 border-bottom">
-                <div class="d-flex align-items-center gap-2.5">
-                  <i class="pi pi-eye text-primary fs-5"></i>
-                  <h6 class="fw-bold text-body mb-0">Live Component Visual Preview</h6>
-                </div>
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-semibold">Interactive Token Preview</span>
+          <!-- 3. Live Component Visual Preview -->
+          <div class="mb-4 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
+                <i class="pi pi-eye text-primary me-2 fs-6"></i>
+                <span>Live Component Visual Preview</span>
+              </h6>
+              <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">Interactive Token Preview</span>
+            </div>
+            <p class="small text-secondary mb-3">Real-time simulation of table interaction states, pagination controls, and interface elements using the current theme token palette.</p>
+            
+            <!-- Table Row Interaction States -->
+            <div class="mb-3 px-1 px-md-2">
+              <div class="small fw-semibold text-secondary text-uppercase tracking-wider mb-2.5" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                Table Row State Progression
               </div>
-              <p class="small text-secondary mb-4">Real-time simulation of table interaction states, pagination controls, and interface elements using the current theme token palette.</p>
               
-              <!-- 1. Table Row Interaction States -->
-              <div class="mb-4 px-1 px-md-2">
-                <div class="small fw-semibold text-secondary text-uppercase tracking-wider mb-3" style="font-size: 0.72rem; letter-spacing: 0.5px;">
-                  Table Row State Progression
+              <div class="d-flex flex-column gap-2.5">
+                <!-- Normal Row -->
+                <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 bg-body border shadow-xs flex-wrap gap-3">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1">#101</span>
+                    <div>
+                      <div class="text-body fw-semibold small">Normal Table Row</div>
+                      <div class="text-secondary small" style="font-size: 0.75rem;">Default table surface layer</div>
+                    </div>
+                  </div>
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 small">Default State</span>
                 </div>
-                
-                <div class="d-flex flex-column gap-3">
-                  <!-- Normal Row -->
-                  <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 bg-body border shadow-xs flex-wrap gap-3">
-                    <div class="d-flex align-items-center gap-3">
-                      <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1">#101</span>
-                      <div>
-                        <div class="text-body fw-semibold small">Normal Table Row</div>
-                        <div class="text-secondary small" style="font-size: 0.75rem;">Default table surface layer</div>
-                      </div>
-                    </div>
-                    <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 small">Default State</span>
-                  </div>
 
-                  <!-- Hovered Row (Soft Warm Tint) -->
-                  <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 border flex-wrap gap-3" style="background-color: var(--theme-row-hover-solid, #fdf2f4); border-color: #fdcfd3 !important;">
-                    <div class="d-flex align-items-center gap-3">
-                      <span class="badge bg-primary bg-opacity-15 text-primary border border-danger-subtle px-2.5 py-1">#102</span>
-                      <div>
-                        <div class="text-body fw-bold small">Hovered Table Row</div>
-                        <div class="text-secondary small" style="font-size: 0.75rem;">Interactive hover feedback (Light Rose Tint: #FDF2F4)</div>
-                      </div>
+                <!-- Hovered Row (Soft Warm Tint) -->
+                <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 border flex-wrap gap-3" style="background-color: var(--theme-row-hover-solid, #fdf2f4); border-color: #fdcfd3 !important;">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-primary bg-opacity-15 text-primary border border-danger-subtle px-2.5 py-1">#102</span>
+                    <div>
+                      <div class="text-body fw-bold small">Hovered Table Row</div>
+                      <div class="text-secondary small" style="font-size: 0.75rem;">Interactive hover feedback (Light Rose Tint: #FDF2F4)</div>
                     </div>
-                    <span class="badge bg-primary bg-opacity-15 text-primary border border-danger-subtle px-2.5 py-1 small fw-semibold">Hover Active</span>
                   </div>
+                  <span class="badge bg-primary bg-opacity-15 text-primary border border-danger-subtle px-2.5 py-1 small fw-semibold">Hover Active</span>
+                </div>
 
-                  <!-- Selected Row (Theme Rose Highlight) -->
-                  <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 text-white shadow-xs flex-wrap gap-3" style="background-color: #e74c5a;">
-                    <div class="d-flex align-items-center gap-3">
-                      <span class="badge bg-white text-danger fw-bold px-2.5 py-1">#103</span>
-                      <div>
-                        <div class="fw-bold small text-white">Active Selected Row</div>
-                        <div class="text-white text-opacity-85 small" style="font-size: 0.75rem;">Selected row highlight (Primary Highlight: #E74C5A)</div>
-                      </div>
+                <!-- Selected Row (Theme Rose Highlight) -->
+                <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 text-white shadow-xs flex-wrap gap-3" style="background-color: #e74c5a;">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-white text-danger fw-bold px-2.5 py-1">#103</span>
+                    <div>
+                      <div class="fw-bold small text-white">Active Selected Row</div>
+                      <div class="text-white text-opacity-85 small" style="font-size: 0.75rem;">Selected row highlight (Primary Highlight: #E74C5A)</div>
                     </div>
-                    <span class="badge bg-white bg-opacity-25 text-white border border-white border-opacity-50 px-2.5 py-1 small fw-semibold">Selected State</span>
                   </div>
+                  <span class="badge bg-white bg-opacity-25 text-white border border-white border-opacity-50 px-2.5 py-1 small fw-semibold">Selected State</span>
                 </div>
               </div>
+            </div>
 
-              <!-- 2. Paginator Component Preview -->
-              <div class="mx-1 mx-md-2 p-4 rounded-3 bg-body border shadow-xs">
+            <!-- Paginator Component Preview -->
+            <div class="px-1 px-md-2">
+              <div class="p-3.5 rounded-3 bg-body border shadow-xs">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                   <div>
                     <div class="small fw-semibold text-body">Paginator Button States</div>
@@ -275,22 +279,23 @@
                   </div>
                   
                   <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="px-3 py-2 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">‹ Prev</span>
-                    <span class="px-3 py-2 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">1</span>
-                    <span class="px-3 py-2 rounded-2 small fw-bold text-danger border shadow-xs" style="background-color: #fef2f3; border-color: #e74c5a;">2 (Active)</span>
-                    <span class="px-3 py-2 rounded-2 small fw-semibold text-danger border shadow-2xs" style="background-color: #fff5f6; border-color: #fdcfd3;">3 (Hover)</span>
-                    <span class="px-3 py-2 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">Next ›</span>
+                    <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">‹ Prev</span>
+                    <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">1</span>
+                    <span class="px-3 py-1.5 rounded-2 small fw-bold text-danger border shadow-xs" style="background-color: #fef2f3; border-color: #e74c5a;">2 (Active)</span>
+                    <span class="px-3 py-1.5 rounded-2 small fw-semibold text-danger border shadow-2xs" style="background-color: #fff5f6; border-color: #fdcfd3;">3 (Hover)</span>
+                    <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">Next ›</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 3. Status & Functional Colors -->
+          <!-- 4. Status & Functional Colors -->
           <div class="mb-4 pt-3 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                <i class="pi pi-check-circle text-success"></i> Status & Functional Colors
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
+                <i class="pi pi-check-circle text-success me-2 fs-6"></i>
+                <span>Status & Functional Colors</span>
               </h6>
               <span class="small text-secondary" style="font-size: 0.75rem;">Semantic feedback states</span>
             </div>
@@ -319,11 +324,12 @@
             </div>
           </div>
 
-          <!-- 4. Surface, Neutral & Canvas Palette -->
+          <!-- 5. Surface, Neutral & Canvas Palette -->
           <div class="mb-4 pt-3 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                <i class="pi pi-box text-secondary"></i> Surface & Background Canvas
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
+                <i class="pi pi-box text-secondary me-2 fs-6"></i>
+                <span>Surface & Background Canvas</span>
               </h6>
               <span class="small text-secondary" style="font-size: 0.75rem;">Layout backgrounds & elevations</span>
             </div>
@@ -352,11 +358,12 @@
             </div>
           </div>
 
-          <!-- 5. Typography System & Font Stack -->
+          <!-- 6. Typography System & Font Stack -->
           <div class="pt-3 border-top">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
-                <i class="pi pi-align-left text-primary"></i> Typography & Font Families
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center">
+                <i class="pi pi-align-left text-primary me-2 fs-6"></i>
+                <span>Typography & Font Families</span>
               </h6>
               <span class="small text-secondary" style="font-size: 0.75rem;">Typeface hierarchy & font stacks</span>
             </div>

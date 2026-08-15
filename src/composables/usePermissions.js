@@ -66,17 +66,6 @@ export function usePermissions() {
         .filter(id => !isNaN(id) && id > 0)
 
       if (granted.length > 0) {
-        // Inherit sub-menus 26 (In Progress), 27 (Done), 28 (Approved) if parent Application is granted
-        if (granted.includes(14) || granted.includes(25)) {
-          if (!unlinkedMenuIds.has(26)) granted.push(26)
-          if (!unlinkedMenuIds.has(27)) granted.push(27)
-          if (!unlinkedMenuIds.has(28)) granted.push(28)
-        }
-        // Inherit 103 (Theme) if Settings is granted
-        if (granted.includes(20) && !unlinkedMenuIds.has(103)) {
-          granted.push(103)
-        }
-
         allowedMenuIds.value = new Set(granted)
       } else {
         allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 101, 102, 103])
