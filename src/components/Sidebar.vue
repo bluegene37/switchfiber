@@ -54,7 +54,7 @@
             :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
             active-class="bg-primary text-white opacity-100 active-link"
             exact-active-class="bg-primary text-white opacity-100 active-link"
-            :title="isCollapsed ? item.name : ''"
+            v-tooltip.right="isCollapsed ? item.name : null"
             @click="$emit('close')"
           >
             <i :class="['pi', item.icon, 'text-center', isCollapsed ? 'fs-5 me-0' : 'me-3']" style="width: 24px;"></i>
@@ -70,7 +70,7 @@
                 isCollapsed ? 'justify-content-center px-0' : 'justify-content-between px-2.5'
               ]"
               style="cursor: pointer; user-select: none;"
-              :title="isCollapsed ? item.name : ''"
+              v-tooltip.right="isCollapsed ? item.name : null"
               @click="handleParentClick(item)"
             >
               <div class="d-flex align-items-center" :class="{ 'justify-content-center w-100': isCollapsed }">
@@ -114,7 +114,7 @@
         @click="$emit('toggle-collapse')" 
         class="nav-link w-100 d-none d-md-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start bg-transparent shadow-none border border-transparent"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
-        :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
+        v-tooltip.right="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
       >
         <div class="d-inline-flex align-items-center justify-content-center" :class="isCollapsed ? 'me-0' : 'me-3'" style="width: 24px; min-width: 24px; flex-shrink: 0;">
           <i :class="['pi', isCollapsed ? 'pi-angle-right' : 'pi-angle-left']" style="font-size: 1rem;"></i>
@@ -129,7 +129,7 @@
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
         active-class="bg-primary text-white opacity-100 active-link"
         exact-active-class="bg-primary text-white opacity-100 active-link"
-        :title="isCollapsed ? 'System Settings' : ''"
+        v-tooltip.right="isCollapsed ? 'System Settings' : null"
         @click="$emit('close')"
       >
         <div class="d-inline-flex align-items-center justify-content-center" :class="isCollapsed ? 'me-0' : 'me-3'" style="width: 24px; min-width: 24px; flex-shrink: 0;">
@@ -143,7 +143,7 @@
         @click="handleLogout" 
         class="nav-link w-100 d-flex align-items-center rounded-3 text-decoration-none text-danger border bg-danger bg-opacity-10 hover-logout py-2 text-start shadow-none"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
-        :title="isCollapsed ? 'Logout Account' : ''"
+        v-tooltip.right="isCollapsed ? 'Logout Account' : null"
       >
         <div class="d-inline-flex align-items-center justify-content-center" :class="isCollapsed ? 'me-0' : 'me-3'" style="width: 24px; min-width: 24px; flex-shrink: 0;">
           <i class="pi pi-sign-out" style="font-size: 1rem;"></i>
@@ -198,6 +198,24 @@ const isOffscreen = computed(() => isMobileViewport.value && !props.isOpen)
 
 const rawMenuItems = ref([
   { id: 5, name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
+  {
+    id: 25,
+    name: 'Application',
+    icon: 'pi-file-edit',
+    children: [
+      { id: 14, name: 'Application List', path: '/application', icon: 'pi-list' },
+    ]
+  },
+  { 
+    id: 23,
+    name: 'Transaction', 
+    icon: 'pi-wallet',
+    children: [
+      { id: 17, name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
+      { id: 18, name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
+      { id: 19, name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
+    ]
+  },
   { 
     id: 21,
     name: 'File Maintenance', 
@@ -213,14 +231,6 @@ const rawMenuItems = ref([
       { id: 13, name: 'Plan', path: '/plan', icon: 'pi-tag' },
     ]
   },
-  {
-    id: 25,
-    name: 'Application',
-    icon: 'pi-file-edit',
-    children: [
-      { id: 14, name: 'Application List', path: '/application', icon: 'pi-list' },
-    ]
-  },
   { 
     id: 22,
     name: 'Users Management', 
@@ -228,16 +238,6 @@ const rawMenuItems = ref([
     children: [
       { id: 15, name: 'User', path: '/user', icon: 'pi-user' },
       { id: 16, name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
-    ]
-  },
-  { 
-    id: 23,
-    name: 'Transaction', 
-    icon: 'pi-wallet',
-    children: [
-      { id: 17, name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
-      { id: 18, name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
-      { id: 19, name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
     ]
   },
   { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' }

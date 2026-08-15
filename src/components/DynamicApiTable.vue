@@ -59,11 +59,11 @@
 
       <!-- Bottom Paginator Skeleton -->
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3 pt-2 border-top">
-        <div class="d-flex align-items-center gap-3">
-          <div class="skeleton-box rounded-2" style="width: 170px; height: 26px;"></div>
-          <div class="skeleton-box rounded-2" style="width: 110px; height: 26px;"></div>
+        <div class="skeleton-box rounded-2" style="width: 200px; height: 26px;"></div>
+        <div class="d-flex align-items-center gap-2.5 ms-auto">
+          <div class="skeleton-box rounded-2" style="width: 120px; height: 26px;"></div>
+          <div class="skeleton-box rounded-2" style="width: 220px; height: 28px;"></div>
         </div>
-        <div class="skeleton-box rounded-2 ms-auto" style="width: 240px; height: 28px;"></div>
       </div>
     </div>
     
@@ -110,7 +110,8 @@
                 type="button" 
                 class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 clear-search-btn"
                 @click="filters['global'].value = null"
-                title="Clear search"
+                v-tooltip.top="'Clear search'"
+                aria-label="Clear search"
               >
                 <i class="pi pi-times" style="font-size: 0.75rem;"></i>
               </button>
@@ -136,7 +137,8 @@
               type="button" 
               class="btn btn-sm btn-outline-danger border-dashed rounded-3 d-inline-flex align-items-center gap-1.5 px-2.5 py-1 small shadow-xs"
               @click="clearAllFilters"
-              title="Clear all applied filters"
+              v-tooltip.top="'Reset all applied filters'"
+              aria-label="Reset all applied filters"
             >
               <i class="pi pi-filter-slash" style="font-size: 0.75rem;"></i>
               <span>Reset ({{ activeFilterCount }})</span>
@@ -205,6 +207,7 @@
             <Button 
               class="p-button-secondary p-button-sm p-button-outlined shadow-xs rounded-3 px-2.5 d-inline-flex align-items-center gap-1.5"
               aria-label="Export Data"
+              v-tooltip.bottom="'Export to CSV, Excel, or PDF'"
               aria-haspopup="true"
               aria-controls="export_menu"
               @click="toggleExportMenu"
@@ -230,26 +233,24 @@
         </div>
       </template>
 
-      <!-- Paginator Start: Dynamic Record Range & Rows Per Page -->
+      <!-- Paginator Start: Dynamic Record Range Summary -->
       <template #paginatorstart>
-        <div class="d-flex align-items-center gap-3 my-1 flex-wrap">
-          <!-- Dynamic Showing X to Y of Z Records -->
-          <div class="small text-secondary d-flex align-items-center gap-1.5">
-            <i class="pi pi-database text-primary opacity-75"></i>
-            <span>Showing <strong class="text-body">{{ recordRangeStart }}</strong> to <strong class="text-body">{{ recordRangeEnd }}</strong> of <strong class="text-body">{{ filteredRecordsCount }}</strong> {{ filteredRecordsCount === 1 ? 'record' : 'records' }}</span>
-            <span v-if="filteredRecordsCount !== totalRecordsCount" class="badge bg-secondary bg-opacity-10 text-secondary border ms-1" style="font-size: 0.72rem;">
-              Filtered from {{ totalRecordsCount }}
-            </span>
-          </div>
+        <div class="small text-secondary d-flex align-items-center my-1 flex-wrap">
+          <i class="pi pi-database text-primary opacity-75 me-2"></i>
+          <span>Showing <strong class="text-body">{{ recordRangeStart }}</strong> to <strong class="text-body">{{ recordRangeEnd }}</strong> of <strong class="text-body">{{ filteredRecordsCount }}</strong> {{ filteredRecordsCount === 1 ? 'record' : 'records' }}</span>
+          <span v-if="filteredRecordsCount !== totalRecordsCount" class="badge bg-secondary bg-opacity-10 text-secondary border ms-2" style="font-size: 0.72rem;">
+            Filtered from {{ totalRecordsCount }}
+          </span>
+        </div>
+      </template>
 
-          <!-- Show Entries Dropdown -->
-          <div class="d-flex align-items-center gap-1.5 ms-md-2">
-            <span class="mb-0 small text-secondary">Show</span>
-            <select v-model="rowsPerPage" class="form-select form-select-sm paginator-rows-select shadow-xs" aria-label="Rows per page">
-              <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-            <span class="mb-0 small text-secondary">per page</span>
-          </div>
+      <!-- Paginator End: Rows Per Page Selector (Grouped with Navigation) -->
+      <template #paginatorend>
+        <div class="d-flex align-items-center gap-2 my-1">
+          <span class="mb-0 small text-secondary text-nowrap me-1">Rows per page:</span>
+          <select v-model="rowsPerPage" class="form-select form-select-sm paginator-rows-select shadow-xs" aria-label="Rows per page">
+            <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
         </div>
       </template>
 
@@ -3755,13 +3756,26 @@ defineExpose({
 }
 
 :deep(.p-paginator-start) {
+  order: 0;
   margin-right: auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+:deep(.p-paginator-end) {
+  order: 1;
+  display: flex !important;
+  align-items: center !important;
+  margin-left: auto !important;
 }
 
 :deep(.p-paginator-content),
 :deep(.p-paginator-pages),
 :deep(.p-paginator-current) {
-  margin-left: auto !important;
+  order: 2;
+  display: flex !important;
+  align-items: center !important;
+  margin-left: 0.5rem !important;
 }
 
 /* ---- Toolbar (responsive) ---- */
@@ -3793,7 +3807,8 @@ defineExpose({
 }
 
 .toolbar-filter-select {
-  width: 135px;
+  min-width: 145px;
+  width: auto;
 }
 
 .toolbar-filter-select select {
@@ -3801,17 +3816,19 @@ defineExpose({
   min-height: 33px !important;
   font-size: 0.82rem;
   cursor: pointer;
+  padding-left: 0.75rem !important;
+  padding-right: 2rem !important;
 }
 
 .paginator-rows-select {
-  width: 78px !important;
+  width: 80px !important;
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
   padding-top: 0.15rem !important;
   padding-bottom: 0.15rem !important;
-  padding-left: 0.65rem !important;
-  padding-right: 1.6rem !important;
+  padding-left: 0.75rem !important;
+  padding-right: 1.8rem !important;
   font-size: 0.8125rem !important;
   font-weight: 500 !important;
   cursor: pointer !important;

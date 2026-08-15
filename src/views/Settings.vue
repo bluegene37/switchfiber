@@ -25,8 +25,9 @@
           </div>
           <h5 class="fw-bold text-body mb-1">{{ userDisplayName }}</h5>
           <p class="small text-secondary mb-3">{{ user?.email || 'admin@switchfiber.com' }}</p>
-          <div class="d-inline-flex align-items-center gap-1.5 px-3 py-1 bg-primary bg-opacity-10 text-primary rounded-pill small fw-semibold mx-auto">
-            <i class="pi pi-shield"></i> {{ userRole }}
+          <div class="d-inline-flex align-items-center px-3 py-1.5 bg-primary bg-opacity-10 text-primary rounded-pill small fw-semibold mx-auto">
+            <i class="pi pi-shield me-2"></i>
+            <span>{{ userRole }}</span>
           </div>
         </div>
 
@@ -87,49 +88,295 @@
 
         <!-- 1. Theme & Appearance Section -->
         <div v-if="activeSection === 'theme'" class="card shadow-sm border-0 rounded-4 p-4 bg-body">
+          <!-- Section Header -->
           <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
             <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
               <i class="pi pi-palette fs-4"></i>
             </div>
             <div>
-              <h5 class="fw-bold text-body mb-1">Theme & Interface Appearance</h5>
-              <p class="small text-secondary mb-0">Switch between Light and Dark mode for optimal viewing comfort.</p>
+              <h5 class="fw-bold text-body mb-1">Theme, Palette & Typography Design System</h5>
+              <p class="small text-secondary mb-0">Explore the SwitchFiber brand color codes, interaction highlight states, and typography specifications.</p>
             </div>
           </div>
 
-          <!-- Active Brand Theme Badge -->
-          <div class="p-3 rounded-3 border bg-body-tertiary mb-4 d-flex align-items-center justify-content-between">
+          <!-- Active Theme & Mode Toggle Banner -->
+          <div class="p-3 rounded-4 border bg-body-tertiary mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
               <span 
-                class="rounded-circle d-inline-block border border-2 border-white shadow-sm" 
-                style="width: 32px; height: 32px; background-color: #e74c5a;"
+                class="rounded-circle d-inline-block border border-2 border-white shadow-sm flex-shrink-0" 
+                style="width: 36px; height: 36px; background-color: #e74c5a;"
               ></span>
               <div>
-                <div class="fw-bold small text-body">SwitchFiber Warm Rose Theme</div>
-                <div class="text-secondary small" style="font-size: 0.75rem;">Eye-Friendly Warm Rose Palette (#e74c5a)</div>
-              </div>
-            </div>
-            <span class="badge bg-primary rounded-pill px-3 py-2">
-              <i class="pi pi-check me-1"></i> Active Theme
-            </span>
-          </div>
-
-          <!-- Mode Toggle -->
-          <h6 class="fw-bold text-body mb-3 border-top pt-3">Interface Mode (Light / Dark)</h6>
-          <div class="p-3 rounded-3 border bg-body-tertiary d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-              <i :class="isDark ? 'pi pi-moon text-warning fs-4' : 'pi pi-sun text-warning fs-4'"></i>
-              <div>
-                <div class="fw-bold small text-body">{{ isDark ? 'Dark Mode' : 'Light Mode' }}</div>
-                <div class="text-secondary small">Toggle between Light and Dark themes anytime</div>
+                <div class="fw-bold small text-body d-flex align-items-center gap-2">
+                  <span>SwitchFiber Warm Rose Theme</span>
+                  <span class="badge bg-primary rounded-pill px-2.5 py-0.5" style="font-size: 0.7rem;">Active</span>
+                </div>
+                <div class="text-secondary small mt-0.5" style="font-size: 0.75rem;">
+                  Mode: <strong class="text-body">{{ isDark ? 'Dark Theme' : 'Light Theme' }}</strong> · Eye-Friendly 8-hour ergonomics palette
+                </div>
               </div>
             </div>
             <button 
               @click="toggleTheme" 
-              class="btn btn-primary btn-sm px-4 fw-bold rounded-pill shadow-sm"
+              class="btn btn-primary btn-sm px-3.5 py-2 fw-semibold rounded-pill shadow-xs d-inline-flex align-items-center gap-2"
             >
-              Switch to {{ isDark ? 'Light Mode' : 'Dark Mode' }}
+              <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'"></i>
+              <span>Switch to {{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
             </button>
+          </div>
+
+          <!-- 1. Primary & Brand Color Palette -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
+                <i class="pi pi-bookmark text-primary"></i> Primary & Brand Colors
+              </h6>
+              <span class="small text-secondary" style="font-size: 0.75rem;">Click any card to copy HEX</span>
+            </div>
+            <p class="small text-secondary mb-3">Core brand identity and primary interaction colors across buttons, navigation links, and active indicators.</p>
+
+            <div class="row g-3">
+              <div v-for="c in primaryColors" :key="c.hex" class="col-12 col-sm-6 col-xl-4">
+                <div 
+                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  @click="copyHex(c.hex)"
+                  v-tooltip.top="`Click to copy ${c.hex}`"
+                >
+                  <div class="d-flex align-items-center gap-3 mb-2">
+                    <div 
+                      class="rounded-3 shadow-xs border flex-shrink-0" 
+                      :style="{ width: '42px', height: '42px', backgroundColor: c.hex }"
+                    ></div>
+                    <div class="overflow-hidden">
+                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
+                      <code class="small text-primary fw-bold">{{ c.hex }}</code>
+                    </div>
+                  </div>
+                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
+                  <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
+                    <span class="font-monospace text-truncate">{{ c.token }}</span>
+                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.75rem;"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Table & Interaction Highlights Palette -->
+          <div class="mb-4 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
+                <i class="pi pi-table text-primary"></i> Table & Paginator Highlights
+              </h6>
+              <span class="small text-secondary" style="font-size: 0.75rem;">Active selection & hover tokens</span>
+            </div>
+            <p class="small text-secondary mb-3">Highlight rules applied to data table row selections, row hover feedback, and pagination buttons.</p>
+
+            <div class="row g-3 mb-3">
+              <div v-for="c in tableHighlightColors" :key="c.name" class="col-12 col-sm-6 col-xl-4">
+                <div 
+                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  @click="copyHex(c.hex)"
+                  v-tooltip.top="`Click to copy ${c.hex}`"
+                >
+                  <div class="d-flex align-items-center gap-3 mb-2">
+                    <div 
+                      class="rounded-3 shadow-xs border flex-shrink-0" 
+                      :style="{ width: '42px', height: '42px', backgroundColor: c.previewColor || c.hex }"
+                    ></div>
+                    <div class="overflow-hidden">
+                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
+                      <code class="small text-primary fw-bold">{{ c.hex }}</code>
+                    </div>
+                  </div>
+                  <div class="small text-secondary" style="font-size: 0.75rem;">{{ c.usage }}</div>
+                  <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
+                    <span class="font-monospace text-truncate">{{ c.token }}</span>
+                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.75rem;"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Interactive Component Preview Box -->
+            <div class="p-3 rounded-3 border bg-body-tertiary">
+              <div class="small fw-bold text-body mb-2 d-flex align-items-center gap-2">
+                <i class="pi pi-eye text-primary"></i> Live Component Visual Preview
+              </div>
+              
+              <!-- Mini Table Row Demonstration -->
+              <div class="d-flex flex-column gap-2 mb-3">
+                <!-- Normal Row -->
+                <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 bg-body border small">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary border">#101</span>
+                    <span class="text-body fw-medium">Normal Table Row</span>
+                  </div>
+                  <span class="text-secondary small">Default Body Background</span>
+                </div>
+
+                <!-- Hovered Row (Soft Warm Tint) -->
+                <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 border small" style="background-color: var(--theme-row-hover-solid, #fdf2f4);">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary border">#102</span>
+                    <span class="text-body fw-semibold">Hovered Table Row (Light Rose Tint: #FDF2F4)</span>
+                  </div>
+                  <span class="badge bg-primary bg-opacity-10 text-primary border border-danger-subtle">Hover State</span>
+                </div>
+
+                <!-- Selected Row (Warm Rose Highlight) -->
+                <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 small text-white shadow-xs" style="background-color: #e74c5a;">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-white text-danger fw-bold">#103</span>
+                    <span class="fw-bold">Active Selected Row (Highlight: #E74C5A)</span>
+                  </div>
+                  <span class="badge bg-white bg-opacity-25 text-white border border-white border-opacity-50">Selected Highlight</span>
+                </div>
+              </div>
+
+              <!-- Mini Paginator Demonstration -->
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                <span class="small text-secondary">Paginator Button States:</span>
+                <div class="d-flex align-items-center gap-1.5">
+                  <span class="px-2.5 py-1 rounded-2 small fw-medium border text-secondary bg-body">‹ Prev</span>
+                  <span class="px-2.5 py-1 rounded-2 small fw-medium border text-secondary bg-body">1</span>
+                  <span class="px-2.5 py-1 rounded-2 small fw-bold text-white shadow-xs" style="background-color: #e74c5a; border: 1px solid #e74c5a;">2 (Active)</span>
+                  <span class="px-2.5 py-1 rounded-2 small fw-medium text-danger border" style="background-color: #fef2f3; border-color: #fdcfd3;">3 (Hover)</span>
+                  <span class="px-2.5 py-1 rounded-2 small fw-medium border text-secondary bg-body">Next ›</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Status & Functional Colors -->
+          <div class="mb-4 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
+                <i class="pi pi-check-circle text-success"></i> Status & Functional Colors
+              </h6>
+              <span class="small text-secondary" style="font-size: 0.75rem;">Semantic feedback states</span>
+            </div>
+            <p class="small text-secondary mb-3">System status badges, alerts, toast notifications, and operation indicators.</p>
+
+            <div class="row g-3">
+              <div v-for="c in statusColors" :key="c.hex" class="col-12 col-sm-6 col-xl-3">
+                <div 
+                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  @click="copyHex(c.hex)"
+                  v-tooltip.top="`Click to copy ${c.hex}`"
+                >
+                  <div class="d-flex align-items-center gap-3 mb-2">
+                    <div 
+                      class="rounded-3 shadow-xs border flex-shrink-0" 
+                      :style="{ width: '38px', height: '38px', backgroundColor: c.hex }"
+                    ></div>
+                    <div class="overflow-hidden">
+                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
+                      <code class="small fw-bold" :style="{ color: c.hex }">{{ c.hex }}</code>
+                    </div>
+                  </div>
+                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Surface, Neutral & Canvas Palette -->
+          <div class="mb-4 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
+                <i class="pi pi-box text-secondary"></i> Surface & Background Canvas
+              </h6>
+              <span class="small text-secondary" style="font-size: 0.75rem;">Layout backgrounds & elevations</span>
+            </div>
+            <p class="small text-secondary mb-3">Theme background surfaces, elevated modal layers, and tooltip containers.</p>
+
+            <div class="row g-3">
+              <div v-for="c in surfaceColors" :key="c.name" class="col-12 col-sm-6 col-xl-4">
+                <div 
+                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  @click="copyHex(c.hex)"
+                  v-tooltip.top="`Click to copy ${c.hex}`"
+                >
+                  <div class="d-flex align-items-center gap-3 mb-2">
+                    <div 
+                      class="rounded-3 shadow-xs border flex-shrink-0" 
+                      :style="{ width: '38px', height: '38px', backgroundColor: c.hex }"
+                    ></div>
+                    <div class="overflow-hidden">
+                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
+                      <code class="small text-body fw-bold">{{ c.hex }}</code>
+                    </div>
+                  </div>
+                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Typography System & Font Stack -->
+          <div class="pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
+                <i class="pi pi-align-left text-primary"></i> Typography & Font Families
+              </h6>
+              <span class="small text-secondary" style="font-size: 0.75rem;">Typeface hierarchy & font stacks</span>
+            </div>
+            <p class="small text-secondary mb-3">Standard font families and weight distributions configured across SwitchFiber.</p>
+
+            <div class="d-flex flex-column gap-3">
+              <!-- Body Font -->
+              <div class="p-3 rounded-3 border bg-body-tertiary">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                  <div class="fw-bold small text-body d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-white">Body Font</span>
+                    <span>Inter</span>
+                  </div>
+                  <span class="small text-secondary font-monospace" style="font-size: 0.72rem;">var(--font-family-base)</span>
+                </div>
+                <div class="small text-secondary mb-2" style="font-size: 0.78rem;">
+                  <strong>Font Stack:</strong> <code>"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif</code>
+                </div>
+                <div class="p-2.5 rounded bg-body border small text-body">
+                  <strong>Sample (400/500/600/700):</strong> The quick brown fox jumps over the lazy dog. Used for all data tables, inputs, modals, buttons, and navigation copy.
+                </div>
+              </div>
+
+              <!-- Headings Font -->
+              <div class="p-3 rounded-3 border bg-body-tertiary">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                  <div class="fw-bold small text-body d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-white">Heading Font</span>
+                    <span>Plus Jakarta Sans</span>
+                  </div>
+                  <span class="small text-secondary font-monospace" style="font-size: 0.72rem;">var(--font-family-heading)</span>
+                </div>
+                <div class="small text-secondary mb-2" style="font-size: 0.78rem;">
+                  <strong>Font Stack:</strong> <code>"Plus Jakarta Sans", "Inter", sans-serif</code>
+                </div>
+                <div class="p-2.5 rounded bg-body border small text-body font-family-heading">
+                  <h6 class="fw-bold text-body mb-1" style="font-family: 'Plus Jakarta Sans', sans-serif;">SwitchFiber Enterprise Fiber Management</h6>
+                  <span class="text-secondary small">Applied to page titles (H1–H6), metric card statistics, and brand headers.</span>
+                </div>
+              </div>
+
+              <!-- Monospace Font -->
+              <div class="p-3 rounded-3 border bg-body-tertiary">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                  <div class="fw-bold small text-body d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary text-white">Monospace Font</span>
+                    <span>SFMono / Menlo / Consolas</span>
+                  </div>
+                  <span class="small text-secondary font-monospace" style="font-size: 0.72rem;">font-monospace</span>
+                </div>
+                <div class="small text-secondary mb-2" style="font-size: 0.78rem;">
+                  <strong>Font Stack:</strong> <code>"SFMono-Regular", Menlo, Monaco, Consolas, "Courier New", monospace</code>
+                </div>
+                <div class="p-2.5 rounded bg-body border font-monospace small text-body">
+                  IP: 192.168.100.1 · MAC: 00:1A:2B:3C:4D:5E · SN: SF-89210-LCP · VLAN: 1042
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -286,6 +533,54 @@ const isSavingProfile = ref(false)
 const isUpdatingPassword = ref(false)
 const profileMsg = ref({ text: '', isError: false })
 const securityMsg = ref({ text: '', isError: false })
+
+const copiedHex = ref('')
+const copyHex = (hex) => {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(hex)
+    copiedHex.value = hex
+    toast.add({ severity: 'info', summary: 'Copied to Clipboard', detail: `${hex} copied!`, life: 2500 })
+    setTimeout(() => {
+      if (copiedHex.value === hex) copiedHex.value = ''
+    }, 2000)
+  }
+}
+
+// 1. Primary & Brand Colors
+const primaryColors = ref([
+  { name: 'Primary Rose Red', hex: '#E74C5A', token: '--bs-primary', usage: 'Primary buttons, active tabs, brand icons' },
+  { name: 'Primary Dark (Hover)', hex: '#D63A48', token: '--bs-primary-hover', usage: 'Button hover and focused interactive states' },
+  { name: 'Primary Active (Deep)', hex: '#C02E3C', token: '--bs-primary-active', usage: 'Button pressed states & deep highlights' },
+  { name: 'Primary Subtle Tint', hex: '#FEF2F3', token: '--bs-primary-bg-subtle', usage: 'Subtle badge bg, paginator hover, soft pills' },
+  { name: 'Primary Border Subtle', hex: '#FDCFD3', token: '--bs-primary-border-subtle', usage: 'Active tab borders & delicate card outlines' },
+  { name: 'Primary White Contrast', hex: '#FFFFFF', token: '--p-primary-contrast-color', usage: 'Text on primary buttons & highlighted rows' }
+])
+
+// 2. Table & Interaction Highlights
+const tableHighlightColors = ref([
+  { name: 'Selected Row Highlight', hex: '#E74C5A', token: '--theme-row-highlight', usage: 'Active selected row with pure white text and buttons' },
+  { name: 'Row Hover Solid', hex: '#FDF2F4', token: '--theme-row-hover-solid', usage: 'Solid background on hovered table rows' },
+  { name: 'Row Hover Translucent', hex: 'rgba(231, 76, 90, 0.06)', previewColor: '#FDF2F4', token: '--theme-row-hover', usage: 'Subtle translucent table row hover layer' },
+  { name: 'Paginator Active Page', hex: '#E74C5A', token: '.p-paginator-page-selected', usage: 'Current active page number pill in table paginator' },
+  { name: 'Paginator Hover / Light Red', hex: '#FEF2F3', previewColor: '#FEF2F3', token: '.p-paginator-page:hover', usage: 'Hover state for pagination navigation buttons' }
+])
+
+// 3. Status & Semantic Colors
+const statusColors = ref([
+  { name: 'Success / Green', hex: '#10B981', token: '--bs-success', usage: 'Active status, online status, systems operational' },
+  { name: 'Warning / Amber', hex: '#F59E0B', token: '--bs-warning', usage: 'Pending status, caution alerts, theme switcher sun' },
+  { name: 'Danger / Red', hex: '#EF4444', token: '--bs-danger', usage: 'Delete actions, error banners, system degraded' },
+  { name: 'Info / Sky Blue', hex: '#0EA5E9', token: '--bs-info', usage: 'Informational badges, helper tips, filter summary' }
+])
+
+// 4. Surface & Neutral Canvas
+const surfaceColors = ref([
+  { name: 'Light App Body Canvas', hex: '#F8F9FA', token: '--bs-body-bg (Light)', usage: 'Default page background in light theme' },
+  { name: 'Light Card & Modals', hex: '#FFFFFF', token: '--bs-card-bg (Light)', usage: 'Data table containers, cards, dialogs' },
+  { name: 'Dark App Body Canvas', hex: '#212529', token: '--bs-body-bg (Dark)', usage: 'Main background canvas in dark theme' },
+  { name: 'Dark Surface Card', hex: '#2B3035', token: '--bs-card-bg (Dark)', usage: 'Elevated cards & data tables in dark theme' },
+  { name: 'Slate Tooltip & Popover', hex: '#1E2227', token: '.p-tooltip-text', usage: 'Floating tooltips, omnibox footer hints' }
+])
 
 const userDisplayName = computed(() => {
   if (!user.value) return 'Admin User'
@@ -452,8 +747,10 @@ const updatePassword = async () => {
 </script>
 
 <style scoped>
-.theme-card:hover {
+.theme-card:hover,
+.color-swatch-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--bs-primary-border-subtle) !important;
 }
 </style>

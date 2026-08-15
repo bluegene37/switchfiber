@@ -32,8 +32,8 @@
       <!-- Advanced Filter Controls (Date Range & Presets) -->
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-2 border-bottom">
         <!-- Date Range Pickers -->
-        <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 flex-md-grow-0">
-          <div class="d-flex align-items-center gap-1.5">
+        <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1 flex-md-grow-0">
+          <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">From:</span>
             <DatePicker 
               v-model="fromDate" 
@@ -45,7 +45,7 @@
               class="date-filter-picker"
             />
           </div>
-          <div class="d-flex align-items-center gap-1.5">
+          <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">To:</span>
             <DatePicker 
               v-model="toDate" 
@@ -93,7 +93,8 @@
             type="button" 
             class="btn btn-sm btn-outline-danger border-dashed rounded-pill d-inline-flex align-items-center gap-1 px-2.5 py-1 small shadow-xs"
             @click="clearAllFilters"
-            title="Reset status and date filters"
+            v-tooltip.top="'Reset status and date filters'"
+            aria-label="Reset status and date filters"
           >
             <i class="pi pi-filter-slash" style="font-size: 0.75rem;"></i>
             <span>Reset Filters</span>
@@ -218,11 +219,17 @@ const clearAllFilters = () => {
 }
 
 .date-filter-picker {
-  width: 140px;
+  width: 145px;
 }
 
-:deep(.date-filter-picker .p-inputtext) {
-  padding: 0.35rem 0.65rem;
+:deep(.date-filter-picker .p-inputtext),
+:deep(.date-filter-picker .p-datepicker-input) {
+  padding-left: 0.75rem !important;
+  padding-right: 2rem !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
   font-size: 0.8125rem;
+  height: 33px !important;
+  border-radius: 8px !important;
 }
 </style>

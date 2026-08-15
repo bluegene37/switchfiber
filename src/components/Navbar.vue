@@ -7,7 +7,7 @@
         class="btn btn-link text-secondary me-2 me-md-3 p-1 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center flex-shrink-0" 
         style="width: 42px; height: 42px;"
         aria-label="Toggle Sidebar"
-        :title="isOpen ? 'Close Sidebar' : (isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar')"
+        v-tooltip.bottom="isOpen ? 'Close Sidebar' : (isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar')"
       >
         <i :class="['pi', isOpen ? 'pi-times' : (isCollapsed ? 'pi-bars' : 'pi-align-left'), 'fs-4']"></i>
       </button>
@@ -19,7 +19,7 @@
         class="btn btn-link text-secondary p-1 d-sm-none border-0 text-decoration-none me-2 rounded-circle hover-bg-icon d-flex align-items-center justify-content-center" 
         style="width: 40px; height: 40px;"
         aria-label="Open Search"
-        title="Search"
+        v-tooltip.bottom="'Search'"
       >
         <i class="pi pi-search fs-5"></i>
       </button>
@@ -192,7 +192,7 @@
       <div
         class="d-none d-lg-flex align-items-center gap-2 px-3 py-1.5 rounded-pill border border-opacity-25"
         :class="apiDegraded ? 'bg-danger bg-opacity-10 text-danger border-danger' : 'bg-success bg-opacity-10 text-success border-success'"
-        :title="apiDegraded ? 'One or more API endpoints are failing — open notifications for details' : 'All monitored API endpoints are responding'"
+        v-tooltip.bottom="apiDegraded ? 'One or more API endpoints are failing — open notifications for details' : 'All monitored API endpoints are responding'"
       >
         <div class="spinner-grow spinner-grow-sm" :class="apiDegraded ? 'text-danger' : 'text-success'" role="status" style="width: 0.55rem; height: 0.55rem;">
           <span class="visually-hidden">Status indicator</span>
@@ -207,7 +207,7 @@
         :class="isDark ? 'btn-dark' : 'btn-light'"
         style="width: 42px; height: 42px; transition: transform 0.2s;"
         aria-label="Toggle Dark Mode"
-        :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        v-tooltip.bottom="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
       >
         <i :class="isDark ? 'pi pi-sun text-warning' : 'pi pi-moon text-secondary'" class="fs-5"></i>
       </button>
@@ -219,7 +219,7 @@
           class="btn btn-link text-secondary position-relative p-2 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center"
           style="width: 42px; height: 42px; transition: transform 0.2s;"
           aria-label="Notifications"
-          title="System Notifications"
+          v-tooltip.bottom="'System Notifications'"
         >
           <i class="pi pi-bell fs-5" :class="{ 'text-primary': isNotificationOpen }"></i>
           <!-- Red Badge Pulse for Unread Count -->

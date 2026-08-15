@@ -277,12 +277,29 @@ html[data-bs-theme="dark"] body,
   box-sizing: border-box !important;
 }
 
+/* PrimeVue Select Wrappers (Custom Select Component) */
 .p-select,
-.p-dropdown,
-.form-select {
+.p-dropdown {
   display: flex !important;
   align-items: center !important;
   padding: 0 !important;
+}
+
+/* Form Labels Global Spacing */
+.form-label {
+  margin-bottom: 0.4rem !important;
+  font-weight: 500;
+}
+
+/* Native HTML Form Select Spacing */
+.form-select {
+  display: inline-block !important;
+  padding-left: 0.75rem !important;
+  padding-right: 2.25rem !important;
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
 }
 
 .p-select .p-select-label,
@@ -303,9 +320,16 @@ html[data-bs-theme="dark"] body,
 .p-inputtext.p-inputtext-sm,
 .form-select-sm,
 .form-control-sm {
-  height: 36px !important;
-  min-height: 36px !important;
-  font-size: 0.875rem !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  font-size: 0.8125rem !important;
+}
+
+.form-select-sm {
+  padding-left: 0.75rem !important;
+  padding-right: 2rem !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
 }
 
 .p-select.p-inputtext-sm .p-select-label,
@@ -314,7 +338,7 @@ html[data-bs-theme="dark"] body,
   padding-bottom: 0.25rem !important;
   padding-left: 0.75rem !important;
   padding-right: 0.75rem !important;
-  font-size: 0.875rem !important;
+  font-size: 0.8125rem !important;
   line-height: 1.5 !important;
 }
 
@@ -817,4 +841,173 @@ html[data-bs-theme="dark"] .p-datatable .p-datatable-tbody > tr.p-highlight > td
    sticky/frozen table columns keep working. */
 body {
   overflow-x: clip;
+}
+
+/* ==========================================================================
+   PrimeVue Tooltip Custom Theme Palette Overrides
+   ========================================================================== */
+.p-tooltip {
+  max-width: 280px !important;
+  font-family: var(--font-family-base, "Inter", sans-serif) !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+.p-tooltip .p-tooltip-text {
+  background-color: #1e2227 !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  padding: 0.35rem 0.65rem !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16) !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.01em !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+.p-tooltip.p-tooltip-top .p-tooltip-arrow,
+.p-tooltip-top .p-tooltip-arrow {
+  border-top-color: #1e2227 !important;
+}
+
+.p-tooltip.p-tooltip-bottom .p-tooltip-arrow,
+.p-tooltip-bottom .p-tooltip-arrow {
+  border-bottom-color: #1e2227 !important;
+}
+
+.p-tooltip.p-tooltip-left .p-tooltip-arrow,
+.p-tooltip-left .p-tooltip-arrow {
+  border-left-color: #1e2227 !important;
+}
+
+.p-tooltip.p-tooltip-right .p-tooltip-arrow,
+.p-tooltip-right .p-tooltip-arrow {
+  border-right-color: #1e2227 !important;
+}
+
+/* Dark Theme Overrides */
+html[data-bs-theme="dark"] .p-tooltip .p-tooltip-text,
+.dark .p-tooltip .p-tooltip-text {
+  background-color: #2b3038 !important;
+  color: #f8f9fa !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
+}
+
+html[data-bs-theme="dark"] .p-tooltip.p-tooltip-top .p-tooltip-arrow,
+.dark .p-tooltip.p-tooltip-top .p-tooltip-arrow,
+html[data-bs-theme="dark"] .p-tooltip-top .p-tooltip-arrow,
+.dark .p-tooltip-top .p-tooltip-arrow {
+  border-top-color: #2b3038 !important;
+}
+
+html[data-bs-theme="dark"] .p-tooltip.p-tooltip-bottom .p-tooltip-arrow,
+.dark .p-tooltip.p-tooltip-bottom .p-tooltip-arrow,
+html[data-bs-theme="dark"] .p-tooltip-bottom .p-tooltip-arrow,
+.dark .p-tooltip-bottom .p-tooltip-arrow {
+  border-bottom-color: #2b3038 !important;
+}
+
+html[data-bs-theme="dark"] .p-tooltip.p-tooltip-left .p-tooltip-arrow,
+.dark .p-tooltip.p-tooltip-left .p-tooltip-arrow,
+html[data-bs-theme="dark"] .p-tooltip-left .p-tooltip-arrow,
+.dark .p-tooltip-left .p-tooltip-arrow {
+  border-left-color: #2b3038 !important;
+}
+
+html[data-bs-theme="dark"] .p-tooltip.p-tooltip-right .p-tooltip-arrow,
+.dark .p-tooltip.p-tooltip-right .p-tooltip-arrow,
+html[data-bs-theme="dark"] .p-tooltip-right .p-tooltip-arrow,
+.dark .p-tooltip-right .p-tooltip-arrow {
+  border-right-color: #2b3038 !important;
+}
+
+/* ==========================================================================
+   PrimeVue Paginator Theme Palette Overrides (SwitchFiber Warm Rose Red)
+   ========================================================================== */
+.p-paginator {
+  background-color: transparent !important;
+  color: var(--bs-body-color, #212529) !important;
+}
+
+.p-paginator .p-paginator-page,
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-last {
+  min-width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  margin: 0 2px !important;
+  color: var(--bs-secondary-color, #6c757d) !important;
+  transition: all 0.15s ease-in-out !important;
+  border: 1px solid transparent !important;
+  background-color: transparent !important;
+}
+
+/* Hover on unselected buttons -> light red accent */
+.p-paginator .p-paginator-page:not(.p-disabled):not(.p-paginator-page-selected):not(.p-highlight):hover,
+.p-paginator .p-paginator-first:not(.p-disabled):hover,
+.p-paginator .p-paginator-prev:not(.p-disabled):hover,
+.p-paginator .p-paginator-next:not(.p-disabled):hover,
+.p-paginator .p-paginator-last:not(.p-disabled):hover {
+  background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
+  color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
+}
+
+/* Active Selected Page Button -> Theme Primary Warm Rose Red (#e74c5a) */
+.p-paginator .p-paginator-page.p-paginator-page-selected,
+.p-paginator .p-paginator-page.p-highlight,
+.p-paginator .p-paginator-page[aria-current="page"],
+.p-paginator .p-paginator-page[aria-selected="true"] {
+  background-color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary, #e74c5a) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(231, 76, 90, 0.3) !important;
+}
+
+/* Dark Mode Paginator Adjustments */
+html[data-bs-theme="dark"] .p-paginator .p-paginator-page,
+.dark .p-paginator .p-paginator-page,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-first,
+.dark .p-paginator .p-paginator-first,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-prev,
+.dark .p-paginator .p-paginator-prev,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-next,
+.dark .p-paginator .p-paginator-next,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-last,
+.dark .p-paginator .p-paginator-last {
+  color: #adb5bd !important;
+}
+
+html[data-bs-theme="dark"] .p-paginator .p-paginator-page:not(.p-disabled):not(.p-paginator-page-selected):not(.p-highlight):hover,
+.dark .p-paginator .p-paginator-page:not(.p-disabled):not(.p-paginator-page-selected):not(.p-highlight):hover,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-first:not(.p-disabled):hover,
+.dark .p-paginator .p-paginator-first:not(.p-disabled):hover,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-prev:not(.p-disabled):hover,
+.dark .p-paginator .p-paginator-prev:not(.p-disabled):hover,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-next:not(.p-disabled):hover,
+.dark .p-paginator .p-paginator-next:not(.p-disabled):hover,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-last:not(.p-disabled):hover,
+.dark .p-paginator .p-paginator-last:not(.p-disabled):hover {
+  background-color: rgba(231, 76, 90, 0.18) !important;
+  color: #ff8591 !important;
+  border-color: rgba(231, 76, 90, 0.3) !important;
+}
+
+html[data-bs-theme="dark"] .p-paginator .p-paginator-page.p-paginator-page-selected,
+.dark .p-paginator .p-paginator-page.p-paginator-page-selected,
+html[data-bs-theme="dark"] .p-paginator .p-paginator-page.p-highlight,
+.dark .p-paginator .p-paginator-page.p-highlight {
+  background-color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary, #e74c5a) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(231, 76, 90, 0.4) !important;
 }
