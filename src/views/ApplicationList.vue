@@ -128,13 +128,9 @@ const toDate = ref(null)
 
 const statusTabs = [
   { id: 'all', label: 'All Applications', value: '', icon: 'pi-list' },
-  { id: 'pending', label: 'Pending', value: 'Pending', icon: 'pi-clock' },
-  { id: 'approved', label: 'Approved', value: 'Approved', icon: 'pi-check-circle' },
-  { id: 'installed', label: 'Installed', value: 'Installed', icon: 'pi-verified' },
-  { id: 'drop', label: 'Drop / Rejected', value: 'Drop', icon: 'pi-times-circle' },
-  { id: 'failed', label: 'Failed', value: 'Failed', icon: 'pi-exclamation-triangle' },
-  { id: 'reschedule', label: 'Reschedule', value: 'Reschedule', icon: 'pi-calendar-times' },
-  { id: 'cancelled', label: 'Cancelled', value: 'Cancelled', icon: 'pi-ban' }
+  { id: 'in_progress', label: 'In Progress', value: 'In Progress', icon: 'pi-clock' },
+  { id: 'done', label: 'Done', value: 'Done', icon: 'pi-check-circle' },
+  { id: 'approved', label: 'Approved', value: 'Approved', icon: 'pi-verified' }
 ]
 
 const setStatusFilter = (status) => {
