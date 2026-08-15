@@ -409,11 +409,11 @@ const bandwidthChartOption = ref({
       type: 'line', 
       smooth: true, 
       data: [42, 38, 85, 94, 88, 110, 65], 
-      itemStyle: { color: '#0d6efd' },
+      itemStyle: { color: '#e74c5a' },
       areaStyle: {
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: 'rgba(13, 110, 253, 0.35)' }, { offset: 1, color: 'rgba(13, 110, 253, 0.02)' }]
+          colorStops: [{ offset: 0, color: 'rgba(231, 76, 90, 0.35)' }, { offset: 1, color: 'rgba(231, 76, 90, 0.02)' }]
         }
       }
     },
@@ -422,11 +422,11 @@ const bandwidthChartOption = ref({
       type: 'line', 
       smooth: true, 
       data: [18, 14, 38, 45, 40, 52, 28], 
-      itemStyle: { color: '#e74c5a' },
+      itemStyle: { color: '#0ea5e9' },
       areaStyle: {
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: 'rgba(231, 76, 90, 0.3)' }, { offset: 1, color: 'rgba(231, 76, 90, 0.02)' }]
+          colorStops: [{ offset: 0, color: 'rgba(14, 165, 233, 0.3)' }, { offset: 1, color: 'rgba(14, 165, 233, 0.02)' }]
         }
       }
     }
@@ -474,7 +474,7 @@ const revenueChartOption = ref({
       type: 'bar',
       barWidth: '45%',
       data: [980, 1040, 1120, 1190, 1240, 1285, 1340],
-      itemStyle: { color: '#8b5cf6', borderRadius: [4, 4, 0, 0] }
+      itemStyle: { color: '#e74c5a', borderRadius: [4, 4, 0, 0] }
     },
     {
       name: 'ARPU (₱)',
@@ -495,7 +495,7 @@ const jobOrdersChartOption = ref({
   yAxis: { type: 'value' },
   series: [
     { name: 'Completed', type: 'bar', stack: 'total', data: [12, 18, 15, 22, 25, 14, 8], itemStyle: { color: '#10b981' } },
-    { name: 'In Progress', type: 'bar', stack: 'total', data: [5, 7, 6, 8, 10, 4, 3], itemStyle: { color: '#3b82f6' } },
+    { name: 'In Progress', type: 'bar', stack: 'total', data: [5, 7, 6, 8, 10, 4, 3], itemStyle: { color: '#0ea5e9' } },
     { name: 'Pending', type: 'bar', stack: 'total', data: [3, 4, 2, 5, 4, 2, 1], itemStyle: { color: '#f59e0b' } }
   ]
 })
@@ -519,7 +519,7 @@ const nodeRadarChartOption = ref({
       name: 'Node Health Comparison',
       type: 'radar',
       data: [
-        { value: [99.9, 82, 94, 65, 70], name: 'Manila Core', itemStyle: { color: '#0d6efd' } },
+        { value: [99.9, 82, 94, 65, 70], name: 'Manila Core', itemStyle: { color: '#e74c5a' } },
         { value: [99.5, 74, 88, 58, 62], name: 'Laguna Node', itemStyle: { color: '#10b981' } },
         { value: [98.8, 68, 80, 52, 55], name: 'Batangas Node', itemStyle: { color: '#8b5cf6' } }
       ]

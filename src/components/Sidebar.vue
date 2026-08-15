@@ -44,7 +44,7 @@
       </div>
 
       <!-- Navigation List -->
-      <ul v-else-if="filteredMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0">
+      <ul v-else-if="filteredMenuItems && filteredMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0">
         <li class="nav-item" v-for="item in filteredMenuItems" :key="item.name">
           <!-- Item with NO children -->
           <router-link 
@@ -123,7 +123,7 @@
       </button>
 
       <router-link 
-        v-if="allowedMenuIds.has(20)"
+        v-if="canAccessSettings"
         to="/settings" 
         class="nav-link d-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start border border-transparent"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
@@ -166,6 +166,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { usePermissions } from '../composables/usePermissions'
 import apiClient from '../services/api'
 
 const props = defineProps({
@@ -184,8 +185,9 @@ const emit = defineEmits(['close', 'toggle-collapse'])
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { allowedMenuIds, canAccessSettings, fetchPermissions } = usePermissions()
 
-const isLoading = ref(true)
+const isLoading = ref(false)
 
 // Below the md breakpoint the sidebar is translated off-canvas. It is still in
 // the DOM, so without this its links stay tab-focusable and screen-reader
@@ -279,48 +281,7 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-const allowedMenuIds = ref(new Set())
 
-const getAllMenuIds = () => {
-  const ids = []
-  rawMenuItems.value.forEach(item => {
-    ids.push(item.id)
-    if (item.children) {
-      item.children.forEach(c => ids.push(c.id))
-    }
-  })
-  return ids
-}
-
-const fetchPermissions = async () => {
-  isLoading.value = true
-  try {
-    const userAccessLevel = Number(authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 1)
-
-    const res = await apiClient.get('/AccesslevelMenu').catch(() => [])
-    let records = res
-    if (res && !Array.isArray(res) && typeof res === 'object') {
-      const key = Object.keys(res).find(k => Array.isArray(res[k]))
-      if (key) records = res[key]
-    }
-
-    if (Array.isArray(records) && records.length > 0) {
-      const granted = records
-        .filter(r => Number(r.accessLevelId || r.accesslevel_id) === userAccessLevel)
-        .map(r => Number(r.menuId || r.menu_id))
-
-      allowedMenuIds.value = new Set(granted)
-    } else {
-      // Fallback if API response is empty
-      allowedMenuIds.value = new Set(getAllMenuIds())
-    }
-  } catch (err) {
-    console.error('Error fetching AccesslevelMenu permissions:', err)
-    allowedMenuIds.value = new Set(getAllMenuIds())
-  } finally {
-    isLoading.value = false
-  }
-}
 
 onMounted(() => {
   fetchPermissions()
@@ -342,16 +303,18 @@ watch(() => authStore.user, () => {
 }, { deep: true })
 
 const filteredMenuItems = computed(() => {
+  if (!rawMenuItems.value || !Array.isArray(rawMenuItems.value)) return []
+  const allowed = allowedMenuIds.value || new Set()
   return rawMenuItems.value
     .map(item => {
-      if (item.children) {
-        const validChildren = item.children.filter(child => allowedMenuIds.value.has(child.id))
+      if (item.children && Array.isArray(item.children)) {
+        const validChildren = item.children.filter(child => child && allowed.has(child.id))
         if (validChildren.length > 0) {
           return { ...item, children: validChildren }
         }
         return null
       }
-      return allowedMenuIds.value.has(item.id) ? item : null
+      return allowed.has(item.id) ? item : null
     })
     .filter(Boolean)
 })
@@ -363,9 +326,13 @@ const filteredMenuItems = computed(() => {
   text-decoration: none !important;
 }
 .sidebar-link:hover:not(.active-link) {
-  background-color: var(--bs-secondary-bg);
+  background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
+  color: var(--bs-primary, #e74c5a) !important;
   opacity: 1 !important;
   text-decoration: none !important;
+}
+.sidebar-link:hover:not(.active-link) i {
+  color: var(--bs-primary, #e74c5a) !important;
 }
 
 /* Explicit high-contrast white text & icons for active / parked sidebar links */

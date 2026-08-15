@@ -384,7 +384,7 @@
               <i :class="sec.icon"></i> {{ sec.title }}
             </h6>
             <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
-              {{ sec.columns.length }} {{ sec.columns.length === 1 ? 'field' : 'fields' }}
+              {{ (sec.columns || []).length }} {{ (sec.columns || []).length === 1 ? 'field' : 'fields' }}
             </span>
           </div>
 
@@ -785,7 +785,7 @@
               <i :class="sec.icon"></i> {{ sec.title }}
             </h6>
             <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
-              {{ sec.columns.length }} {{ sec.columns.length === 1 ? 'field' : 'fields' }}
+              {{ (sec.columns || []).length }} {{ (sec.columns || []).length === 1 ? 'field' : 'fields' }}
             </span>
           </div>
 
@@ -901,7 +901,7 @@
               <i :class="sec.icon"></i> {{ sec.title }}
             </h6>
             <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
-              {{ sec.columns.length }} {{ sec.columns.length === 1 ? 'field' : 'fields' }}
+              {{ (sec.columns || []).length }} {{ (sec.columns || []).length === 1 ? 'field' : 'fields' }}
             </span>
           </div>
 
@@ -1921,7 +1921,7 @@ const filteredData = computed(() => {
   return list
 })
 
-const filteredRecordsCount = computed(() => filteredData.value.length)
+const filteredRecordsCount = computed(() => (filteredData.value || []).length)
 
 const activeFilterCount = computed(() => {
   let count = 0
@@ -3048,11 +3048,19 @@ const fetchData = async ({ silent = false } = {}) => {
     if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
       const menuList = unwrappedData || []
       const hasApiViewer = menuList.some(m => Number(m.id) === 24 || (m.name && m.name.toLowerCase().includes('api viewer')))
+      const hasSettings = menuList.some(m => Number(m.id) === 20 || (m.name && m.name.toLowerCase().includes('settings')))
+      const hasTheme = menuList.some(m => Number(m.id) === 103 || (m.name && m.name.toLowerCase().includes('theme')))
       const hasModifyPwd = menuList.some(m => Number(m.id) === 101 || (m.name && m.name.toLowerCase().includes('modify password')))
       const hasUnmaskPwd = menuList.some(m => Number(m.id) === 102 || (m.name && m.name.toLowerCase().includes('unmask password')))
       
       if (!hasApiViewer) {
         menuList.push({ id: 24, name: 'API Viewer', route: '/data-viewer', icon: 'pi pi-database', description: 'Inspect live GET endpoints across all backend services' })
+      }
+      if (!hasSettings) {
+        menuList.push({ id: 20, name: 'Settings', route: '/settings', icon: 'pi pi-cog', description: 'System appearance, profile preferences, and security configurations' })
+      }
+      if (!hasTheme) {
+        menuList.push({ id: 103, name: 'Theme & Appearance', route: '/settings#theme', icon: 'pi pi-palette', description: 'Permission to view design palette and toggle Light/Dark theme mode' })
       }
       if (!hasModifyPwd) {
         menuList.push({ id: 101, name: 'Modify Password', route: '/modify_password', icon: 'pi pi-key', description: 'Permission to modify password fields across forms' })
@@ -3205,7 +3213,7 @@ const fetchAccessLevelMenus = async () => {
 
 const activeLinkedMenuIds = computed(() => {
   const set = new Set()
-  if (!props.selectedAccessLevel || !accessLevelMenus.value.length) return set
+  if (!props.selectedAccessLevel || !accessLevelMenus.value || !accessLevelMenus.value.length) return set
   
   const targetAccId = String(
     props.selectedAccessLevel.id ?? 
@@ -3321,7 +3329,9 @@ const toggleMenuLink = async (menuRow) => {
         detail: `Linked "${menuName}" to "${roleName}"`,
         life: 3000
       })
-      window.dispatchEvent(new CustomEvent('accesslevelmenu-updated'))
+      window.dispatchEvent(new CustomEvent('accesslevelmenu-updated', {
+        detail: { accessLevelId: targetAccId, menuId: targetMenuId, linked: true }
+      }))
     } else {
       // Remove Link: DELETE from /api/AccesslevelMenu
       const targetAccStr = String(targetAccId).trim()
@@ -3358,7 +3368,9 @@ const toggleMenuLink = async (menuRow) => {
         detail: `Unlinked "${menuName}" from "${roleName}"`,
         life: 3000
       })
-      window.dispatchEvent(new CustomEvent('accesslevelmenu-updated'))
+      window.dispatchEvent(new CustomEvent('accesslevelmenu-updated', {
+        detail: { accessLevelId: targetAccId, menuId: targetMenuId, linked: false }
+      }))
     }
   } catch (err) {
     console.error('Error toggling menu link:', err)

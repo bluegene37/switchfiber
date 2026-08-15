@@ -58,25 +58,28 @@
             />
           </div>
 
-          <!-- Quick Date Presets -->
-          <div class="d-flex align-items-center gap-1 ms-sm-1">
+          <!-- Quick Date Presets (Theme-Driven Centralized Highlight) -->
+          <div class="d-flex align-items-center gap-1.5 ms-sm-1">
             <button 
               type="button" 
-              class="btn btn-sm btn-outline-secondary border-0 rounded-pill px-2.5 py-1 small fw-medium"
+              class="btn-date-preset"
+              :class="{ 'active': selectedDatePreset === 'today' }"
               @click="applyDatePreset('today')"
             >
               Today
             </button>
             <button 
               type="button" 
-              class="btn btn-sm btn-outline-secondary border-0 rounded-pill px-2.5 py-1 small fw-medium"
+              class="btn-date-preset"
+              :class="{ 'active': selectedDatePreset === 'this_week' }"
               @click="applyDatePreset('this_week')"
             >
               This Week
             </button>
             <button 
               type="button" 
-              class="btn btn-sm btn-outline-secondary border-0 rounded-pill px-2.5 py-1 small fw-medium"
+              class="btn-date-preset"
+              :class="{ 'active': selectedDatePreset === 'this_month' }"
               @click="applyDatePreset('this_month')"
             >
               This Month
@@ -125,6 +128,7 @@ const apiTableRef = ref(null)
 const selectedStatus = ref('')
 const fromDate = ref(null)
 const toDate = ref(null)
+const selectedDatePreset = ref('')
 
 const statusTabs = [
   { id: 'all', label: 'All Applications', value: '', icon: 'pi-list' },
@@ -177,6 +181,14 @@ const activeFilterSummary = computed(() => {
 })
 
 const applyDatePreset = (preset) => {
+  if (selectedDatePreset.value === preset) {
+    selectedDatePreset.value = ''
+    fromDate.value = null
+    toDate.value = null
+    return
+  }
+
+  selectedDatePreset.value = preset
   const today = new Date()
   if (preset === 'today') {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate())
@@ -194,6 +206,7 @@ const applyDatePreset = (preset) => {
 
 const clearAllFilters = () => {
   selectedStatus.value = ''
+  selectedDatePreset.value = ''
   fromDate.value = null
   toDate.value = null
 }
@@ -210,8 +223,9 @@ const clearAllFilters = () => {
 }
 
 .hover-tab:hover {
-  background-color: var(--bs-secondary-bg) !important;
-  color: var(--bs-primary) !important;
+  background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
+  border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
+  color: var(--bs-primary, #e74c5a) !important;
 }
 
 .date-filter-picker {

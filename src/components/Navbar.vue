@@ -84,7 +84,7 @@
             <div class="overflow-y-auto p-2 flex-grow-1" style="max-height: 400px;">
               
               <!-- 1. Recent Searches (when query is empty) -->
-              <div v-if="!searchQuery.trim() && recentSearches.length > 0">
+              <div v-if="!searchQuery.trim() && (recentSearches || []).length > 0">
                 <div class="d-flex align-items-center justify-content-between px-2 py-1 mb-1 text-secondary" style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                   <span><i class="pi pi-history me-1"></i> Recent Searches</span>
                   <button @click="clearRecentSearches" class="btn btn-link text-secondary p-0 text-decoration-none border-0" style="font-size: 0.7rem;">Clear All</button>
@@ -104,14 +104,14 @@
               </div>
 
               <!-- Default Prompt when Empty & No Recent Searches -->
-              <div v-if="!searchQuery.trim() && recentSearches.length === 0" class="text-center py-4 px-3 text-secondary">
+              <div v-if="!searchQuery.trim() && (recentSearches || []).length === 0" class="text-center py-4 px-3 text-secondary">
                 <i class="pi pi-compass fs-2 text-primary opacity-50 mb-2"></i>
                 <div class="fw-semibold text-body small">Quick Navigation & Global Search</div>
                 <div class="small mt-1" style="font-size: 0.78rem;">Type a module name, customer name, job order ticket, or IP address...</div>
               </div>
 
               <!-- 2. Categorized Active Search Results -->
-              <template v-if="searchQuery.trim() && groupedResults.length > 0">
+              <template v-if="searchQuery.trim() && (groupedResults || []).length > 0">
                 <div v-for="(group, gIdx) in groupedResults" :key="group.name" class="mb-2">
                   <div class="px-2 py-1 text-secondary d-flex align-items-center gap-1.5" style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                     <i :class="group.icon" style="font-size: 0.75rem;"></i>
@@ -154,7 +154,7 @@
               </template>
 
               <!-- 3. Empty Search Result State -->
-              <div v-if="searchQuery.trim() && groupedResults.length === 0 && !isLoading" class="text-center py-4 px-3 text-secondary">
+              <div v-if="searchQuery.trim() && (groupedResults || []).length === 0 && !isLoading" class="text-center py-4 px-3 text-secondary">
                 <i class="pi pi-search-minus fs-2 mb-2 opacity-50"></i>
                 <div class="fw-semibold text-body small">No results matching "{{ searchQuery }}"</div>
                 <div class="small mt-1" style="font-size: 0.78rem;">Try searching for "Applications", "Dashboard", "Job Order", or "Router".</div>
@@ -200,8 +200,9 @@
         <span class="fw-semibold" style="font-size: 0.8rem;">{{ apiDegraded ? 'Service Degraded' : 'Systems Operational' }}</span>
       </div>
 
-      <!-- Quick Light/Dark Mode Toggle -->
+      <!-- Quick Light/Dark Mode Toggle (Access-Controlled) -->
       <button 
+        v-if="canAccessTheme"
         @click="toggleTheme" 
         class="btn btn-sm rounded-3 d-flex align-items-center justify-content-center p-0 shadow-sm border ms-1"
         :class="isDark ? 'btn-dark' : 'btn-light'"
@@ -259,12 +260,12 @@
 
             <!-- Notification Item List -->
             <div class="overflow-y-auto custom-scrollbar" style="max-height: 340px;">
-              <div v-if="isCheckingHealth && notifications.length === 0" class="p-4 text-center text-secondary small">
+              <div v-if="isCheckingHealth && (notifications || []).length === 0" class="p-4 text-center text-secondary small">
                 <i class="pi pi-spin pi-spinner fs-5 d-block mb-2 opacity-75"></i>
                 Checking system health…
               </div>
 
-              <div v-else-if="notifications.length === 0" class="p-4 text-center text-secondary small">
+              <div v-else-if="(notifications || []).length === 0" class="p-4 text-center text-secondary small">
                 <i class="pi pi-check-circle fs-4 d-block mb-2 text-success opacity-75"></i>
                 <div class="fw-semibold text-body">All systems responding</div>
                 <div class="mt-1" style="font-size: 0.78rem;">No alerts at the moment.</div>
@@ -342,6 +343,7 @@
             </div>
             
             <button 
+              v-if="canAccessSettings"
               @click="goToSettings" 
               class="w-100 btn btn-link text-start text-body text-decoration-none d-flex align-items-center gap-2 rounded-2 py-2 px-3 hover-dropdown-item border-0 shadow-none"
             >
@@ -371,6 +373,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { useSearch } from '../composables/useSearch'
+import { usePermissions } from '../composables/usePermissions'
 import apiClient from '../services/api'
 
 const props = defineProps({
@@ -413,6 +416,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const { isDark, toggleTheme } = useTheme()
+const { canAccessTheme, canAccessSettings } = usePermissions()
 
 // Integrated Global Search Composable
 const {

@@ -1,49 +1,61 @@
 <template>
   <div class="d-flex flex-column gap-4">
-    <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
-      <div>
-        <h1 class="fs-3 fw-bold text-body mb-0">System & Account Settings</h1>
-        <p class="small text-secondary mt-1 mb-0">Customize application theme colors, manage user profile, security, and system preferences.</p>
+    <!-- Access Restricted State when Settings (id: 20) is disabled -->
+    <div v-if="!canAccessSettings" class="card shadow-sm border-0 rounded-4 p-5 text-center bg-body">
+      <div class="p-4 bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex mx-auto mb-3">
+        <i class="pi pi-lock fs-1"></i>
       </div>
+      <h3 class="fw-bold text-body">Access Restricted</h3>
+      <p class="text-secondary max-w-md mx-auto mb-0">You do not have permission to access System & Account Settings. Please contact your system administrator.</p>
     </div>
 
-    <!-- Main Content Container -->
-    <div class="row g-4">
-      <!-- Left Column: Navigation Tabs & Profile Overview Card -->
-      <div class="col-12 col-lg-4">
-        <!-- Profile Card -->
-        <div class="card shadow-sm border-0 rounded-4 p-4 text-center mb-4 bg-body">
-          <div class="position-relative d-inline-block mx-auto mb-3">
-            <div 
-              class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm mx-auto border border-3 border-white" 
-              style="width: 88px; height: 88px; font-size: 2.25rem;"
-            >
-              {{ userInitial }}
-            </div>
-            <span class="position-absolute bottom-0 end-0 p-2 bg-success border border-light rounded-circle" title="Online"></span>
-          </div>
-          <h5 class="fw-bold text-body mb-1">{{ userDisplayName }}</h5>
-          <p class="small text-secondary mb-3">{{ user?.email || 'admin@switchfiber.com' }}</p>
-          <div class="d-inline-flex align-items-center px-3 py-1.5 bg-primary bg-opacity-10 text-primary rounded-pill small fw-semibold mx-auto">
-            <i class="pi pi-shield me-2"></i>
-            <span>{{ userRole }}</span>
-          </div>
+    <!-- Main Settings Container -->
+    <template v-else>
+      <!-- Header -->
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+        <div>
+          <h1 class="fs-3 fw-bold text-body mb-0">System & Account Settings</h1>
+          <p class="small text-secondary mt-1 mb-0">Customize application theme colors, manage user profile, security, and system preferences.</p>
         </div>
+      </div>
 
-        <!-- Quick Navigation -->
-        <div class="list-group shadow-sm border-0 rounded-4 overflow-hidden">
-          <button 
-            @click="activeSection = 'theme'" 
-            class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border-0"
-            :class="{ 'bg-primary text-white fw-bold': activeSection === 'theme' }"
-          >
-            <div class="d-flex align-items-center gap-3">
-              <i class="pi pi-palette fs-5"></i>
-              <span>Theme & Appearance</span>
+      <!-- Main Content Container -->
+      <div class="row g-4">
+        <!-- Left Column: Navigation Tabs & Profile Overview Card -->
+        <div class="col-12 col-lg-4">
+          <!-- Profile Card -->
+          <div class="card shadow-sm border-0 rounded-4 p-4 text-center mb-4 bg-body">
+            <div class="position-relative d-inline-block mx-auto mb-3">
+              <div 
+                class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm mx-auto border border-3 border-white" 
+                style="width: 88px; height: 88px; font-size: 2.25rem;"
+              >
+                {{ userInitial }}
+              </div>
+              <span class="position-absolute bottom-0 end-0 p-2 bg-success border border-light rounded-circle" title="Online"></span>
             </div>
-            <i class="pi pi-chevron-right small"></i>
-          </button>
+            <h5 class="fw-bold text-body mb-1">{{ userDisplayName }}</h5>
+            <p class="small text-secondary mb-3">{{ user?.email || 'admin@switchfiber.com' }}</p>
+            <div class="d-inline-flex align-items-center px-3 py-1.5 bg-primary bg-opacity-10 text-primary rounded-pill small fw-semibold mx-auto">
+              <i class="pi pi-shield me-2"></i>
+              <span>{{ userRole }}</span>
+            </div>
+          </div>
+
+          <!-- Quick Navigation -->
+          <div class="list-group shadow-sm border-0 rounded-4 overflow-hidden">
+            <button 
+              v-if="canAccessTheme"
+              @click="activeSection = 'theme'" 
+              class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border-0"
+              :class="{ 'bg-primary text-white fw-bold': activeSection === 'theme' }"
+            >
+              <div class="d-flex align-items-center gap-3">
+                <i class="pi pi-palette fs-5"></i>
+                <span>Theme & Appearance</span>
+              </div>
+              <i class="pi pi-chevron-right small"></i>
+            </button>
           
           <button 
             @click="activeSection = 'profile'" 
@@ -240,8 +252,8 @@
                 <div class="d-flex align-items-center gap-1.5">
                   <span class="px-2.5 py-1 rounded-2 small fw-medium border text-secondary bg-body">‹ Prev</span>
                   <span class="px-2.5 py-1 rounded-2 small fw-medium border text-secondary bg-body">1</span>
-                  <span class="px-2.5 py-1 rounded-2 small fw-bold text-white shadow-xs" style="background-color: #e74c5a; border: 1px solid #e74c5a;">2 (Active)</span>
-                  <span class="px-2.5 py-1 rounded-2 small fw-medium text-danger border" style="background-color: #fef2f3; border-color: #fdcfd3;">3 (Hover)</span>
+                  <span class="px-2.5 py-1 rounded-2 small fw-bold text-danger border shadow-xs" style="background-color: #fef2f3; border-color: #e74c5a;">2 (Active)</span>
+                  <span class="px-2.5 py-1 rounded-2 small fw-medium text-danger border" style="background-color: #fff5f6; border-color: #fdcfd3;">3 (Hover)</span>
                   <span class="px-2.5 py-1 rounded-2 small fw-medium border text-secondary bg-body">Next ›</span>
                 </div>
               </div>
@@ -508,13 +520,15 @@
 
       </div>
     </div>
-  </div>
+  </template>
+</div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
+import { usePermissions } from '../composables/usePermissions'
 import apiClient from '../services/api'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
@@ -522,9 +536,16 @@ import Password from 'primevue/password'
 
 const authStore = useAuthStore()
 const { isDark, toggleTheme } = useTheme()
+const { canAccessTheme, canAccessSettings } = usePermissions()
 const toast = useToast()
 
-const activeSection = ref('profile')
+const activeSection = ref(canAccessTheme.value ? 'theme' : 'profile')
+
+watch(canAccessTheme, (allowed) => {
+  if (!allowed && activeSection.value === 'theme') {
+    activeSection.value = 'profile'
+  }
+})
 const user = computed(() => authStore.user)
 
 const apiUrl = ref(import.meta.env.VITE_API_URL || 'https://103.249.198.43:8090')
@@ -562,7 +583,9 @@ const tableHighlightColors = ref([
   { name: 'Row Hover Solid', hex: '#FDF2F4', token: '--theme-row-hover-solid', usage: 'Solid background on hovered table rows' },
   { name: 'Row Hover Translucent', hex: 'rgba(231, 76, 90, 0.06)', previewColor: '#FDF2F4', token: '--theme-row-hover', usage: 'Subtle translucent table row hover layer' },
   { name: 'Paginator Active Page', hex: '#E74C5A', token: '.p-paginator-page-selected', usage: 'Current active page number pill in table paginator' },
-  { name: 'Paginator Hover / Light Red', hex: '#FEF2F3', previewColor: '#FEF2F3', token: '.p-paginator-page:hover', usage: 'Hover state for pagination navigation buttons' }
+  { name: 'Paginator Hover / Light Red', hex: '#FEF2F3', previewColor: '#FEF2F3', token: '.p-paginator-page:hover', usage: 'Hover state for pagination navigation buttons' },
+  { name: 'Date Filter Active Preset', hex: '#E74C5A', token: '--theme-chip-active-bg', usage: 'Active state on Today, This Week, This Month buttons' },
+  { name: 'Date Filter Hover Preset', hex: '#FEF2F3', previewColor: '#FEF2F3', token: '--theme-chip-hover-bg', usage: 'Soft hover on Today, This Week, This Month buttons' }
 ])
 
 // 3. Status & Semantic Colors
@@ -579,7 +602,7 @@ const surfaceColors = ref([
   { name: 'Light Card & Modals', hex: '#FFFFFF', token: '--bs-card-bg (Light)', usage: 'Data table containers, cards, dialogs' },
   { name: 'Dark App Body Canvas', hex: '#212529', token: '--bs-body-bg (Dark)', usage: 'Main background canvas in dark theme' },
   { name: 'Dark Surface Card', hex: '#2B3035', token: '--bs-card-bg (Dark)', usage: 'Elevated cards & data tables in dark theme' },
-  { name: 'Slate Tooltip & Popover', hex: '#1E2227', token: '.p-tooltip-text', usage: 'Floating tooltips, omnibox footer hints' }
+  { name: 'Theme Tooltip Slate', hex: '#1E2227', token: '--theme-tooltip-bg', usage: 'Floating tooltips with theme border, omnibox footer hints' }
 ])
 
 const userDisplayName = computed(() => {
