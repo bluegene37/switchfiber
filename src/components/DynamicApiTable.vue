@@ -80,7 +80,7 @@
       v-model:first="firstRowIndex"
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
       v-model:selection="selectedRow"
-      :selectionMode="isMenuEndpoint ? null : 'single'"
+      selectionMode="single"
       @row-select="handleRowSelect"
       @row-unselect="handleRowUnselect"
       @row-click="handleRowClick"
@@ -3633,19 +3633,28 @@ defineExpose({
   background-color: rgba(255, 255, 255, 0.25) !important;
 }
 
-/* Disable row highlight red ONLY on Menu list table */
-:deep(.no-row-highlight .p-datatable-tbody > tr.p-highlight),
-:deep(.no-row-highlight .p-datatable-tbody > tr[aria-selected="true"]) {
-  background-color: transparent !important;
-  color: inherit !important;
+/* High-Contrast ToggleSwitch on HIGHLIGHTED / SELECTED rows (Inverted Styling) */
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider) {
+  background-color: #ffffff !important;
+  border: 2px solid #ffffff !important;
 }
-:deep(.no-row-highlight .p-datatable-tbody > tr.p-highlight span),
-:deep(.no-row-highlight .p-datatable-tbody > tr[aria-selected="true"] span) {
-  color: inherit !important;
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-handle),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-handle) {
+  background-color: var(--theme-row-highlight, #e74c5a) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
 }
-:deep(.no-row-highlight .p-datatable-tbody > tr.p-highlight td.frozen-actions-col),
-:deep(.no-row-highlight .p-datatable-tbody > tr[aria-selected="true"] td.frozen-actions-col) {
-  background-color: var(--bs-body-bg, #ffffff) !important;
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-slider),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-slider) {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+}
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-handle),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-handle) {
+  background-color: #ffffff !important;
 }
 
 /* Precise Alignment for PrimeVue Form Components (DatePicker, InputNumber, Select) */

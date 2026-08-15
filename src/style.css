@@ -150,6 +150,26 @@ a:focus,
   box-shadow: 0 0 0 0.2rem rgba(231, 76, 90, 0.18) !important;
 }
 
+/* Global PrimeVue ToggleSwitch Theme Overrides (Warm Rose) */
+.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+  background-color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.p-toggleswitch.p-toggleswitch-checked:not(.p-disabled):hover .p-toggleswitch-slider {
+  background-color: var(--bs-primary-hover, #d63a48) !important;
+  border-color: var(--bs-primary-hover, #d63a48) !important;
+}
+
+.p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-slider {
+  background-color: #cbd5e1 !important;
+}
+
+html[data-bs-theme="dark"] .p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-slider,
+.dark .p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-slider {
+  background-color: #475569 !important;
+}
+
 /* PrimeVue Menu Component Styling (Clean Neutral Items with Rose Hover) */
 .p-menu,
 .p-menu-overlay {
