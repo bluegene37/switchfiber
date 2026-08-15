@@ -147,14 +147,14 @@
             </div>
             <p class="small text-secondary mb-3">Core brand identity and primary interaction colors across buttons, navigation links, and active indicators.</p>
 
-            <div class="row g-3">
+            <div class="row g-3 px-1 px-md-2">
               <div v-for="c in primaryColors" :key="c.hex" class="col-12 col-sm-6 col-xl-4">
                 <div 
-                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
                   @click="copyHex(c.hex)"
                   v-tooltip.top="`Click to copy ${c.hex}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2">
+                  <div class="d-flex align-items-center gap-3 mb-2.5">
                     <div 
                       class="rounded-3 shadow-xs border flex-shrink-0" 
                       :style="{ width: '42px', height: '42px', backgroundColor: c.hex }"
@@ -165,7 +165,7 @@
                     </div>
                   </div>
                   <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
-                  <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
+                  <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
                     <span class="font-monospace text-truncate">{{ c.token }}</span>
                     <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.75rem;"></i>
                   </div>
@@ -184,14 +184,14 @@
             </div>
             <p class="small text-secondary mb-3">Highlight rules applied to data table row selections, row hover feedback, and pagination buttons.</p>
 
-            <div class="row g-3 mb-3">
+            <div class="row g-3 mb-3 px-1 px-md-2">
               <div v-for="c in tableHighlightColors" :key="c.name" class="col-12 col-sm-6 col-xl-4">
                 <div 
-                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
                   @click="copyHex(c.hex)"
                   v-tooltip.top="`Click to copy ${c.hex}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2">
+                  <div class="d-flex align-items-center gap-3 mb-2.5">
                     <div 
                       class="rounded-3 shadow-xs border flex-shrink-0" 
                       :style="{ width: '42px', height: '42px', backgroundColor: c.previewColor || c.hex }"
@@ -201,8 +201,8 @@
                       <code class="small text-primary fw-bold">{{ c.hex }}</code>
                     </div>
                   </div>
-                  <div class="small text-secondary" style="font-size: 0.75rem;">{{ c.usage }}</div>
-                  <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
+                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
+                  <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
                     <span class="font-monospace text-truncate">{{ c.token }}</span>
                     <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.75rem;"></i>
                   </div>
@@ -211,25 +211,25 @@
             </div>
 
             <!-- Live Interactive Component Preview Box -->
-            <div class="p-4 rounded-4 border bg-body-tertiary mt-4 shadow-xs">
-              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-2 border-bottom">
-                <div class="d-flex align-items-center gap-2">
+            <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary mt-4 shadow-xs">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-2.5">
                   <i class="pi pi-eye text-primary fs-5"></i>
                   <h6 class="fw-bold text-body mb-0">Live Component Visual Preview</h6>
                 </div>
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">Interactive Token Preview</span>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-semibold">Interactive Token Preview</span>
               </div>
               <p class="small text-secondary mb-4">Real-time simulation of table interaction states, pagination controls, and interface elements using the current theme token palette.</p>
               
               <!-- 1. Table Row Interaction States -->
-              <div class="mb-4">
-                <div class="small fw-semibold text-secondary text-uppercase tracking-wider mb-2.5" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+              <div class="mb-4 px-1 px-md-2">
+                <div class="small fw-semibold text-secondary text-uppercase tracking-wider mb-3" style="font-size: 0.72rem; letter-spacing: 0.5px;">
                   Table Row State Progression
                 </div>
                 
-                <div class="d-flex flex-column gap-2.5">
+                <div class="d-flex flex-column gap-3">
                   <!-- Normal Row -->
-                  <div class="d-flex align-items-center justify-content-between p-3.5 rounded-3 bg-body border shadow-xs flex-wrap gap-3">
+                  <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 bg-body border shadow-xs flex-wrap gap-3">
                     <div class="d-flex align-items-center gap-3">
                       <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1">#101</span>
                       <div>
@@ -241,7 +241,7 @@
                   </div>
 
                   <!-- Hovered Row (Soft Warm Tint) -->
-                  <div class="d-flex align-items-center justify-content-between p-3.5 rounded-3 border flex-wrap gap-3" style="background-color: var(--theme-row-hover-solid, #fdf2f4); border-color: #fdcfd3 !important;">
+                  <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 border flex-wrap gap-3" style="background-color: var(--theme-row-hover-solid, #fdf2f4); border-color: #fdcfd3 !important;">
                     <div class="d-flex align-items-center gap-3">
                       <span class="badge bg-primary bg-opacity-15 text-primary border border-danger-subtle px-2.5 py-1">#102</span>
                       <div>
@@ -253,7 +253,7 @@
                   </div>
 
                   <!-- Selected Row (Theme Rose Highlight) -->
-                  <div class="d-flex align-items-center justify-content-between p-3.5 rounded-3 text-white shadow-xs flex-wrap gap-3" style="background-color: #e74c5a;">
+                  <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 text-white shadow-xs flex-wrap gap-3" style="background-color: #e74c5a;">
                     <div class="d-flex align-items-center gap-3">
                       <span class="badge bg-white text-danger fw-bold px-2.5 py-1">#103</span>
                       <div>
@@ -267,7 +267,7 @@
               </div>
 
               <!-- 2. Paginator Component Preview -->
-              <div class="p-3.5 rounded-3 bg-body border shadow-xs">
+              <div class="mx-1 mx-md-2 p-4 rounded-3 bg-body border shadow-xs">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                   <div>
                     <div class="small fw-semibold text-body">Paginator Button States</div>
@@ -275,11 +275,11 @@
                   </div>
                   
                   <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">‹ Prev</span>
-                    <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">1</span>
-                    <span class="px-3 py-1.5 rounded-2 small fw-bold text-danger border shadow-xs" style="background-color: #fef2f3; border-color: #e74c5a;">2 (Active)</span>
-                    <span class="px-3 py-1.5 rounded-2 small fw-semibold text-danger border shadow-2xs" style="background-color: #fff5f6; border-color: #fdcfd3;">3 (Hover)</span>
-                    <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">Next ›</span>
+                    <span class="px-3 py-2 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">‹ Prev</span>
+                    <span class="px-3 py-2 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">1</span>
+                    <span class="px-3 py-2 rounded-2 small fw-bold text-danger border shadow-xs" style="background-color: #fef2f3; border-color: #e74c5a;">2 (Active)</span>
+                    <span class="px-3 py-2 rounded-2 small fw-semibold text-danger border shadow-2xs" style="background-color: #fff5f6; border-color: #fdcfd3;">3 (Hover)</span>
+                    <span class="px-3 py-2 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">Next ›</span>
                   </div>
                 </div>
               </div>
@@ -296,14 +296,14 @@
             </div>
             <p class="small text-secondary mb-3">System status badges, alerts, toast notifications, and operation indicators.</p>
 
-            <div class="row g-3">
+            <div class="row g-3 px-1 px-md-2">
               <div v-for="c in statusColors" :key="c.hex" class="col-12 col-sm-6 col-xl-3">
                 <div 
-                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
                   @click="copyHex(c.hex)"
                   v-tooltip.top="`Click to copy ${c.hex}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2">
+                  <div class="d-flex align-items-center gap-3 mb-2.5">
                     <div 
                       class="rounded-3 shadow-xs border flex-shrink-0" 
                       :style="{ width: '38px', height: '38px', backgroundColor: c.hex }"
@@ -329,14 +329,14 @@
             </div>
             <p class="small text-secondary mb-3">Theme background surfaces, elevated modal layers, and tooltip containers.</p>
 
-            <div class="row g-3">
+            <div class="row g-3 px-1 px-md-2">
               <div v-for="c in surfaceColors" :key="c.name" class="col-12 col-sm-6 col-xl-4">
                 <div 
-                  class="p-3 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
+                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
                   @click="copyHex(c.hex)"
                   v-tooltip.top="`Click to copy ${c.hex}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2">
+                  <div class="d-flex align-items-center gap-3 mb-2.5">
                     <div 
                       class="rounded-3 shadow-xs border flex-shrink-0" 
                       :style="{ width: '38px', height: '38px', backgroundColor: c.hex }"
@@ -362,42 +362,46 @@
             </div>
             <p class="small text-secondary mb-4">Standard font families and weight distributions configured across SwitchFiber with balanced spacing and optimal legibility.</p>
 
-            <div class="d-flex flex-column gap-4">
+            <div class="d-flex flex-column gap-4 px-1 px-md-2">
               <!-- Body Font: Inter -->
-              <div class="p-4 rounded-4 border bg-body-tertiary shadow-xs">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
-                  <div class="fw-bold text-body d-flex align-items-center gap-2">
-                    <span class="badge bg-primary text-white px-2.5 py-1">Body Font</span>
-                    <span class="fs-6">Inter</span>
+              <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary shadow-xs">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3.5 pb-2.5 border-bottom px-1 px-md-2">
+                  <div class="fw-bold text-body d-flex align-items-center gap-2.5">
+                    <span class="badge bg-primary text-white px-3 py-1.5 rounded-2">Body Font</span>
+                    <span class="fs-6 fw-bold">Inter</span>
                   </div>
-                  <span class="small text-secondary font-monospace px-2 py-1 bg-body rounded border" style="font-size: 0.75rem;">var(--font-family-base)</span>
+                  <div class="d-flex align-items-center">
+                    <span class="small text-secondary font-monospace px-3 py-1.5 bg-body rounded-2 border shadow-2xs" style="font-size: 0.75rem;">
+                      var(--font-family-base)
+                    </span>
+                  </div>
                 </div>
                 
-                <div class="small text-secondary mb-3" style="font-size: 0.8125rem;">
+                <div class="small text-secondary mb-3.5 px-1 px-md-2" style="font-size: 0.8125rem;">
                   <strong>Font Stack:</strong> <code>"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif</code>
                 </div>
 
-                <!-- Spacious Sample Canvas -->
-                <div class="p-4 rounded-3 bg-body border shadow-xs text-body">
+                <!-- Spacious Sample Canvas with Generous Inset Padding -->
+                <div class="mx-1 mx-md-2 p-4 p-md-4.5 rounded-3 bg-body border shadow-xs text-body">
                   <div class="text-secondary font-monospace small mb-3 pb-2 border-bottom" style="font-size: 0.85rem; letter-spacing: 2px;">
                     Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
                   </div>
                   
-                  <div class="d-flex flex-column gap-2" style="line-height: 1.65;">
+                  <div class="d-flex flex-column gap-2.5" style="line-height: 1.7;">
                     <div class="small">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2">400 Regular</span>
+                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">400 Regular</span>
                       The quick brown fox jumps over the lazy dog. Standard interface typography for body text and descriptions.
                     </div>
                     <div class="small fw-medium">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2">500 Medium</span>
+                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">500 Medium</span>
                       The quick brown fox jumps over the lazy dog. Used for table cells, active form inputs, and interactive labels.
                     </div>
                     <div class="small fw-semibold">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2">600 SemiBold</span>
+                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">600 SemiBold</span>
                       The quick brown fox jumps over the lazy dog. Applied to table headers, modal action buttons, and active tabs.
                     </div>
                     <div class="small fw-bold">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2">700 Bold</span>
+                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">700 Bold</span>
                       The quick brown fox jumps over the lazy dog. Emphasized KPI statistics, card subtitles, and alert callouts.
                     </div>
                   </div>
@@ -405,30 +409,34 @@
               </div>
 
               <!-- Headings Font: Plus Jakarta Sans -->
-              <div class="p-4 rounded-4 border bg-body-tertiary shadow-xs">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
-                  <div class="fw-bold text-body d-flex align-items-center gap-2">
-                    <span class="badge bg-primary text-white px-2.5 py-1">Heading Font</span>
-                    <span class="fs-6">Plus Jakarta Sans</span>
+              <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary shadow-xs">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3.5 pb-2.5 border-bottom px-1 px-md-2">
+                  <div class="fw-bold text-body d-flex align-items-center gap-2.5">
+                    <span class="badge bg-primary text-white px-3 py-1.5 rounded-2">Heading Font</span>
+                    <span class="fs-6 fw-bold">Plus Jakarta Sans</span>
                   </div>
-                  <span class="small text-secondary font-monospace px-2 py-1 bg-body rounded border" style="font-size: 0.75rem;">var(--font-family-heading)</span>
+                  <div class="d-flex align-items-center">
+                    <span class="small text-secondary font-monospace px-3 py-1.5 bg-body rounded-2 border shadow-2xs" style="font-size: 0.75rem;">
+                      var(--font-family-heading)
+                    </span>
+                  </div>
                 </div>
                 
-                <div class="small text-secondary mb-3" style="font-size: 0.8125rem;">
+                <div class="small text-secondary mb-3.5 px-1 px-md-2" style="font-size: 0.8125rem;">
                   <strong>Font Stack:</strong> <code>"Plus Jakarta Sans", "Inter", sans-serif</code>
                 </div>
 
-                <!-- Spacious Sample Canvas -->
-                <div class="p-4 rounded-3 bg-body border shadow-xs text-body" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                <!-- Spacious Sample Canvas with Generous Inset Padding -->
+                <div class="mx-1 mx-md-2 p-4 p-md-4.5 rounded-3 bg-body border shadow-xs text-body" style="font-family: 'Plus Jakarta Sans', sans-serif;">
                   <div class="text-secondary font-monospace small mb-3 pb-2 border-bottom" style="font-size: 0.85rem; letter-spacing: 2px;">
                     Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
                   </div>
                   
                   <div class="d-flex flex-column gap-2.5">
-                    <h4 class="fw-bold text-body mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                    <h4 class="fw-bold text-body mb-1" style="font-family: 'Plus Jakarta Sans', sans-serif;">
                       SwitchFiber Enterprise Fiber Network Management
                     </h4>
-                    <p class="text-secondary small mb-0" style="line-height: 1.6;">
+                    <p class="text-secondary small mb-0" style="line-height: 1.7;">
                       Applied to page titles (H1–H6), dashboard summary figures, brand navigation titles, and elevated section headings.
                     </p>
                   </div>
@@ -436,29 +444,33 @@
               </div>
 
               <!-- Monospace Font: SFMono / Menlo / Consolas -->
-              <div class="p-4 rounded-4 border bg-body-tertiary shadow-xs">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
-                  <div class="fw-bold text-body d-flex align-items-center gap-2">
-                    <span class="badge bg-secondary text-white px-2.5 py-1">Monospace Font</span>
-                    <span class="fs-6">SFMono / Menlo / Consolas</span>
+              <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary shadow-xs">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3.5 pb-2.5 border-bottom px-1 px-md-2">
+                  <div class="fw-bold text-body d-flex align-items-center gap-2.5">
+                    <span class="badge bg-secondary text-white px-3 py-1.5 rounded-2">Monospace Font</span>
+                    <span class="fs-6 fw-bold">SFMono / Menlo / Consolas</span>
                   </div>
-                  <span class="small text-secondary font-monospace px-2 py-1 bg-body rounded border" style="font-size: 0.75rem;">font-monospace</span>
+                  <div class="d-flex align-items-center">
+                    <span class="small text-secondary font-monospace px-3 py-1.5 bg-body rounded-2 border shadow-2xs" style="font-size: 0.75rem;">
+                      font-monospace
+                    </span>
+                  </div>
                 </div>
                 
-                <div class="small text-secondary mb-3" style="font-size: 0.8125rem;">
+                <div class="small text-secondary mb-3.5 px-1 px-md-2" style="font-size: 0.8125rem;">
                   <strong>Font Stack:</strong> <code>"SFMono-Regular", Menlo, Monaco, Consolas, "Courier New", monospace</code>
                 </div>
 
-                <!-- Spacious Sample Canvas -->
-                <div class="p-4 rounded-3 bg-body border shadow-xs font-monospace small text-body">
+                <!-- Spacious Sample Canvas with Generous Inset Padding -->
+                <div class="mx-1 mx-md-2 p-4 p-md-4.5 rounded-3 bg-body border shadow-xs font-monospace small text-body">
                   <div class="text-secondary small mb-3 pb-2 border-bottom" style="font-size: 0.85rem; letter-spacing: 1.5px;">
                     0123456789 :.-_/#?&=!$^*+@
                   </div>
-                  <div class="d-flex flex-column gap-2" style="line-height: 1.7;">
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2">IP Address</span> 192.168.100.1 &bull; 10.200.4.254/24</div>
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2">Hardware MAC</span> 00:1A:2B:3C:4D:5E</div>
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2">Device Serial</span> SF-89210-LCP-PORT-04</div>
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2">VLAN Tag</span> VLAN-1042 [Primary Uplink]</div>
+                  <div class="d-flex flex-column gap-2.5" style="line-height: 1.75;">
+                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">IP Address</span> 192.168.100.1 &bull; 10.200.4.254/24</div>
+                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">Hardware MAC</span> 00:1A:2B:3C:4D:5E</div>
+                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">Device Serial</span> SF-89210-LCP-PORT-04</div>
+                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">VLAN Tag</span> VLAN-1042 [Primary Uplink]</div>
                   </div>
                 </div>
               </div>
