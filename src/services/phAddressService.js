@@ -1,10 +1,8 @@
-/**
- * Service to manage local Philippines Address Data (PSGC)
- * Fetches static JSON datasets from /data/philippines/ with in-memory caching.
- */
+import defaultRegions from '../../public/data/philippines/regions.json'
+import defaultProvinces from '../../public/data/philippines/provinces.json'
 
-let regionsCache = null
-let provincesCache = null
+let regionsCache = defaultRegions || null
+let provincesCache = defaultProvinces || null
 let citiesCache = null
 let barangaysCache = null
 
@@ -14,11 +12,17 @@ export const phAddressService = {
    * @returns {Promise<Array<{code: string, name: string, regionName: string}>>}
    */
   async getRegions() {
-    if (!regionsCache) {
-      const res = await fetch('/data/philippines/regions.json')
-      regionsCache = await res.json()
+    if (!regionsCache || regionsCache.length === 0) {
+      try {
+        const res = await fetch('/data/philippines/regions.json')
+        if (res.ok) {
+          regionsCache = await res.json()
+        }
+      } catch (e) {
+        regionsCache = defaultRegions || []
+      }
     }
-    return regionsCache
+    return regionsCache || defaultRegions || []
   },
 
   /**

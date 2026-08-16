@@ -280,6 +280,13 @@
             </span>
             <span v-else class="text-muted">-</span>
           </span>
+          <span v-else-if="getFieldType(col) === 'image_upload'">
+            <span v-if="slotProps.data[col]" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="openImagePreview(slotProps.data[col], formatLabel(col))">
+              <img :src="slotProps.data[col]" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
+              <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">View</span>
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
           <span v-else-if="col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid'">
             {{ getAccessLevelLabel(slotProps.data[col]) }}
           </span>
@@ -537,63 +544,104 @@
                 v-else-if="getFieldType(col) === 'region_dropdown'" 
                 :id="col" 
                 v-model="formData[col]" 
-                :options="regionsList" 
+                :options="createRegionOptions" 
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
-                :editable="true"
                 @change="onRegionChanged(formData)"
                 placeholder="Select Region" 
                 class="w-100 p-inputtext-sm" 
               />
 
               <!-- Province Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'province_dropdown'" 
-                :id="col" 
-                v-model="formData[col]" 
-                :options="provincesList" 
-                optionLabel="label" 
-                optionValue="value" 
-                :filter="true"
-                :editable="true"
-                :disabled="isCityDisabled(formData)"
-                placeholder="Select Province" 
-                class="w-100 p-inputtext-sm" 
-              />
+              <div v-else-if="getFieldType(col) === 'province_dropdown'" class="position-relative">
+                <Select 
+                  :id="col" 
+                  v-model="formData[col]" 
+                  :options="createProvinceOptions" 
+                  optionLabel="label" 
+                  optionValue="value" 
+                  :filter="true"
+                  :disabled="isCityDisabled(formData)"
+                  placeholder="Select Province" 
+                  class="w-100 p-inputtext-sm" 
+                />
+                <div 
+                  v-if="isCityDisabled(formData)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  title="Please select Region first"
+                  @click.stop="notifyAddressStep(formData, 'province', 'create')"
+                ></div>
+                <div 
+                  v-if="shouldShowAddressHint(formData, 'province', 'create')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(formData, 'province')?.summary }}</span>
+                </div>
+              </div>
 
               <!-- City / Municipality Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'city_dropdown'" 
-                :id="col" 
-                v-model="formData[col]" 
-                :options="citiesList" 
-                optionLabel="label" 
-                optionValue="value" 
-                :filter="true"
-                :editable="true"
-                :disabled="isCityDisabled(formData)"
-                @change="onCityChanged(formData)"
-                :virtualScrollerOptions="{ itemSize: 38 }"
-                :placeholder="getCityPlaceholder(formData)" 
-                class="w-100 p-inputtext-sm" 
-              />
+              <div v-else-if="getFieldType(col) === 'city_dropdown'" class="position-relative">
+                <Select
+                  :id="col"
+                  v-model="formData[col]"
+                  :options="createCityOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isCityDisabled(formData)"
+                  @change="onCityChanged(formData)"
+                  :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getCityPlaceholder(formData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                <div 
+                  v-if="isCityDisabled(formData)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  title="Please select Region first"
+                  @click.stop="notifyAddressStep(formData, 'city', 'create')"
+                ></div>
+                <div 
+                  v-if="shouldShowAddressHint(formData, 'city', 'create')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(formData, 'city')?.summary }}</span>
+                </div>
+              </div>
 
               <!-- Barangay Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'barangay_dropdown'" 
-                :id="col" 
-                v-model="formData[col]" 
-                :options="barangaysList" 
-                optionLabel="label" 
-                optionValue="value" 
-                :filter="true"
-                :editable="true"
-                :disabled="isBarangayDisabled(formData)"
-                :virtualScrollerOptions="{ itemSize: 38 }"
-                :placeholder="getBarangayPlaceholder(formData)" 
-                class="w-100 p-inputtext-sm" 
-              />
+              <div v-else-if="getFieldType(col) === 'barangay_dropdown'" class="position-relative">
+                <Select
+                  :id="col"
+                  v-model="formData[col]"
+                  :options="createBarangayOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isBarangayDisabled(formData)"
+                  :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getBarangayPlaceholder(formData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                <div 
+                  v-if="isBarangayDisabled(formData)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  title="Please select City first"
+                  @click.stop="notifyAddressStep(formData, 'barangay', 'create')"
+                ></div>
+                <div 
+                  v-if="shouldShowAddressHint(formData, 'barangay', 'create')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(formData, 'barangay')?.summary }}</span>
+                </div>
+              </div>
 
               <!-- Status Dropdown -->
               <Select 
@@ -676,6 +724,15 @@
                 <div v-else-if="formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
                   <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
                 </div>
+              </div>
+
+              <!-- Image Upload (Dropzone) -->
+              <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
+                <ImageDropzone
+                  v-model="formData[col]"
+                  :fieldId="col"
+                  :label="formatLabel(col)"
+                />
               </div>
 
               <!-- Password Field -->
@@ -829,6 +886,16 @@
                 disabled
                 class="w-100"
               />
+
+              <!-- Image Upload (Preview in View Modal) -->
+              <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
+                <ImageDropzone
+                  :modelValue="viewFormData[col]"
+                  :fieldId="`view-${col}`"
+                  :label="formatLabel(col)"
+                  disabled
+                />
+              </div>
 
               <!-- Textarea for Multiline Fields -->
               <Textarea 
@@ -1054,70 +1121,111 @@
                 v-else-if="getFieldType(col) === 'region_dropdown'" 
                 :id="`edit-${col}`" 
                 v-model="editFormData[col]" 
-                :options="regionsList" 
+                :options="createRegionOptions" 
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
-                :editable="true"
                 @change="onRegionChanged(editFormData)"
                 placeholder="Select Region" 
                 class="w-100 p-inputtext-sm" 
               />
 
               <!-- Province Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'province_dropdown'" 
-                :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
-                :options="provincesList" 
-                optionLabel="label" 
-                optionValue="value" 
-                :filter="true"
-                :editable="true"
-                :disabled="isCityDisabled(editFormData)"
-                placeholder="Select Province" 
-                class="w-100 p-inputtext-sm" 
-              />
+              <div v-else-if="getFieldType(col) === 'province_dropdown'" class="position-relative">
+                <Select 
+                  :id="`edit-${col}`" 
+                  v-model="editFormData[col]" 
+                  :options="createProvinceOptions" 
+                  optionLabel="label" 
+                  optionValue="value" 
+                  :filter="true"
+                  :disabled="isCityDisabled(editFormData)"
+                  placeholder="Select Province" 
+                  class="w-100 p-inputtext-sm" 
+                />
+                <div 
+                  v-if="isCityDisabled(editFormData)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  title="Please select Region first"
+                  @click.stop="notifyAddressStep(editFormData, 'province', 'edit')"
+                ></div>
+                <div 
+                  v-if="shouldShowAddressHint(editFormData, 'province', 'edit')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(editFormData, 'province')?.summary }}</span>
+                </div>
+              </div>
 
               <!-- City / Municipality Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'city_dropdown'" 
-                :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
-                :options="citiesList" 
-                optionLabel="label" 
-                optionValue="value" 
-                :filter="true"
-                :editable="true"
-                :disabled="isCityDisabled(editFormData)"
-                @change="onCityChanged(editFormData)"
-                :virtualScrollerOptions="{ itemSize: 38 }"
-                :placeholder="getCityPlaceholder(editFormData)" 
-                class="w-100 p-inputtext-sm" 
-              />
+              <div v-else-if="getFieldType(col) === 'city_dropdown'" class="position-relative">
+                <Select
+                  :id="`edit-${col}`"
+                  v-model="editFormData[col]"
+                  :options="createCityOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isCityDisabled(editFormData)"
+                  @change="onCityChanged(editFormData)"
+                  :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getCityPlaceholder(editFormData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                <div 
+                  v-if="isCityDisabled(editFormData)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  title="Please select Region first"
+                  @click.stop="notifyAddressStep(editFormData, 'city', 'edit')"
+                ></div>
+                <div 
+                  v-if="shouldShowAddressHint(editFormData, 'city', 'edit')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(editFormData, 'city')?.summary }}</span>
+                </div>
+              </div>
 
               <!-- Barangay Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'barangay_dropdown'" 
-                :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
-                :options="barangaysList" 
-                optionLabel="label" 
-                optionValue="value" 
-                :filter="true"
-                :editable="true"
-                :disabled="isBarangayDisabled(editFormData)"
-                :virtualScrollerOptions="{ itemSize: 38 }"
-                :placeholder="getBarangayPlaceholder(editFormData)" 
-                class="w-100 p-inputtext-sm" 
-              />
+              <div v-else-if="getFieldType(col) === 'barangay_dropdown'" class="position-relative">
+                <Select
+                  :id="`edit-${col}`"
+                  v-model="editFormData[col]"
+                  :options="createBarangayOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isBarangayDisabled(editFormData)"
+                  :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getBarangayPlaceholder(editFormData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                <div 
+                  v-if="isBarangayDisabled(editFormData)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  title="Please select City first"
+                  @click.stop="notifyAddressStep(editFormData, 'barangay', 'edit')"
+                ></div>
+                <div 
+                  v-if="shouldShowAddressHint(editFormData, 'barangay', 'edit')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(editFormData, 'barangay')?.summary }}</span>
+                </div>
+              </div>
 
               <!-- Status Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'status_dropdown'" 
-                :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
-                :options="statusOptions" 
+              <Select
+                v-else-if="getFieldType(col) === 'status_dropdown'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="statusOptions"
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
@@ -1222,6 +1330,15 @@
                 </div>
               </div>
 
+              <!-- Image Upload (Dropzone) -->
+              <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
+                <ImageDropzone
+                  v-model="editFormData[col]"
+                  :fieldId="`edit-${col}`"
+                  :label="formatLabel(col)"
+                />
+              </div>
+
               <!-- DatePicker for Date Fields -->
               <DatePicker 
                 v-else-if="getFieldType(col) === 'date'" 
@@ -1321,13 +1438,39 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Image Preview Lightbox Dialog for Table -->
+    <Dialog
+      v-model:visible="tableImagePreviewVisible"
+      modal
+      :header="tableImagePreviewTitle || 'Image Preview'"
+      :style="{ width: '90vw', maxWidth: '600px' }"
+      :closable="true"
+    >
+      <div class="text-center p-2">
+        <img
+          :src="tableImagePreviewUrl"
+          alt="Full Image Preview"
+          class="img-fluid rounded shadow-sm"
+          style="max-height: 70vh; object-fit: contain;"
+        />
+      </div>
+      <template #footer>
+        <div class="d-flex justify-content-end gap-2">
+          <Button label="Close" class="p-button-sm p-button-secondary" @click="tableImagePreviewVisible = false" />
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, isRef, unref } from 'vue'
 import apiClient from '../services/api'
 import phAddressService from '../services/phAddressService'
+import defaultRegions from '../../public/data/philippines/regions.json'
+import defaultProvinces from '../../public/data/philippines/provinces.json'
+import ImageDropzone from './ImageDropzone.vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -1432,8 +1575,9 @@ const modalBreakpoints = computed(() => {
 })
 
 const getColumnClass = (col) => {
-  if (getFieldType(col) === 'textarea') {
-    return 'col-12'
+  const type = getFieldType(col)
+  if (type === 'textarea' || type === 'image_upload') {
+    return isWideForm.value ? 'col-12 col-md-6' : 'col-12'
   }
   return isWideForm.value ? 'col-12 col-md-6 col-lg-4' : 'col-12 col-md-6'
 }
@@ -1444,6 +1588,16 @@ const loading = ref(false)
 const refreshing = ref(false)
 const error = ref(null)
 const dt = ref()
+
+const tableImagePreviewVisible = ref(false)
+const tableImagePreviewUrl = ref('')
+const tableImagePreviewTitle = ref('')
+
+const openImagePreview = (url, title = 'Image Preview') => {
+  tableImagePreviewUrl.value = url
+  tableImagePreviewTitle.value = title
+  tableImagePreviewVisible.value = true
+}
 
 // Format camelCase and underscore properties into human-readable Title Case
 function formatLabel(col) {
@@ -1512,9 +1666,36 @@ function formatLabel(col) {
 }
 
 // Classify field types for smart form rendering
+// Some columns end in "Id" without being a numeric key: governmentValidId and
+// secondGovernmentValidId hold the URL of a scanned document. Treating those as
+// numbers rendered an InputNumber showing NaN and wrote that over the stored
+// link on save, so they are kept out of the numeric heuristic.
+const NON_NUMERIC_ID_HINTS = ['valid', 'picture', 'photo', 'image', 'document', 'file', 'url', 'attachment', 'proof']
+
+function isNonNumericIdField(lower) {
+  return NON_NUMERIC_ID_HINTS.some(hint => lower.includes(hint))
+}
+
 function getFieldType(col) {
   if (!col) return 'text'
-  const lower = col.toLowerCase()
+  const lower = col.toLowerCase().replace(/_/g, '')
+
+  // Image / Picture upload fields (Government Valid ID, Second Government Valid ID, House Front Picture, Document Picture, etc.)
+  if (
+    lower.includes('picture') ||
+    lower.includes('photo') ||
+    lower.includes('validid') ||
+    lower.includes('governmentvalidid') ||
+    lower.includes('housefront') ||
+    lower.includes('documentpicture') ||
+    lower.includes('proofofbilling') ||
+    (lower.includes('image') && !lower.includes('duration')) ||
+    lower.includes('signature') ||
+    lower.startsWith('attachment')
+  ) {
+    return 'image_upload'
+  }
+
   if (lower.includes('email')) {
     return 'email'
   }
@@ -1592,7 +1773,7 @@ function getFieldType(col) {
     lower.includes('quantity') ||
     lower.includes('balance') ||
     lower.includes('day') ||
-    (lower.includes('id') && (lower.endsWith('id') || lower.startsWith('id')) && !lower.includes('accesslevel') && !lower.includes('lcp') && !lower.includes('nap') && !lower.includes('port') && !lower.includes('vlan') && !lower.includes('plan')) ||
+    (lower.includes('id') && (lower.endsWith('id') || lower.startsWith('id')) && !lower.includes('accesslevel') && !lower.includes('lcp') && !lower.includes('nap') && !lower.includes('port') && !lower.includes('vlan') && !lower.includes('plan') && !isNonNumericIdField(lower)) ||
     lower === 'splynxid' ||
     lower === 'mikrotikid' ||
     lower === 'duration'
@@ -2428,17 +2609,60 @@ const napsList = ref([])
 const portsList = ref([])
 const vlansList = ref([])
 const plansList = ref([])
-const regionsList = ref([])
-const provincesList = ref([])
+const usersList = ref([])
+const defaultFormattedRegions = (defaultRegions || []).map(r => ({
+  label: `${r.name} (${r.regionName})`,
+  value: r.name,
+  code: r.code,
+  name: r.name,
+  regionName: r.regionName
+}))
+
+const defaultFormattedProvinces = (defaultProvinces || []).map(p => ({
+  label: p.name,
+  value: p.name,
+  code: p.code,
+  regionCode: p.regionCode
+}))
+
+const regionsList = ref(defaultFormattedRegions)
+const provincesList = ref(defaultFormattedProvinces)
 const citiesList = ref([])
 const barangaysList = ref([])
 
-const usersList = ref([])
-const statusOptions = ref([
-  { label: 'Drop', value: 'Drop' },
-  { label: 'Failed', value: 'Failed' },
-  { label: 'Reschedule', value: 'Reschedule' }
-])
+const APPLICATION_STATUS_LIST = [
+  'In Progress',
+  'Done',
+  'Approved'
+]
+
+const DEFAULT_STATUS_LIST = [
+  'In Progress',
+  'Done',
+  'Approved'
+]
+
+const isApplicationEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'applications' || ep === 'application'
+})
+
+const statusOptions = computed(() => {
+  if (isApplicationEndpoint.value) {
+    return APPLICATION_STATUS_LIST.map(v => ({ label: v, value: v }))
+  }
+  return DEFAULT_STATUS_LIST.map(v => ({ label: v, value: v }))
+})
+
+const editStatusOptions = computed(() => {
+  if (isApplicationEndpoint.value) {
+    return APPLICATION_STATUS_LIST.map(v => ({ label: v, value: v }))
+  }
+  const record = editFormData.value || {}
+  const statusKey = Object.keys(record).find(k => k.toLowerCase() === 'status') || (statusColName.value || 'status')
+  const current = record[statusKey]
+  return getStableOptionsWithCurrent(statusOptions.value, current)
+})
 
 const onsiteStatusOptions = ref([
   { label: 'Done', value: 'Done' },
@@ -2518,43 +2742,8 @@ const fetchRelatedData = async () => {
       usersList.value = unwrap(userRes.value)
     }
 
-    // Load local PSGC data for Region, Province, City, and Barangay dropdowns
-    try {
-      const [regionsData, provincesData, citiesData] = await Promise.all([
-        phAddressService.getRegions(),
-        phAddressService.getProvinces(),
-        phAddressService.getCities()
-      ])
-      regionsList.value = (regionsData || []).map(r => ({ label: `${r.name} (${r.regionName})`, value: r.name, code: r.code }))
-      provincesList.value = (provincesData || []).map(p => ({ label: p.name, value: p.name, code: p.code, regionCode: p.regionCode }))
-      citiesList.value = (citiesData || []).map(c => ({ label: `${c.name} ${c.isCity ? '(City)' : ''}`, value: c.name, code: c.code, regionCode: c.regionCode, provinceCode: c.provinceCode }))
-      
-      allProvincesFallbackCache = provincesList.value
-      allCitiesFallbackCache = citiesList.value
-    } catch (e) {
-      console.warn('Failed to load local PSGC region/city/province data:', e)
-    }
-
-    // Fetch from fast local PSGC barangays.json dataset
-    try {
-      const res = await fetch('/data/philippines/barangays.json')
-      if (res.ok) {
-        const groupedData = await res.json()
-        const allBrgys = []
-        Object.values(groupedData).forEach(brgys => {
-          brgys.forEach(b => {
-            allBrgys.push(b.name)
-          })
-        })
-        const uniqueBrgyNames = Array.from(new Set(allBrgys)).sort((a, b) => a.localeCompare(b))
-        const formattedList = uniqueBrgyNames.map(name => ({ label: name, value: name }))
-        allBarangaysFallbackCache = formattedList
-        barangaysList.value = formattedList
-      }
-    } catch (e) {
-      const distinct = Array.from(new Set((tableData.value || []).map(row => row.barangay).filter(Boolean)))
-      barangaysList.value = distinct.map(b => ({ label: b, value: b }))
-    }
+    // Trigger address data loading in parallel
+    fetchAddressData()
   } catch (err) {
     console.error('Error fetching related data:', err)
   }
@@ -2564,6 +2753,73 @@ let allBarangaysFallbackCache = null
 let allCitiesFallbackCache = null
 let allProvincesFallbackCache = null
 
+const fetchAddressData = async () => {
+  try {
+    const [regionsData, provincesData, citiesData] = await Promise.all([
+      phAddressService.getRegions(),
+      phAddressService.getProvinces(),
+      phAddressService.getCities()
+    ])
+    if (regionsData && regionsData.length > 0) {
+      regionsList.value = regionsData.map(r => ({
+        label: `${r.name} (${r.regionName})`,
+        value: r.name,
+        code: r.code,
+        name: r.name,
+        regionName: r.regionName
+      }))
+    }
+    if (provincesData && provincesData.length > 0) {
+      provincesList.value = provincesData.map(p => ({
+        label: p.name,
+        value: p.name,
+        code: p.code,
+        regionCode: p.regionCode
+      }))
+      allProvincesFallbackCache = provincesList.value
+    }
+    if (citiesData && citiesData.length > 0) {
+      citiesList.value = citiesData.map(c => ({
+        label: `${c.name} ${c.isCity ? '(City)' : ''}`,
+        value: c.name,
+        code: c.code,
+        regionCode: c.regionCode,
+        provinceCode: c.provinceCode
+      }))
+      allCitiesFallbackCache = citiesList.value
+    }
+  } catch (e) {
+    console.warn('Failed to load local PSGC region/city/province data:', e)
+  }
+
+  try {
+    const res = await fetch('/data/philippines/barangays.json')
+    if (res.ok) {
+      const groupedData = await res.json()
+      const allBrgys = []
+      Object.values(groupedData).forEach(brgys => {
+        brgys.forEach(b => {
+          allBrgys.push(b.name)
+        })
+      })
+      const uniqueBrgyNames = Array.from(new Set(allBrgys)).sort((a, b) => a.localeCompare(b))
+      const formattedList = uniqueBrgyNames.map(name => ({ label: name, value: name }))
+      allBarangaysFallbackCache = formattedList
+      if (barangaysList.value.length === 0) {
+        barangaysList.value = formattedList
+      }
+    }
+  } catch (e) {
+    const distinct = Array.from(new Set((tableData.value || []).map(row => row.barangay).filter(Boolean)))
+    if (distinct.length > 0) {
+      barangaysList.value = distinct.map(b => ({ label: b, value: b }))
+    }
+  }
+}
+
+// Call immediately on setup
+fetchAddressData()
+
 const updateCitiesForSelectedRegion = async (regionVal) => {
   if (!regionVal) {
     if (allCitiesFallbackCache) citiesList.value = allCitiesFallbackCache
@@ -2571,13 +2827,14 @@ const updateCitiesForSelectedRegion = async (regionVal) => {
     return
   }
 
-  const str = (typeof regionVal === 'string' ? regionVal : (regionVal?.value || regionVal?.name || '')).toLowerCase()
+  const str = String(typeof regionVal === 'string' ? regionVal : (regionVal?.value || regionVal?.name || '')).trim().toLowerCase()
 
   const matchedRegion = regionsList.value.find(r => 
-    (r.code && r.code === regionVal) ||
-    (r.value && r.value.toLowerCase() === str) ||
-    (r.name && r.name.toLowerCase() === str) ||
-    (r.label && r.label.toLowerCase().includes(str))
+    (r.code && String(r.code).toLowerCase() === str) ||
+    (r.value && String(r.value).toLowerCase() === str) ||
+    (r.name && String(r.name).toLowerCase() === str) ||
+    (r.label && String(r.label).toLowerCase().includes(str)) ||
+    (r.regionName && String(r.regionName).toLowerCase() === str)
   )
 
   if (matchedRegion && matchedRegion.code) {
@@ -2607,14 +2864,15 @@ const updateBarangaysForSelectedCity = async (cityName) => {
     return
   }
 
-  const str = (typeof cityName === 'string' ? cityName : (cityName?.value || cityName?.name || '')).toLowerCase()
+  const str = String(typeof cityName === 'string' ? cityName : (cityName?.value || cityName?.name || '')).trim().toLowerCase()
 
   // First try finding in currently displayed citiesList, then in allCitiesFallbackCache
   const sourceList = (citiesList.value && citiesList.value.length > 0) ? citiesList.value : (allCitiesFallbackCache || [])
   const matchedCity = sourceList.find(c => 
-    (c.code && c.code === cityName) ||
-    (c.value && c.value.toLowerCase() === str) ||
-    (c.label && c.label.toLowerCase().includes(str))
+    (c.code && String(c.code).toLowerCase() === str) ||
+    (c.value && String(c.value).toLowerCase() === str) ||
+    (c.name && String(c.name).toLowerCase() === str) ||
+    (c.label && String(c.label).toLowerCase().includes(str))
   )
 
   if (matchedCity && matchedCity.code) {
@@ -2635,46 +2893,122 @@ const updateBarangaysForSelectedCity = async (cityName) => {
 }
 
 const regionColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'region_dropdown'))
+const provinceColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'province_dropdown'))
 const cityColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'city_dropdown'))
 const barangayColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'barangay_dropdown'))
+const statusColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'status_dropdown'))
+
+const createRegionOptions = computed(() => regionsList.value || [])
+const createProvinceOptions = computed(() => provincesList.value || [])
+const createCityOptions = computed(() => citiesList.value || [])
+const createBarangayOptions = computed(() => barangaysList.value || [])
+
+const unwrapForm = (targetForm) => {
+  if (!targetForm) return {}
+  const unwrapped = unref(targetForm)
+  if (unwrapped && typeof unwrapped === 'object' && unwrapped.value && typeof unwrapped.value === 'object') {
+    return unwrapped.value
+  }
+  return unwrapped || {}
+}
 
 const isCityDisabled = (targetForm) => {
+  const form = unwrapForm(targetForm)
   if (regionColName.value) {
-    return !targetForm[regionColName.value]
+    const val = form[regionColName.value]
+    return val === null || val === undefined || String(val).trim() === ''
   }
   return false
 }
 
 const isBarangayDisabled = (targetForm) => {
+  const form = unwrapForm(targetForm)
   if (cityColName.value) {
-    return !targetForm[cityColName.value]
+    const val = form[cityColName.value]
+    return val === null || val === undefined || String(val).trim() === ''
   }
   return false
 }
 
 const getCityPlaceholder = (targetForm) => {
-  if (regionColName.value && !targetForm[regionColName.value]) {
+  if (isCityDisabled(targetForm)) {
     return 'Select Region First'
   }
   return 'Select City / Town'
 }
 
 const getBarangayPlaceholder = (targetForm) => {
-  if (cityColName.value && !targetForm[cityColName.value]) {
+  if (isBarangayDisabled(targetForm)) {
     return 'Select City / Town First'
   }
   return 'Select or Type Barangay'
 }
 
+const touchedAddressBlockers = ref({
+  create_city: false,
+  create_barangay: false,
+  create_province: false,
+  edit_city: false,
+  edit_barangay: false,
+  edit_province: false
+})
+
+const resetTouchedAddressBlockers = (scope) => {
+  if (!scope || scope === 'create') {
+    touchedAddressBlockers.value.create_city = false
+    touchedAddressBlockers.value.create_barangay = false
+    touchedAddressBlockers.value.create_province = false
+  }
+  if (!scope || scope === 'edit') {
+    touchedAddressBlockers.value.edit_city = false
+    touchedAddressBlockers.value.edit_barangay = false
+    touchedAddressBlockers.value.edit_province = false
+  }
+}
+
+/**
+ * Explains why a locked address step is not responding.
+ *
+ * City and Barangay stay disabled until their parent is chosen.
+ * An overlay on the locked dropdown catches clicks to explain the prerequisite step.
+ */
+const getAddressStepBlocker = (targetForm, field) => {
+  const form = unwrapForm(targetForm)
+  if (!form) return null
+  if ((field === 'city' || field === 'province') && isCityDisabled(form)) {
+    return { summary: 'Select Region first', detail: 'Please select a Region before selecting City / Municipality.' }
+  }
+  if (field === 'barangay' && isBarangayDisabled(form)) {
+    return { summary: 'Select City first', detail: 'Please select a City / Municipality before selecting Barangay.' }
+  }
+  return null
+}
+
+const shouldShowAddressHint = (targetForm, field, scope = 'create') => {
+  const key = `${scope}_${field}`
+  if (!touchedAddressBlockers.value[key]) return false
+  return !!getAddressStepBlocker(targetForm, field)
+}
+
+const notifyAddressStep = (targetForm, field, scope = 'create') => {
+  const blocker = getAddressStepBlocker(targetForm, field)
+  if (!blocker) return
+  const key = `${scope}_${field}`
+  touchedAddressBlockers.value[key] = true
+  toast.add({ severity: 'warn', summary: blocker.summary, detail: blocker.detail, life: 3500 })
+}
+
 const onRegionChanged = (targetForm) => {
-  if (cityColName.value) targetForm[cityColName.value] = ''
-  if (barangayColName.value) targetForm[barangayColName.value] = ''
-  updateCitiesForSelectedRegion(regionColName.value ? targetForm[regionColName.value] : null)
+  const form = unwrapForm(targetForm)
+  if (cityColName.value) form[cityColName.value] = ''
+  if (barangayColName.value) form[barangayColName.value] = ''
+  updateCitiesForSelectedRegion(regionColName.value ? form[regionColName.value] : null)
 }
 
 const onCityChanged = (targetForm) => {
-  if (barangayColName.value) targetForm[barangayColName.value] = ''
-  updateBarangaysForSelectedCity(cityColName.value ? targetForm[cityColName.value] : null)
+  const form = unwrapForm(targetForm)
+  if (barangayColName.value) form[barangayColName.value] = ''
+  updateBarangaysForSelectedCity(cityColName.value ? form[cityColName.value] : null)
 }
 
 watch(
@@ -2704,6 +3038,18 @@ watch(
     updateBarangaysForSelectedCity(newCity)
   }
 )
+
+watch(displayCreateDialog, (isOpen) => {
+  if (!isOpen) {
+    resetTouchedAddressBlockers('create')
+  }
+})
+
+watch(displayEditDialog, (isOpen) => {
+  if (!isOpen) {
+    resetTouchedAddressBlockers('edit')
+  }
+})
 
 const getAccessLevelLabel = (id) => {
   if (id === null || id === undefined) return '-'
@@ -2804,6 +3150,8 @@ const formatViewFieldValue = (col, val) => {
 }
 
 const openCreateDialog = () => {
+  fetchAddressData()
+  resetTouchedAddressBlockers('create')
   saveError.value = null
   showPasswordState.value = {}
   formData.value = {}
@@ -2837,6 +3185,13 @@ const openCreateDialog = () => {
       formData.value[col] = ''
     }
   })
+
+  if (isApplicationEndpoint.value) {
+    const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
+    if (statusCol) {
+      formData.value[statusCol] = 'In Progress'
+    }
+  }
   formData.value.confirmPassword = ''
   displayCreateDialog.value = true
 }
@@ -2966,13 +3321,85 @@ const openViewDialog = (record) => {
   displayViewDialog.value = true
 }
 
-const openEditDialog = (record) => {
+const openEditDialog = async (record) => {
+  resetTouchedAddressBlockers('edit')
   editError.value = null
   showPasswordState.value = {}
   editingRecordId.value = getRecordId(record)
   editFormData.value = { ...record }
   const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
   const currentUserIdOrName = authStore.user?.id || currentUser
+
+  // 1. Normalize and match Region
+  const regCol = formColumns.value.find(c => getFieldType(c) === 'region_dropdown')
+  const rawRegion = regCol ? editFormData.value[regCol] : (record.region || record.regionName || record.region_name || '')
+  let matchedRegionVal = rawRegion
+  if (rawRegion) {
+    const str = String(rawRegion).trim().toLowerCase()
+    const match = (regionsList.value || []).find(r => 
+      (r.name && r.name.toLowerCase() === str) ||
+      (r.value && r.value.toLowerCase() === str) ||
+      (r.code && String(r.code).toLowerCase() === str) ||
+      (r.regionName && r.regionName.toLowerCase() === str)
+    )
+    if (match) {
+      matchedRegionVal = match.value
+      if (regCol) editFormData.value[regCol] = match.value
+    }
+  }
+
+  // 2. Pre-load cities for the region
+  await updateCitiesForSelectedRegion(matchedRegionVal)
+
+  // 3. Normalize and match City
+  const cCol = formColumns.value.find(c => getFieldType(c) === 'city_dropdown')
+  const rawCity = cCol ? editFormData.value[cCol] : (record.city || record.cityName || record.city_name || record.municipality || '')
+  let matchedCityVal = rawCity
+  if (rawCity) {
+    const str = String(rawCity).trim().toLowerCase()
+    const match = (citiesList.value || []).find(c => 
+      (c.name && c.name.toLowerCase() === str) ||
+      (c.value && c.value.toLowerCase() === str) ||
+      (c.code && String(c.code).toLowerCase() === str)
+    )
+    if (match) {
+      matchedCityVal = match.value
+      if (cCol) editFormData.value[cCol] = match.value
+    }
+  }
+
+  // 4. Pre-load barangays for the city
+  await updateBarangaysForSelectedCity(matchedCityVal)
+
+  // 5. Normalize and match Barangay
+  const bCol = formColumns.value.find(c => getFieldType(c) === 'barangay_dropdown')
+  const rawBrgy = bCol ? editFormData.value[bCol] : (record.barangay || record.barangayName || record.barangay_name || '')
+  if (rawBrgy) {
+    const str = String(rawBrgy).trim().toLowerCase()
+    const match = (barangaysList.value || []).find(b => 
+      (b.name && b.name.toLowerCase() === str) ||
+      (b.value && b.value.toLowerCase() === str) ||
+      (b.name && b.name.toLowerCase().startsWith(str)) ||
+      (b.value && b.value.toLowerCase().startsWith(str))
+    )
+    if (match) {
+      if (bCol) editFormData.value[bCol] = match.value
+    }
+  }
+
+  // 6. Normalize and match Status
+  const statusCol = formColumns.value.find(c => getFieldType(c) === 'status_dropdown') || 'status'
+  const curStatus = record[statusCol]
+  if (isApplicationEndpoint.value) {
+    if (curStatus) {
+      const match = APPLICATION_STATUS_LIST.find(
+        s => s.toLowerCase() === String(curStatus).trim().toLowerCase()
+      )
+      editFormData.value[statusCol] = match || 'In Progress'
+    } else {
+      editFormData.value[statusCol] = 'In Progress'
+    }
+  }
 
   formColumns.value.forEach(col => {
     const type = getFieldType(col)
@@ -3012,6 +3439,7 @@ const openEditDialog = (record) => {
   if (pwdCol) {
     editFormData.value.confirmPassword = record[pwdCol] || editFormData.value[pwdCol] || ''
   }
+
   displayEditDialog.value = true
 }
 
@@ -3611,6 +4039,7 @@ const fetchCurrentUserPermissions = async () => {
 }
 
 onMounted(() => {
+  fetchAddressData()
   fetchData()
   fetchRelatedData()
   fetchAccessLevelMenus()
@@ -4087,6 +4516,17 @@ defineExpose({
 :deep(.p-menu .p-menuitem-link:hover .p-menuitem-icon),
 :deep(.p-menu .p-menu-item-link:hover .p-menu-item-label),
 :deep(.p-menu .p-menuitem-link:hover .p-menuitem-text) {
+  color: var(--bs-primary, #e74c5a) !important;
+}
+
+.address-step-hint {
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: var(--bs-primary, #e74c5a) !important;
+  line-height: 1.25;
+}
+.address-step-hint i {
+  font-size: 0.8rem;
   color: var(--bs-primary, #e74c5a) !important;
 }
 
