@@ -101,8 +101,16 @@
               <h5 class="fw-bold text-body mb-0 font-monospace fs-6">
                 {{ activeSchemaName || selectedEndpoint || '—' }}
               </h5>
+              <!-- The single column count for the page; it follows the column
+                   search so the number on screen always matches the rows. -->
               <span v-if="activeFields.length" class="badge bg-body-tertiary text-body border px-2.5 py-1 small fw-semibold">
-                <i class="pi pi-list text-primary me-1"></i> {{ activeFields.length }} {{ activeFields.length === 1 ? 'column' : 'columns' }}
+                <i class="pi pi-list text-primary me-1"></i>
+                <template v-if="isFilteringColumns">
+                  {{ visibleFields.length }} of {{ activeFields.length }} columns
+                </template>
+                <template v-else>
+                  {{ activeFields.length }} {{ activeFields.length === 1 ? 'column' : 'columns' }}
+                </template>
               </span>
               <span v-if="requiredCount" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2.5 py-1 small fw-semibold">
                 {{ requiredCount }} required in form
@@ -179,36 +187,25 @@
 
             <!-- Columns table -->
             <div v-else-if="viewMode === 'table'">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                <div class="position-relative" style="flex: 1 1 14rem; max-width: 24rem;">
-                  <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary pointer-events-none" style="left: 0.75rem; font-size: 0.85rem; z-index: 2;"></i>
-                  <input
-                    v-model="columnSearch"
-                    type="text"
-                    class="form-control form-control-sm bg-body-tertiary border-0 shadow-none rounded-3"
-                    placeholder="Search columns, types, or formats..."
-                    style="padding-left: 2.2rem; height: 34px;"
-                  />
-                  <button
-                    v-if="columnSearch"
-                    type="button"
-                    class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0"
-                    title="Clear search"
-                    style="line-height: 1; z-index: 3;"
-                    @click="columnSearch = ''"
-                  >
-                    <i class="pi pi-times" style="font-size: 0.75rem;"></i>
-                  </button>
-                </div>
-
-                <span class="badge bg-body-tertiary text-body border px-2.5 py-1 small fw-semibold">
-                  <template v-if="columnSearch.trim()">
-                    Showing {{ visibleFields.length }} of {{ activeFields.length }}
-                  </template>
-                  <template v-else>
-                    {{ activeFields.length }} {{ activeFields.length === 1 ? 'column' : 'columns' }}
-                  </template>
-                </span>
+              <div class="position-relative mb-3" style="max-width: 22rem;">
+                <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary pointer-events-none" style="left: 0.75rem; font-size: 0.85rem; z-index: 2;"></i>
+                <input
+                  v-model="columnSearch"
+                  type="text"
+                  class="form-control form-control-sm bg-body-tertiary border-0 shadow-none rounded-3"
+                  placeholder="Search columns, types, or formats..."
+                  style="padding-left: 2.2rem; padding-right: 2.2rem; height: 34px;"
+                />
+                <button
+                  v-if="columnSearch"
+                  type="button"
+                  class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0"
+                  title="Clear search"
+                  style="line-height: 1; z-index: 3;"
+                  @click="columnSearch = ''"
+                >
+                  <i class="pi pi-times" style="font-size: 0.75rem;"></i>
+                </button>
               </div>
 
               <div v-if="!visibleFields.length" class="text-center text-muted py-5 small border rounded-3">
@@ -421,6 +418,11 @@ const activeFields = computed(() => {
 })
 
 const requiredCount = computed(() => activeFields.value.filter(f => f.formRequired).length)
+
+// Only meaningful in the Columns view; the Raw JSON view ignores the search.
+const isFilteringColumns = computed(() =>
+  viewMode.value === 'table' && Boolean(columnSearch.value.trim())
+)
 
 const visibleFields = computed(() => {
   const q = columnSearch.value.trim().toLowerCase()
