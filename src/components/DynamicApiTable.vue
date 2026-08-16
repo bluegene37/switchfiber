@@ -1680,7 +1680,7 @@ function getFieldType(col) {
   if (!col) return 'text'
   const lower = col.toLowerCase().replace(/_/g, '')
 
-  // Image / Picture upload fields (Government Valid ID, Second Government Valid ID, House Front Picture, Document Picture, etc.)
+  // Image / Picture upload fields (Government Valid ID, Second Government Valid ID, House Front Picture, Document Picture, Picture of Statement Billing From Other Provider, etc.)
   if (
     lower.includes('picture') ||
     lower.includes('photo') ||
@@ -1689,6 +1689,12 @@ function getFieldType(col) {
     lower.includes('housefront') ||
     lower.includes('documentpicture') ||
     lower.includes('proofofbilling') ||
+    lower.includes('statementbilling') ||
+    lower.includes('statementofbilling') ||
+    lower.includes('statementofaccount') ||
+    lower.includes('billingstatement') ||
+    (lower.includes('statement') && (lower.includes('provider') || lower.includes('billing') || lower.includes('picture') || lower.includes('image') || lower.includes('proof') || lower.includes('doc'))) ||
+    (lower.includes('billing') && (lower.includes('provider') || lower.includes('picture') || lower.includes('photo') || lower.includes('image') || lower.includes('proof') || lower.includes('attachment') || lower.includes('statement') || lower.includes('doc'))) ||
     (lower.includes('image') && !lower.includes('duration')) ||
     lower.includes('signature') ||
     lower.startsWith('attachment')
