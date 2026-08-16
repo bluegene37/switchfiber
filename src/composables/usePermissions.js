@@ -36,6 +36,9 @@ export function usePermissions() {
   const fetchPermissions = async () => {
     if (!authStore.isAuthenticated) {
       allowedMenuIds.value = new Set()
+      // Still a settled answer — callers waiting on the first result should
+      // stop showing a loader rather than spin forever.
+      hasLoadedOnce.value = true
       return
     }
 
@@ -152,6 +155,7 @@ export function usePermissions() {
   return {
     allowedMenuIds,
     isLoadingPermissions,
+    hasLoadedPermissions: hasLoadedOnce,
     isSuperAdmin,
     fetchPermissions,
     canAccess,

@@ -28,10 +28,36 @@
       </button>
     </div>
 
+    <!-- Menu Search (hidden while collapsed — there is no room for it) -->
+    <div v-if="!isCollapsed" class="px-2 pt-3 pb-0">
+      <div class="position-relative">
+        <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary pointer-events-none" style="left: 0.65rem; font-size: 0.8rem; z-index: 2;"></i>
+        <input
+          v-model="menuSearch"
+          type="text"
+          class="form-control form-control-sm bg-body-tertiary border-0 shadow-none rounded-3"
+          placeholder="Search menu..."
+          aria-label="Search menu"
+          style="padding-left: 2rem; padding-right: 2rem; height: 32px; font-size: 0.8125rem;"
+        />
+        <button
+          v-if="menuSearch"
+          type="button"
+          class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0"
+          title="Clear search"
+          aria-label="Clear menu search"
+          style="line-height: 1; z-index: 3;"
+          @click="menuSearch = ''"
+        >
+          <i class="pi pi-times" style="font-size: 0.7rem;"></i>
+        </button>
+      </div>
+    </div>
+
     <!-- Navigation List -->
     <nav class="flex-grow-1 overflow-y-auto py-3 px-2">
       <!-- Loading State (Modern Skeleton Shimmer) -->
-      <div v-if="isLoading" class="d-flex flex-column gap-2 px-1">
+      <div v-if="showSkeleton" class="d-flex flex-column gap-2 px-1">
         <div 
           v-for="n in 5" 
           :key="n" 
@@ -44,8 +70,8 @@
       </div>
 
       <!-- Navigation List -->
-      <ul v-else-if="filteredMenuItems && filteredMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0">
-        <li class="nav-item" v-for="item in filteredMenuItems" :key="item.name">
+      <ul v-else-if="visibleMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0">
+        <li class="nav-item" v-for="item in visibleMenuItems" :key="item.name">
           <!-- Item with NO children -->
           <router-link 
             v-if="!item.children"
@@ -99,7 +125,13 @@
         </li>
       </ul>
 
-      <!-- Fallback Empty State -->
+      <!-- No search hits: distinct from having no menu access at all -->
+      <div v-else-if="isSearchingMenu" class="text-center text-muted py-4 small">
+        <i class="pi pi-search-minus fs-4 mb-2 d-block opacity-50"></i>
+        <span v-if="!isCollapsed">No menu matching "{{ menuSearch }}"</span>
+      </div>
+
+      <!-- Fallback Empty State (only once permissions have actually resolved) -->
       <div v-else class="text-center text-muted py-4 small">
         <i class="pi pi-inbox fs-4 mb-2 d-block opacity-50"></i>
         <span v-if="!isCollapsed">No menu access</span>
@@ -185,9 +217,15 @@ const emit = defineEmits(['close', 'toggle-collapse'])
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const { allowedMenuIds, canAccessSettings, fetchPermissions } = usePermissions()
+const { allowedMenuIds, canAccessSettings, fetchPermissions, hasLoadedPermissions } = usePermissions()
 
-const isLoading = ref(false)
+// Permissions arrive from the API after mount. Until that first response lands,
+// an empty allowedMenuIds is "not known yet", not "no access" — so show the
+// skeleton rather than flashing the empty state at every login.
+const showSkeleton = computed(() => !hasLoadedPermissions.value)
+
+const menuSearch = ref('')
+const isSearchingMenu = computed(() => menuSearch.value.trim().length > 0)
 
 // Below the md breakpoint the sidebar is translated off-canvas. It is still in
 // the DOM, so without this its links stay tab-focusable and screen-reader
@@ -249,10 +287,14 @@ const rawMenuItems = ref([
   { id: 29, name: 'Models', path: '/models', icon: 'pi-table' }
 ])
 
-const expandedState = ref({ 25: true })
+// Nothing is expanded up front. A group opens only when the active route is one
+// of its children (see checkAutoExpand) or when the user clicks it.
+const expandedState = ref({})
 
 const isExpanded = (item) => {
   if (!item || !item.id) return false
+  // While searching, every surviving group is open so the hits are visible.
+  if (isSearchingMenu.value) return true
   return !!expandedState.value[item.id]
 }
 
@@ -321,6 +363,34 @@ const filteredMenuItems = computed(() => {
       return allowed.has(item.id) ? item : null
     })
     .filter(Boolean)
+})
+
+/**
+ * The permitted menu narrowed by the search box.
+ *
+ * A group is kept when its own name matches (with all its children), or when
+ * some of its children match (with only those children).
+ */
+const visibleMenuItems = computed(() => {
+  const q = menuSearch.value.trim().toLowerCase()
+  if (!q) return filteredMenuItems.value
+
+  const matches = (name) => String(name || '').toLowerCase().includes(q)
+
+  return filteredMenuItems.value
+    .map(item => {
+      if (!item.children) return matches(item.name) ? item : null
+      if (matches(item.name)) return item
+      const hits = item.children.filter(child => matches(child.name))
+      return hits.length ? { ...item, children: hits } : null
+    })
+    .filter(Boolean)
+})
+
+// The search box is hidden when collapsed, so a filter left behind would
+// silently hide icons with no visible cause.
+watch(() => props.isCollapsed, (collapsed) => {
+  if (collapsed) menuSearch.value = ''
 })
 </script>
 
