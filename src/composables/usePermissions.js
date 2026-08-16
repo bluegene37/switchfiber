@@ -2,6 +2,10 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import apiClient from '../services/api'
 
+// Menu ids for screens that live in the front end and have no Menus row in the
+// database yet. See fetchPermissions for how these are treated.
+const CLIENT_PROVIDED_MENU_IDS = [29] // 29 = Models
+
 // Shared reactive state across all components
 const allowedMenuIds = ref(new Set())
 const unlinkedMenuIds = new Set()
@@ -66,13 +70,30 @@ export function usePermissions() {
         .filter(id => !isNaN(id) && id > 0)
 
       if (granted.length > 0) {
-        allowedMenuIds.value = new Set(granted)
+        const allowed = new Set(granted)
+
+        // A screen shipped by the front end has no AccesslevelMenu row until an
+        // admin ticks it in Access Level Management, and an unprovisioned id
+        // would otherwise be indistinguishable from a revoked one — hiding the
+        // page from everybody. Grant it only while nothing has ever been said
+        // about it; the moment any access level is given or denied the menu,
+        // the stored configuration takes over.
+        const everProvisioned = new Set(
+          combined
+            .map(r => Number(r?.menuId ?? r?.menu_id ?? r?.MenuId))
+            .filter(id => !isNaN(id) && id > 0)
+        )
+        CLIENT_PROVIDED_MENU_IDS.forEach(id => {
+          if (!everProvisioned.has(id)) allowed.add(id)
+        })
+
+        allowedMenuIds.value = allowed
       } else {
-        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 101, 102, 103])
+        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 101, 102, 103])
       }
     } catch (err) {
       console.warn('[usePermissions] Error fetching access level permissions:', err)
-      allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 101, 102, 103])
+      allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 101, 102, 103])
     } finally {
       isLoadingPermissions.value = false
       hasLoadedOnce.value = true

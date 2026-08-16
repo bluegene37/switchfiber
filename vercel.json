@@ -5,6 +5,10 @@
       "destination": "https://103.249.198.43:8090/api/:path*"
     },
     {
+      "source": "/openapi/:path*",
+      "destination": "https://103.249.198.43:8090/openapi/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

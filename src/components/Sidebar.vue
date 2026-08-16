@@ -245,7 +245,8 @@ const rawMenuItems = ref([
       { id: 16, name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
     ]
   },
-  { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' }
+  { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },
+  { id: 29, name: 'Models', path: '/models', icon: 'pi-table' }
 ])
 
 const expandedState = ref({ 25: true })

@@ -1,0 +1,137 @@
+import { EndpointSchemaMeta } from './schemaMeta'
+
+/**
+ * Decides which form fields are mandatory.
+ *
+ * The API cannot answer this on its own: ASP.NET emits every non-nullable
+ * property into the OpenAPI `required` array, so CreateApplicationRequest
+ * claims all 36 of its fields are required. Taking that literally would make
+ * the Application form impossible to submit.
+ *
+ * So the schema list (already narrowed to required-and-non-nullable by
+ * scripts/generate_schema_meta.js) is filtered through two layers:
+ *
+ *   1. SYSTEM_FIELDS      — audit/identity columns the app fills in itself.
+ *   2. ENDPOINT_OVERRIDES — a hand-tuned list for the three endpoints where
+ *                           the schema is still far too broad.
+ *
+ * Editing the overrides below is the intended way to change what a form
+ * demands; nothing else needs to be touched.
+ */
+
+/**
+ * Columns the server or DynamicApiTable populates, never the user.
+ * Compared after normalization, so `created_by`, `createdBy` and
+ * `CreatedByUserId` all match.
+ */
+const SYSTEM_FIELDS = new Set([
+  'id',
+  'rowversion',
+  'timestamp',
+  'created',
+  'createdat',
+  'createdby',
+  'createdbyuserid',
+  'createddate',
+  'modifiedat',
+  'modifiedby',
+  'modifiedbyuserid',
+  'modifieddate',
+  'lastmodified',
+  'lastmodifiedby',
+  'updatedat',
+  'updatedby',
+  'updateddate',
+  'useremail'
+])
+
+/**
+ * Endpoints where the schema-derived list is still unusable, with the set a
+ * user actually has to fill in. Keys are matched case-insensitively against
+ * the DynamicApiTable `endpoint` prop.
+ *
+ * The counts in the comments are what the schema alone would have demanded.
+ * Every other endpoint is left to the schema, which gets it right — the
+ * lookup tables resolve to `name` + `description`, Users to its eight real
+ * fields, and so on.
+ */
+const ENDPOINT_OVERRIDES = {
+  applications: [ // schema says 32
+    'emailAddress', 'region', 'city', 'barangay',
+    'firstName', 'lastName', 'mobileNumber',
+    'installationAddress', 'desiredPlan', 'status'
+  ],
+  joborders: [ // schema says 78
+    'firstName', 'lastName', 'contactNumber', 'address',
+    'region', 'city', 'barangay', 'planId', 'status'
+  ],
+  billingdetails: [ // schema says 34
+    'fullName', 'contactNumber', 'address',
+    'region', 'city', 'barangay', 'plan', 'status'
+  ]
+}
+
+/**
+ * Same normalization DynamicApiTable's getFieldType uses, so the API's
+ * `menu_id` / `accesslevel_id` line up with the form's `menuId` /
+ * `accessLevelId`.
+ */
+const normalize = (name) => String(name || '').toLowerCase().replace(/_/g, '')
+
+const lookupEndpointMeta = (endpoint) => {
+  if (!endpoint) return null
+  const target = normalize(endpoint)
+  const key = Object.keys(EndpointSchemaMeta).find(k => normalize(k) === target)
+  return key ? EndpointSchemaMeta[key] : null
+}
+
+/**
+ * The mandatory columns for a form, expressed as names that exist in
+ * `formColumns` (so callers can look them up in the form data directly).
+ *
+ * Endpoints with no request schema — RadiusUser, BillingStatements — and
+ * those whose DTO is entirely nullable — Plans, Invoices — return an empty
+ * array, leaving those forms exactly as they behaved before.
+ *
+ * @param {string} endpoint      the DynamicApiTable `endpoint` prop
+ * @param {string[]} formColumns the columns actually rendered in the form
+ * @param {'create'|'update'} mode
+ * @returns {string[]} column names, in `formColumns` order
+ */
+export function resolveRequiredFields(endpoint, formColumns = [], mode = 'create') {
+  const override = ENDPOINT_OVERRIDES[normalize(endpoint)]
+
+  let candidates
+  if (override) {
+    candidates = override
+  } else {
+    const meta = lookupEndpointMeta(endpoint)
+    // Fall back to the other verb's schema: several endpoints describe only
+    // one of POST/PUT, and the two shapes are near-identical where both exist.
+    const modeMeta = meta?.[mode] || meta?.create || meta?.update
+    candidates = modeMeta?.required || []
+  }
+
+  const wanted = new Set(
+    candidates.map(normalize).filter(name => !SYSTEM_FIELDS.has(name))
+  )
+  if (!wanted.size) return []
+
+  // Only ever require something the form actually renders. UpdateBarangayRequest
+  // demands `city`, for instance, which the Barangays form has no input for.
+  return formColumns.filter(col => wanted.has(normalize(col)))
+}
+
+/**
+ * True when the endpoint's required set came from a hand-tuned override rather
+ * than straight from the schema. The Models page uses this to explain why a
+ * field the API calls required is not marked required in the form.
+ */
+export function hasRequiredOverride(endpoint) {
+  return Boolean(ENDPOINT_OVERRIDES[normalize(endpoint)])
+}
+
+/** True for columns the app fills in itself, so a form never asks for them. */
+export function isSystemField(name) {
+  return SYSTEM_FIELDS.has(normalize(name))
+}

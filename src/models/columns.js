@@ -25,6 +25,7 @@ export const EndpointColumns = {
     "secondNearestLandmark",
     "applicablePromo",
     "documentPicture",
+    "pictureofstatmentbillingfromotherprovider",
     "referrersAccountNumber",
     "applyingFor",
     "status",

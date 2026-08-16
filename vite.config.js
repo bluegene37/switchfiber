@@ -51,6 +51,14 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_URL || 'https://103.249.198.43:8090',
           changeOrigin: true,
           secure: false // ignores self-signed cert in dev mode
+        },
+        // Lets the Models page pull the live OpenAPI document same-origin.
+        // The trailing slash matters: vite matches proxy keys by prefix, so a
+        // bare '/openapi' would also swallow the bundled /openapi.json asset.
+        '/openapi/': {
+          target: env.VITE_API_URL || 'https://103.249.198.43:8090',
+          changeOrigin: true,
+          secure: false // ignores self-signed cert in dev mode
         }
       }
     }

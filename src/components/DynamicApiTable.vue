@@ -385,7 +385,7 @@
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
-      <div v-if="saveError" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
+      <div v-if="saveError" id="form-error-create" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
         <i class="pi pi-exclamation-triangle me-2"></i> {{ saveError }}
       </div>
 
@@ -405,13 +405,15 @@
           </div>
 
           <div class="row g-3">
-            <div 
-              v-for="col in sec.columns" 
-              :key="col" 
-              :class="getColumnClass(col)"
+            <div
+              v-for="col in sec.columns"
+              :key="col"
+              :id="fieldWrapId('create', col)"
+              :class="[getColumnClass(col), { 'field-invalid': hasFieldError('create', col) }]"
             >
               <label :for="col" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
+                <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
               </label>
 
               <!-- Toggle Switch for Active / Boolean fields -->
@@ -563,8 +565,9 @@
                   optionValue="value" 
                   :filter="true"
                   :disabled="isCityDisabled(formData)"
-                  placeholder="Select Province" 
-                  class="w-100 p-inputtext-sm" 
+                  @change="onProvinceChanged(formData)"
+                  placeholder="Select Province"
+                  class="w-100 p-inputtext-sm"
                 />
                 <div 
                   v-if="isCityDisabled(formData)" 
@@ -704,7 +707,7 @@
                     v-model="formData[col]"
                     class="form-control form-control-sm pe-5"
                     :disabled="!userPermissions.canModifyPassword"
-                    :class="{ 'is-invalid': formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword }"
+                    :class="{ 'is-invalid': passwordsMismatch('create') }"
                     :placeholder="userPermissions.canModifyPassword ? 'Confirm password' : 'Password modification disabled'"
                   />
                   <button 
@@ -721,7 +724,7 @@
                 <div v-if="!userPermissions.canModifyPassword" class="text-muted small mt-1" style="font-size: 0.75rem;">
                   <i class="pi pi-lock me-1"></i> You do not have permission to modify passwords.
                 </div>
-                <div v-else-if="formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
+                <div v-else-if="passwordsMismatch('create')" class="text-danger small mt-1" style="font-size: 0.75rem;">
                   <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
                 </div>
               </div>
@@ -820,6 +823,14 @@
                 }"
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
               />
+
+              <div
+                v-if="hasFieldError('create', col)"
+                class="field-error-hint mt-1 d-flex align-items-center gap-1"
+              >
+                <i class="pi pi-exclamation-circle"></i>
+                <span>{{ fieldErrorText('create', col) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -962,7 +973,7 @@
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
-      <div v-if="editError" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
+      <div v-if="editError" id="form-error-edit" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
         <i class="pi pi-exclamation-triangle me-2"></i> {{ editError }}
       </div>
 
@@ -982,13 +993,15 @@
           </div>
 
           <div class="row g-3">
-            <div 
-              v-for="col in sec.columns" 
-              :key="col" 
-              :class="getColumnClass(col)"
+            <div
+              v-for="col in sec.columns"
+              :key="col"
+              :id="fieldWrapId('edit', col)"
+              :class="[getColumnClass(col), { 'field-invalid': hasFieldError('edit', col) }]"
             >
               <label :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
+                <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
               </label>
 
               <!-- Toggle Switch for Active / Boolean fields -->
@@ -1140,8 +1153,9 @@
                   optionValue="value" 
                   :filter="true"
                   :disabled="isCityDisabled(editFormData)"
-                  placeholder="Select Province" 
-                  class="w-100 p-inputtext-sm" 
+                  @change="onProvinceChanged(editFormData)"
+                  placeholder="Select Province"
+                  class="w-100 p-inputtext-sm"
                 />
                 <div 
                   v-if="isCityDisabled(editFormData)" 
@@ -1281,7 +1295,7 @@
                     v-model="editFormData[col]"
                     class="form-control form-control-sm pe-5"
                     :disabled="!userPermissions.canModifyPassword"
-                    :class="{ 'is-invalid': editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword }"
+                    :class="{ 'is-invalid': passwordsMismatch('edit') }"
                     :placeholder="userPermissions.canModifyPassword ? 'Confirm password' : 'Password modification disabled'"
                   />
                   <button 
@@ -1298,7 +1312,7 @@
                 <div v-if="!userPermissions.canModifyPassword" class="text-muted small mt-1" style="font-size: 0.75rem;">
                   <i class="pi pi-lock me-1"></i> You do not have permission to modify passwords.
                 </div>
-                <div v-else-if="editFormData.password && editFormData.confirmPassword && editFormData.password !== editFormData.confirmPassword" class="text-danger small mt-1" style="font-size: 0.75rem;">
+                <div v-else-if="passwordsMismatch('edit')" class="text-danger small mt-1" style="font-size: 0.75rem;">
                   <i class="pi pi-exclamation-circle me-1"></i> Passwords do not match
                 </div>
               </div>
@@ -1397,6 +1411,14 @@
                 }"
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
               />
+
+              <div
+                v-if="hasFieldError('edit', col)"
+                class="field-error-hint mt-1 d-flex align-items-center gap-1"
+              >
+                <i class="pi pi-exclamation-circle"></i>
+                <span>{{ fieldErrorText('edit', col) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1465,7 +1487,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch, isRef, unref } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick } from 'vue'
 import apiClient from '../services/api'
 import phAddressService from '../services/phAddressService'
 import defaultRegions from '../../public/data/philippines/regions.json'
@@ -1487,6 +1509,7 @@ import Popover from 'primevue/popover'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { EndpointColumns } from '../models/columns'
+import { resolveRequiredFields } from '../models/requiredFields'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import jsPDF from 'jspdf'
@@ -1631,7 +1654,9 @@ function formatLabel(col) {
     confirmpassword: 'Confirm Password',
     email: 'Email',
     useremail: 'Email Address',
-    rowversion: 'Row Version'
+    rowversion: 'Row Version',
+    pictureofstatmentbillingfromotherprovider: 'Picture of Statement Billing From Other Provider',
+    pictureofstatementbillingfromotherprovider: 'Picture of Statement Billing From Other Provider'
   }
   if (customOverrides[col.toLowerCase()]) {
     return customOverrides[col.toLowerCase()]
@@ -2862,6 +2887,41 @@ const updateCitiesForSelectedRegion = async (regionVal) => {
   }
 }
 
+// Narrows the city list to a single province. Region already filtered it down
+// once; picking a province is the second, finer step.
+const updateCitiesForSelectedProvince = async (provinceVal, regionVal) => {
+  if (!provinceVal) {
+    // Province cleared: fall back to the whole region.
+    await updateCitiesForSelectedRegion(regionVal)
+    return
+  }
+
+  const str = String(typeof provinceVal === 'string' ? provinceVal : (provinceVal?.value || provinceVal?.name || '')).trim().toLowerCase()
+
+  const matchedProvince = (provincesList.value || []).find(p =>
+    (p.code && String(p.code).toLowerCase() === str) ||
+    (p.value && String(p.value).toLowerCase() === str) ||
+    (p.name && String(p.name).toLowerCase() === str) ||
+    (p.label && String(p.label).toLowerCase() === str)
+  )
+
+  if (matchedProvince && matchedProvince.code) {
+    try {
+      const cList = await phAddressService.getCities(matchedProvince.regionCode || null, matchedProvince.code)
+      if (cList && cList.length > 0) {
+        citiesList.value = cList.map(c => ({ label: `${c.name} ${c.isCity ? '(City)' : ''}`, value: c.name, code: c.code, regionCode: c.regionCode, provinceCode: c.provinceCode }))
+        return
+      }
+    } catch (err) {
+      console.error('Error filtering cities for province:', err)
+    }
+  }
+
+  // Unknown province, or a province with no cities of its own — keep the
+  // region-wide list rather than stranding the user with an empty dropdown.
+  await updateCitiesForSelectedRegion(regionVal)
+}
+
 const updateBarangaysForSelectedCity = async (cityName) => {
   if (!cityName) {
     if (allBarangaysFallbackCache) {
@@ -2950,6 +3010,163 @@ const getBarangayPlaceholder = (targetForm) => {
   return 'Select or Type Barangay'
 }
 
+/* ------------------------------------------------------------------ *
+ * Required-field validation
+ *
+ * Which fields are mandatory comes from the API's OpenAPI document via
+ * src/models/requiredFields.js — see that file for why the schema's own
+ * `required` array cannot be used directly.
+ * ------------------------------------------------------------------ */
+
+// { create: { colName: 'message' }, edit: { ... } }
+const fieldErrors = ref({ create: {}, edit: {} })
+
+const requiredColumns = computed(() =>
+  new Set(resolveRequiredFields(props.endpoint, formColumns.value, 'create'))
+)
+
+const isFieldRequired = (col) => {
+  if (!requiredColumns.value.has(col)) return false
+  // A toggle always holds a boolean, so it can never be "missing".
+  if (getFieldType(col) === 'toggle') return false
+  return true
+}
+
+const hasFieldError = (scope, col) => Boolean(fieldErrors.value[scope]?.[col])
+const fieldErrorText = (scope, col) => fieldErrors.value[scope]?.[col] || ''
+
+const formForScope = (scope) => (scope === 'edit' ? editFormData : formData)
+
+/** The password column, resolved the same way saveData resolves it. */
+const passwordColumn = () => formColumns.value.find(col => getFieldType(col) === 'password')
+
+const passwordsMismatch = (scope) => {
+  const pwdCol = passwordColumn()
+  if (!pwdCol) return false
+  const form = formForScope(scope).value
+  const pwd = form[pwdCol] || ''
+  const confirmPwd = form.confirmPassword || ''
+  return Boolean(pwd && confirmPwd && pwd !== confirmPwd)
+}
+
+const isBlank = (val) => {
+  if (val === null || val === undefined) return true
+  if (typeof val === 'string') return val.trim() === ''
+  if (val instanceof Date) return isNaN(val.getTime())
+  if (Array.isArray(val)) return val.length === 0
+  return false
+}
+
+const fieldWrapId = (scope, col) => `field-${scope}-${col}`
+
+/**
+ * Fills fieldErrors[scope] and returns the columns that failed, in form order
+ * so the first entry is the one highest up the dialog.
+ */
+const validateRequired = (scope) => {
+  const form = formForScope(scope).value
+  const errors = {}
+  const missing = []
+
+  formColumns.value.forEach(col => {
+    if (!isFieldRequired(col)) return
+    // An existing record's password is not echoed back by the API, so demanding
+    // it on edit would lock the user out of saving any other change.
+    if (scope === 'edit' && ['password', 'confirm_password'].includes(getFieldType(col))) return
+    if (!isBlank(form[col])) return
+    errors[col] = `${formatLabel(col)} is required`
+    missing.push(col)
+  })
+
+  // confirmPassword is a client-only field, so it never appears in formColumns
+  // required lists — mirror whatever the password field itself demands.
+  const pwdCol = passwordColumn()
+  if (scope === 'create' && pwdCol && isFieldRequired(pwdCol) && isBlank(form.confirmPassword)) {
+    errors.confirmPassword = 'Confirm Password is required'
+    missing.push('confirmPassword')
+  }
+
+  fieldErrors.value[scope] = errors
+  return missing
+}
+
+/** Brings an element inside the dialog's own scroll container into view. */
+const scrollIntoDialog = (el) => {
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+const focusFirstInvalid = async (scope, col) => {
+  await nextTick()
+  const wrapper = document.getElementById(fieldWrapId(scope, col))
+  if (!wrapper) return
+  scrollIntoDialog(wrapper)
+  const focusable = wrapper.querySelector('input, textarea, [tabindex]:not([tabindex="-1"])')
+  if (focusable) focusable.focus({ preventScroll: true })
+}
+
+/** Surfaces the dialog's error banner, which sits above a tall scroll pane. */
+const scrollErrorBannerIntoView = async (scope) => {
+  await nextTick()
+  scrollIntoDialog(document.getElementById(`form-error-${scope}`))
+}
+
+/**
+ * Runs before submit. Returns true when the form is good to send; otherwise
+ * marks the offending fields and points the user at the first one.
+ */
+const runPreSubmitChecks = async (scope) => {
+  const missing = validateRequired(scope)
+  const setError = (msg) => {
+    if (scope === 'edit') editError.value = msg
+    else saveError.value = msg
+  }
+
+  if (missing.length) {
+    setError(`${missing.length} required ${missing.length === 1 ? 'field is' : 'fields are'} missing. Please complete the highlighted ${missing.length === 1 ? 'field' : 'fields'}.`)
+    toast.add({
+      severity: 'warn',
+      summary: 'Cannot save yet',
+      detail: `${missing.length} required ${missing.length === 1 ? 'field' : 'fields'} still empty: ${missing.slice(0, 3).map(formatLabel).join(', ')}${missing.length > 3 ? `, +${missing.length - 3} more` : ''}`,
+      life: 5000
+    })
+    await focusFirstInvalid(scope, missing[0])
+    return false
+  }
+
+  if (passwordsMismatch(scope)) {
+    setError('Passwords do not match. Please ensure both password fields are identical.')
+    await scrollErrorBannerIntoView(scope)
+    return false
+  }
+
+  return true
+}
+
+// Clear a field's error as soon as it is filled in, without wiring an input
+// handler onto each of the 26 field-type branches.
+const watchScopeForFixes = (scope) => {
+  watch(
+    () => formForScope(scope).value,
+    (form) => {
+      const errors = fieldErrors.value[scope]
+      if (!form || !errors || !Object.keys(errors).length) return
+      const remaining = { ...errors }
+      let changed = false
+      Object.keys(errors).forEach(col => {
+        if (!isBlank(form[col])) {
+          delete remaining[col]
+          changed = true
+        }
+      })
+      if (changed) fieldErrors.value[scope] = remaining
+    },
+    { deep: true }
+  )
+}
+watchScopeForFixes('create')
+watchScopeForFixes('edit')
+
 const touchedAddressBlockers = ref({
   create_city: false,
   create_barangay: false,
@@ -3006,9 +3223,20 @@ const notifyAddressStep = (targetForm, field, scope = 'create') => {
 
 const onRegionChanged = (targetForm) => {
   const form = unwrapForm(targetForm)
+  if (provinceColName.value) form[provinceColName.value] = ''
   if (cityColName.value) form[cityColName.value] = ''
   if (barangayColName.value) form[barangayColName.value] = ''
   updateCitiesForSelectedRegion(regionColName.value ? form[regionColName.value] : null)
+}
+
+const onProvinceChanged = (targetForm) => {
+  const form = unwrapForm(targetForm)
+  if (cityColName.value) form[cityColName.value] = ''
+  if (barangayColName.value) form[barangayColName.value] = ''
+  updateCitiesForSelectedProvince(
+    provinceColName.value ? form[provinceColName.value] : null,
+    regionColName.value ? form[regionColName.value] : null
+  )
 }
 
 const onCityChanged = (targetForm) => {
@@ -3048,12 +3276,14 @@ watch(
 watch(displayCreateDialog, (isOpen) => {
   if (!isOpen) {
     resetTouchedAddressBlockers('create')
+    fieldErrors.value.create = {}
   }
 })
 
 watch(displayEditDialog, (isOpen) => {
   if (!isOpen) {
     resetTouchedAddressBlockers('edit')
+    fieldErrors.value.edit = {}
   }
 })
 
@@ -3158,6 +3388,7 @@ const formatViewFieldValue = (col, val) => {
 const openCreateDialog = () => {
   fetchAddressData()
   resetTouchedAddressBlockers('create')
+  fieldErrors.value.create = {}
   saveError.value = null
   showPasswordState.value = {}
   formData.value = {}
@@ -3232,22 +3463,24 @@ const syncPairedFields = (payload) => {
     const found = lcpnapportsList.value.find(opt => opt.value === payload.lcpnapportId || opt.id === payload.lcpnapportId)
     if (found) payload.lcpnapport = found.label
   }
+
+  // Ensure picture of statement billing from other provider is synced to backend key
+  const statementBillingVal = payload.pictureofstatmentbillingfromotherprovider || 
+                              payload.pictureOfStatementBillingFromOtherProvider || 
+                              payload.picture_of_statement_billing_from_other_provider || 
+                              payload.pictureofstatementbillingfromotherprovider ||
+                              payload.statementBilling || 
+                              payload.proofOfBilling || ''
+  if (statementBillingVal) {
+    payload.pictureofstatmentbillingfromotherprovider = statementBillingVal
+  }
 }
 
 const saveData = async () => {
   saveError.value = null
 
-  // Password confirmation validation
-  const hasPassword = formColumns.value.some(col => getFieldType(col) === 'password')
-  if (hasPassword) {
-    const pwdCol = formColumns.value.find(col => getFieldType(col) === 'password')
-    const pwd = formData.value[pwdCol] || ''
-    const confirmPwd = formData.value.confirmPassword || ''
-    if (pwd !== confirmPwd) {
-      saveError.value = 'Passwords do not match. Please ensure both password fields are identical.'
-      return
-    }
-  }
+  // Required fields and password confirmation, before anything is sent.
+  if (!await runPreSubmitChecks('create')) return
 
   saving.value = true
   try {
@@ -3298,13 +3531,20 @@ const saveData = async () => {
     
     console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, payload)
     await apiClient.post(`/${props.endpoint}`, payload)
-    
+
     // Refresh table
     await fetchData()
     displayCreateDialog.value = false
+    toast.add({
+      severity: 'success',
+      summary: 'Record created',
+      detail: `New ${formatLabel(props.endpoint)} record saved successfully.`,
+      life: 3000
+    })
   } catch (err) {
     console.error(`Error creating record for ${props.endpoint}:`, err)
     saveError.value = err.message || 'Failed to create record. Please check input values.'
+    await scrollErrorBannerIntoView('create')
   } finally {
     saving.value = false
   }
@@ -3329,6 +3569,7 @@ const openViewDialog = (record) => {
 
 const openEditDialog = async (record) => {
   resetTouchedAddressBlockers('edit')
+  fieldErrors.value.edit = {}
   editError.value = null
   showPasswordState.value = {}
   editingRecordId.value = getRecordId(record)
@@ -3450,20 +3691,15 @@ const openEditDialog = async (record) => {
 }
 
 const saveEdit = async () => {
-  if (!editingRecordId.value) return
   editError.value = null
 
-  // Password confirmation validation
-  const hasPassword = formColumns.value.some(col => getFieldType(col) === 'password')
-  if (hasPassword) {
-    const pwdCol = formColumns.value.find(col => getFieldType(col) === 'password')
-    const pwd = editFormData.value[pwdCol] || ''
-    const confirmPwd = editFormData.value.confirmPassword || ''
-    if (pwd !== confirmPwd) {
-      editError.value = 'Passwords do not match. Please ensure both password fields are identical.'
-      return
-    }
+  if (!editingRecordId.value) {
+    editError.value = 'This record has no identifier, so it cannot be updated. Close the dialog and refresh the table.'
+    return
   }
+
+  // Required fields and password confirmation, before anything is sent.
+  if (!await runPreSubmitChecks('edit')) return
 
   savingEdit.value = true
   try {
@@ -3509,12 +3745,20 @@ const saveEdit = async () => {
     })
 
     console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, payload)
-    await apiClient.put(`/${props.endpoint}/${editingRecordId.value}`, payload)
+    const updatedId = editingRecordId.value
+    await apiClient.put(`/${props.endpoint}/${updatedId}`, payload)
     await fetchData()
     displayEditDialog.value = false
+    toast.add({
+      severity: 'success',
+      summary: 'Record updated',
+      detail: `${formatLabel(props.endpoint)} record #${updatedId} saved successfully.`,
+      life: 3000
+    })
   } catch (err) {
     console.error(`Error updating record for ${props.endpoint}:`, err)
     editError.value = err.message || 'Failed to update record. Please check input values.'
+    await scrollErrorBannerIntoView('edit')
   } finally {
     savingEdit.value = false
   }
@@ -3541,6 +3785,12 @@ const deleteRecord = async () => {
     await apiClient.delete(`/${props.endpoint}/${targetId}`)
     await fetchData()
     displayDeleteDialog.value = false
+    toast.add({
+      severity: 'success',
+      summary: 'Record deleted',
+      detail: `${formatLabel(props.endpoint)} record #${targetId} was removed.`,
+      life: 3000
+    })
   } catch (err) {
     console.error(`Error deleting record for ${props.endpoint}:`, err)
     deleteError.value = err.message || 'Failed to delete record.'
@@ -3617,6 +3867,7 @@ const fetchData = async ({ silent = false } = {}) => {
       }
 
       const hasApiViewer = menuList.some(m => Number(m.id) === 24 || (m.name && m.name.toLowerCase().includes('api viewer')))
+      const hasModels = menuList.some(m => Number(m.id) === 29 || (m.name && m.name.toLowerCase() === 'models'))
       const hasSettings = menuList.some(m => Number(m.id) === 20 || (m.name && m.name.toLowerCase().includes('settings')))
       const hasTheme = menuList.some(m => Number(m.id) === 103 || (m.name && m.name.toLowerCase().includes('theme')))
       const hasModifyPwd = menuList.some(m => Number(m.id) === 101 || (m.name && m.name.toLowerCase().includes('modify password')))
@@ -3624,6 +3875,9 @@ const fetchData = async ({ silent = false } = {}) => {
       
       if (!hasApiViewer) {
         menuList.push({ id: 24, name: 'API Viewer', route: '/data-viewer', icon: 'pi pi-database', description: 'Inspect live GET endpoints across all backend services' })
+      }
+      if (!hasModels) {
+        menuList.push({ id: 29, name: 'Models', route: '/models', icon: 'pi pi-table', description: 'Browse every table\'s columns, data types, and required fields' })
       }
       if (!hasSettings) {
         menuList.push({ id: 20, name: 'Settings', route: '/settings', icon: 'pi pi-cog', description: 'System appearance, profile preferences, and security configurations' })
@@ -4534,6 +4788,34 @@ defineExpose({
 .address-step-hint i {
   font-size: 0.8rem;
   color: var(--bs-primary, #e74c5a) !important;
+}
+
+/* Required-field validation. One rule per control family keeps the 26
+   field-type branches in both dialogs free of validation markup. */
+.field-error-hint {
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: var(--bs-danger, #dc3545) !important;
+  line-height: 1.25;
+}
+.field-error-hint i {
+  font-size: 0.8rem;
+  color: var(--bs-danger, #dc3545) !important;
+}
+
+.field-invalid :deep(.p-select),
+.field-invalid :deep(.p-inputtext),
+.field-invalid :deep(.p-textarea),
+.field-invalid :deep(.p-datepicker-input),
+.field-invalid :deep(.form-control),
+.field-invalid :deep(.dropzone) {
+  border-color: var(--bs-danger, #dc3545) !important;
+}
+
+.field-invalid :deep(.p-select:focus),
+.field-invalid :deep(.p-inputtext:focus),
+.field-invalid :deep(.form-control:focus) {
+  box-shadow: 0 0 0 0.15rem rgba(var(--bs-danger-rgb, 220, 53, 69), 0.2) !important;
 }
 
 @media (max-width: 767.98px) {

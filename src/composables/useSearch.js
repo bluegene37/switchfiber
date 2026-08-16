@@ -44,6 +44,7 @@ export function useSearch() {
     { id: 'nav-user', category: 'Navigation', title: 'User Accounts', subtitle: 'System users & admin accounts', icon: 'pi pi-users', route: '/user' },
     { id: 'nav-access-level', category: 'Navigation', title: 'Access Levels & Permissions', subtitle: 'Role-based access control matrix', icon: 'pi pi-lock', route: '/access_level' },
     { id: 'nav-api-viewer', category: 'Navigation', title: 'API Data Viewer', subtitle: 'Inspect raw JSON endpoints & API tables', icon: 'pi pi-database', route: '/data-viewer' },
+    { id: 'nav-models', category: 'Navigation', title: 'Models', subtitle: 'Table columns, data types, & required fields', icon: 'pi pi-table', route: '/models' },
     { id: 'nav-settings', category: 'Navigation', title: 'Settings', subtitle: 'Account settings & preference management', icon: 'pi pi-cog', route: '/settings' }
   ]
 
