@@ -255,7 +255,16 @@
       </template>
 
       <!-- Dynamic Visible Columns -->
-      <Column v-for="col in displayedColumns" :key="col" :field="col" :header="formatLabel(col)" :sortable="true">
+      <Column
+        v-for="col in displayedColumns"
+        :key="col"
+        :field="col"
+        :header="formatLabel(col)"
+        :sortable="true"
+        :frozen="isLeftFrozenColumn(col)"
+        alignFrozen="left"
+        :class="isLeftFrozenColumn(col) ? 'frozen-left-col' : ''"
+      >
         <template #body="slotProps">
           <span v-if="col.toLowerCase() === 'active'">
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Active</span>
@@ -1690,6 +1699,9 @@ function isCreatedOrModifiedField(col) {
 // the View Details modal, which builds its own list from the full record.
 const APPLICATION_COLUMNS = [
   'id',
+  // Status sits directly after the id so it lands in the first screenful and is
+  // covered by the left-pinning below, keeping it readable on narrow viewports.
+  'status',
   // The API returns `dateTime`; `timestamp` is the name used by the static
   // fallback list, so match either depending on which one the payload carries.
   'dateTime',
@@ -1702,8 +1714,7 @@ const APPLICATION_COLUMNS = [
   'barangay',
   'installationAddress',
   'desiredPlan',
-  'applyingFor',
-  'status'
+  'applyingFor'
 ]
 
 const CONCISE_ENDPOINT_COLUMNS = {
@@ -1879,6 +1890,25 @@ const displayedColumns = computed(() => {
   if (visibleColumns.value.length === 0) return columns.value
   return columns.value.filter(col => visibleColumns.value.includes(col))
 })
+
+// Columns pinned to the left edge so they survive horizontal scrolling on a narrow
+// viewport. Only the leading run of pinnable columns qualifies: PrimeVue offsets a
+// frozen column by the width of the frozen columns before it, so a gap in the run
+// would leave the later column overlapping whatever scrolls beneath it. The run is
+// pinned only when it actually reaches the status column, since pinning the id on
+// its own just costs horizontal space.
+const PINNABLE_LEADING_COLUMNS = ['id', 'status']
+
+const leftFrozenColumns = computed(() => {
+  const run = []
+  for (const col of displayedColumns.value) {
+    if (!PINNABLE_LEADING_COLUMNS.includes(col.toLowerCase())) break
+    run.push(col)
+  }
+  return run.some(c => c.toLowerCase() === 'status') ? run : []
+})
+
+const isLeftFrozenColumn = (col) => leftFrozenColumns.value.includes(col)
 
 const hasActiveColumn = computed(() => {
   return (columns.value || []).some(c => {
@@ -3833,6 +3863,13 @@ defineExpose({
   background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
   box-shadow: -4px 0 8px rgba(0, 0, 0, 0.06) !important;
   z-index: 3 !important;
+}
+
+/* Left-pinned columns (id / status): the shared frozen rule above casts its shadow
+   leftward for the right-pinned Actions column, so flip it to trail rightward. */
+:deep(.p-datatable-tbody > tr > td.frozen-left-col),
+:deep(.p-datatable-thead > tr > th.frozen-left-col) {
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.06) !important;
 }
 
 :deep(.p-datatable-tbody > tr:hover > td.p-frozen-column),
