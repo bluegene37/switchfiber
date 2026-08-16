@@ -352,7 +352,7 @@ const filteredMenuItems = computed(() => {
 
 .hover-logout {
   transition: all 0.2s ease-in-out;
-  border: 1px solid rgba(231, 76, 90, 0.2) !important;
+  border: 1px solid rgba(var(--bs-primary-rgb, 231, 76, 90), 0.2) !important;
 }
 .hover-logout:hover {
   background-color: var(--bs-danger) !important;

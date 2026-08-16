@@ -370,7 +370,7 @@ watch(selectedEndpoint, () => {
 
 .get-badge-active {
   background-color: #ffffff !important;
-  color: #e74c5a !important;
+  color: var(--bs-primary, #e74c5a) !important;
   font-weight: 700 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
 }

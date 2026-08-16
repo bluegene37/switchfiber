@@ -26,6 +26,16 @@ function adjustColorBrightness(hex, percent) {
   return `#${toHex(r * factor)}${toHex(g * factor)}${toHex(b * factor)}`
 }
 
+// Blend a colour toward a target by `ratio` (0 = untouched, 1 = fully the target).
+// Tints and shades built this way keep the theme's hue, which brightness scaling
+// alone cannot do: multiplying a saturated hue never reaches a pale wash.
+function mixColor(hex, targetHex, ratio) {
+  const [r, g, b] = hexToRgbValues(hex)
+  const [tr, tg, tb] = hexToRgbValues(targetHex)
+  const toHex = x => Math.min(255, Math.max(0, Math.round(x))).toString(16).padStart(2, '0')
+  return `#${toHex(r + (tr - r) * ratio)}${toHex(g + (tg - g) * ratio)}${toHex(b + (tb - b) * ratio)}`
+}
+
 export function buildPaletteFromHex(hex, name = 'SwitchFiber Theme') {
   const [r, g, b] = hexToRgbValues(hex)
   const hover = adjustColorBrightness(hex, -10)
@@ -36,9 +46,37 @@ export function buildPaletteFromHex(hex, name = 'SwitchFiber Theme') {
     hover,
     active,
     rgb: `${r}, ${g}, ${b}`,
+    // Solid tints, matching the values style.css documents for the default rose.
+    bgSubtle: mixColor(hex, '#ffffff', 0.93),
+    borderSubtle: mixColor(hex, '#ffffff', 0.78),
+    // Light wash used behind hovered table rows, per mode.
+    rowHoverSolidLight: mixColor(hex, '#ffffff', 0.96),
+    rowHoverSolidDark: mixColor(hex, '#15171a', 0.86),
+    // Lifted variant that stays legible as text on a dark surface.
+    onDark: mixColor(hex, '#ffffff', 0.35),
     subtleBg: `rgba(${r}, ${g}, ${b}, 0.08)`,
     pdfRgb: [r, g, b]
   }
+}
+
+/**
+ * Categorical series colours for charts, stepped through the active brand hue
+ * from a deep shade to a pale tint.
+ *
+ * Chart categories like plan tiers or node names carry no inherent meaning, so
+ * they follow the theme instead of pulling in unrelated hues. Genuinely semantic
+ * series — success / warning / danger — keep their own fixed colours and must not
+ * use this ramp.
+ */
+export function buildCategoricalRamp(hex, steps = 5) {
+  if (steps <= 1) return [hex]
+  const ramp = []
+  for (let i = 0; i < steps; i++) {
+    const t = i / (steps - 1)
+    const distance = Math.abs(t - 0.5) * 1.1
+    ramp.push(mixColor(hex, t < 0.5 ? '#2a0d11' : '#ffffff', distance))
+  }
+  return ramp
 }
 
 export const THEME_PALETTES = {
@@ -74,7 +112,12 @@ function applyColorTheme(themeKeyOrHex) {
     root.style.setProperty('--bs-primary-rgb', palette.rgb)
     root.style.setProperty('--bs-primary-hover', palette.hover)
     root.style.setProperty('--bs-primary-active', palette.active)
-    root.style.setProperty('--bs-primary-bg-subtle', palette.subtleBg)
+    root.style.setProperty('--bs-primary-bg-subtle', palette.bgSubtle)
+    // Previously left at the static rose value, so every subtle border kept the
+    // old hue after a theme switch.
+    root.style.setProperty('--bs-primary-border-subtle', palette.borderSubtle)
+    root.style.setProperty('--bs-link-color-rgb', palette.rgb)
+    root.style.setProperty('--theme-primary-on-dark', palette.onDark)
 
     root.style.setProperty('--p-primary-color', palette.primary)
     root.style.setProperty('--p-primary-hover-color', palette.hover)
@@ -84,7 +127,7 @@ function applyColorTheme(themeKeyOrHex) {
     root.style.setProperty('--theme-primary-hover', palette.hover)
     root.style.setProperty('--theme-row-highlight', palette.primary)
     root.style.setProperty('--theme-row-hover', `rgba(${palette.rgb}, 0.08)`)
-    root.style.setProperty('--theme-row-hover-solid', isDark.value ? '#2b2326' : '#fdf2f4')
+    root.style.setProperty('--theme-row-hover-solid', isDark.value ? palette.rowHoverSolidDark : palette.rowHoverSolidLight)
     root.setAttribute('data-color-theme', typeof themeKeyOrHex === 'string' ? themeKeyOrHex : 'red')
   }
 }
@@ -107,6 +150,9 @@ export function useTheme() {
       document.documentElement.removeAttribute('data-bs-theme')
       localStorage.theme = 'light'
     }
+    // Some tokens (the solid row-hover wash) resolve differently per mode, and
+    // were previously fixed at whatever mode was active on first load.
+    applyColorTheme(activeColorTheme.value)
   }
 
   const setColorTheme = (themeKeyOrHex) => {

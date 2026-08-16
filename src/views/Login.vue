@@ -159,7 +159,7 @@ const handleForgotPassword = async () => {
 
 .login-field-group:focus-within {
   border-color: var(--bs-primary) !important;
-  box-shadow: 0 0 0 3px rgba(231, 76, 90, 0.18) !important;
+  box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb, 231, 76, 90), 0.18) !important;
 }
 
 :deep(.login-field-group .p-password),

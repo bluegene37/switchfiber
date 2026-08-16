@@ -3637,7 +3637,7 @@ defineExpose({
   transition: background-color 0.15s ease-in-out;
 }
 :deep(.p-datatable-tbody > tr:hover) {
-  background-color: var(--theme-row-hover, rgba(231, 76, 90, 0.06)) !important;
+  background-color: var(--theme-row-hover, rgba(var(--bs-primary-rgb, 231, 76, 90), 0.06)) !important;
 }
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"]),
@@ -3686,12 +3686,12 @@ defineExpose({
 :deep(.delete-btn .pi),
 :deep(.delete-btn .pi-trash),
 :deep(.delete-btn span) {
-  color: #ef4444 !important;
+  color: var(--bs-danger, #ef4444) !important;
 }
 
 :deep(.delete-btn:hover) {
-  color: #e74c5a !important;
-  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: var(--bs-danger-hover, #dc2626) !important;
+  background-color: rgba(var(--bs-danger-rgb, 239, 68, 68), 0.15) !important;
 }
 
 /* Trashcan Icon on HIGHLIGHTED / SELECTED rows (Pure White for high contrast on red background) */
@@ -3765,7 +3765,7 @@ defineExpose({
 }
 
 :deep(.p-datatable-tbody > tr:hover td.frozen-actions-col) {
-  background-color: var(--theme-row-hover, rgba(231, 76, 90, 0.06)) !important;
+  background-color: var(--theme-row-hover, rgba(var(--bs-primary-rgb, 231, 76, 90), 0.06)) !important;
 }
 
 :deep(.p-datatable-tbody > tr.p-highlight td.frozen-actions-col),
@@ -3865,11 +3865,34 @@ defineExpose({
   z-index: 3 !important;
 }
 
-/* Left-pinned columns (id / status): the shared frozen rule above casts its shadow
-   leftward for the right-pinned Actions column, so flip it to trail rightward. */
+/* Left-pinned columns (id / status).
+   These need their own opaque background: a sticky cell keeps its place while the
+   rest of the row slides beneath it, so without one the scrolling text shows
+   straight through. The shared frozen rule also casts its shadow leftward for the
+   right-pinned Actions column, so flip it to trail rightward here. */
 :deep(.p-datatable-tbody > tr > td.frozen-left-col),
-:deep(.p-datatable-thead > tr > th.frozen-left-col) {
+:deep(td.frozen-left-col) {
+  background-color: var(--bs-body-bg, #ffffff) !important;
   box-shadow: 4px 0 8px rgba(0, 0, 0, 0.06) !important;
+  z-index: 2 !important;
+}
+
+:deep(.p-datatable-thead > tr > th.frozen-left-col),
+:deep(th.frozen-left-col) {
+  background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.06) !important;
+  z-index: 3 !important;
+}
+
+/* The pinned cells must repaint the row's own hover / selected fill, otherwise
+   they stay body-coloured and cut a gap through the highlighted row. */
+:deep(.p-datatable-tbody > tr:hover > td.frozen-left-col) {
+  background-color: var(--theme-row-hover-solid, var(--bs-secondary-bg, #f4f5f7)) !important;
+}
+
+:deep(.p-datatable-tbody > tr.p-highlight > td.frozen-left-col),
+:deep(.p-datatable-tbody > tr[aria-selected="true"] > td.frozen-left-col) {
+  background-color: var(--theme-row-highlight, #e74c5a) !important;
 }
 
 :deep(.p-datatable-tbody > tr:hover > td.p-frozen-column),
@@ -4007,7 +4030,7 @@ defineExpose({
   transition: color 0.15s ease-in-out;
 }
 .clear-search-btn:hover {
-  color: #ef4444 !important;
+  color: var(--bs-danger, #ef4444) !important;
 }
 
 .action-row-btn {
@@ -4056,7 +4079,7 @@ defineExpose({
 
 :deep(.p-menu .p-menu-item-link:hover),
 :deep(.p-menu .p-menuitem-link:hover) {
-  background-color: rgba(231, 76, 90, 0.08) !important;
+  background-color: rgba(var(--bs-primary-rgb, 231, 76, 90), 0.08) !important;
   color: var(--bs-primary, #e74c5a) !important;
 }
 

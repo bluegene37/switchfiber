@@ -195,6 +195,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useAppStore } from '../stores/app'
 import apiClient from '../services/api'
+import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR } from '../composables/useTheme'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
 import DataTable from 'primevue/datatable'
@@ -392,6 +393,31 @@ const handleExport = () => {
   }
 }
 
+// Chart series colours.
+//
+// ECharts renders to canvas and cannot read CSS custom properties, so the palette
+// is resolved here from the same MASTER_THEME_COLOR that drives the CSS tokens —
+// changing that one hex still recolours every chart.
+//
+// Categorical series (plan tiers, node names) step through the brand hue. Only
+// genuinely semantic series keep fixed status colours.
+const brandRamp = buildCategoricalRamp(MASTER_THEME_COLOR, 5)
+const BRAND = {
+  deep: brandRamp[0],
+  mid: brandRamp[1],
+  base: brandRamp[2],
+  light: brandRamp[3],
+  pale: brandRamp[4]
+}
+const rgbaOf = (hex, alpha) => `rgba(${buildPaletteFromHex(hex).rgb}, ${alpha})`
+
+// Mirrors the semantic tokens in style.css; these must not follow the brand hue.
+const STATUS = {
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger: '#ef4444'
+}
+
 // 1. Network Bandwidth Line Chart
 const bandwidthChartOption = ref({
   tooltip: { trigger: 'axis' },
@@ -409,11 +435,11 @@ const bandwidthChartOption = ref({
       type: 'line', 
       smooth: true, 
       data: [42, 38, 85, 94, 88, 110, 65], 
-      itemStyle: { color: '#e74c5a' },
+      itemStyle: { color: BRAND.base },
       areaStyle: {
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: 'rgba(231, 76, 90, 0.35)' }, { offset: 1, color: 'rgba(231, 76, 90, 0.02)' }]
+          colorStops: [{ offset: 0, color: rgbaOf(BRAND.base, 0.35) }, { offset: 1, color: rgbaOf(BRAND.base, 0.02) }]
         }
       }
     },
@@ -422,11 +448,11 @@ const bandwidthChartOption = ref({
       type: 'line', 
       smooth: true, 
       data: [18, 14, 38, 45, 40, 52, 28], 
-      itemStyle: { color: '#0ea5e9' },
+      itemStyle: { color: BRAND.deep },
       areaStyle: {
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: 'rgba(14, 165, 233, 0.3)' }, { offset: 1, color: 'rgba(14, 165, 233, 0.02)' }]
+          colorStops: [{ offset: 0, color: rgbaOf(BRAND.deep, 0.3) }, { offset: 1, color: rgbaOf(BRAND.deep, 0.02) }]
         }
       }
     }
@@ -448,11 +474,11 @@ const planDistributionChartOption = ref({
       label: { show: false },
       emphasis: { label: { show: true, fontSize: '14', fontWeight: 'bold' } },
       data: [
-        { value: 4500, name: 'Fiber 50Mbps', itemStyle: { color: '#3b82f6' } },
-        { value: 3800, name: 'Fiber 100Mbps', itemStyle: { color: '#10b981' } },
-        { value: 2100, name: 'Fiber 200Mbps', itemStyle: { color: '#8b5cf6' } },
-        { value: 950, name: 'Enterprise 500Mbps', itemStyle: { color: '#f59e0b' } },
-        { value: 542, name: 'Fiber 1Gbps', itemStyle: { color: '#ec4899' } }
+        { value: 4500, name: 'Fiber 50Mbps', itemStyle: { color: BRAND.deep } },
+        { value: 3800, name: 'Fiber 100Mbps', itemStyle: { color: BRAND.mid } },
+        { value: 2100, name: 'Fiber 200Mbps', itemStyle: { color: BRAND.base } },
+        { value: 950, name: 'Enterprise 500Mbps', itemStyle: { color: BRAND.light } },
+        { value: 542, name: 'Fiber 1Gbps', itemStyle: { color: BRAND.pale } }
       ]
     }
   ]
@@ -474,14 +500,14 @@ const revenueChartOption = ref({
       type: 'bar',
       barWidth: '45%',
       data: [980, 1040, 1120, 1190, 1240, 1285, 1340],
-      itemStyle: { color: '#e74c5a', borderRadius: [4, 4, 0, 0] }
+      itemStyle: { color: BRAND.base, borderRadius: [4, 4, 0, 0] }
     },
     {
       name: 'ARPU (₱)',
       type: 'line',
       yAxisIndex: 1,
       data: [1380, 1400, 1420, 1435, 1440, 1450, 1465],
-      itemStyle: { color: '#f59e0b' }
+      itemStyle: { color: BRAND.deep }
     }
   ]
 })
@@ -494,9 +520,9 @@ const jobOrdersChartOption = ref({
   xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
   yAxis: { type: 'value' },
   series: [
-    { name: 'Completed', type: 'bar', stack: 'total', data: [12, 18, 15, 22, 25, 14, 8], itemStyle: { color: '#10b981' } },
-    { name: 'In Progress', type: 'bar', stack: 'total', data: [5, 7, 6, 8, 10, 4, 3], itemStyle: { color: '#0ea5e9' } },
-    { name: 'Pending', type: 'bar', stack: 'total', data: [3, 4, 2, 5, 4, 2, 1], itemStyle: { color: '#f59e0b' } }
+    { name: 'Completed', type: 'bar', stack: 'total', data: [12, 18, 15, 22, 25, 14, 8], itemStyle: { color: STATUS.success } },
+    { name: 'In Progress', type: 'bar', stack: 'total', data: [5, 7, 6, 8, 10, 4, 3], itemStyle: { color: BRAND.base } },
+    { name: 'Pending', type: 'bar', stack: 'total', data: [3, 4, 2, 5, 4, 2, 1], itemStyle: { color: STATUS.warning } }
   ]
 })
 
@@ -519,9 +545,9 @@ const nodeRadarChartOption = ref({
       name: 'Node Health Comparison',
       type: 'radar',
       data: [
-        { value: [99.9, 82, 94, 65, 70], name: 'Manila Core', itemStyle: { color: '#e74c5a' } },
-        { value: [99.5, 74, 88, 58, 62], name: 'Laguna Node', itemStyle: { color: '#10b981' } },
-        { value: [98.8, 68, 80, 52, 55], name: 'Batangas Node', itemStyle: { color: '#8b5cf6' } }
+        { value: [99.9, 82, 94, 65, 70], name: 'Manila Core', itemStyle: { color: BRAND.base } },
+        { value: [99.5, 74, 88, 58, 62], name: 'Laguna Node', itemStyle: { color: BRAND.deep } },
+        { value: [98.8, 68, 80, 52, 55], name: 'Batangas Node', itemStyle: { color: BRAND.light } }
       ]
     }
   ]
@@ -543,9 +569,9 @@ const uptimeGaugeChartOption = ref({
         lineStyle: {
           width: 18,
           color: [
-            [0.6, '#ef4444'],
-            [0.85, '#f59e0b'],
-            [1, '#10b981']
+            [0.6, STATUS.danger],
+            [0.85, STATUS.warning],
+            [1, STATUS.success]
           ]
         }
       },

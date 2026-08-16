@@ -114,9 +114,9 @@
           <!-- Active Theme & Mode Toggle Banner -->
           <div class="p-3 rounded-4 border bg-body-tertiary mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
-              <span 
-                class="rounded-circle d-inline-block border border-2 border-white shadow-sm flex-shrink-0" 
-                style="width: 36px; height: 36px; background-color: #e74c5a;"
+              <span
+                class="rounded-circle d-inline-block border border-2 border-white shadow-sm flex-shrink-0"
+                style="width: 36px; height: 36px; background-color: var(--bs-primary);"
               ></span>
               <div>
                 <div class="fw-bold small text-body d-flex align-items-center gap-2">
@@ -150,25 +150,25 @@
 
             <div class="row g-3 px-1 px-md-2">
               <div v-for="c in primaryColors" :key="c.hex" class="col-12 col-sm-6 col-xl-4">
-                <div 
-                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
-                  @click="copyHex(c.hex)"
-                  v-tooltip.top="`Click to copy ${c.hex}`"
+                <div
+                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all d-flex flex-column"
+                  @click="copyHex(displayHex(c))"
+                  v-tooltip.top="`Click to copy ${displayHex(c)}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2.5">
-                    <div 
-                      class="rounded-3 shadow-xs border flex-shrink-0" 
-                      :style="{ width: '42px', height: '42px', backgroundColor: c.hex }"
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <div
+                      class="rounded-3 shadow-xs border flex-shrink-0"
+                      :style="{ width: '42px', height: '42px', backgroundColor: swatchColor(c) }"
                     ></div>
-                    <div class="overflow-hidden">
-                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
-                      <code class="small text-primary fw-bold">{{ c.hex }}</code>
+                    <div class="min-w-0">
+                      <div class="fw-bold small text-body swatch-name">{{ c.name }}</div>
+                      <code class="small text-primary fw-bold">{{ displayHex(c) }}</code>
                     </div>
                   </div>
-                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
-                  <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
-                    <span class="font-monospace text-truncate">{{ c.token }}</span>
-                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" class="ms-2" style="font-size: 0.75rem;"></i>
+                  <div class="small text-secondary swatch-usage">{{ c.usage }}</div>
+                  <div class="mt-3 pt-2.5 border-top d-flex align-items-center justify-content-between gap-3 text-secondary" style="font-size: 0.7rem;">
+                    <span class="font-monospace swatch-token">{{ c.token }}</span>
+                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" class="flex-shrink-0" style="font-size: 0.75rem;"></i>
                   </div>
                 </div>
               </div>
@@ -188,25 +188,25 @@
 
             <div class="row g-3 px-1 px-md-2">
               <div v-for="c in tableHighlightColors" :key="c.name" class="col-12 col-sm-6 col-xl-4">
-                <div 
-                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
-                  @click="copyHex(c.hex)"
-                  v-tooltip.top="`Click to copy ${c.hex}`"
+                <div
+                  class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all d-flex flex-column"
+                  @click="copyHex(displayHex(c))"
+                  v-tooltip.top="`Click to copy ${displayHex(c)}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2.5">
-                    <div 
-                      class="rounded-3 shadow-xs border flex-shrink-0" 
-                      :style="{ width: '42px', height: '42px', backgroundColor: c.previewColor || c.hex }"
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <div
+                      class="rounded-3 shadow-xs border flex-shrink-0"
+                      :style="{ width: '42px', height: '42px', backgroundColor: swatchColor(c) }"
                     ></div>
-                    <div class="overflow-hidden">
-                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
-                      <code class="small text-primary fw-bold">{{ c.hex }}</code>
+                    <div class="min-w-0">
+                      <div class="fw-bold small text-body swatch-name">{{ c.name }}</div>
+                      <code class="small text-primary fw-bold">{{ displayHex(c) }}</code>
                     </div>
                   </div>
-                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
-                  <div class="mt-2.5 pt-2 border-top d-flex align-items-center justify-content-between text-secondary" style="font-size: 0.7rem;">
-                    <span class="font-monospace text-truncate">{{ c.token }}</span>
-                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" class="ms-2" style="font-size: 0.75rem;"></i>
+                  <div class="small text-secondary swatch-usage">{{ c.usage }}</div>
+                  <div class="mt-3 pt-2.5 border-top d-flex align-items-center justify-content-between gap-3 text-secondary" style="font-size: 0.7rem;">
+                    <span class="font-monospace swatch-token">{{ c.token }}</span>
+                    <i :class="copiedHex === c.hex ? 'pi pi-check text-success' : 'pi pi-copy'" class="flex-shrink-0" style="font-size: 0.75rem;"></i>
                   </div>
                 </div>
               </div>
@@ -244,24 +244,24 @@
                 </div>
 
                 <!-- Hovered Row (Soft Warm Tint) -->
-                <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 border flex-wrap gap-3" style="background-color: var(--theme-row-hover-solid, #fdf2f4); border-color: #fdcfd3 !important;">
+                <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 border flex-wrap gap-3" style="background-color: var(--theme-row-hover-solid); border-color: var(--bs-primary-border-subtle) !important;">
                   <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-primary bg-opacity-15 text-primary border border-danger-subtle px-2.5 py-1">#102</span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2.5 py-1">#102</span>
                     <div>
                       <div class="text-body fw-bold small">Hovered Table Row</div>
-                      <div class="text-secondary small" style="font-size: 0.75rem;">Interactive hover feedback (Light Rose Tint: #FDF2F4)</div>
+                      <div class="text-secondary small" style="font-size: 0.75rem;">Interactive hover feedback (<code class="text-secondary">--theme-row-hover-solid</code>)</div>
                     </div>
                   </div>
-                  <span class="badge bg-primary bg-opacity-15 text-primary border border-danger-subtle px-2.5 py-1 small fw-semibold">Hover Active</span>
+                  <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2.5 py-1 small fw-semibold">Hover Active</span>
                 </div>
 
-                <!-- Selected Row (Theme Rose Highlight) -->
-                <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 text-white shadow-xs flex-wrap gap-3" style="background-color: #e74c5a;">
+                <!-- Selected Row (Theme Highlight) -->
+                <div class="d-flex align-items-center justify-content-between px-4 py-3.5 rounded-3 text-white shadow-xs flex-wrap gap-3" style="background-color: var(--theme-row-highlight);">
                   <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-white text-danger fw-bold px-2.5 py-1">#103</span>
+                    <span class="badge bg-white text-primary fw-bold px-2.5 py-1">#103</span>
                     <div>
                       <div class="fw-bold small text-white">Active Selected Row</div>
-                      <div class="text-white text-opacity-85 small" style="font-size: 0.75rem;">Selected row highlight (Primary Highlight: #E74C5A)</div>
+                      <div class="text-white text-opacity-85 small" style="font-size: 0.75rem;">Selected row highlight (<code class="text-white text-opacity-85">--theme-row-highlight</code>)</div>
                     </div>
                   </div>
                   <span class="badge bg-white bg-opacity-25 text-white border border-white border-opacity-50 px-2.5 py-1 small fw-semibold">Selected State</span>
@@ -284,8 +284,8 @@
                   <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">‹ Prev</span>
                     <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">1</span>
-                    <span class="px-3 py-1.5 rounded-2 small fw-bold text-danger border shadow-xs" style="background-color: #fef2f3; border-color: #e74c5a;">2 (Active)</span>
-                    <span class="px-3 py-1.5 rounded-2 small fw-semibold text-danger border shadow-2xs" style="background-color: #fff5f6; border-color: #fdcfd3;">3 (Hover)</span>
+                    <span class="px-3 py-1.5 rounded-2 small fw-bold text-primary border shadow-xs" style="background-color: var(--bs-primary-bg-subtle); border-color: var(--bs-primary);">2 (Active)</span>
+                    <span class="px-3 py-1.5 rounded-2 small fw-semibold text-primary border shadow-2xs" style="background-color: var(--theme-row-hover-solid); border-color: var(--bs-primary-border-subtle);">3 (Hover)</span>
                     <span class="px-3 py-1.5 rounded-2 small fw-medium border text-secondary bg-body shadow-2xs">Next ›</span>
                   </div>
                 </div>
@@ -308,20 +308,20 @@
               <div v-for="c in statusColors" :key="c.hex" class="col-12 col-sm-6 col-xl-3">
                 <div 
                   class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
-                  @click="copyHex(c.hex)"
-                  v-tooltip.top="`Click to copy ${c.hex}`"
+                  @click="copyHex(displayHex(c))"
+                  v-tooltip.top="`Click to copy ${displayHex(c)}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2.5">
-                    <div 
-                      class="rounded-3 shadow-xs border flex-shrink-0" 
-                      :style="{ width: '38px', height: '38px', backgroundColor: c.hex }"
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <div
+                      class="rounded-3 shadow-xs border flex-shrink-0"
+                      :style="{ width: '38px', height: '38px', backgroundColor: swatchColor(c) }"
                     ></div>
-                    <div class="overflow-hidden">
-                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
-                      <code class="small fw-bold" :style="{ color: c.hex }">{{ c.hex }}</code>
+                    <div class="min-w-0">
+                      <div class="fw-bold small text-body swatch-name">{{ c.name }}</div>
+                      <code class="small fw-bold" :style="{ color: displayHex(c) }">{{ displayHex(c) }}</code>
                     </div>
                   </div>
-                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
+                  <div class="small text-secondary swatch-usage">{{ c.usage }}</div>
                 </div>
               </div>
             </div>
@@ -342,20 +342,20 @@
               <div v-for="c in surfaceColors" :key="c.name" class="col-12 col-sm-6 col-xl-4">
                 <div 
                   class="p-4 rounded-3 border bg-body-tertiary h-100 cursor-pointer color-swatch-card transition-all"
-                  @click="copyHex(c.hex)"
-                  v-tooltip.top="`Click to copy ${c.hex}`"
+                  @click="copyHex(displayHex(c))"
+                  v-tooltip.top="`Click to copy ${displayHex(c)}`"
                 >
-                  <div class="d-flex align-items-center gap-3 mb-2.5">
-                    <div 
-                      class="rounded-3 shadow-xs border flex-shrink-0" 
-                      :style="{ width: '38px', height: '38px', backgroundColor: c.hex }"
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <div
+                      class="rounded-3 shadow-xs border flex-shrink-0"
+                      :style="{ width: '38px', height: '38px', backgroundColor: swatchColor(c) }"
                     ></div>
-                    <div class="overflow-hidden">
-                      <div class="fw-bold small text-body text-truncate">{{ c.name }}</div>
-                      <code class="small text-body fw-bold">{{ c.hex }}</code>
+                    <div class="min-w-0">
+                      <div class="fw-bold small text-body swatch-name">{{ c.name }}</div>
+                      <code class="small text-body fw-bold">{{ displayHex(c) }}</code>
                     </div>
                   </div>
-                  <div class="small text-secondary text-truncate" style="font-size: 0.75rem;">{{ c.usage }}</div>
+                  <div class="small text-secondary swatch-usage">{{ c.usage }}</div>
                 </div>
               </div>
             </div>
@@ -372,117 +372,105 @@
             </div>
             <p class="small text-secondary mb-4">Standard font families and weight distributions configured across SwitchFiber with balanced spacing and optimal legibility.</p>
 
-            <div class="d-flex flex-column gap-4 px-1 px-md-2">
+            <div class="d-flex flex-column gap-3 px-1 px-md-2">
               <!-- Body Font: Inter -->
-              <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary shadow-xs">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3.5 pb-2.5 border-bottom px-1 px-md-2">
-                  <div class="fw-bold text-body d-flex align-items-center gap-2.5">
-                    <span class="badge bg-primary text-white px-3 py-1.5 rounded-2">Body Font</span>
-                    <span class="fs-6 fw-bold">Inter</span>
+              <div class="p-4 rounded-3 border bg-body-tertiary typography-card">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-3 mb-3 border-bottom">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-primary text-white px-3 py-2 rounded-2">Body Font</span>
+                    <span class="fs-6 fw-bold text-body">Inter</span>
                   </div>
-                  <div class="d-flex align-items-center">
-                    <span class="small text-secondary font-monospace px-3 py-1.5 bg-body rounded-2 border shadow-2xs" style="font-size: 0.75rem;">
-                      var(--font-family-base)
-                    </span>
-                  </div>
-                </div>
-                
-                <div class="small text-secondary mb-3.5 px-1 px-md-2" style="font-size: 0.8125rem;">
-                  <strong>Font Stack:</strong> <code>"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif</code>
+                  <code class="type-token">var(--font-family-base)</code>
                 </div>
 
-                <!-- Spacious Sample Canvas with Generous Inset Padding -->
-                <div class="mx-1 mx-md-2 p-4 p-md-4.5 rounded-3 bg-body border shadow-xs text-body">
-                  <div class="text-secondary font-monospace small mb-3 pb-2 border-bottom" style="font-size: 0.85rem; letter-spacing: 2px;">
-                    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
-                  </div>
-                  
-                  <div class="d-flex flex-column gap-2.5" style="line-height: 1.7;">
-                    <div class="small">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">400 Regular</span>
-                      The quick brown fox jumps over the lazy dog. Standard interface typography for body text and descriptions.
-                    </div>
-                    <div class="small fw-medium">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">500 Medium</span>
-                      The quick brown fox jumps over the lazy dog. Used for table cells, active form inputs, and interactive labels.
-                    </div>
-                    <div class="small fw-semibold">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">600 SemiBold</span>
-                      The quick brown fox jumps over the lazy dog. Applied to table headers, modal action buttons, and active tabs.
-                    </div>
-                    <div class="small fw-bold">
-                      <span class="badge bg-secondary-subtle text-secondary border me-2.5 px-2 py-1">700 Bold</span>
-                      The quick brown fox jumps over the lazy dog. Emphasized KPI statistics, card subtitles, and alert callouts.
-                    </div>
-                  </div>
+                <div class="type-stack mb-3">
+                  <span class="fw-semibold text-body">Font stack</span>
+                  <code>"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif</code>
                 </div>
+
+                <div class="type-specimen pb-3 mb-3 border-bottom">
+                  Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
+                </div>
+
+                <dl class="type-weights mb-0">
+                  <dt>400 · Regular</dt>
+                  <dd style="font-weight: 400;">The quick brown fox jumps over the lazy dog. Standard interface typography for body text and descriptions.</dd>
+
+                  <dt>500 · Medium</dt>
+                  <dd style="font-weight: 500;">The quick brown fox jumps over the lazy dog. Used for table cells, active form inputs, and interactive labels.</dd>
+
+                  <dt>600 · SemiBold</dt>
+                  <dd style="font-weight: 600;">The quick brown fox jumps over the lazy dog. Applied to table headers, modal action buttons, and active tabs.</dd>
+
+                  <dt>700 · Bold</dt>
+                  <dd style="font-weight: 700;">The quick brown fox jumps over the lazy dog. Emphasized KPI statistics, card subtitles, and alert callouts.</dd>
+                </dl>
               </div>
 
               <!-- Headings Font: Plus Jakarta Sans -->
-              <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary shadow-xs">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3.5 pb-2.5 border-bottom px-1 px-md-2">
-                  <div class="fw-bold text-body d-flex align-items-center gap-2.5">
-                    <span class="badge bg-primary text-white px-3 py-1.5 rounded-2">Heading Font</span>
-                    <span class="fs-6 fw-bold">Plus Jakarta Sans</span>
+              <div class="p-4 rounded-3 border bg-body-tertiary typography-card">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-3 mb-3 border-bottom">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-primary text-white px-3 py-2 rounded-2">Heading Font</span>
+                    <span class="fs-6 fw-bold text-body">Plus Jakarta Sans</span>
                   </div>
-                  <div class="d-flex align-items-center">
-                    <span class="small text-secondary font-monospace px-3 py-1.5 bg-body rounded-2 border shadow-2xs" style="font-size: 0.75rem;">
-                      var(--font-family-heading)
-                    </span>
-                  </div>
-                </div>
-                
-                <div class="small text-secondary mb-3.5 px-1 px-md-2" style="font-size: 0.8125rem;">
-                  <strong>Font Stack:</strong> <code>"Plus Jakarta Sans", "Inter", sans-serif</code>
+                  <code class="type-token">var(--font-family-heading)</code>
                 </div>
 
-                <!-- Spacious Sample Canvas with Generous Inset Padding -->
-                <div class="mx-1 mx-md-2 p-4 p-md-4.5 rounded-3 bg-body border shadow-xs text-body" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-                  <div class="text-secondary font-monospace small mb-3 pb-2 border-bottom" style="font-size: 0.85rem; letter-spacing: 2px;">
-                    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
-                  </div>
-                  
-                  <div class="d-flex flex-column gap-2.5">
-                    <h4 class="fw-bold text-body mb-1" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-                      SwitchFiber Enterprise Fiber Network Management
-                    </h4>
-                    <p class="text-secondary small mb-0" style="line-height: 1.7;">
-                      Applied to page titles (H1–H6), dashboard summary figures, brand navigation titles, and elevated section headings.
-                    </p>
-                  </div>
+                <div class="type-stack mb-3">
+                  <span class="fw-semibold text-body">Font stack</span>
+                  <code>"Plus Jakarta Sans", "Inter", sans-serif</code>
                 </div>
+
+                <div class="type-specimen pb-3 mb-3 border-bottom" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                  Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
+                </div>
+
+                <dl class="type-weights mb-0">
+                  <dt>Display</dt>
+                  <dd>
+                    <span class="d-block fs-5 fw-bold text-body" style="font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.3;">
+                      SwitchFiber Enterprise Fiber Network Management
+                    </span>
+                    <span class="d-block text-secondary mt-1">
+                      Applied to page titles (H1–H6), dashboard summary figures, brand navigation titles, and elevated section headings.
+                    </span>
+                  </dd>
+                </dl>
               </div>
 
               <!-- Monospace Font: SFMono / Menlo / Consolas -->
-              <div class="p-4 p-md-5 rounded-4 border bg-body-tertiary shadow-xs">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3.5 pb-2.5 border-bottom px-1 px-md-2">
-                  <div class="fw-bold text-body d-flex align-items-center gap-2.5">
-                    <span class="badge bg-secondary text-white px-3 py-1.5 rounded-2">Monospace Font</span>
-                    <span class="fs-6 fw-bold">SFMono / Menlo / Consolas</span>
+              <div class="p-4 rounded-3 border bg-body-tertiary typography-card">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-3 mb-3 border-bottom">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-secondary text-white px-3 py-2 rounded-2">Monospace Font</span>
+                    <span class="fs-6 fw-bold text-body">SFMono / Menlo / Consolas</span>
                   </div>
-                  <div class="d-flex align-items-center">
-                    <span class="small text-secondary font-monospace px-3 py-1.5 bg-body rounded-2 border shadow-2xs" style="font-size: 0.75rem;">
-                      font-monospace
-                    </span>
-                  </div>
-                </div>
-                
-                <div class="small text-secondary mb-3.5 px-1 px-md-2" style="font-size: 0.8125rem;">
-                  <strong>Font Stack:</strong> <code>"SFMono-Regular", Menlo, Monaco, Consolas, "Courier New", monospace</code>
+                  <code class="type-token">font-monospace</code>
                 </div>
 
-                <!-- Spacious Sample Canvas with Generous Inset Padding -->
-                <div class="mx-1 mx-md-2 p-4 p-md-4.5 rounded-3 bg-body border shadow-xs font-monospace small text-body">
-                  <div class="text-secondary small mb-3 pb-2 border-bottom" style="font-size: 0.85rem; letter-spacing: 1.5px;">
-                    0123456789 :.-_/#?&=!$^*+@
-                  </div>
-                  <div class="d-flex flex-column gap-2.5" style="line-height: 1.75;">
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">IP Address</span> 192.168.100.1 &bull; 10.200.4.254/24</div>
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">Hardware MAC</span> 00:1A:2B:3C:4D:5E</div>
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">Device Serial</span> SF-89210-LCP-PORT-04</div>
-                    <div><span class="badge bg-secondary-subtle text-secondary me-2.5 px-2 py-1">VLAN Tag</span> VLAN-1042 [Primary Uplink]</div>
-                  </div>
+                <div class="type-stack mb-3">
+                  <span class="fw-semibold text-body">Font stack</span>
+                  <code>"SFMono-Regular", Menlo, Monaco, Consolas, "Courier New", monospace</code>
                 </div>
+
+                <div class="type-specimen font-monospace pb-3 mb-3 border-bottom">
+                  0123456789 :.-_/#?&=!$^*+@
+                </div>
+
+                <dl class="type-weights mb-0">
+                  <dt>IP Address</dt>
+                  <dd class="font-monospace">192.168.100.1 &bull; 10.200.4.254/24</dd>
+
+                  <dt>Hardware MAC</dt>
+                  <dd class="font-monospace">00:1A:2B:3C:4D:5E</dd>
+
+                  <dt>Device Serial</dt>
+                  <dd class="font-monospace">SF-89210-LCP-PORT-04</dd>
+
+                  <dt>VLAN Tag</dt>
+                  <dd class="font-monospace">VLAN-1042 [Primary Uplink]</dd>
+                </dl>
               </div>
             </div>
           </div>
@@ -621,7 +609,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { usePermissions } from '../composables/usePermissions'
@@ -700,6 +688,38 @@ const surfaceColors = ref([
   { name: 'Dark Surface Card', hex: '#2B3035', token: '--bs-card-bg (Dark)', usage: 'Elevated cards & data tables in dark theme' },
   { name: 'Theme Tooltip Slate', hex: '#1E2227', token: '--theme-tooltip-bg', usage: 'Floating tooltips with theme border, omnibox footer hints' }
 ])
+
+// Each reference card reads its swatch and hex from the resolved CSS custom
+// property rather than the literal above, so this page documents what the app is
+// actually rendering. The literals stay as the fallback for entries whose token is
+// a selector (e.g. .p-paginator-page-selected) rather than a variable.
+const resolvedTokens = ref({})
+
+const refreshResolvedTokens = () => {
+  if (typeof document === 'undefined') return
+  const styles = getComputedStyle(document.documentElement)
+  const out = {}
+  const all = [
+    ...primaryColors.value,
+    ...tableHighlightColors.value,
+    ...statusColors.value,
+    ...surfaceColors.value
+  ]
+  all.forEach(c => {
+    if (!c.token || !c.token.startsWith('--')) return
+    const value = styles.getPropertyValue(c.token).trim()
+    if (value) out[c.token] = value
+  })
+  resolvedTokens.value = out
+}
+
+const tokenValue = (c) => (c.token && resolvedTokens.value[c.token]) || ''
+const displayHex = (c) => tokenValue(c) || c.hex
+const swatchColor = (c) => tokenValue(c) || c.previewColor || c.hex
+
+onMounted(refreshResolvedTokens)
+// Surface and tooltip tokens resolve differently per mode.
+watch(isDark, () => nextTick(refreshResolvedTokens))
 
 const userDisplayName = computed(() => {
   if (!user.value) return 'Admin User'
@@ -871,5 +891,112 @@ const updatePassword = async () => {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-color: var(--bs-primary-border-subtle) !important;
+}
+
+/* Long token names used to be clipped mid-word against the card edge. They now
+   wrap on their own line, and the usage line reserves two rows so the footers of
+   every card in a row line up instead of stepping. */
+.min-w-0 {
+  min-width: 0;
+}
+
+.swatch-name {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.swatch-usage {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  min-height: 2.25rem;
+  overflow-wrap: anywhere;
+}
+
+.swatch-token {
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+/* The card is a flex column, so pushing the token footer down keeps it pinned to
+   the bottom edge regardless of how many lines the usage text takes. */
+.color-swatch-card > .border-top {
+  margin-top: auto !important;
+}
+
+/* Typography specimens.
+   These previously nested a second bordered card inside the section card, which
+   read as a stray grey panel next to the flat swatch cards above. They now use the
+   same single p-4 / rounded-3 / bg-body-tertiary surface as the rest of the page. */
+.type-token {
+  font-size: 0.72rem;
+  color: var(--bs-secondary-color);
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.3rem 0.6rem;
+  white-space: nowrap;
+}
+
+.type-stack {
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--bs-secondary-color);
+  overflow-wrap: anywhere;
+}
+
+.type-stack code {
+  color: var(--bs-secondary-color);
+}
+
+.type-specimen {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  letter-spacing: 0.08em;
+  color: var(--bs-secondary-color);
+  overflow-wrap: anywhere;
+}
+
+/* A two-column grid so every sample starts on the same left edge instead of being
+   pushed to a ragged start by an inline badge of varying width. */
+.type-weights {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 1.25rem;
+  row-gap: 0.85rem;
+  align-items: baseline;
+}
+
+.type-weights dt {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
+.type-weights dd {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--bs-body-color);
+  overflow-wrap: anywhere;
+}
+
+/* Narrow viewports cannot afford the label column, so the label sits above its
+   sample rather than squeezing the text into a sliver. */
+@media (max-width: 575.98px) {
+  .type-weights {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.35rem;
+  }
+
+  .type-weights dd {
+    margin-bottom: 0.75rem;
+  }
+
+  .type-weights dd:last-child {
+    margin-bottom: 0;
+  }
 }
 </style>
