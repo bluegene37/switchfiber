@@ -112,6 +112,7 @@
         :filter-endpoint="isDedicatedStatusRoute ? '/Applications/filter' : null"
         :filter-params="activeFilterParams"
         :hide-create-button="false"
+        hide-status-filter
         create-button-label="Create Application"
       />
     </div>
@@ -128,20 +129,13 @@ const route = useRoute()
 const router = useRouter()
 const apiTableRef = ref(null)
 
-const getInitialThisWeekRange = () => {
-  const today = new Date()
-  const day = today.getDay()
-  const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
-  const monday = new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0)
-  const now = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
-  return { from: monday, to: now }
-}
-
-const initialRange = getInitialThisWeekRange()
+// No date range is applied on load: the list opens on the full record set and the
+// user narrows it from there. Defaulting to a window silently hid every record
+// whose timestamp fell outside it.
 const selectedStatus = ref('')
-const fromDate = ref(initialRange.from)
-const toDate = ref(initialRange.to)
-const selectedDatePreset = ref('this_week')
+const fromDate = ref(null)
+const toDate = ref(null)
+const selectedDatePreset = ref('')
 
 const statusTabs = [
   { id: 'all', label: 'All Application', value: '', routePath: '/application', icon: 'pi-list' },

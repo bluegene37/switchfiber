@@ -1362,6 +1362,12 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // Set by parents that already expose their own status filter, so the toolbar
+  // does not offer a second, redundant one.
+  hideStatusFilter: {
+    type: Boolean,
+    default: false
+  },
   createButtonLabel: {
     type: String,
     default: 'Create'
@@ -1373,6 +1379,22 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['row-select', 'row-unselect'])
+
+// Filter-param keys that are resolved client-side rather than sent to the API.
+const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate']
+
+// Lowercased row fields a date range is matched against, most specific first, so
+// a record's own event date wins over the audit columns that trail behind it.
+const DATE_FILTER_ROW_FIELDS = [
+  'datetime',
+  'applicationdate',
+  'date',
+  'timestamp',
+  'createddate',
+  'created_date',
+  'createdat',
+  'modifieddate'
+]
 
 // Determine if the endpoint is Menus (for adding row toggle switch controls)
 const isMenuEndpoint = computed(() => {
@@ -1663,8 +1685,30 @@ function isCreatedOrModifiedField(col) {
   )
 }
 
-// Concise column presets for complex endpoints with many fields (e.g. Job Orders)
+// Concise column presets for complex endpoints with many fields (e.g. Job Orders).
+// Only the listed fields become table columns; every other field is still shown in
+// the View Details modal, which builds its own list from the full record.
+const APPLICATION_COLUMNS = [
+  'id',
+  // The API returns `dateTime`; `timestamp` is the name used by the static
+  // fallback list, so match either depending on which one the payload carries.
+  'dateTime',
+  'timestamp',
+  'firstName',
+  'lastName',
+  'mobileNumber',
+  'emailAddress',
+  'city',
+  'barangay',
+  'installationAddress',
+  'desiredPlan',
+  'applyingFor',
+  'status'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
+  Applications: APPLICATION_COLUMNS,
+  applications: APPLICATION_COLUMNS,
   JobOrders: [
     'id',
     'accountNo',
@@ -1848,6 +1892,7 @@ const hasStatusColumn = computed(() => {
 })
 
 const hasStatusFilter = computed(() => {
+  if (props.hideStatusFilter) return false
   return hasActiveColumn.value || hasStatusColumn.value
 })
 
@@ -1918,10 +1963,9 @@ const filteredData = computed(() => {
 
     if (pFrom || pTo) {
       list = list.filter(row => {
-        const dateKey = Object.keys(row).find(k => {
-          const l = k.toLowerCase()
-          return l === 'timestamp' || l === 'createddate' || l === 'created_date' || l === 'createdat' || l === 'date' || l === 'applicationdate' || l === 'modifieddate'
-        })
+        const dateKey = DATE_FILTER_ROW_FIELDS
+          .map(pref => Object.keys(row).find(k => k.toLowerCase() === pref))
+          .find(k => k && row[k])
         if (!dateKey || !row[dateKey]) return true
         const rowTime = new Date(row[dateKey]).getTime()
         if (isNaN(rowTime)) return true
@@ -3049,18 +3093,23 @@ const fetchData = async ({ silent = false } = {}) => {
     let url = `/${props.endpoint}`
     let params = undefined
 
-    const hasFilterParams = props.filterParams && Object.keys(props.filterParams).some(k => {
-      const v = props.filterParams[k]
-      return v !== undefined && v !== null && String(v).trim() !== ''
+    // The backend /filter endpoints return an empty array as soon as fromDate or
+    // toDate is supplied, even for a range spanning every record, so date bounds
+    // are never sent upstream. They are applied client-side in `filteredData`.
+    const serverParams = {}
+    Object.entries(props.filterParams || {}).forEach(([k, v]) => {
+      if (DATE_FILTER_PARAM_KEYS.includes(k)) return
+      if (v === undefined || v === null || String(v).trim() === '') return
+      serverParams[k] = v
     })
 
-    if (hasFilterParams) {
+    if (Object.keys(serverParams).length > 0) {
       if (props.filterEndpoint) {
         url = props.filterEndpoint.startsWith('/') ? props.filterEndpoint : `/${props.filterEndpoint}`
       } else {
         url = `/${props.endpoint}/filter`
       }
-      params = { ...props.filterParams }
+      params = serverParams
     } else {
       url = `/${props.endpoint}`
       params = undefined
