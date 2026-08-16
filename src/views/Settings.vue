@@ -937,7 +937,16 @@ const updatePassword = async () => {
   white-space: nowrap;
 }
 
+/* Laid out as a flex row rather than two inline elements: Vue's template compiler
+   condenses whitespace and drops a whitespace-only node entirely when it spans a
+   newline, so the space between the label and the stack disappeared. An explicit
+   gap cannot be lost to reformatting. */
 .type-stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.5rem;
+  row-gap: 0.15rem;
   font-size: 0.78rem;
   line-height: 1.6;
   color: var(--bs-secondary-color);
@@ -946,6 +955,7 @@ const updatePassword = async () => {
 
 .type-stack code {
   color: var(--bs-secondary-color);
+  min-width: 0;
 }
 
 .type-specimen {
