@@ -1664,6 +1664,14 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // Resolve `filterParams.status` in the browser instead of sending it upstream.
+  // The whole set stays loaded, which is what lets `statusCounts` report every
+  // status at once (a server-filtered response only ever knows about its own), and
+  // switching status then costs no request at all.
+  clientStatusFilter: {
+    type: Boolean,
+    default: false
+  },
   createButtonLabel: {
     type: String,
     default: 'Create'
@@ -1698,6 +1706,7 @@ const serverFilterParams = computed(() => {
   const out = {}
   Object.entries(props.filterParams || {}).forEach(([k, v]) => {
     if (DATE_FILTER_PARAM_KEYS.includes(k)) return
+    if (props.clientStatusFilter && k === 'status') return
     if (v === undefined || v === null || String(v).trim() === '') return
     out[k] = v
   })
@@ -2347,6 +2356,23 @@ const statusFilterOptions = computed(() => {
   return []
 })
 
+const rowStatusOf = (row) => String(row?.status ?? row?.Status ?? '').trim()
+
+// Rows with no recognisable date field are kept: an unknown date is not evidence
+// that the row falls outside the range.
+const isRowInDateRange = (row, from, to) => {
+  if (!from && !to) return true
+  const dateKey = DATE_FILTER_ROW_FIELDS
+    .map(pref => Object.keys(row).find(k => k.toLowerCase() === pref))
+    .find(k => k && row[k])
+  if (!dateKey || !row[dateKey]) return true
+  const rowTime = new Date(row[dateKey]).getTime()
+  if (isNaN(rowTime)) return true
+  if (from && rowTime < from) return false
+  if (to && rowTime > to) return false
+  return true
+}
+
 const filteredData = computed(() => {
   if (!Array.isArray(data.value)) return []
   let list = data.value
@@ -2390,23 +2416,18 @@ const filteredData = computed(() => {
 
     if (pStatus) {
       list = list.filter(row => {
-        const rowStatus = String(row.status || row.Status || '').trim().toLowerCase()
+        const rowStatus = rowStatusOf(row).toLowerCase()
+        // When the status never went to the server this filter is the only thing
+        // narrowing the set, so it has to be exact — letting blank-status rows
+        // through would show them under every status and make the tab counts
+        // sum past the total. Server-filtered responses keep the older leniency.
+        if (props.clientStatusFilter) return rowStatus === pStatus
         return !rowStatus || rowStatus === pStatus
       })
     }
 
     if (pFrom || pTo) {
-      list = list.filter(row => {
-        const dateKey = DATE_FILTER_ROW_FIELDS
-          .map(pref => Object.keys(row).find(k => k.toLowerCase() === pref))
-          .find(k => k && row[k])
-        if (!dateKey || !row[dateKey]) return true
-        const rowTime = new Date(row[dateKey]).getTime()
-        if (isNaN(rowTime)) return true
-        if (pFrom && rowTime < pFrom) return false
-        if (pTo && rowTime > pTo) return false
-        return true
-      })
+      list = list.filter(row => isRowInDateRange(row, pFrom, pTo))
     }
   }
 
@@ -2429,6 +2450,36 @@ const filteredData = computed(() => {
 })
 
 const filteredRecordsCount = computed(() => (filteredData.value || []).length)
+
+// Row counts per status for a parent that renders its own status tabs. Every other
+// active scope is applied (the date range in particular) but the status filter
+// itself is not, so each number answers "how many rows would that tab show". Only
+// meaningful while `clientStatusFilter` keeps the whole set loaded; a
+// server-filtered response only ever contains one status.
+const statusCounts = computed(() => {
+  const rows = Array.isArray(data.value) ? data.value : []
+  const from = props.filterParams?.fromDate ? new Date(props.filterParams.fromDate).getTime() : null
+  const to = props.filterParams?.toDate ? new Date(props.filterParams.toDate).getTime() : null
+
+  const inScope = rows.filter(row => isRowInDateRange(row, from, to))
+  const byStatus = {}
+  inScope.forEach(row => {
+    const key = rowStatusOf(row).toLowerCase()
+    if (!key) return
+    byStatus[key] = (byStatus[key] || 0) + 1
+  })
+
+  return {
+    total: inScope.length,
+    byStatus,
+    // Case-insensitive lookup for a label like 'In Progress'
+    countFor: (status) => {
+      const key = String(status || '').trim().toLowerCase()
+      if (!key) return inScope.length
+      return byStatus[key] || 0
+    }
+  }
+})
 
 const activeFilterCount = computed(() => {
   let count = 0
@@ -4860,7 +4911,9 @@ defineExpose({
   openEditDialog,
   confirmDelete,
   fetchData,
-  refreshData
+  refreshData,
+  statusCounts,
+  hasFetched
 })
 </script>
 

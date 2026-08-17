@@ -26,6 +26,15 @@
         >
           <i :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
           <span>{{ tab.label }}</span>
+          <span
+            v-if="statusCounts"
+            class="badge rounded-pill status-tab-count"
+            :class="selectedStatus === tab.value
+              ? 'bg-white bg-opacity-25 text-white'
+              : 'bg-secondary bg-opacity-10 text-secondary'"
+          >
+            {{ statusCounts.countFor(tab.value) }}
+          </span>
         </button>
       </div>
 
@@ -106,11 +115,12 @@
       </div>
 
       <!-- Data Table with standard inside-the-card toolbar Create button -->
-      <DynamicApiTable 
-        ref="apiTableRef" 
-        endpoint="Applications" 
+      <DynamicApiTable
+        ref="apiTableRef"
+        endpoint="Applications"
         :filter-endpoint="isDedicatedStatusRoute ? '/Applications/filter' : null"
         :filter-params="activeFilterParams"
+        :client-status-filter="!isDedicatedStatusRoute"
         :hide-create-button="false"
         hide-status-filter
         create-button-label="Create Application"
@@ -141,6 +151,16 @@ const statusTabs = [
   { id: 'done', label: 'Done', value: 'Done', routePath: '/application/done', icon: 'pi-check-circle' },
   { id: 'approved', label: 'Approved', value: 'Approved', routePath: '/application/approved', icon: 'pi-verified' }
 ]
+
+// Counts for the status tabs, computed by the table over the set it already holds —
+// no second request. Absent until the first fetch settles, so the tabs show no
+// number rather than a misleading zero.
+const statusCounts = computed(() => {
+  if (isDedicatedStatusRoute.value) return null
+  const table = apiTableRef.value
+  if (!table || !table.hasFetched) return null
+  return table.statusCounts || null
+})
 
 const isDedicatedStatusRoute = computed(() => {
   const p = route.path.toLowerCase()
@@ -290,6 +310,13 @@ const clearAllFilters = () => {
 .status-tab-btn {
   transition: all 0.2s ease-in-out;
   font-size: 0.8125rem;
+}
+
+.status-tab-count {
+  font-size: 0.6875rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  min-width: 1.4rem;
 }
 
 .hover-tab:hover {
