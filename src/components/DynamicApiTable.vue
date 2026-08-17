@@ -863,7 +863,7 @@
     <Dialog 
       v-model:visible="displayViewDialog" 
       modal 
-      :header="`View ${formatLabel(endpoint)} Record #${viewingRecordId || ''}`" 
+      :header="viewingRecordId ? `View ${formatLabel(endpoint)} Record #${viewingRecordId}` : `View ${formatLabel(endpoint)} Record`" 
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
@@ -987,7 +987,7 @@
     <Dialog 
       v-model:visible="displayEditDialog" 
       modal 
-      :header="`Update ${formatLabel(endpoint)} Record #${editingRecordId || ''}`" 
+      :header="editingRecordId ? `Update ${formatLabel(endpoint)} Record #${editingRecordId}` : `Update ${formatLabel(endpoint)} Record`" 
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
