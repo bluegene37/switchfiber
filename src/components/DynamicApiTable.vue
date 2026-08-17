@@ -346,7 +346,16 @@
 
       <!-- Empty State -->
       <template #empty>
-        <div class="p-5 text-center text-secondary d-flex flex-column align-items-center justify-content-center">
+        <!-- Still verifying: never assert "no data" until a request has settled -->
+        <div
+          v-if="!hasFetched || refreshing"
+          class="p-5 d-flex flex-column align-items-center justify-content-center gap-2"
+        >
+          <div v-for="r in 3" :key="r" class="skeleton-box rounded-2" :style="{ width: r === 1 ? '220px' : r === 2 ? '300px' : '180px', height: '14px' }"></div>
+          <span class="small text-secondary mt-2">Checking for records&hellip;</span>
+        </div>
+
+        <div v-else class="p-5 text-center text-secondary d-flex flex-column align-items-center justify-content-center">
           <div class="rounded-circle bg-body-tertiary p-3 mb-3 d-inline-flex align-items-center justify-content-center border" style="width: 56px; height: 56px;">
             <i :class="activeFilterCount > 0 ? 'pi pi-search-minus' : 'pi pi-inbox'" class="text-secondary fs-4"></i>
           </div>
@@ -1571,6 +1580,27 @@ const DATE_FILTER_ROW_FIELDS = [
   'modifieddate'
 ]
 
+// The subset of `filterParams` that actually reaches the API: date bounds are
+// stripped (see fetchData) and blank values dropped.
+const serverFilterParams = computed(() => {
+  const out = {}
+  Object.entries(props.filterParams || {}).forEach(([k, v]) => {
+    if (DATE_FILTER_PARAM_KEYS.includes(k)) return
+    if (v === undefined || v === null || String(v).trim() === '') return
+    out[k] = v
+  })
+  return out
+})
+
+// Everything that decides which request is issued. Changing date bounds alone
+// leaves this untouched, so switching a date preset re-filters in place instead
+// of firing a redundant request.
+const fetchSourceKey = computed(() => {
+  const p = serverFilterParams.value
+  const serialized = Object.keys(p).sort().map(k => `${k}=${p[k]}`).join('&')
+  return `${props.endpoint}|${props.filterEndpoint || ''}|${serialized}`
+})
+
 // Determine if the endpoint is Menus (for adding row toggle switch controls)
 const isMenuEndpoint = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
@@ -1609,6 +1639,9 @@ const data = ref([])
 const selectedRow = ref(null)
 const loading = ref(true)
 const refreshing = ref(false)
+// Stays false until a request has actually settled, so the "no records" panel can
+// never be shown on the strength of an empty initial / cleared dataset alone
+const hasFetched = ref(false)
 const error = ref(null)
 const dt = ref()
 
@@ -3806,9 +3839,23 @@ const deleteRecord = async () => {
   }
 }
 
+// Monotonic request token: only the newest fetch is allowed to write to `data`,
+// so a slow response for a filter the user has already moved off cannot land.
+let fetchToken = 0
+
 // `silent` skips the full-page skeleton so the toolbar stays visible during a manual refresh
 const fetchData = async ({ silent = false } = {}) => {
-  if (!silent) loading.value = true
+  const token = ++fetchToken
+  if (!silent) {
+    loading.value = true
+    // Mark the dataset unconfirmed for the duration of the request. The skeleton
+    // replaces the table while `loading` is true, so the previous filter's rows
+    // stay in `data` (dropping them would collapse `allRawColumns` onto the
+    // static fallback and prune the user's visible-column selection) but nothing
+    // derived from them can be asserted as the current result.
+    hasFetched.value = false
+    firstRowIndex.value = 0
+  }
   error.value = null
   try {
     let url = `/${props.endpoint}`
@@ -3817,12 +3864,7 @@ const fetchData = async ({ silent = false } = {}) => {
     // The backend /filter endpoints return an empty array as soon as fromDate or
     // toDate is supplied, even for a range spanning every record, so date bounds
     // are never sent upstream. They are applied client-side in `filteredData`.
-    const serverParams = {}
-    Object.entries(props.filterParams || {}).forEach(([k, v]) => {
-      if (DATE_FILTER_PARAM_KEYS.includes(k)) return
-      if (v === undefined || v === null || String(v).trim() === '') return
-      serverParams[k] = v
-    })
+    const serverParams = { ...serverFilterParams.value }
 
     if (Object.keys(serverParams).length > 0) {
       if (props.filterEndpoint) {
@@ -3837,7 +3879,10 @@ const fetchData = async ({ silent = false } = {}) => {
     }
 
     const response = await apiClient.get(url, { params })
-    
+
+    // A newer fetch was started while this one was in flight — discard this result
+    if (token !== fetchToken) return
+
     let unwrappedData = response
     if (response && !Array.isArray(response) && typeof response === 'object') {
       const arrayKey = Object.keys(response).find(key => Array.isArray(response[key]))
@@ -3902,17 +3947,30 @@ const fetchData = async ({ silent = false } = {}) => {
     }
 
     data.value = unwrappedData || []
+    // The dataset is now confirmed: an empty table from here on really is empty
+    hasFetched.value = true
 
-    // Auto-park / auto-select the first row on load if no row is selected
-    if (data.value.length > 0 && !selectedRow.value) {
-      selectedRow.value = data.value[0]
-      emit('row-select', data.value[0])
+    // Auto-park on the first row when nothing is selected, or when the selected
+    // row belongs to a filter the fetch has just replaced
+    const selectedId = selectedRow.value?.id
+    const selectionSurvives = selectedId !== undefined && selectedId !== null
+      ? data.value.some(row => row.id === selectedId)
+      : data.value.includes(selectedRow.value)
+    if (!selectionSurvives) {
+      if (data.value.length > 0) {
+        selectedRow.value = data.value[0]
+        emit('row-select', data.value[0])
+      } else if (selectedRow.value) {
+        selectedRow.value = null
+        emit('row-unselect', null)
+      }
     }
   } catch (err) {
+    if (token !== fetchToken) return
     console.error(`Error for ${props.endpoint}:`, err)
     error.value = err.message || 'Failed to fetch data'
   } finally {
-    if (!silent) loading.value = false
+    if (!silent && token === fetchToken) loading.value = false
   }
 }
 
@@ -4229,15 +4287,12 @@ watch(() => props.selectedAccessLevel, async (newVal) => {
   }
 }, { immediate: true, deep: true })
 
-watch(() => props.filterParams, () => {
-  fetchData({ silent: true })
-}, { deep: true })
-
-watch(() => props.filterEndpoint, () => {
-  fetchData({ silent: false })
-})
-
-watch(() => props.endpoint, () => {
+// One watcher for endpoint + filter-endpoint + server-bound filter params. Routes
+// like /application/in-progress, /done and /approved share this component
+// instance, so a status switch never remounts it — this is what re-requests the
+// data, and it does so non-silently so the skeleton (not the previous status's
+// rows or its empty-state panel) is what's on screen while the request runs.
+watch(fetchSourceKey, () => {
   fetchData({ silent: false })
 })
 
