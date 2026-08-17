@@ -10,12 +10,13 @@
 
     <!-- Data Viewer -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3">
-      <DynamicApiTable 
-        ref="apiTableRef" 
-        v-if="endpoint" 
-        :endpoint="endpoint" 
-        :key="endpoint" 
-        :hide-create-button="false"
+      <DynamicApiTable
+        ref="apiTableRef"
+        v-if="endpoint"
+        :endpoint="endpoint"
+        :key="endpoint"
+        :read-only="readOnly"
+        :hide-create-button="readOnly"
         :create-button-label="`Create ${title}`"
       />
       <div v-else class="p-4 text-center text-muted">Invalid Configuration</div>
@@ -148,11 +149,20 @@ const routeMap = {
     icon: 'pi-receipt', 
     description: 'Generate customer billing statements, track invoice payment statuses, charges, and financial transaction records.' 
   },
-  '/billing': { 
-    title: 'Billing', 
-    endpoint: 'BillingDetails', 
-    icon: 'pi-credit-card', 
-    description: 'Manage subscriber billing accounts, modem serial numbers, payment schedules, and account statuses.' 
+  '/billing': {
+    title: 'Billing',
+    endpoint: 'BillingDetails',
+    icon: 'pi-credit-card',
+    description: 'Manage subscriber billing accounts, modem serial numbers, payment schedules, and account statuses.'
+  },
+  // RadiusUser records come back without a usable key (every `id` is an empty
+  // string), so there is nothing to address a write to — this screen browses only.
+  '/disconnection': {
+    title: 'Disconnection',
+    endpoint: 'RadiusUser',
+    icon: 'pi-ban',
+    readOnly: true,
+    description: 'Review RADIUS subscriber accounts and whether each one is currently enabled or disabled.'
   },
 }
 
@@ -160,6 +170,7 @@ const config = computed(() => routeMap[route.path] || { title: 'Unknown', endpoi
 const title = computed(() => config.value.title)
 const endpoint = computed(() => config.value.endpoint)
 const icon = computed(() => config.value.icon || 'pi-list')
+const readOnly = computed(() => config.value.readOnly === true)
 const description = computed(() => config.value.description || `Manage ${title.value} records and system configurations.`)
 
 const openCreateModal = () => {

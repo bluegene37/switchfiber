@@ -20,7 +20,7 @@
           <div class="skeleton-box rounded-3" style="width: 32px; height: 32px;"></div>
           <div class="skeleton-box rounded-3" style="width: 32px; height: 32px;"></div>
           <div class="skeleton-box rounded-3" style="width: 85px; height: 32px;"></div>
-          <div v-if="!hideCreateButton" class="skeleton-box rounded-3" style="width: 120px; height: 32px;"></div>
+          <div v-if="showCreateButton" class="skeleton-box rounded-3" style="width: 120px; height: 32px;"></div>
         </div>
       </div>
 
@@ -85,7 +85,7 @@
       @row-unselect="handleRowUnselect"
       @row-click="handleRowClick"
       @selection-change="handleSelectionChange"
-      dataKey="id"
+      :dataKey="tableDataKey"
       filterDisplay="menu"
       :globalFilterFields="displayedColumns"
       :class="['small highlight-selected-row', densityClass]"
@@ -220,7 +220,7 @@
 
             <!-- Primary Action: Create Button -->
             <Button 
-              v-if="!hideCreateButton" 
+              v-if="showCreateButton" 
               class="p-button-primary p-button-sm rounded-3 px-3 px-sm-3.5 shadow-xs ms-1 fw-semibold d-inline-flex align-items-center gap-1.5" 
               :aria-label="createButtonLabel || 'Create'" 
               @click="openCreateDialog"
@@ -269,6 +269,11 @@
           <span v-if="col.toLowerCase() === 'active'">
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Active</span>
             <span v-else class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2.5 py-1">Inactive</span>
+          </span>
+          <!-- `disabled` is inverted against `active`: true means the account is cut off -->
+          <span v-else-if="col.toLowerCase() === 'disabled'">
+            <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1">Disabled</span>
+            <span v-else class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Enabled</span>
           </span>
           <span v-else-if="col.toLowerCase().includes('status')">
             <span 
@@ -326,19 +331,21 @@
               aria-label="View Details"
               @click="openViewDialog(slotProps.data)" 
             />
-            <Button 
-              icon="pi pi-pencil" 
-              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 action-row-btn" 
-              v-tooltip.top="'Edit Record'" 
+            <Button
+              v-if="!readOnly"
+              icon="pi pi-pencil"
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 action-row-btn"
+              v-tooltip.top="'Edit Record'"
               aria-label="Edit Record"
-              @click="openEditDialog(slotProps.data)" 
+              @click="openEditDialog(slotProps.data)"
             />
-            <Button 
-              icon="pi pi-trash" 
-              class="p-button-text p-button-sm p-button-rounded p-0 delete-btn action-row-btn" 
-              v-tooltip.top="'Delete Record'" 
+            <Button
+              v-if="!readOnly"
+              icon="pi pi-trash"
+              class="p-button-text p-button-sm p-button-rounded p-0 delete-btn action-row-btn"
+              v-tooltip.top="'Delete Record'"
               aria-label="Delete Record"
-              @click="confirmDelete(slotProps.data)" 
+              @click="confirmDelete(slotProps.data)"
             />
           </div>
         </template>
@@ -374,7 +381,7 @@
               @click="clearAllFilters" 
             />
             <Button 
-              v-if="!hideCreateButton" 
+              v-if="showCreateButton" 
               :label="`Create ${formatLabel(endpoint)}`" 
               icon="pi pi-plus" 
               class="p-button-primary p-button-sm rounded-3 shadow-xs" 
@@ -958,12 +965,14 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-between align-items-center w-100 mt-2">
-          <Button 
-            label="Edit Record" 
-            icon="pi pi-pencil" 
-            class="p-button-outlined p-button-primary p-button-sm" 
-            @click="displayViewDialog = false; openEditDialog(viewFormData)" 
+          <Button
+            v-if="!readOnly"
+            label="Edit Record"
+            icon="pi pi-pencil"
+            class="p-button-outlined p-button-primary p-button-sm"
+            @click="displayViewDialog = false; openEditDialog(viewFormData)"
           />
+          <span v-else></span>
           <Button 
             label="Close" 
             icon="pi pi-times" 
@@ -1546,6 +1555,13 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // Browse-only surface: no Create, no per-row Edit / Delete, no Edit shortcut in
+  // the View dialog. For endpoints that are read-only or whose records carry no
+  // usable key to write back to.
+  readOnly: {
+    type: Boolean,
+    default: false
+  },
   // Set by parents that already expose their own status filter, so the toolbar
   // does not offer a second, redundant one.
   hideStatusFilter: {
@@ -1622,6 +1638,10 @@ const isWideForm = computed(() => {
 })
 
 const normalizeColKey = (col) => String(col || '').toLowerCase().replace(/_/g, '')
+
+// A read-only table offers no way in to the create form, whatever the parent asked
+// for with hide-create-button.
+const showCreateButton = computed(() => !props.hideCreateButton && !props.readOnly)
 
 const modalStyle = computed(() => {
   if (isWideForm.value) {
@@ -1984,9 +2004,18 @@ const APPLICATION_COLUMNS = [
   'applyingFor'
 ]
 
+const RADIUS_USER_COLUMNS = [
+  'disabled',
+  'group',
+  'name'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
+  RadiusUser: RADIUS_USER_COLUMNS,
+  radiususer: RADIUS_USER_COLUMNS,
+  RadiusUsers: RADIUS_USER_COLUMNS,
   JobOrders: [
     'id',
     'accountNo',
@@ -2311,6 +2340,37 @@ const clearAllFilters = () => {
   filters.value.global.value = null
   selectedStatusFilter.value = ''
   firstRowIndex.value = 0
+}
+
+// PrimeVue matches the selected row against the rest by `dataKey`, so a key that
+// repeats highlights every row that shares it. Not every endpoint hands back a
+// populated id — RadiusUser returns `id: ""` on every record — so fall back to the
+// first column whose values are present and unique, and to plain object identity
+// when there is no such column.
+const tableDataKey = computed(() => {
+  const rows = Array.isArray(data.value) ? data.value : []
+  if (rows.length === 0) return 'id'
+
+  const isUsableKey = (field) => {
+    const seen = new Set()
+    for (const row of rows) {
+      const val = row?.[field]
+      if (val === null || val === undefined || String(val).trim() === '') return false
+      if (seen.has(String(val))) return false
+      seen.add(String(val))
+    }
+    return true
+  }
+
+  if (isUsableKey('id')) return 'id'
+  return allRawColumns.value.find(col => col.toLowerCase() !== 'id' && isUsableKey(col)) || undefined
+})
+
+const rowKeyOf = (row) => {
+  const field = tableDataKey.value
+  if (!field || !row) return undefined
+  const val = row[field]
+  return val === null || val === undefined || String(val).trim() === '' ? undefined : val
 }
 
 const recordRangeStart = computed(() => {
@@ -4083,6 +4143,11 @@ const fetchData = async ({ silent = false } = {}) => {
         menuList.push({ id: 28, name: 'Approved', route: '/application/approved', icon: 'pi pi-verified', description: 'View verified and approved customer applications' })
       }
 
+      const hasDisconnection = menuList.some(m => Number(m.id) === 30 || (m.name && m.name.toLowerCase() === 'disconnection'))
+      if (!hasDisconnection) {
+        menuList.push({ id: 30, name: 'Disconnection', route: '/disconnection', icon: 'pi pi-ban', description: 'Review RADIUS subscriber accounts and their enabled / disabled state' })
+      }
+
       const hasApiViewer = menuList.some(m => Number(m.id) === 24 || (m.name && m.name.toLowerCase().includes('api viewer')))
       const hasModels = menuList.some(m => Number(m.id) === 29 || (m.name && m.name.toLowerCase() === 'models'))
       const hasSettings = menuList.some(m => Number(m.id) === 20 || (m.name && m.name.toLowerCase().includes('settings')))
@@ -4117,9 +4182,9 @@ const fetchData = async ({ silent = false } = {}) => {
 
     // Auto-park on the first row when nothing is selected, or when the selected
     // row belongs to a filter the fetch has just replaced
-    const selectedId = selectedRow.value?.id
-    const selectionSurvives = selectedId !== undefined && selectedId !== null
-      ? data.value.some(row => row.id === selectedId)
+    const selectedKey = rowKeyOf(selectedRow.value)
+    const selectionSurvives = selectedKey !== undefined
+      ? data.value.some(row => rowKeyOf(row) === selectedKey)
       : data.value.includes(selectedRow.value)
     if (!selectionSurvives) {
       if (data.value.length > 0) {
@@ -4143,15 +4208,15 @@ const refreshData = async () => {
   if (refreshing.value) return
   refreshing.value = true
 
-  const previousId = selectedRow.value?.id ?? null
+  const previousKey = rowKeyOf(selectedRow.value)
   try {
     await fetchData({ silent: true })
     await fetchRelatedData()
 
-    // Re-point the selection at the freshly fetched row object (same id), so the
+    // Re-point the selection at the freshly fetched row object (same key), so the
     // highlighted row and any parent detail panel stay in sync after the reload.
-    if (previousId !== null) {
-      const match = data.value.find(row => row.id === previousId)
+    if (previousKey !== undefined) {
+      const match = data.value.find(row => rowKeyOf(row) === previousKey)
       if (match) {
         selectedRow.value = match
         emit('row-select', match)

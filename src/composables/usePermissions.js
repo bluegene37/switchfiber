@@ -4,7 +4,7 @@ import apiClient from '../services/api'
 
 // Menu ids for screens that live in the front end and have no Menus row in the
 // database yet. See fetchPermissions for how these are treated.
-const CLIENT_PROVIDED_MENU_IDS = [29] // 29 = Models
+const CLIENT_PROVIDED_MENU_IDS = [29, 30] // 29 = Models, 30 = Disconnection
 
 // Shared reactive state across all components
 const allowedMenuIds = ref(new Set())
@@ -92,11 +92,11 @@ export function usePermissions() {
 
         allowedMenuIds.value = allowed
       } else {
-        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 101, 102, 103])
+        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 101, 102, 103])
       }
     } catch (err) {
       console.warn('[usePermissions] Error fetching access level permissions:', err)
-      allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 101, 102, 103])
+      allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 101, 102, 103])
     } finally {
       isLoadingPermissions.value = false
       hasLoadedOnce.value = true

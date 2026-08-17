@@ -141,6 +141,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/disconnection',
+      name: 'disconnection',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/data-viewer',
       name: 'api-viewer',
       component: () => import('../views/Api.vue'),
