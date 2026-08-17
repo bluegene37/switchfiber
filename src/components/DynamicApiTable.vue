@@ -1607,11 +1607,21 @@ const isMenuEndpoint = computed(() => {
   return ep === 'menus' || ep === 'menu'
 })
 
-// Determine if the endpoint needs a wider 3-column modal (Job Orders & Billing Details) or standard 2-column modal
+// Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders
+// & Billing Details — the field-heavy forms) or the standard 2-column modal
 const isWideForm = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
-  return ep === 'joborders' || ep === 'billingdetails' || ep === 'job_order' || ep === 'billing'
+  return (
+    ep === 'joborders' ||
+    ep === 'billingdetails' ||
+    ep === 'job_order' ||
+    ep === 'billing' ||
+    ep === 'applications' ||
+    ep === 'application'
+  )
 })
+
+const normalizeColKey = (col) => String(col || '').toLowerCase().replace(/_/g, '')
 
 const modalStyle = computed(() => {
   if (isWideForm.value) {
@@ -1629,10 +1639,14 @@ const modalBreakpoints = computed(() => {
 
 const getColumnClass = (col) => {
   const type = getFieldType(col)
-  if (type === 'textarea' || type === 'image_upload') {
-    return isWideForm.value ? 'col-12 col-md-6' : 'col-12'
+  // Wide (3-column) forms keep every field on the same one-third track, image
+  // dropzones and textareas included. Giving those two a half-width span used to
+  // leave the grid ragged: a half-width field landing mid-row pushed the next
+  // third-width field onto a new line and opened gaps down the form.
+  if (isWideForm.value) {
+    return 'col-12 col-md-6 col-lg-4'
   }
-  return isWideForm.value ? 'col-12 col-md-6 col-lg-4' : 'col-12 col-md-6'
+  return (type === 'textarea' || type === 'image_upload') ? 'col-12' : 'col-12 col-md-6'
 }
 
 const data = ref([])
@@ -1658,7 +1672,15 @@ const openImagePreview = (url, title = 'Image Preview') => {
 // Format camelCase and underscore properties into human-readable Title Case
 function formatLabel(col) {
   if (!col) return ''
-  
+
+  // An application carries both `emailAddress` (the applicant's) and `userEmail`
+  // (the account that recorded it). The shared override below renders userEmail as
+  // "Email Address", which would print the same label twice in one form, so this
+  // endpoint gets the literal field name instead.
+  if (isApplicationEndpoint.value && normalizeColKey(col) === 'useremail') {
+    return 'User Email'
+  }
+
   const customOverrides = {
     fname: 'First Name',
     mname: 'Middle Name',
@@ -2471,8 +2493,147 @@ const getColumnSection = (col) => {
   return 'profile'
 }
 
+// Explicit field arrangement for the Applications form. The keyword-based grouping
+// above drops 20-odd of these columns into one "profile" section in raw schema
+// order, which reads as a wall of inputs with the ID uploads scattered through it.
+// These five groups follow how the form is actually filled in — who, where, what
+// they signed up for, what they attached, how it was processed — and each group's
+// field count is chosen to tile evenly across the 3-column grid.
+const APPLICATION_FORM_LAYOUT = [
+  {
+    key: 'identity',
+    title: 'Applicant Identity',
+    icon: 'pi pi-user',
+    badgeClass: 'text-primary',
+    columns: [
+      'firstName',
+      'middleName',
+      'lastName',
+      'emailAddress',
+      'mobileNumber',
+      'secondaryMobileNumber'
+    ]
+  },
+  {
+    key: 'address',
+    title: 'Installation Address & Landmarks',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-info',
+    columns: [
+      'region',
+      'province',
+      'city',
+      'barangay',
+      'installationAddress',
+      'landmark',
+      'firstNearestLandmark',
+      'secondNearestLandmark'
+    ]
+  },
+  {
+    key: 'plan',
+    title: 'Service Plan, Promo & Referral',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-success',
+    columns: [
+      'desiredPlan',
+      'applyingFor',
+      'applicablePromo',
+      'termsAndConditionsAgreement',
+      'referredBy',
+      'referrersAccountNumber'
+    ]
+  },
+  {
+    key: 'documents',
+    title: 'Uploaded Documents',
+    icon: 'pi pi-images',
+    badgeClass: 'text-warning',
+    columns: [
+      'governmentValidId',
+      'secondGovernmentValidId',
+      'houseFrontPicture',
+      'documentPicture',
+      'proofOfBilling',
+      'pictureofstatmentbillingfromotherprovider',
+      'pictureofstatementbillingfromotherprovider'
+    ]
+  },
+  {
+    key: 'ops',
+    title: 'Operational Status & Sign-off',
+    icon: 'pi pi-check-square',
+    badgeClass: 'text-secondary',
+    columns: [
+      'timestamp',
+      'status',
+      'visitBy',
+      'visitWith',
+      'visitWithOther',
+      'userEmail',
+      'remarks'
+    ]
+  }
+]
+
+// Arrange `cols` per APPLICATION_FORM_LAYOUT. Matching ignores case and
+// underscores, and any column the layout does not name still renders — under
+// "Additional Details", or in the audit group for the View dialog — so a new
+// backend field is never silently dropped from the form.
+const buildApplicationSections = (cols, { includeAudit = false } = {}) => {
+  const pool = new Map()
+  ;(cols || []).forEach(col => {
+    const key = normalizeColKey(col)
+    if (!pool.has(key)) pool.set(key, col)
+  })
+
+  const sections = []
+  APPLICATION_FORM_LAYOUT.forEach(sec => {
+    const picked = []
+    sec.columns.forEach(wanted => {
+      const key = normalizeColKey(wanted)
+      if (pool.has(key)) {
+        picked.push(pool.get(key))
+        pool.delete(key)
+      }
+    })
+    if (picked.length > 0) {
+      sections.push({ ...sec, columns: picked })
+    }
+  })
+
+  const leftovers = [...pool.values()]
+  const extras = leftovers.filter(col => !isAuditField(col))
+  const auditCols = leftovers.filter(col => isAuditField(col))
+
+  if (extras.length > 0) {
+    sections.push({
+      key: 'extra',
+      title: 'Additional Details',
+      icon: 'pi pi-file',
+      badgeClass: 'text-secondary',
+      columns: extras
+    })
+  }
+  if (includeAudit && auditCols.length > 0) {
+    sections.push({
+      key: 'audit',
+      title: getSectionTitle('audit'),
+      icon: SECTION_META.audit.icon,
+      badgeClass: SECTION_META.audit.badgeClass,
+      columns: auditCols
+    })
+  }
+
+  return sections
+}
+
 // Columns for Create & Edit forms (excludes system audit fields completely)
 const formSections = computed(() => {
+  if (isApplicationEndpoint.value) {
+    return buildApplicationSections(formColumns.value)
+  }
+
   const groups = {
     profile: [],
     plan: [],
@@ -2521,6 +2682,10 @@ const viewFormColumns = computed(() => {
 })
 
 const viewFormSections = computed(() => {
+  if (isApplicationEndpoint.value) {
+    return buildApplicationSections(viewFormColumns.value, { includeAudit: true })
+  }
+
   const groups = {
     profile: [],
     plan: [],
