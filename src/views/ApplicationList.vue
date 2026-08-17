@@ -129,9 +129,7 @@ const route = useRoute()
 const router = useRouter()
 const apiTableRef = ref(null)
 
-// No date range is applied on load: the list opens on the full record set and the
-// user narrows it from there. Defaulting to a window silently hid every record
-// whose timestamp fell outside it.
+// Default to 'This Week' on initial load to avoid fetching/rendering massive datasets at once
 const selectedStatus = ref('')
 const fromDate = ref(null)
 const toDate = ref(null)
@@ -264,12 +262,15 @@ const applyDatePreset = (preset) => {
     const day = today.getDay()
     const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
+    toDate.value = new Date(today.getFullYear(), today.getMonth(), diffToMonday + 6, 23, 59, 59, 999)
   } else if (preset === 'this_month') {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0)
     toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
   }
 }
+
+// Default to 'This Week' filter on initial load
+applyDatePreset('this_week')
 
 const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {

@@ -1607,7 +1607,7 @@ const getColumnClass = (col) => {
 
 const data = ref([])
 const selectedRow = ref(null)
-const loading = ref(false)
+const loading = ref(true)
 const refreshing = ref(false)
 const error = ref(null)
 const dt = ref()
@@ -2242,6 +2242,13 @@ const activeFilterCount = computed(() => {
   let count = 0
   if (filters.value.global?.value && String(filters.value.global.value).trim().length > 0) count++
   if (selectedStatusFilter.value && String(selectedStatusFilter.value).trim().length > 0) count++
+  if (props.filterParams && typeof props.filterParams === 'object') {
+    Object.values(props.filterParams).forEach(val => {
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        count++
+      }
+    })
+  }
   return count
 })
 
@@ -4227,6 +4234,10 @@ watch(() => props.filterParams, () => {
 }, { deep: true })
 
 watch(() => props.filterEndpoint, () => {
+  fetchData({ silent: false })
+})
+
+watch(() => props.endpoint, () => {
   fetchData({ silent: false })
 })
 
