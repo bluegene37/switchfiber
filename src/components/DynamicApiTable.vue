@@ -117,6 +117,33 @@
               </button>
             </div>
 
+            <!-- Connection Filter (RadiusUser only), defaulting to All -->
+            <div v-if="isRadiusUserEndpoint" class="d-inline-flex align-items-center gap-1.5">
+              <button
+                v-for="opt in CONNECTION_FILTER_OPTIONS"
+                :key="opt.value"
+                type="button"
+                class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-1.5 px-2.5 py-1 fw-medium text-nowrap connection-filter-btn"
+                :class="connectionFilter === opt.value
+                  ? 'btn-primary text-white shadow-sm'
+                  : 'border text-secondary bg-body-tertiary shadow-xs'"
+                :aria-pressed="connectionFilter === opt.value"
+                v-tooltip.top="opt.value === '' ? 'Show all accounts' : `Show only ${opt.label} accounts`"
+                @click="setConnectionFilter(opt.value)"
+              >
+                <i :class="['pi', opt.icon]" style="font-size: 0.75rem;"></i>
+                <span>{{ opt.label }}</span>
+                <span
+                  class="badge rounded-pill connection-filter-count"
+                  :class="connectionFilter === opt.value
+                    ? 'bg-white bg-opacity-25 text-white'
+                    : 'bg-secondary bg-opacity-10 text-secondary'"
+                >
+                  {{ connectionCounts[opt.countKey] }}
+                </span>
+              </button>
+            </div>
+
             <!-- Quick Status Filter (when active or status column exists) -->
             <div v-if="hasStatusFilter" class="toolbar-filter-select">
               <select 
@@ -307,6 +334,74 @@
             </span>
             <span v-else>{{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}</span>
           </span>
+        </template>
+      </Column>
+
+      <!-- Connection Status (RadiusUser only) — the state as a pill, in its own
+           column ahead of the switch that changes it. Tracks the in-flight value
+           while a connect / disconnect is running, so it never disagrees with the
+           switch beside it. -->
+      <Column
+        v-if="isRadiusUserEndpoint"
+        header="Connection Status"
+        :style="{ minWidth: '180px', width: '180px' }"
+      >
+        <template #body="slotProps">
+          <span
+            class="badge rounded-pill px-2.5 py-1 fw-semibold border"
+            :class="isRowConnected(slotProps.data)
+              ? 'bg-success bg-opacity-10 text-success border-success border-opacity-25'
+              : 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25'"
+          >
+            {{ isRowConnected(slotProps.data) ? 'Connected' : 'Disconnected' }}
+          </span>
+        </template>
+      </Column>
+
+      <!-- Connection Toggle (RadiusUser only). With the caption hidden the switch
+           sits alone and the header carries the meaning; when the caption is on it
+           reads after the switch in a fixed-width slot, so the switches stay
+           aligned down the column instead of shifting with the word beside them. -->
+      <Column
+        v-if="isRadiusUserEndpoint"
+        header="Connection"
+        :style="{
+          minWidth: SHOW_CONNECTION_STATE_LABEL ? '165px' : '120px',
+          width: SHOW_CONNECTION_STATE_LABEL ? '165px' : '120px'
+        }"
+        class="text-center"
+      >
+        <template #body="slotProps">
+          <div
+            class="d-inline-flex align-items-center gap-2"
+            :class="{ 'connection-cell': SHOW_CONNECTION_STATE_LABEL }"
+            @click.stop
+          >
+            <ToggleSwitch
+              :modelValue="isRowConnected(slotProps.data)"
+              :disabled="isConnectionPending(slotProps.data) || !radiusNameOf(slotProps.data)"
+              @update:modelValue="value => toggleConnection(slotProps.data, value)"
+              :aria-label="`Toggle connection for ${radiusNameOf(slotProps.data) || 'this account'}`"
+              v-tooltip.top="isRowConnected(slotProps.data) ? 'Disconnect this account' : 'Connect this account'"
+            />
+
+            <span v-if="SHOW_CONNECTION_STATE_LABEL" class="connection-state small fw-semibold">
+              <span v-if="isConnectionPending(slotProps.data)" class="text-secondary d-inline-flex align-items-center gap-1">
+                <i class="pi pi-spin pi-spinner" style="font-size: 0.75rem;"></i>
+                <span>Working…</span>
+              </span>
+              <span v-else :class="isRowConnected(slotProps.data) ? 'text-success' : 'text-danger'">
+                {{ isRowConnected(slotProps.data) ? 'Connected' : 'Disconnected' }}
+              </span>
+            </span>
+
+            <!-- Caption off: the request still needs to be visible while it runs -->
+            <i
+              v-else-if="isConnectionPending(slotProps.data)"
+              class="pi pi-spin pi-spinner text-secondary"
+              style="font-size: 0.8rem;"
+            ></i>
+          </div>
         </template>
       </Column>
 
@@ -1507,6 +1602,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick } from 'vue'
 import apiClient from '../services/api'
+import { RadiusUserService } from '../services/radiusUsers'
 import phAddressService from '../services/phAddressService'
 import defaultRegions from '../../public/data/philippines/regions.json'
 import defaultProvinces from '../../public/data/philippines/provinces.json'
@@ -1699,6 +1795,12 @@ function formatLabel(col) {
   // endpoint gets the literal field name instead.
   if (isApplicationEndpoint.value && normalizeColKey(col) === 'useremail') {
     return 'User Email'
+  }
+
+  // The RadiusUser `disabled` flag is shown as Enabled / Disabled, so the raw field
+  // name as a header reads as a contradiction: "Disabled: Enabled".
+  if (isRadiusUserEndpoint.value && normalizeColKey(col) === 'disabled') {
+    return 'Account State'
   }
 
   const customOverrides = {
@@ -2274,6 +2376,12 @@ const filteredData = computed(() => {
     })
   }
 
+  // Connection Filter (RadiusUser) — resolved from the row group, same as the toggle
+  if (isRadiusUserEndpoint.value && connectionFilter.value) {
+    const wantConnected = connectionFilter.value === 'connected'
+    list = list.filter(row => isRowConnected(row) === wantConnected)
+  }
+
   // Client-side FilterParams Status & Date/Timestamp Filtering
   if (props.filterParams && typeof props.filterParams === 'object') {
     const pStatus = props.filterParams.status ? String(props.filterParams.status).trim().toLowerCase() : ''
@@ -2326,6 +2434,7 @@ const activeFilterCount = computed(() => {
   let count = 0
   if (filters.value.global?.value && String(filters.value.global.value).trim().length > 0) count++
   if (selectedStatusFilter.value && String(selectedStatusFilter.value).trim().length > 0) count++
+  if (isRadiusUserEndpoint.value && connectionFilter.value) count++
   if (props.filterParams && typeof props.filterParams === 'object') {
     Object.values(props.filterParams).forEach(val => {
       if (val !== undefined && val !== null && String(val).trim() !== '') {
@@ -2339,14 +2448,29 @@ const activeFilterCount = computed(() => {
 const clearAllFilters = () => {
   filters.value.global.value = null
   selectedStatusFilter.value = ''
+  connectionFilter.value = ''
   firstRowIndex.value = 0
 }
 
+// Columns that can stand in for a primary key, in order of preference. The list is
+// deliberately closed: keying off whatever column happens to be unique would let
+// the key drift to an ordinary attribute (a group, a status) and silently change
+// what "the same row" means the moment that attribute is edited.
+const IDENTITY_KEY_CANDIDATES = [
+  'id',
+  'name',
+  'username',
+  'accountno',
+  'accountnumber',
+  'code',
+  'email',
+  'useremail'
+]
+
 // PrimeVue matches the selected row against the rest by `dataKey`, so a key that
 // repeats highlights every row that shares it. Not every endpoint hands back a
-// populated id — RadiusUser returns `id: ""` on every record — so fall back to the
-// first column whose values are present and unique, and to plain object identity
-// when there is no such column.
+// populated id — RadiusUser returns `id: ""` on every record — so fall through the
+// candidates above, and to plain object identity when none of them qualify.
 const tableDataKey = computed(() => {
   const rows = Array.isArray(data.value) ? data.value : []
   if (rows.length === 0) return 'id'
@@ -2362,8 +2486,11 @@ const tableDataKey = computed(() => {
     return true
   }
 
-  if (isUsableKey('id')) return 'id'
-  return allRawColumns.value.find(col => col.toLowerCase() !== 'id' && isUsableKey(col)) || undefined
+  for (const candidate of IDENTITY_KEY_CANDIDATES) {
+    const col = allRawColumns.value.find(c => normalizeColKey(c) === candidate)
+    if (col && isUsableKey(col)) return col
+  }
+  return undefined
 })
 
 const rowKeyOf = (row) => {
@@ -2371,6 +2498,127 @@ const rowKeyOf = (row) => {
   if (!field || !row) return undefined
   const val = row[field]
   return val === null || val === undefined || String(val).trim() === '' ? undefined : val
+}
+
+const isRadiusUserEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'radiususer' || ep === 'radiususers'
+})
+
+// A RADIUS account reports its session state through its Group: the backend puts
+// the word "Disconnected" in that column when the session is cut, and there is no
+// dedicated status field to read. Matching is substring-based, so it holds however
+// the group is spelled around it ("Disconnected", "SwitchLite-Disconnected", …).
+const isGroupDisconnected = (group) => /disconnected/i.test(String(group || ''))
+
+const nonEmptyString = (val) => (
+  val === null || val === undefined || String(val).trim() === '' ? '' : String(val)
+)
+
+// The connect / disconnect calls are still keyed by account name.
+const radiusNameOf = (row) => nonEmptyString(row?.name ?? row?.Name)
+
+const radiusGroupOf = (row) => nonEmptyString(row?.group ?? row?.Group)
+
+// Set to true to bring back the "Connected" / "Disconnected" caption beside each
+// connection switch. Hidden for now: the switch position and the column header
+// already carry the state, and the tooltip says what a click will do.
+const SHOW_CONNECTION_STATE_LABEL = false
+
+const CONNECTION_FILTER_OPTIONS = [
+  { value: '', label: 'All', icon: 'pi-list', countKey: 'all' },
+  { value: 'connected', label: 'Connected', icon: 'pi-check-circle', countKey: 'connected' },
+  { value: 'disconnected', label: 'Disconnected', icon: 'pi-ban', countKey: 'disconnected' }
+]
+
+// Defaults to All (no filter)
+const connectionFilter = ref('')
+
+const setConnectionFilter = (value) => {
+  connectionFilter.value = value
+}
+
+// Counts over the whole fetched set, so the chips answer "how many are cut off?"
+// without having to switch filters to find out.
+const connectionCounts = computed(() => {
+  const rows = Array.isArray(data.value) ? data.value : []
+  const connected = rows.reduce((acc, row) => acc + (isRowConnected(row) ? 1 : 0), 0)
+  return { all: rows.length, connected, disconnected: rows.length - connected }
+})
+
+// Desired state per row while its connect / disconnect POST is in flight. The
+// switch is driven off the row's group, which only changes once the server has
+// moved the account, so without this the control would sit still after a click.
+const pendingConnection = ref({})
+
+const connectionPendingKey = (row) => {
+  const key = rowKeyOf(row) ?? radiusNameOf(row)
+  return key === undefined || key === '' ? undefined : String(key)
+}
+
+const isConnectionPending = (row) => {
+  const key = connectionPendingKey(row)
+  return key !== undefined && key in pendingConnection.value
+}
+
+const isRowConnected = (row) => {
+  const key = connectionPendingKey(row)
+  if (key !== undefined && key in pendingConnection.value) {
+    return pendingConnection.value[key]
+  }
+  return !isGroupDisconnected(radiusGroupOf(row))
+}
+
+// `connect` / `disconnect` are keyed by the account name, not by id — RadiusUser
+// records come back with an empty id.
+const toggleConnection = async (row, desiredConnected) => {
+  const name = radiusNameOf(row)
+  if (!name) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Cannot change connection',
+      detail: 'This record has no account name to send to the RADIUS API.',
+      life: 4000
+    })
+    return
+  }
+
+  const pendingKey = connectionPendingKey(row)
+  if (pendingKey === undefined || pendingKey in pendingConnection.value) return
+
+  pendingConnection.value = { ...pendingConnection.value, [pendingKey]: desiredConnected }
+  try {
+    if (desiredConnected) {
+      await RadiusUserService.connectRadiusUser(encodeURIComponent(name))
+    } else {
+      await RadiusUserService.disconnectRadiusUser(encodeURIComponent(name))
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: desiredConnected ? 'Account Connected' : 'Account Disconnected',
+      detail: `${name} was ${desiredConnected ? 'connected' : 'disconnected'}.`,
+      life: 3000
+    })
+
+    // The group is the source of truth for the new state, so re-read the list
+    // rather than trusting the optimistic value.
+    await fetchData({ silent: true })
+  } catch (err) {
+    console.error(`Error toggling RADIUS connection for ${name}:`, err)
+    toast.add({
+      severity: 'error',
+      summary: desiredConnected ? 'Connect Failed' : 'Disconnect Failed',
+      detail: err.message || 'The RADIUS API rejected the request.',
+      life: 5000
+    })
+  } finally {
+    // Dropping the optimistic value hands the switch back to the fetched group —
+    // which also means it snaps back if the server did not apply the change.
+    const next = { ...pendingConnection.value }
+    delete next[pendingKey]
+    pendingConnection.value = next
+  }
 }
 
 const recordRangeStart = computed(() => {
@@ -2383,7 +2631,7 @@ const recordRangeEnd = computed(() => {
   return Math.min(firstRowIndex.value + rowsPerPage.value, filteredRecordsCount.value)
 })
 
-watch([() => filters.value.global?.value, selectedStatusFilter, rowsPerPage], () => {
+watch([() => filters.value.global?.value, selectedStatusFilter, connectionFilter, rowsPerPage], () => {
   firstRowIndex.value = 0
 })
 
@@ -4649,6 +4897,36 @@ defineExpose({
   color: #ffffff !important;
 }
 
+/* Status pills are the one thing the blanket white override above must not touch:
+   a pill is pale-tinted by design, so white-on-pale-green left "Enabled" invisible
+   on the selected row. Give them a solid white chip and put the semantic colour
+   back on the text, so the status still reads — and still reads green/red. */
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge) {
+  background-color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-success),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-success) {
+  color: var(--bs-success-text-emphasis, #0a6b45) !important;
+}
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-danger),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-danger) {
+  color: var(--bs-danger-text-emphasis, #b02a37) !important;
+}
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-secondary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-secondary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning-emphasis),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-warning-emphasis),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-info),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-info) {
+  color: #343a40 !important;
+}
+
 /* Ensure action buttons on highlighted rows are crisp white with soft white glass hover */
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .p-button-text),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .p-button-text),
@@ -4771,6 +5049,35 @@ defineExpose({
   height: 26px !important;
   padding: 0 !important;
   min-width: 26px !important;
+}
+
+.connection-cell {
+  min-width: 136px;
+}
+
+/* Reserves the widest state word so the switch never moves between rows */
+.connection-state {
+  min-width: 86px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.connection-filter-btn {
+  font-size: 0.8125rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.connection-filter-count {
+  font-size: 0.6875rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  min-width: 1.4rem;
+}
+
+.connection-filter-btn:not(.btn-primary):hover {
+  background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
+  border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
+  color: var(--bs-primary, #e74c5a) !important;
 }
 
 .skeleton-box {
