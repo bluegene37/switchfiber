@@ -10,9 +10,6 @@
       </div>
 
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <span class="badge bg-body-tertiary text-secondary border px-2.5 py-1 small fw-normal text-truncate" style="max-width: 20rem;">
-          <i class="pi pi-database text-primary me-1"></i> {{ sourceLabel }}
-        </span>
         <Button
           :label="isRefreshing ? 'Refreshing...' : 'Refresh from API'"
           icon="pi pi-refresh"
@@ -290,7 +287,6 @@ const spec = ref(null)
 const isLoading = ref(true)
 const isRefreshing = ref(false)
 const loadError = ref(null)
-const sourceLabel = ref('Loading...')
 
 const searchQuery = ref('')
 const columnSearch = ref('')
@@ -450,11 +446,6 @@ watch(models, (list) => {
   }
 })
 
-const describeSource = (origin, doc) => {
-  const count = Object.keys(doc?.components?.schemas || {}).length
-  return `${origin} · ${count} schemas · ${doc?.info?.title || 'API'} v${doc?.info?.version || '?'}`
-}
-
 const loadSpec = async (url) => {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -467,11 +458,9 @@ onMounted(async () => {
   try {
     const doc = await loadSpec(BUNDLED_SPEC_URL)
     spec.value = doc
-    sourceLabel.value = describeSource('bundled openapi.json', doc)
   } catch (err) {
     console.error('[Models] Failed to load bundled OpenAPI document:', err)
     loadError.value = `Could not load the bundled schema (${err.message}). Try "Refresh from API".`
-    sourceLabel.value = 'no schema loaded'
   } finally {
     isLoading.value = false
   }
@@ -483,7 +472,6 @@ const refreshFromApi = async () => {
   try {
     const doc = await loadSpec(LIVE_SPEC_URL)
     spec.value = doc
-    sourceLabel.value = describeSource('live API', doc)
   } catch (err) {
     console.warn('[Models] Live schema refresh failed, keeping the bundled copy:', err)
     // The bundled document is still on screen, so this is a notice, not a failure.

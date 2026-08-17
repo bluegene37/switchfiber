@@ -1,6 +1,40 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+const APP_TITLE = 'Switch Fiber'
+
+// Browser-tab label per route, keyed by route name and worded to match the sidebar
+// menu entry that leads there. A route missing from here just shows APP_TITLE.
+const ROUTE_TITLES = {
+  login: 'Sign In',
+  dashboard: 'Dashboard',
+  application: 'All Application',
+  'application-in-progress': 'In Progress',
+  'application-done': 'Done',
+  'application-approved': 'Approved',
+  application_list: 'All Application',
+  job_order: 'Job Order',
+  invoice: 'Invoice',
+  billing: 'Billing',
+  lcp: 'LCP',
+  lcnap: 'LCNAP',
+  lcnap_port: 'LCNAP Port',
+  nap: 'NAP',
+  port: 'Port',
+  vlan: 'VLAN',
+  router: 'Router',
+  plan: 'Plan',
+  user: 'User',
+  menu: 'Menu',
+  access_level: 'Access Level',
+  access_level_menu: 'Access Level Menu',
+  disconnection: 'Disconnection',
+  'api-viewer': 'API Viewer',
+  models: 'Models',
+  settings: 'Settings',
+  'not-found': 'Page Not Found'
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -202,6 +236,18 @@ router.beforeEach((to) => {
     return { name: 'dashboard' }
   }
   return true
+})
+
+// Runs after the guard has settled, so a redirected navigation titles the tab with
+// where the user actually landed rather than where they aimed.
+//
+// Page first, brand last — the usual convention (Stripe, Linear, GitHub, Jira).
+// Browser tabs truncate from the right, so the leading text is what stays readable
+// once several tabs are open; putting "Switch Fiber" first would leave every tab
+// showing the same visible prefix.
+router.afterEach((to) => {
+  const label = ROUTE_TITLES[to.name]
+  document.title = label ? `${label} | ${APP_TITLE}` : APP_TITLE
 })
 
 // A stale lazy-chunk reference after a redeploy throws on navigation; a single
