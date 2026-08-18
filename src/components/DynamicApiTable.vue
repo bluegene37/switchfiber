@@ -73,23 +73,25 @@
       <DataTable 
         ref="dt"
         :value="filteredData" 
-      scrollable
-      :size="tableSize"
-      :paginator="true" 
-      :rows="rowsPerPage" 
-      v-model:first="firstRowIndex"
-      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
-      v-model:selection="selectedRow"
-      selectionMode="single"
-      @row-select="handleRowSelect"
-      @row-unselect="handleRowUnselect"
-      @row-click="handleRowClick"
-      @selection-change="handleSelectionChange"
-      :dataKey="tableDataKey"
-      filterDisplay="menu"
-      :globalFilterFields="displayedColumns"
-      :class="['small highlight-selected-row', densityClass]"
-    >
+        scrollable
+        :size="tableSize"
+        :paginator="true" 
+        :rows="rowsPerPage" 
+        v-model:first="firstRowIndex"
+        v-model:sortField="sortField"
+        v-model:sortOrder="sortOrder"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+        v-model:selection="selectedRow"
+        selectionMode="single"
+        @row-select="handleRowSelect"
+        @row-unselect="handleRowUnselect"
+        @row-click="handleRowClick"
+        @selection-change="handleSelectionChange"
+        :dataKey="tableDataKey"
+        filterDisplay="menu"
+        :globalFilterFields="displayedColumns"
+        :class="['small highlight-selected-row', densityClass]"
+      >
       <template #header>
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 gap-md-3 py-1.5 table-toolbar">
           <!-- Left Zone: Search, Status Quick Filter & Reset Button -->
@@ -1746,6 +1748,14 @@ const props = defineProps({
   selectedAccessLevel: {
     type: Object,
     default: null
+  },
+  defaultSortField: {
+    type: String,
+    default: 'id'
+  },
+  defaultSortOrder: {
+    type: Number,
+    default: -1 // -1 = Descending (Newest first), 1 = Ascending
   }
 })
 
@@ -2623,10 +2633,33 @@ const activeFilterCount = computed(() => {
   return count
 })
 
+const sortField = ref(props.defaultSortField || 'id')
+const sortOrder = ref(props.defaultSortOrder ?? -1)
+
+// Synchronize sortField with the matching casing of the column in displayedColumns
+watch(displayedColumns, (newCols) => {
+  if (!newCols || !newCols.length) return
+  if (sortField.value) {
+    const match = newCols.find(c => c.toLowerCase() === sortField.value.toLowerCase())
+    if (match) {
+      sortField.value = match
+    } else if (newCols.some(c => c.toLowerCase() === 'id')) {
+      sortField.value = newCols.find(c => c.toLowerCase() === 'id')
+    } else if (!props.defaultSortField) {
+      sortField.value = null
+    }
+  }
+}, { immediate: true })
+
 const clearAllFilters = () => {
   filters.value.global.value = null
   selectedStatusFilter.value = ''
   connectionFilter.value = ''
+  if (props.defaultSortField) {
+    const match = displayedColumns.value.find(c => c.toLowerCase() === props.defaultSortField.toLowerCase())
+    sortField.value = match || props.defaultSortField
+    sortOrder.value = props.defaultSortOrder ?? -1
+  }
   firstRowIndex.value = 0
   emit('reset-filters')
 }
