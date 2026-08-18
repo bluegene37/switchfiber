@@ -291,18 +291,20 @@
         :frozen="isLeftFrozenColumn(col)"
         alignFrozen="left"
         :class="isLeftFrozenColumn(col) ? 'frozen-left-col' : ''"
+        :headerClass="isStatusColumn(col) ? 'text-center' : ''"
+        :bodyClass="isStatusColumn(col) ? 'text-center' : ''"
       >
         <template #body="slotProps">
-          <span v-if="col.toLowerCase() === 'active'">
+          <div v-if="col.toLowerCase() === 'active'" class="d-flex justify-content-center">
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Active</span>
             <span v-else class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2.5 py-1">Inactive</span>
-          </span>
+          </div>
           <!-- `disabled` is inverted against `active`: true means the account is cut off -->
-          <span v-else-if="col.toLowerCase() === 'disabled'">
+          <div v-else-if="col.toLowerCase() === 'disabled'" class="d-flex justify-content-center">
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1">Disabled</span>
             <span v-else class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Enabled</span>
-          </span>
-          <span v-else-if="col.toLowerCase().includes('status')">
+          </div>
+          <div v-else-if="col.toLowerCase().includes('status')" class="d-flex justify-content-center">
             <span 
               v-if="slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== ''"
               class="badge rounded-pill px-2.5 py-1 fw-semibold border"
@@ -311,7 +313,7 @@
               {{ getStatusBadgeConfig(slotProps.data[col]).label }}
             </span>
             <span v-else class="text-muted">-</span>
-          </span>
+          </div>
           <span v-else-if="getFieldType(col) === 'image_upload'">
             <span v-if="slotProps.data[col]" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="openImagePreview(slotProps.data[col], formatLabel(col))">
               <img :src="slotProps.data[col]" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
@@ -345,16 +347,20 @@
         v-if="isRadiusUserEndpoint"
         header="Connection Status"
         :style="{ minWidth: '180px', width: '180px' }"
+        headerClass="text-center"
+        bodyClass="text-center"
       >
         <template #body="slotProps">
-          <span
-            class="badge rounded-pill px-2.5 py-1 fw-semibold border"
-            :class="isRowConnected(slotProps.data)
-              ? 'bg-success bg-opacity-10 text-success border-success border-opacity-25'
-              : 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25'"
-          >
-            {{ isRowConnected(slotProps.data) ? 'Connected' : 'Disconnected' }}
-          </span>
+          <div class="d-flex justify-content-center">
+            <span
+              class="badge rounded-pill px-2.5 py-1 fw-semibold border"
+              :class="isRowConnected(slotProps.data)
+                ? 'bg-success bg-opacity-10 text-success border-success border-opacity-25'
+                : 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25'"
+            >
+              {{ isRowConnected(slotProps.data) ? 'Connected' : 'Disconnected' }}
+            </span>
+          </div>
         </template>
       </Column>
 
@@ -369,11 +375,12 @@
           minWidth: SHOW_CONNECTION_STATE_LABEL ? '165px' : '120px',
           width: SHOW_CONNECTION_STATE_LABEL ? '165px' : '120px'
         }"
-        class="text-center"
+        headerClass="text-center"
+        bodyClass="text-center"
       >
         <template #body="slotProps">
           <div
-            class="d-inline-flex align-items-center gap-2"
+            class="d-flex justify-content-center align-items-center gap-2"
             :class="{ 'connection-cell': SHOW_CONNECTION_STATE_LABEL }"
             @click.stop
           >
@@ -2187,6 +2194,12 @@ function isCreatedOrModifiedField(col) {
   )
 }
 
+const isStatusColumn = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase()
+  return lower === 'status' || lower.includes('status') || lower === 'active' || lower === 'disabled'
+}
+
 // Concise column presets for complex endpoints with many fields (e.g. Job Orders).
 // Only the listed fields become table columns; every other field is still shown in
 // the View Details modal, which builds its own list from the full record.
@@ -2216,12 +2229,31 @@ const RADIUS_USER_COLUMNS = [
   'name'
 ]
 
+const BILLING_DETAILS_COLUMNS = [
+  'id',
+  'accountNo',
+  'status',
+  'fullName',
+  'contactNumber',
+  'plan',
+  'accountBalance',
+  'billingDay',
+  'billingStatus',
+  'city',
+  'username',
+  'dateInstalled'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
   RadiusUser: RADIUS_USER_COLUMNS,
   radiususer: RADIUS_USER_COLUMNS,
   RadiusUsers: RADIUS_USER_COLUMNS,
+  BillingDetails: BILLING_DETAILS_COLUMNS,
+  billingdetails: BILLING_DETAILS_COLUMNS,
+  Billing: BILLING_DETAILS_COLUMNS,
+  billing: BILLING_DETAILS_COLUMNS,
   JobOrders: [
     'id',
     'accountNo',
@@ -4312,6 +4344,7 @@ const saveData = async () => {
       delete payload.email
     }
 
+    const numericUserId = Number(authStore.user?.id) || 2
     const loggedInUserId = String(authStore.user?.id || 2)
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
     const nowIso = new Date().toISOString()
@@ -4359,20 +4392,28 @@ const saveData = async () => {
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
         remarks: payload.remarks ? String(payload.remarks) : '',
         modifiedBy: loggedInUserId,
-        modifiedDate: nowIso,
+        modifiedDate: '',
         userEmail: currentUserEmail
       }
     } else {
-      // Auto-populate createdBy and modifiedBy for backend API if present in table schema
-      const createdByCol = allRawColumns.value.find(c => c.toLowerCase().includes('createdby'))
-      const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
+      // Auto-populate createdBy and modifiedBy for backend API with logged-in user numeric ID
+      const createdByCol = allRawColumns.value.find(c => c.toLowerCase() === 'createdby' || c.toLowerCase().includes('createdby'))
+      const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase() === 'modifiedby' || c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
 
       if (createdByCol) {
-        payload[createdByCol] = loggedInUserId
+        payload[createdByCol] = numericUserId
       }
       if (modifiedByCol) {
-        payload[modifiedByCol] = loggedInUserId
+        payload[modifiedByCol] = numericUserId
       }
+
+      // Date and time are automatically generated by the server. Strip client-supplied audit dates
+      Object.keys(payload).forEach(key => {
+        const lower = key.toLowerCase()
+        if (lower.includes('createddate') || lower.includes('created_at') || lower.includes('createdat') || lower.includes('modifieddate') || lower.includes('modified_at') || lower.includes('updateddate')) {
+          delete payload[key]
+        }
+      })
 
       if (columns.value.includes('userEmail') && !payload.userEmail) {
         payload.userEmail = currentUserEmail
@@ -4577,9 +4618,9 @@ const saveEdit = async () => {
       delete payload.email
     }
 
+    const numericUserId = Number(authStore.user?.id) || 2
     const loggedInUserId = String(authStore.user?.id || 2)
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
-    const nowIso = new Date().toISOString()
     
     // Clean legacy / alias audit columns and read-only creation audit fields
     delete payload.lastModified
@@ -4623,23 +4664,18 @@ const saveEdit = async () => {
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
         remarks: payload.remarks ? String(payload.remarks) : '',
         modifiedBy: loggedInUserId,
-        modifiedDate: nowIso,
+        modifiedDate: '',
         userEmail: payload.userEmail || currentUserEmail
       }
     } else {
       Object.keys(payload).forEach(key => {
         const lower = key.toLowerCase()
-        if (lower.includes('createdby') || lower.includes('createddate') || lower.includes('created_at')) {
+        if (lower.includes('createdby') || lower.includes('createddate') || lower.includes('created_at') || lower.includes('createdat')) {
           delete payload[key]
         } else if (lower.includes('modifiedby') || lower.includes('updatedby')) {
-          payload[key] = loggedInUserId
+          payload[key] = numericUserId
         } else if (lower.includes('modifieddate') || lower.includes('updateddate') || lower.includes('modified_at')) {
-          // Strip or format modifiedDate so invalid date strings don't fail ASP.NET DateTime validation
-          if (!payload[key] || typeof payload[key] !== 'string' || isNaN(Date.parse(payload[key]))) {
-            delete payload[key]
-          } else {
-            payload[key] = new Date(payload[key]).toISOString()
-          }
+          delete payload[key]
         }
       })
 
@@ -5066,13 +5102,16 @@ const toggleMenuLink = async (menuRow) => {
     
     if (!currentlyLinked) {
       // Create Link: POST to /api/AccesslevelMenu
+      const numericUserId = Number(authStore.user?.id) || 2
       const payload = {
         accessLevelId: targetAccId,
         menuId: targetMenuId,
         accesslevel_id: targetAccId,
         menu_id: targetMenuId,
         AccessLevelId: targetAccId,
-        MenuId: targetMenuId
+        MenuId: targetMenuId,
+        createdBy: numericUserId,
+        modifiedBy: numericUserId
       }
       
       console.log(`[DynamicApiTable] Creating link POST /api/AccesslevelMenu:`, payload)
@@ -5265,6 +5304,14 @@ defineExpose({
 </script>
 
 <style scoped>
+:deep(.p-datatable .p-datatable-thead > tr > th.text-center .p-column-header-content) {
+  justify-content: center !important;
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr > td.text-center) {
+  text-align: center !important;
+}
+
 :deep(.p-datatable-tbody > tr) {
   cursor: pointer;
   transition: background-color 0.15s ease-in-out;

@@ -799,6 +799,12 @@ const saveProfile = async () => {
       modifiedBy: userId
     }
 
+    delete updatePayload.createdDate
+    delete updatePayload.createdAt
+    delete updatePayload.created_at
+    delete updatePayload.modifiedDate
+    delete updatePayload.modified_at
+
     await apiClient.put(`/Users/${userId}`, updatePayload).catch(async () => {
       return await apiClient.put('/Users', updatePayload)
     })
@@ -864,6 +870,12 @@ const updatePassword = async () => {
       // Form Audit Trail Standard: UPDATE (PUT) populates modifiedBy with logged-in user id
       modifiedBy: userId
     }
+
+    delete passwordPayload.createdDate
+    delete passwordPayload.createdAt
+    delete passwordPayload.created_at
+    delete passwordPayload.modifiedDate
+    delete passwordPayload.modified_at
 
     await apiClient.put(`/Users/${userId}`, passwordPayload).catch(async () => {
       return await apiClient.put('/Users', passwordPayload)
