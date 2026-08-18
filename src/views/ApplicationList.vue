@@ -10,38 +10,42 @@
 
     <!-- Main Card Container: Filter Tabs & Data Table -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
-      <!-- Status Filter Tabs (Shown only on All Application page) -->
-      <div v-if="!isDedicatedStatusRoute" class="d-flex align-items-center gap-2 overflow-x-auto pb-2 border-bottom filter-tabs-scrollable">
-        <button
-          v-for="tab in statusTabs"
-          :key="tab.id"
-          type="button"
-          class="btn btn-sm d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1.5 fw-medium text-nowrap status-tab-btn"
-          :class="[
-            selectedStatus === tab.value 
-              ? 'btn-primary shadow-sm text-white' 
-              : 'btn-light border text-secondary bg-body-tertiary hover-tab'
-          ]"
-          @click="setStatusFilter(tab.value)"
-        >
-          <i :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
-          <span>{{ tab.label }}</span>
-          <span
-            v-if="statusCounts"
-            class="badge rounded-pill status-tab-count"
-            :class="selectedStatus === tab.value
-              ? 'bg-white bg-opacity-25 text-white'
-              : 'bg-secondary bg-opacity-10 text-secondary'"
+      <!-- Unified Filter Controls (Status Tabs on Left | Date Range right after divider) -->
+      <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom">
+        <!-- Left Side: Status Filter Tabs (Shown only on All Application page) -->
+        <div v-if="!isDedicatedStatusRoute" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
+          <button
+            v-for="tab in statusTabs"
+            :key="tab.id"
+            type="button"
+            class="btn btn-sm d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1.5 fw-medium text-nowrap status-tab-btn"
+            :class="[
+              selectedStatus === tab.value 
+                ? 'btn-primary shadow-sm text-white' 
+                : 'btn-light border text-secondary bg-body-tertiary hover-tab'
+            ]"
+            @click="setStatusFilter(tab.value)"
           >
-            {{ statusCounts.countFor(tab.value) }}
-          </span>
-        </button>
-      </div>
+            <i :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
+            <span>{{ tab.label }}</span>
+            <span
+              v-if="statusCounts"
+              class="badge rounded-pill status-tab-count"
+              :class="selectedStatus === tab.value
+                ? 'bg-white bg-opacity-25 text-white'
+                : 'bg-secondary bg-opacity-10 text-secondary'"
+            >
+              {{ statusCounts.countFor(tab.value) }}
+            </span>
+          </button>
+        </div>
 
-      <!-- Advanced Filter Controls (Date Range & Presets) -->
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-2 border-bottom">
-        <!-- Date Range Pickers -->
-        <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1 flex-md-grow-0">
+        <!-- Vertical Divider (Shown when Status Tabs are visible) -->
+        <div v-if="!isDedicatedStatusRoute" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
+
+        <!-- Date Range Pickers & Presets (Placed directly after divider) -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <!-- Date Range Pickers -->
           <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">From:</span>
             <DatePicker 
@@ -95,23 +99,6 @@
             </button>
           </div>
         </div>
-
-        <!-- Active Filter Badge & Clear Button -->
-        <div v-if="hasActiveFilter" class="d-flex align-items-center gap-2 ms-auto">
-          <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
-            Filter Active: {{ activeFilterSummary }}
-          </span>
-          <button 
-            type="button" 
-            class="btn btn-sm btn-outline-danger border-dashed rounded-pill d-inline-flex align-items-center gap-1 px-2.5 py-1 small shadow-xs"
-            @click="clearAllFilters"
-            v-tooltip.top="'Reset status and date filters'"
-            aria-label="Reset status and date filters"
-          >
-            <i class="pi pi-filter-slash" style="font-size: 0.75rem;"></i>
-            <span>Reset Filters</span>
-          </button>
-        </div>
       </div>
 
       <!-- Data Table with standard inside-the-card toolbar Create button -->
@@ -124,6 +111,7 @@
         :hide-create-button="false"
         hide-status-filter
         create-button-label="Create Application"
+        @reset-filters="clearAllFilters"
       />
     </div>
   </div>
@@ -323,6 +311,14 @@ const clearAllFilters = () => {
   background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
   border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
   color: var(--bs-primary, #e74c5a) !important;
+}
+
+.filter-divider {
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: #cbd5e1 !important;
+  user-select: none;
+  line-height: 1;
 }
 
 .date-filter-picker {

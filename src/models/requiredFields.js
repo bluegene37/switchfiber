@@ -59,7 +59,8 @@ const ENDPOINT_OVERRIDES = {
   applications: [ // schema says 32
     'emailAddress', 'region', 'city', 'barangay',
     'firstName', 'lastName', 'mobileNumber',
-    'installationAddress', 'desiredPlan', 'status'
+    'installationAddress', 'desiredPlan', 'status',
+    'houseFrontPicture', 'governmentValidId', 'documentPicture'
   ],
   joborders: [ // schema says 78
     'firstName', 'lastName', 'contactNumber', 'address',

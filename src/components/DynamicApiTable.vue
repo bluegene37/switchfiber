@@ -644,11 +644,24 @@
                 v-else-if="getFieldType(col) === 'plan_dropdown'" 
                 :id="col" 
                 v-model="formData[col]" 
-                :options="plansList" 
+                :options="getPlanOptions(col, formData[col])" 
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
-                placeholder="Select Plan" 
+                placeholder="Select Desired Plan" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Referred By Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'referredby_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="getReferrerOptions(formData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Referrer" 
                 class="w-100 p-inputtext-sm" 
               />
 
@@ -846,6 +859,7 @@
                   v-model="formData[col]"
                   :fieldId="col"
                   :label="formatLabel(col)"
+                  :required="isFieldRequired(col)"
                 />
               </div>
 
@@ -898,6 +912,17 @@
                 v-model="formData[col]" 
                 class="w-100 p-inputtext-sm" 
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- Phone / Mobile Input -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'phone'" 
+                :id="col" 
+                type="tel"
+                v-model="formData[col]" 
+                class="w-100 p-inputtext-sm font-monospace" 
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
+                placeholder="e.g. 09123456789 or +639123456789" 
               />
 
               <!-- InputNumber for Numeric Fields -->
@@ -1036,6 +1061,16 @@
                 :id="`view-${col}`" 
                 type="password"
                 modelValue="••••••••" 
+                readonly
+                disabled
+                class="w-100 p-inputtext-sm bg-light font-monospace" 
+              />
+
+              <!-- Phone / Mobile Field in View Modal -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'phone'" 
+                :id="`view-${col}`" 
+                :modelValue="viewFormData[col]" 
                 readonly
                 disabled
                 class="w-100 p-inputtext-sm bg-light font-monospace" 
@@ -1234,11 +1269,24 @@
                 v-else-if="getFieldType(col) === 'plan_dropdown'" 
                 :id="`edit-${col}`" 
                 v-model="editFormData[col]" 
-                :options="plansList" 
+                :options="getPlanOptions(col, editFormData[col])" 
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
-                placeholder="Select Plan" 
+                placeholder="Select Desired Plan" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Referred By Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'referredby_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="getReferrerOptions(editFormData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Referrer" 
                 class="w-100 p-inputtext-sm" 
               />
 
@@ -1463,6 +1511,7 @@
                   v-model="editFormData[col]"
                   :fieldId="`edit-${col}`"
                   :label="formatLabel(col)"
+                  :required="isFieldRequired(col)"
                 />
               </div>
 
@@ -1488,6 +1537,17 @@
                 v-model="editFormData[col]" 
                 class="w-100 p-inputtext-sm" 
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
+
+              <!-- Phone / Mobile Input -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'phone'" 
+                :id="`edit-${col}`" 
+                type="tel"
+                v-model="editFormData[col]" 
+                class="w-100 p-inputtext-sm font-monospace" 
+                :class="{ 'p-invalid': hasFieldError('edit', col) }"
+                placeholder="e.g. 09123456789 or +639123456789" 
               />
 
               <!-- InputNumber for Numeric Fields -->
@@ -1682,7 +1742,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['row-select', 'row-unselect'])
+const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters'])
 
 // Filter-param keys that are resolved client-side rather than sent to the API.
 const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate']
@@ -1841,6 +1901,20 @@ function formatLabel(col) {
     email: 'Email',
     useremail: 'Email Address',
     rowversion: 'Row Version',
+    desiredplan: 'Desired Plan',
+    referredby: 'Referred By',
+    barangay1: 'Barangay 1',
+    barangay2: 'Barangay 2',
+    termsandconditionsagreement: 'Terms & Conditions Agreement',
+    firstnearestlandmark: '1st Nearest Landmark',
+    secondnearestlandmark: '2nd Nearest Landmark',
+    referrersaccountnumber: "Referrer's Account Number",
+    secondgovernmentvalidid: '2nd Government Valid ID',
+    governmentvalidid: 'Government Valid ID',
+    housefrontpicture: 'House Front Picture',
+    documentpicture: 'Document Picture',
+    applyingfor: 'Applying For',
+    visitwithother: 'Visit With (Other)',
     pictureofstatmentbillingfromotherprovider: 'Picture of Statement Billing From Other Provider',
     pictureofstatementbillingfromotherprovider: 'Picture of Statement Billing From Other Provider'
   }
@@ -1916,6 +1990,24 @@ function getFieldType(col) {
   if (lower.includes('email')) {
     return 'email'
   }
+  if (
+    lower === 'mobilenumber' ||
+    lower === 'secondarymobilenumber' ||
+    lower === 'contactnumber' ||
+    lower === 'cellphonenumber' ||
+    lower === 'phonenumber' ||
+    lower === 'phone' ||
+    lower === 'mobile' ||
+    lower === 'cellphone' ||
+    lower === 'contact_number' ||
+    lower === 'mobile_number' ||
+    lower === 'phone_number' ||
+    (lower.includes('mobile') && lower.includes('number')) ||
+    (lower.includes('contact') && lower.includes('number')) ||
+    (lower.includes('phone') && lower.includes('number'))
+  ) {
+    return 'phone'
+  }
   if (lower === 'confirmpassword' || lower === 'confirm_password') {
     return 'confirm_password'
   }
@@ -1946,8 +2038,11 @@ function getFieldType(col) {
   if (lower === 'vlan_id' || lower === 'vlanid' || lower === 'vlan') {
     return 'vlan_dropdown'
   }
-  if (lower === 'plan_id' || lower === 'planid' || lower === 'choose_plan' || lower === 'chooseplan' || lower === 'plan') {
+  if (lower === 'plan_id' || lower === 'planid' || lower === 'choose_plan' || lower === 'chooseplan' || lower === 'plan' || lower === 'desiredplan' || lower === 'desired_plan') {
     return 'plan_dropdown'
+  }
+  if (lower === 'referredby' || lower === 'referred_by') {
+    return 'referredby_dropdown'
   }
   if (lower === 'region' || lower === 'regionname' || lower === 'region_name') {
     return 'region_dropdown'
@@ -2501,6 +2596,7 @@ const clearAllFilters = () => {
   selectedStatusFilter.value = ''
   connectionFilter.value = ''
   firstRowIndex.value = 0
+  emit('reset-filters')
 }
 
 // Columns that can stand in for a primary key, in order of preference. The list is
@@ -2883,6 +2979,8 @@ const APPLICATION_FORM_LAYOUT = [
       'province',
       'city',
       'barangay',
+      'barangay1',
+      'barangay2',
       'installationAddress',
       'landmark',
       'firstNearestLandmark',
@@ -3237,6 +3335,89 @@ const DEFAULT_STATUS_LIST = [
   'Approved'
 ]
 
+const getStableOptionsWithCurrent = (optionsList, currentVal) => {
+  const list = Array.isArray(optionsList) ? [...optionsList] : []
+  if (currentVal !== null && currentVal !== undefined && String(currentVal).trim() !== '') {
+    const str = String(currentVal).trim()
+    const exists = list.some(opt => 
+      String(opt.value) === str || 
+      String(opt.value).toLowerCase() === str.toLowerCase() ||
+      String(opt.label) === str ||
+      String(opt.label).toLowerCase() === str.toLowerCase()
+    )
+    if (!exists) {
+      list.unshift({ label: str, value: currentVal })
+    }
+  }
+  return list
+}
+
+const APPLICATION_REFERRER_LIST = [
+  'None',
+  'SWITCH GAISANO',
+  'PRECIOUS GAISANO',
+  'Norwina A. Armas',
+  'Mariane Talento Puyot',
+  'Nicolas Marinay Occidental Jr.',
+  'Paula Marie T. Fermanis',
+  'Emylinda B. Biasca',
+  'Precious Ann Vergonio',
+  'Maria Nympha Vergonio',
+  'Jonalyn Perez Agsalon',
+  'Menandro B. Albao',
+  'Vilma S. Divinagracia',
+  'Anthony Francis N. Samar',
+  'Keanu C. Nido',
+  'Severino L. Cervo',
+  'Bernadette  Delos Santos',
+  'Gladiola Veron Lico',
+  'Shania Manalo',
+  'Ria Gielen Paclibare',
+  'Cheryll Briones',
+  'Vea Vianca Delos Reyes',
+  'John Rainier Cernero',
+  'Mark Paner',
+  'Heatherlynn Hernandez',
+  'Gibson Lizardo',
+  'Elmer Tuyor Jr.',
+  'Jordan Cerrero',
+  'Carina Añonuevo',
+  'Lealyn Bayos',
+  'Lhen Ambao',
+  'Jennylyn Calle',
+  'Dan Onia',
+  'Christopher George Cajes',
+  'Baltazar Masucol',
+  'Jennelyn Rufino',
+  'Ofelia Ceñidoza',
+  'Rainier Ubana',
+  'Jonalyn Delima',
+  'Arvin Mateo',
+  'Manuel Pangilinan Jr.',
+  'Regina Casano',
+  'Peter Dominic Ojeda',
+  'Reina Jane Ferido',
+  'Sygel Landicho',
+  'Jennyzell Ceñidoza'
+]
+
+const referrerOptions = computed(() => {
+  return APPLICATION_REFERRER_LIST.map(v => ({ label: v, value: v }))
+})
+
+const getReferrerOptions = (currentVal) => {
+  return getStableOptionsWithCurrent(referrerOptions.value, currentVal)
+}
+
+const getPlanOptions = (col, currentVal) => {
+  const isIdField = col && (col.toLowerCase() === 'planid' || col.toLowerCase() === 'plan_id')
+  const baseOptions = plansList.value.map(p => ({
+    label: p.label || p.name || `Plan #${p.id}`,
+    value: isIdField ? p.id : (p.name || p.value || p.id)
+  }))
+  return getStableOptionsWithCurrent(baseOptions, currentVal)
+}
+
 const isApplicationEndpoint = computed(() => {
   const ep = (props.endpoint || '').trim().toLowerCase()
   return ep === 'applications' || ep === 'application'
@@ -3331,7 +3512,13 @@ const fetchRelatedData = async () => {
       lcpnapportsList.value = unwrap(lcnapPortRes.value).map(item => ({ label: `${item.name || 'LCNAP Port #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (planRes.status === 'fulfilled') {
-      plansList.value = unwrap(planRes.value).map(item => ({ label: `${item.name || 'Plan #' + item.id}`, value: item.id }))
+      plansList.value = unwrap(planRes.value).map(item => ({ 
+        label: item.name ? `${item.name}${item.amount ? ' (₱' + Number(item.amount).toLocaleString() + ')' : ''}` : `Plan #${item.id}`, 
+        name: item.name || `Plan #${item.id}`,
+        id: item.id,
+        amount: item.amount,
+        value: item.name || item.id 
+      }))
     }
     if (userRes.status === 'fulfilled') {
       usersList.value = unwrap(userRes.value)
@@ -3621,6 +3808,26 @@ const isBlank = (val) => {
   return false
 }
 
+const isValidPhoneNumber = (val) => {
+  if (val === null || val === undefined || String(val).trim() === '') return true
+  const str = String(val).trim()
+  const raw = str.replace(/[\s\-()]/g, '')
+  
+  // Format 1: 09XXXXXXXXX or 0XXXXXXXXXX (exactly 11 digits, starts with 0)
+  if (/^0\d{10}$/.test(raw)) {
+    return true
+  }
+  // Format 2: +62XXXXXXXXXX, +63XXXXXXXXXX, or + followed by 12 digits (exactly 13 chars with '+')
+  if (/^\+\d{12}$/.test(raw)) {
+    return true
+  }
+  // Format 3: 62XXXXXXXXXX or 63XXXXXXXXXX (exactly 12 digits)
+  if (/^(62|63)\d{10}$/.test(raw)) {
+    return true
+  }
+  return false
+}
+
 const fieldWrapId = (scope, col) => `field-${scope}-${col}`
 
 /**
@@ -3633,13 +3840,29 @@ const validateRequired = (scope) => {
   const missing = []
 
   formColumns.value.forEach(col => {
-    if (!isFieldRequired(col)) return
-    // An existing record's password is not echoed back by the API, so demanding
-    // it on edit would lock the user out of saving any other change.
-    if (scope === 'edit' && ['password', 'confirm_password'].includes(getFieldType(col))) return
-    if (!isBlank(form[col])) return
-    errors[col] = `${formatLabel(col)} is required`
-    missing.push(col)
+    const type = getFieldType(col)
+    const val = form[col]
+
+    // 1. Required check
+    if (isFieldRequired(col)) {
+      // An existing record's password is not echoed back by the API, so demanding
+      // it on edit would lock the user out of saving any other change.
+      if (scope === 'edit' && ['password', 'confirm_password'].includes(type)) return
+      if (isBlank(val)) {
+        errors[col] = `${formatLabel(col)} is required`
+        missing.push(col)
+        return
+      }
+    }
+
+    // 2. Phone validation (for required phone fields or optional phone fields if populated)
+    if (type === 'phone' && !isBlank(val)) {
+      if (!isValidPhoneNumber(val)) {
+        errors[col] = `${formatLabel(col)} must be exactly 11 digits (e.g. 09123456789) or 13 characters (e.g. +639123456789 / +629123456789)`
+        missing.push(col)
+        return
+      }
+    }
   })
 
   // confirmPassword is a client-only field, so it never appears in formColumns
@@ -3687,14 +3910,16 @@ const runPreSubmitChecks = async (scope) => {
   }
 
   if (missing.length) {
-    setError(`${missing.length} required ${missing.length === 1 ? 'field is' : 'fields are'} missing. Please complete the highlighted ${missing.length === 1 ? 'field' : 'fields'}.`)
+    const firstCol = missing[0]
+    const errText = fieldErrors.value[scope][firstCol] || `${missing.length} field(s) require attention. Please fix highlighted fields.`
+    setError(errText)
     toast.add({
       severity: 'warn',
-      summary: 'Cannot save yet',
-      detail: `${missing.length} required ${missing.length === 1 ? 'field' : 'fields'} still empty: ${missing.slice(0, 3).map(formatLabel).join(', ')}${missing.length > 3 ? `, +${missing.length - 3} more` : ''}`,
+      summary: 'Validation Error',
+      detail: errText,
       life: 5000
     })
-    await focusFirstInvalid(scope, missing[0])
+    await focusFirstInvalid(scope, firstCol)
     return false
   }
 
@@ -3718,7 +3943,19 @@ const watchScopeForFixes = (scope) => {
       const remaining = { ...errors }
       let changed = false
       Object.keys(errors).forEach(col => {
-        if (!isBlank(form[col])) {
+        const type = getFieldType(col)
+        const val = form[col]
+        if (type === 'phone') {
+          if (isBlank(val)) {
+            if (!isFieldRequired(col)) {
+              delete remaining[col]
+              changed = true
+            }
+          } else if (isValidPhoneNumber(val)) {
+            delete remaining[col]
+            changed = true
+          }
+        } else if (!isBlank(val)) {
           delete remaining[col]
           changed = true
         }
@@ -3834,6 +4071,15 @@ watch(
   () => editFormData.value.city || editFormData.value.cityName || editFormData.value.city_name || editFormData.value.municipality,
   (newCity) => {
     updateBarangaysForSelectedCity(newCity)
+  }
+)
+
+watch(
+  () => formData.value.barangay || formData.value.barangayName,
+  (newBrgy) => {
+    if (isApplicationEndpoint.value && newBrgy && !formData.value.barangay1) {
+      formData.value.barangay1 = newBrgy
+    }
   }
 )
 
@@ -3980,6 +4226,8 @@ const openCreateDialog = () => {
     } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
       const guestOption = accessLevels.value.find(opt => (opt.nameOnly || opt.label || '').toLowerCase().includes('guest'))
       formData.value[col] = guestOption ? guestOption.value : accessLevels.value[0].value
+    } else if (type === 'referredby_dropdown') {
+      formData.value[col] = 'None'
     } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown') {
       formData.value[col] = null
     } else {
@@ -3991,6 +4239,15 @@ const openCreateDialog = () => {
     const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
     if (statusCol) {
       formData.value[statusCol] = 'In Progress'
+    }
+    const termsCol = formColumns.value.find(c => c.toLowerCase().includes('termsandconditions'))
+    if (termsCol) {
+      formData.value[termsCol] = 'Agreed'
+    }
+    const nowIso = new Date().toISOString()
+    const tsCol = formColumns.value.find(c => c.toLowerCase() === 'timestamp')
+    if (tsCol) {
+      formData.value[tsCol] = nowIso
     }
   }
   formData.value.confirmPassword = ''
@@ -4057,6 +4314,7 @@ const saveData = async () => {
 
     const loggedInUserId = String(authStore.user?.id || 2)
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
+    const nowIso = new Date().toISOString()
     
     // Clean legacy alias audit columns
     delete payload.lastModified
@@ -4064,37 +4322,80 @@ const saveData = async () => {
     delete payload.lastModifiedBy
     delete payload.last_modified_by
 
-    // Auto-populate createdBy and modifiedBy for backend API if present in table schema
-    const createdByCol = allRawColumns.value.find(c => c.toLowerCase().includes('createdby'))
-    const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
-
-    if (createdByCol) {
-      payload[createdByCol] = loggedInUserId
-    }
-    if (modifiedByCol) {
-      payload[modifiedByCol] = loggedInUserId
-    }
-
-    if (columns.value.includes('userEmail') && !payload.userEmail) {
-      payload.userEmail = currentUserEmail
-    } else if (!columns.value.includes('userEmail')) {
-      delete payload.userEmail
-    }
-
-    // Clean null / empty string fields and format numeric / date fields properly
-    Object.keys(payload).forEach(key => {
-      if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
-        delete payload[key]
-      } else if (payload[key] instanceof Date) {
-        const d = payload[key]
-        payload[key] = d.toISOString()
-      } else if (typeof payload[key] === 'string' && payload[key].trim() !== '' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
-        payload[key] = Number(payload[key])
+    let finalPayload
+    if (isApplicationEndpoint.value) {
+      finalPayload = {
+        timestamp: payload.timestamp ? (payload.timestamp instanceof Date ? payload.timestamp.toISOString() : String(payload.timestamp)) : nowIso,
+        emailAddress: payload.emailAddress ? String(payload.emailAddress) : '',
+        region: payload.region ? String(payload.region) : '',
+        city: payload.city ? String(payload.city) : '',
+        barangay: payload.barangay ? String(payload.barangay) : '',
+        referredBy: payload.referredBy ? String(payload.referredBy) : '',
+        firstName: payload.firstName ? String(payload.firstName) : '',
+        middleName: payload.middleName ? String(payload.middleName) : '',
+        lastName: payload.lastName ? String(payload.lastName) : '',
+        mobileNumber: payload.mobileNumber ? String(payload.mobileNumber) : '',
+        secondaryMobileNumber: payload.secondaryMobileNumber ? String(payload.secondaryMobileNumber) : '',
+        installationAddress: payload.installationAddress ? String(payload.installationAddress) : '',
+        landmark: payload.landmark ? String(payload.landmark) : '',
+        desiredPlan: payload.desiredPlan ? String(payload.desiredPlan) : '',
+        proofOfBilling: payload.proofOfBilling ? String(payload.proofOfBilling) : '',
+        governmentValidId: payload.governmentValidId ? String(payload.governmentValidId) : '',
+        secondGovernmentValidId: payload.secondGovernmentValidId ? String(payload.secondGovernmentValidId) : '',
+        houseFrontPicture: payload.houseFrontPicture ? String(payload.houseFrontPicture) : '',
+        termsAndConditionsAgreement: payload.termsAndConditionsAgreement ? String(payload.termsAndConditionsAgreement) : 'Agreed',
+        firstNearestLandmark: payload.firstNearestLandmark ? String(payload.firstNearestLandmark) : '',
+        secondNearestLandmark: payload.secondNearestLandmark ? String(payload.secondNearestLandmark) : '',
+        applicablePromo: payload.applicablePromo ? String(payload.applicablePromo) : '',
+        documentPicture: payload.documentPicture ? String(payload.documentPicture) : '',
+        barangay1: payload.barangay1 ? String(payload.barangay1) : (payload.barangay ? String(payload.barangay) : ''),
+        barangay2: payload.barangay2 ? String(payload.barangay2) : '',
+        pictureofstatmentbillingfromotherprovider: payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider ? String(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider) : '',
+        referrersAccountNumber: payload.referrersAccountNumber ? String(payload.referrersAccountNumber) : '',
+        applyingFor: payload.applyingFor ? String(payload.applyingFor) : '',
+        status: payload.status ? String(payload.status) : 'In Progress',
+        visitBy: payload.visitBy ? String(payload.visitBy) : '',
+        visitWith: payload.visitWith ? String(payload.visitWith) : '',
+        visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
+        remarks: payload.remarks ? String(payload.remarks) : '',
+        modifiedBy: loggedInUserId,
+        modifiedDate: nowIso,
+        userEmail: currentUserEmail
       }
-    })
+    } else {
+      // Auto-populate createdBy and modifiedBy for backend API if present in table schema
+      const createdByCol = allRawColumns.value.find(c => c.toLowerCase().includes('createdby'))
+      const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
+
+      if (createdByCol) {
+        payload[createdByCol] = loggedInUserId
+      }
+      if (modifiedByCol) {
+        payload[modifiedByCol] = loggedInUserId
+      }
+
+      if (columns.value.includes('userEmail') && !payload.userEmail) {
+        payload.userEmail = currentUserEmail
+      } else if (!columns.value.includes('userEmail')) {
+        delete payload.userEmail
+      }
+
+      // Clean null / empty string fields and format numeric / date fields properly
+      finalPayload = { ...payload }
+      Object.keys(finalPayload).forEach(key => {
+        if (finalPayload[key] === '' || finalPayload[key] === null || finalPayload[key] === undefined) {
+          delete finalPayload[key]
+        } else if (finalPayload[key] instanceof Date) {
+          const d = finalPayload[key]
+          finalPayload[key] = d.toISOString()
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number') {
+          finalPayload[key] = Number(finalPayload[key])
+        }
+      })
+    }
     
-    console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, payload)
-    await apiClient.post(`/${props.endpoint}`, payload)
+    console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, finalPayload)
+    await apiClient.post(`/${props.endpoint}`, finalPayload)
 
     // Refresh table
     await fetchData()
@@ -4237,6 +4538,8 @@ const openEditDialog = async (record) => {
       else if (type === 'nap_dropdown') targetList = napsList.value
       else if (type === 'port_dropdown') targetList = portsList.value
       else if (type === 'vlan_dropdown') targetList = vlansList.value
+      else if (type === 'plan_dropdown') targetList = getPlanOptions(col, val)
+      else if (type === 'referredby_dropdown') targetList = getReferrerOptions(val)
 
       if (targetList && targetList.length > 0) {
         const match = targetList.find(opt => opt.value === val || opt.value === String(val) || opt.id === val || opt.id === Number(val))
@@ -4275,6 +4578,8 @@ const saveEdit = async () => {
     }
 
     const loggedInUserId = String(authStore.user?.id || 2)
+    const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
+    const nowIso = new Date().toISOString()
     
     // Clean legacy / alias audit columns and read-only creation audit fields
     delete payload.lastModified
@@ -4282,35 +4587,77 @@ const saveEdit = async () => {
     delete payload.lastModifiedBy
     delete payload.last_modified_by
 
-    Object.keys(payload).forEach(key => {
-      const lower = key.toLowerCase()
-      if (lower.includes('createdby') || lower.includes('createddate') || lower.includes('created_at')) {
-        delete payload[key]
-      } else if (lower.includes('modifiedby') || lower.includes('updatedby')) {
-        payload[key] = loggedInUserId
-      } else if (lower.includes('modifieddate') || lower.includes('updateddate') || lower.includes('modified_at')) {
-        // Strip or format modifiedDate so invalid date strings don't fail ASP.NET DateTime validation
-        if (!payload[key] || typeof payload[key] !== 'string' || isNaN(Date.parse(payload[key]))) {
+    let finalPayload
+    if (isApplicationEndpoint.value) {
+      finalPayload = {
+        emailAddress: payload.emailAddress ? String(payload.emailAddress) : '',
+        region: payload.region ? String(payload.region) : '',
+        city: payload.city ? String(payload.city) : '',
+        barangay: payload.barangay ? String(payload.barangay) : '',
+        referredBy: payload.referredBy ? String(payload.referredBy) : '',
+        firstName: payload.firstName ? String(payload.firstName) : '',
+        middleName: payload.middleName ? String(payload.middleName) : '',
+        lastName: payload.lastName ? String(payload.lastName) : '',
+        mobileNumber: payload.mobileNumber ? String(payload.mobileNumber) : '',
+        secondaryMobileNumber: payload.secondaryMobileNumber ? String(payload.secondaryMobileNumber) : '',
+        installationAddress: payload.installationAddress ? String(payload.installationAddress) : '',
+        landmark: payload.landmark ? String(payload.landmark) : '',
+        desiredPlan: payload.desiredPlan ? String(payload.desiredPlan) : '',
+        proofOfBilling: payload.proofOfBilling ? String(payload.proofOfBilling) : '',
+        governmentValidId: payload.governmentValidId ? String(payload.governmentValidId) : '',
+        secondGovernmentValidId: payload.secondGovernmentValidId ? String(payload.secondGovernmentValidId) : '',
+        houseFrontPicture: payload.houseFrontPicture ? String(payload.houseFrontPicture) : '',
+        termsAndConditionsAgreement: payload.termsAndConditionsAgreement ? String(payload.termsAndConditionsAgreement) : 'Agreed',
+        firstNearestLandmark: payload.firstNearestLandmark ? String(payload.firstNearestLandmark) : '',
+        secondNearestLandmark: payload.secondNearestLandmark ? String(payload.secondNearestLandmark) : '',
+        applicablePromo: payload.applicablePromo ? String(payload.applicablePromo) : '',
+        documentPicture: payload.documentPicture ? String(payload.documentPicture) : '',
+        barangay1: payload.barangay1 ? String(payload.barangay1) : (payload.barangay ? String(payload.barangay) : ''),
+        barangay2: payload.barangay2 ? String(payload.barangay2) : '',
+        pictureofstatmentbillingfromotherprovider: payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider ? String(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider) : '',
+        referrersAccountNumber: payload.referrersAccountNumber ? String(payload.referrersAccountNumber) : '',
+        applyingFor: payload.applyingFor ? String(payload.applyingFor) : '',
+        status: payload.status ? String(payload.status) : 'In Progress',
+        visitBy: payload.visitBy ? String(payload.visitBy) : '',
+        visitWith: payload.visitWith ? String(payload.visitWith) : '',
+        visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
+        remarks: payload.remarks ? String(payload.remarks) : '',
+        modifiedBy: loggedInUserId,
+        modifiedDate: nowIso,
+        userEmail: payload.userEmail || currentUserEmail
+      }
+    } else {
+      Object.keys(payload).forEach(key => {
+        const lower = key.toLowerCase()
+        if (lower.includes('createdby') || lower.includes('createddate') || lower.includes('created_at')) {
           delete payload[key]
-        } else {
-          payload[key] = new Date(payload[key]).toISOString()
+        } else if (lower.includes('modifiedby') || lower.includes('updatedby')) {
+          payload[key] = loggedInUserId
+        } else if (lower.includes('modifieddate') || lower.includes('updateddate') || lower.includes('modified_at')) {
+          // Strip or format modifiedDate so invalid date strings don't fail ASP.NET DateTime validation
+          if (!payload[key] || typeof payload[key] !== 'string' || isNaN(Date.parse(payload[key]))) {
+            delete payload[key]
+          } else {
+            payload[key] = new Date(payload[key]).toISOString()
+          }
         }
-      }
-    })
+      })
 
-    Object.keys(payload).forEach(key => {
-      if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
-        delete payload[key]
-      } else if (payload[key] instanceof Date) {
-        payload[key] = payload[key].toISOString()
-      } else if (typeof payload[key] === 'string' && payload[key].trim() !== '' && !isNaN(payload[key]) && getFieldType(key) === 'number') {
-        payload[key] = Number(payload[key])
-      }
-    })
+      finalPayload = { ...payload }
+      Object.keys(finalPayload).forEach(key => {
+        if (finalPayload[key] === '' || finalPayload[key] === null || finalPayload[key] === undefined) {
+          delete finalPayload[key]
+        } else if (finalPayload[key] instanceof Date) {
+          finalPayload[key] = finalPayload[key].toISOString()
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number') {
+          finalPayload[key] = Number(finalPayload[key])
+        }
+      })
+    }
 
-    console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, payload)
+    console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, finalPayload)
     const updatedId = editingRecordId.value
-    await apiClient.put(`/${props.endpoint}/${updatedId}`, payload)
+    await apiClient.put(`/${props.endpoint}/${updatedId}`, finalPayload)
     await fetchData()
     displayEditDialog.value = false
     toast.add({

@@ -7,6 +7,8 @@ export const EndpointColumns = {
     "region",
     "city",
     "barangay",
+    "barangay1",
+    "barangay2",
     "referredBy",
     "firstName",
     "middleName",
@@ -35,11 +37,7 @@ export const EndpointColumns = {
     "remarks",
     "modifiedBy",
     "modifiedDate",
-    "userEmail",
-    "created",
-    "createdBy",
-    "lastModified",
-    "lastModifiedBy"
+    "userEmail"
   ],
   "BillingDetails": [
     "id",

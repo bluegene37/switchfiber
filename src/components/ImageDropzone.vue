@@ -45,14 +45,27 @@
       :id="dropzoneElementId"
       ref="dropzoneElement"
       class="dropzone-box border border-dashed rounded text-center p-3"
-      :class="{ 'dropzone-disabled': disabled }"
+      :class="{ 
+        'dropzone-disabled': disabled,
+        'dropzone-required': required,
+        'dropzone-optional': !required
+      }"
     >
       <div class="dz-message d-flex flex-column align-items-center justify-content-center gap-1 cursor-pointer">
-        <div class="dz-icon-circle rounded-circle d-flex align-items-center justify-content-center mb-1">
-          <i class="pi pi-cloud-upload" style="font-size: 1.35rem; color: var(--bs-primary, #e74c5a);"></i>
+        <div 
+          class="dz-icon-circle rounded-circle d-flex align-items-center justify-content-center mb-1"
+          :class="required ? 'dz-icon-circle-required' : 'dz-icon-circle-optional'"
+        >
+          <i 
+            class="pi pi-cloud-upload" 
+            :style="{
+              fontSize: '1.35rem',
+              color: required ? 'var(--bs-primary, #e74c5a)' : '#64748b'
+            }"
+          ></i>
         </div>
         <div class="small fw-semibold text-dark">
-          Drag & drop image here or <span class="text-primary text-decoration-underline">browse</span>
+          Drag & drop image here or <span :class="required ? 'text-primary text-decoration-underline' : 'text-secondary text-decoration-underline'">browse</span>
         </div>
         <div class="text-muted" style="font-size: 0.72rem;">
           PNG, JPG, WEBP, GIF (Max {{ maxFilesize }}MB)
@@ -117,6 +130,10 @@ const props = defineProps({
   label: {
     type: String,
     default: ''
+  },
+  required: {
+    type: Boolean,
+    default: false
   },
   disabled: {
     type: Boolean,
@@ -243,20 +260,36 @@ watch(() => props.disabled, (newVal) => {
   cursor: pointer;
 }
 
-.dropzone-box:hover:not(.dropzone-disabled) {
+.dropzone-box.dropzone-required:hover:not(.dropzone-disabled) {
   border-color: var(--bs-primary, #e74c5a) !important;
   background-color: rgba(var(--bs-primary-rgb, 231, 76, 90), 0.04);
 }
 
-.dropzone-box.dz-drag-hover {
+.dropzone-box.dropzone-optional:hover:not(.dropzone-disabled) {
+  border-color: #64748b !important;
+  background-color: rgba(100, 116, 139, 0.04);
+}
+
+.dropzone-box.dropzone-required.dz-drag-hover {
   border-color: var(--bs-primary, #e74c5a) !important;
   background-color: rgba(var(--bs-primary-rgb, 231, 76, 90), 0.08);
 }
 
-.dz-icon-circle {
+.dropzone-box.dropzone-optional.dz-drag-hover {
+  border-color: #64748b !important;
+  background-color: rgba(100, 116, 139, 0.08);
+}
+
+.dz-icon-circle-required {
   width: 40px;
   height: 40px;
   background-color: rgba(var(--bs-primary-rgb, 231, 76, 90), 0.1);
+}
+
+.dz-icon-circle-optional {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(100, 116, 139, 0.12);
 }
 
 .dropzone-disabled {

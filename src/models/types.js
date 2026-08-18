@@ -23,6 +23,9 @@
  * @property {string} secondNearestLandmark
  * @property {string} applicablePromo
  * @property {string} documentPicture
+ * @property {string} barangay1
+ * @property {string} barangay2
+ * @property {string} pictureofstatmentbillingfromotherprovider
  * @property {string} referrersAccountNumber
  * @property {string} applyingFor
  * @property {string} status
@@ -297,6 +300,9 @@
  * @property {string} secondNearestLandmark
  * @property {string} applicablePromo
  * @property {string} documentPicture
+ * @property {string} barangay1
+ * @property {string} barangay2
+ * @property {string} pictureofstatmentbillingfromotherprovider
  * @property {string} referrersAccountNumber
  * @property {string} applyingFor
  * @property {string} status
