@@ -259,6 +259,16 @@ const rawMenuItems = ref([
       { id: 19, name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
     ]
   },
+  { id: 30, name: 'Disconnection', path: '/disconnection', icon: 'pi-ban' },
+  { 
+    id: 22,
+    name: 'Users Management', 
+    icon: 'pi-users',
+    children: [
+      { id: 15, name: 'User', path: '/user', icon: 'pi-user' },
+      { id: 16, name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
+    ]
+  },
   { 
     id: 21,
     name: 'File Maintenance', 
@@ -274,16 +284,6 @@ const rawMenuItems = ref([
       { id: 13, name: 'Plan', path: '/plan', icon: 'pi-tag' },
     ]
   },
-  { 
-    id: 22,
-    name: 'Users Management', 
-    icon: 'pi-users',
-    children: [
-      { id: 15, name: 'User', path: '/user', icon: 'pi-user' },
-      { id: 16, name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
-    ]
-  },
-  { id: 30, name: 'Disconnection', path: '/disconnection', icon: 'pi-ban' },
   { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },
   { id: 29, name: 'Models', path: '/models', icon: 'pi-table' }
 ])
