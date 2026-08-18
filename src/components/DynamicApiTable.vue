@@ -980,8 +980,8 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2 mt-3">
-          <Button label="Cancel" icon="pi pi-times" class="p-button-text p-button-secondary p-button-sm" @click="displayCreateDialog = false" />
-          <Button label="Save Record" icon="pi pi-check" class="p-button-primary p-button-sm" @click="saveData" :loading="saving" />
+          <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayCreateDialog = false" />
+          <Button :label="`Save ${formatLabel(endpoint)}`" icon="pi pi-check" class="p-button-primary p-button-sm rounded-3 px-3.5 shadow-xs" @click="saveData" :loading="saving" />
         </div>
       </template>
     </Dialog>
@@ -1106,14 +1106,14 @@
             v-if="!readOnly"
             label="Edit Record"
             icon="pi pi-pencil"
-            class="p-button-outlined p-button-primary p-button-sm"
+            class="p-button-outlined p-button-primary p-button-sm rounded-3 px-3"
             @click="displayViewDialog = false; openEditDialog(viewFormData)"
           />
           <span v-else></span>
           <Button 
             label="Close" 
             icon="pi pi-times" 
-            class="p-button-secondary p-button-sm" 
+            class="p-button-secondary p-button-sm rounded-3 px-3" 
             @click="displayViewDialog = false" 
           />
         </div>
@@ -1605,8 +1605,8 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2 mt-3">
-          <Button label="Cancel" icon="pi pi-times" class="p-button-text p-button-secondary p-button-sm" @click="displayEditDialog = false" />
-          <Button label="Update Record" icon="pi pi-check" class="p-button-primary p-button-sm" @click="saveEdit" :loading="savingEdit" />
+          <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayEditDialog = false" />
+          <Button label="Save Changes" icon="pi pi-check" class="p-button-primary p-button-sm rounded-3 px-3.5 shadow-xs" @click="saveEdit" :loading="savingEdit" />
         </div>
       </template>
     </Dialog>
@@ -1635,8 +1635,8 @@
 
       <template #footer>
         <div class="d-flex justify-content-end gap-2 mt-3">
-          <Button label="Cancel" icon="pi pi-times" class="p-button-text p-button-secondary p-button-sm" @click="displayDeleteDialog = false" />
-          <Button label="Delete Record" icon="pi pi-trash" class="p-button-danger p-button-sm" @click="deleteRecord" :loading="deleting" />
+          <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayDeleteDialog = false" />
+          <Button label="Delete Record" icon="pi pi-trash" class="p-button-danger p-button-sm rounded-3 px-3 shadow-xs" @click="deleteRecord" :loading="deleting" />
         </div>
       </template>
     </Dialog>
@@ -1659,7 +1659,7 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2">
-          <Button label="Close" class="p-button-sm p-button-secondary" @click="tableImagePreviewVisible = false" />
+          <Button label="Close" icon="pi pi-times" class="p-button-sm p-button-secondary rounded-3 px-3" @click="tableImagePreviewVisible = false" />
         </div>
       </template>
     </Dialog>
@@ -1824,9 +1824,9 @@ const modalStyle = computed(() => {
 
 const modalBreakpoints = computed(() => {
   if (isWideForm.value) {
-    return { '1200px': '95vw', '960px': '98vw' }
+    return { '1200px': '95vw', '960px': '98vw', '640px': '100vw' }
   }
-  return { '960px': '95vw' }
+  return { '960px': '95vw', '640px': '100vw' }
 })
 
 const getColumnClass = (col) => {
