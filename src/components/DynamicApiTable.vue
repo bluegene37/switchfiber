@@ -306,6 +306,13 @@
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1">Disabled</span>
             <span v-else class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Enabled</span>
           </div>
+          <!-- Agreement Checkbox Column display -->
+          <div v-else-if="getFieldType(col) === 'agreement_checkbox'" class="d-flex justify-content-center">
+            <span v-if="isAgreementChecked(slotProps.data[col])" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">
+              <i class="pi pi-check me-1 small"></i>Yes, I Agree
+            </span>
+            <span v-else class="text-muted">-</span>
+          </div>
           <div v-else-if="col.toLowerCase().includes('status')" class="d-flex justify-content-center">
             <span 
               v-if="slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== ''"
@@ -529,19 +536,95 @@
               v-for="col in sec.columns"
               :key="col"
               :id="fieldWrapId('create', col)"
-              :class="[getColumnClass(col), { 'field-invalid': hasFieldError('create', col) }]"
+              :class="[
+                getColumnClass(col),
+                {
+                  'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress'),
+                  'field-invalid': hasFieldError('create', col) || (normalizeColKey(col) === 'barangay1' && (hasFieldError('create', 'barangay1') || hasFieldError('create', 'barangay2'))) || (normalizeColKey(col) === 'visitwithother' && (hasFieldError('create', 'visitWithOther') || hasFieldError('create', 'userEmail')))
+                }
+              ]"
             >
-              <label :for="col" class="form-label fw-medium text-body small mb-1">
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="col" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
               </label>
 
+              <!-- Combined Barangay 1 & Barangay 2 Column (Stacked) -->
+              <div v-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`create-barangay1`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 1
+                    <span v-if="isFieldRequired('barangay1')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="create-barangay1" 
+                    v-model="formData.barangay1" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter barangay 1" 
+                  />
+                </div>
+                <div>
+                  <label :for="`create-barangay2`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 2
+                    <span v-if="isFieldRequired('barangay2')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="create-barangay2" 
+                    v-model="formData.barangay2" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter barangay 2" 
+                  />
+                </div>
+              </div>
+
+              <!-- Combined Visit With (Other) & User Email Column (Stacked) -->
+              <div v-else-if="normalizeColKey(col) === 'visitwithother'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`create-visitwithother`" class="form-label fw-medium text-body small mb-1">
+                    Visit With (Other)
+                    <span v-if="isFieldRequired('visitWithOther')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="create-visitwithother" 
+                    v-model="formData.visitWithOther" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter visit with (other)" 
+                  />
+                </div>
+                <div>
+                  <label :for="`create-useremail`" class="form-label fw-medium text-body small mb-1">
+                    User Email
+                    <span v-if="isFieldRequired('userEmail')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="create-useremail" 
+                    v-model="formData.userEmail" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter user email" 
+                  />
+                </div>
+              </div>
+
               <!-- Toggle Switch for Active / Boolean fields -->
-              <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+              <div v-else-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
                 <ToggleSwitch :id="col" v-model="formData[col]" />
                 <span class="small fw-semibold" :class="formData[col] ? 'text-success' : 'text-secondary'">
                   {{ formData[col] ? 'Active' : 'Inactive' }}
                 </span>
+              </div>
+
+              <!-- Agreement Checkbox -->
+              <div v-else-if="getFieldType(col) === 'agreement_checkbox'" class="d-flex align-items-center gap-2 pt-2">
+                <Checkbox 
+                  :inputId="col" 
+                  v-model="formData[col]" 
+                  :binary="true" 
+                  trueValue="Yes, I Agree" 
+                  falseValue="" 
+                />
+                <label :for="col" class="form-check-label small fw-medium mb-0 cursor-pointer user-select-none">
+                  Yes, I Agree
+                </label>
               </div>
 
               <!-- Access Level Dropdown -->
@@ -951,8 +1034,10 @@
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="col" 
                 v-model="formData[col]" 
-                rows="3" 
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress')) && isApplicationEndpoint ? 4 : 3" 
                 class="w-100 p-inputtext-sm" 
+                :class="{ 'flex-grow-1': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') }"
+                :style="isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') ? 'min-height: 96px;' : ''"
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
               />
 
@@ -1015,18 +1100,94 @@
             <div 
               v-for="col in sec.columns" 
               :key="col" 
-              :class="getColumnClass(col)"
+              :class="[
+                getColumnClass(col),
+                {
+                  'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress')
+                }
+              ]"
             >
-              <label :for="`view-${col}`" class="form-label fw-medium text-body small mb-1">
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="`view-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
               </label>
 
+              <!-- Combined Barangay 1 & Barangay 2 Column in View Modal (Stacked) -->
+              <div v-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`view-barangay1`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 1
+                  </label>
+                  <InputText 
+                    id="view-barangay1" 
+                    :modelValue="viewFormData.barangay1 || '-'" 
+                    readonly 
+                    disabled 
+                    class="w-100 p-inputtext-sm bg-light" 
+                  />
+                </div>
+                <div>
+                  <label :for="`view-barangay2`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 2
+                  </label>
+                  <InputText 
+                    id="view-barangay2" 
+                    :modelValue="viewFormData.barangay2 || '-'" 
+                    readonly 
+                    disabled 
+                    class="w-100 p-inputtext-sm bg-light" 
+                  />
+                </div>
+              </div>
+
+              <!-- Combined Visit With (Other) & User Email Column in View Modal (Stacked) -->
+              <div v-else-if="normalizeColKey(col) === 'visitwithother'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`view-visitwithother`" class="form-label fw-medium text-body small mb-1">
+                    Visit With (Other)
+                  </label>
+                  <InputText 
+                    id="view-visitwithother" 
+                    :modelValue="viewFormData.visitWithOther || '-'" 
+                    readonly 
+                    disabled 
+                    class="w-100 p-inputtext-sm bg-light" 
+                  />
+                </div>
+                <div>
+                  <label :for="`view-useremail`" class="form-label fw-medium text-body small mb-1">
+                    User Email
+                  </label>
+                  <InputText 
+                    id="view-useremail" 
+                    :modelValue="viewFormData.userEmail || '-'" 
+                    readonly 
+                    disabled 
+                    class="w-100 p-inputtext-sm bg-light" 
+                  />
+                </div>
+              </div>
+
               <!-- Toggle Switch for Active / Boolean fields -->
-              <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+              <div v-else-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
                 <ToggleSwitch :id="`view-${col}`" :modelValue="!!viewFormData[col]" disabled />
                 <span class="small fw-semibold" :class="viewFormData[col] ? 'text-success' : 'text-secondary'">
                   {{ viewFormData[col] ? 'Active' : 'Inactive' }}
                 </span>
+              </div>
+
+              <!-- Agreement Checkbox in View Dialog -->
+              <div v-else-if="getFieldType(col) === 'agreement_checkbox'" class="d-flex align-items-center gap-2 pt-2">
+                <Checkbox 
+                  :inputId="`view-${col}`" 
+                  :modelValue="isAgreementChecked(viewFormData[col]) ? 'Yes, I Agree' : ''" 
+                  :binary="true" 
+                  trueValue="Yes, I Agree" 
+                  falseValue="" 
+                  disabled 
+                />
+                <label :for="`view-${col}`" class="form-check-label small fw-medium mb-0" :class="isAgreementChecked(viewFormData[col]) ? 'text-success' : 'text-secondary'">
+                  {{ isAgreementChecked(viewFormData[col]) ? 'Yes, I Agree' : 'Not Agreed' }}
+                </label>
               </div>
 
               <!-- DatePicker for Date Fields -->
@@ -1058,10 +1219,12 @@
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="`view-${col}`" 
                 :modelValue="viewFormData[col]" 
-                rows="3" 
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress')) && isApplicationEndpoint ? 4 : 3" 
                 readonly
                 disabled
                 class="w-100 p-inputtext-sm bg-light" 
+                :class="{ 'flex-grow-1': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') }"
+                :style="isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') ? 'min-height: 96px;' : ''"
               />
 
               <!-- Password for Password Fields in View Modal -->
@@ -1154,19 +1317,95 @@
               v-for="col in sec.columns"
               :key="col"
               :id="fieldWrapId('edit', col)"
-              :class="[getColumnClass(col), { 'field-invalid': hasFieldError('edit', col) }]"
+              :class="[
+                getColumnClass(col),
+                {
+                  'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress'),
+                  'field-invalid': hasFieldError('edit', col) || (normalizeColKey(col) === 'barangay1' && (hasFieldError('edit', 'barangay1') || hasFieldError('edit', 'barangay2'))) || (normalizeColKey(col) === 'visitwithother' && (hasFieldError('edit', 'visitWithOther') || hasFieldError('edit', 'userEmail')))
+                }
+              ]"
             >
-              <label :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
               </label>
 
+              <!-- Combined Barangay 1 & Barangay 2 Column in Edit Modal (Stacked) -->
+              <div v-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`edit-barangay1`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 1
+                    <span v-if="isFieldRequired('barangay1')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="edit-barangay1" 
+                    v-model="editFormData.barangay1" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter barangay 1" 
+                  />
+                </div>
+                <div>
+                  <label :for="`edit-barangay2`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 2
+                    <span v-if="isFieldRequired('barangay2')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="edit-barangay2" 
+                    v-model="editFormData.barangay2" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter barangay 2" 
+                  />
+                </div>
+              </div>
+
+              <!-- Combined Visit With (Other) & User Email Column in Edit Modal (Stacked) -->
+              <div v-else-if="normalizeColKey(col) === 'visitwithother'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`edit-visitwithother`" class="form-label fw-medium text-body small mb-1">
+                    Visit With (Other)
+                    <span v-if="isFieldRequired('visitWithOther')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="edit-visitwithother" 
+                    v-model="editFormData.visitWithOther" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter visit with (other)" 
+                  />
+                </div>
+                <div>
+                  <label :for="`edit-useremail`" class="form-label fw-medium text-body small mb-1">
+                    User Email
+                    <span v-if="isFieldRequired('userEmail')" class="text-danger ms-1" title="Required">*</span>
+                  </label>
+                  <InputText 
+                    id="edit-useremail" 
+                    v-model="editFormData.userEmail" 
+                    class="w-100 p-inputtext-sm" 
+                    placeholder="Enter user email" 
+                  />
+                </div>
+              </div>
+
               <!-- Toggle Switch for Active / Boolean fields -->
-              <div v-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
+              <div v-else-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
                 <ToggleSwitch :id="`edit-${col}`" v-model="editFormData[col]" />
                 <span class="small fw-semibold" :class="editFormData[col] ? 'text-success' : 'text-secondary'">
                   {{ editFormData[col] ? 'Active' : 'Inactive' }}
                 </span>
+              </div>
+
+              <!-- Agreement Checkbox in Edit Dialog -->
+              <div v-else-if="getFieldType(col) === 'agreement_checkbox'" class="d-flex align-items-center gap-2 pt-2">
+                <Checkbox 
+                  :inputId="`edit-${col}`" 
+                  v-model="editFormData[col]" 
+                  :binary="true" 
+                  trueValue="Yes, I Agree" 
+                  falseValue="" 
+                />
+                <label :for="`edit-${col}`" class="form-check-label small fw-medium mb-0 cursor-pointer user-select-none">
+                  Yes, I Agree
+                </label>
               </div>
 
               <!-- Access Level Dropdown -->
@@ -1576,9 +1815,11 @@
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="`edit-${col}`" 
                 v-model="editFormData[col]" 
-                rows="3" 
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress')) && isApplicationEndpoint ? 4 : 3" 
                 class="w-100 p-inputtext-sm" 
-                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+                :class="{ 'flex-grow-1': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') }"
+                :style="isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') ? 'min-height: 96px;' : ''"
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
               />
 
               <!-- InputText for Standard / Monospace Fields -->
@@ -1684,6 +1925,7 @@ import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import ToggleSwitch from 'primevue/toggleswitch'
+import Checkbox from 'primevue/checkbox'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
 import Password from 'primevue/password'
@@ -1841,6 +2083,10 @@ const modalBreakpoints = computed(() => {
 
 const getColumnClass = (col) => {
   const type = getFieldType(col)
+  const lower = (col || '').toLowerCase().replace(/_/g, '')
+  if (lower === 'installationaddress' || lower === 'remarks' || lower === 'remark') {
+    return 'col-12 col-md-12 col-lg-8'
+  }
   // Wide (3-column) forms keep every field on the same one-third track, image
   // dropzones and textareas included. Giving those two a half-width span used to
   // leave the grid ragged: a half-width field landing mid-row pushed the next
@@ -1923,6 +2169,9 @@ function formatLabel(col) {
     barangay1: 'Barangay 1',
     barangay2: 'Barangay 2',
     termsandconditionsagreement: 'Terms & Conditions Agreement',
+    termsandconditions: 'Terms & Conditions',
+    termsagreement: 'Terms Agreement',
+    agreement: 'Agreement',
     firstnearestlandmark: '1st Nearest Landmark',
     secondnearestlandmark: '2nd Nearest Landmark',
     referrersaccountnumber: "Referrer's Account Number",
@@ -1978,6 +2227,26 @@ function isNonNumericIdField(lower) {
   return NON_NUMERIC_ID_HINTS.some(hint => lower.includes(hint))
 }
 
+const isAgreementChecked = (val) => {
+  if (val === true || val === 'true') return true
+  if (typeof val === 'string') {
+    const trimmed = val.trim().toLowerCase()
+    return trimmed === 'yes, i agree' || trimmed === 'agreed' || trimmed === 'yes' || trimmed === 'true' || trimmed === '1'
+  }
+  return false
+}
+
+const normalizeAgreementValue = (val) => {
+  if (val === true || val === 'true') return 'Yes, I Agree'
+  if (typeof val === 'string') {
+    const trimmed = val.trim()
+    if (trimmed && trimmed.toLowerCase() !== 'false' && trimmed.toLowerCase() !== 'no' && trimmed.toLowerCase() !== '0') {
+      return 'Yes, I Agree'
+    }
+  }
+  return ''
+}
+
 function getFieldType(col) {
   if (!col) return 'text'
   const lower = col.toLowerCase().replace(/_/g, '')
@@ -2030,6 +2299,15 @@ function getFieldType(col) {
   }
   if (lower === 'active' || lower === 'isactive' || lower === 'enabled') {
     return 'toggle'
+  }
+  if (
+    lower === 'termsandconditionsagreement' ||
+    lower === 'termsandconditions' ||
+    lower === 'termsagreement' ||
+    lower.includes('termsandconditions') ||
+    (lower.includes('agreement') && !lower.includes('id'))
+  ) {
+    return 'agreement_checkbox'
   }
   if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
     return 'accesslevel_dropdown'
@@ -3041,15 +3319,14 @@ const APPLICATION_FORM_LAYOUT = [
     badgeClass: 'text-info',
     columns: [
       'region',
-      'province',
       'city',
       'barangay',
       'barangay1',
-      'barangay2',
       'installationAddress',
       'landmark',
       'firstNearestLandmark',
-      'secondNearestLandmark'
+      'secondNearestLandmark',
+      'province'
     ]
   },
   {
@@ -3087,13 +3364,12 @@ const APPLICATION_FORM_LAYOUT = [
     icon: 'pi pi-check-square',
     badgeClass: 'text-secondary',
     columns: [
-      'timestamp',
       'status',
       'visitBy',
       'visitWith',
       'visitWithOther',
-      'userEmail',
-      'remarks'
+      'remarks',
+      'timestamp'
     ]
   }
 ]
@@ -3117,6 +3393,12 @@ const buildApplicationSections = (cols, { includeAudit = false } = {}) => {
       if (pool.has(key)) {
         picked.push(pool.get(key))
         pool.delete(key)
+        if (key === 'barangay1') {
+          pool.delete('barangay2')
+        }
+        if (key === 'visitwithother') {
+          pool.delete('useremail')
+        }
       }
     })
     if (picked.length > 0) {
@@ -3250,10 +3532,12 @@ const exportExcel = () => {
       const rowObj = {}
       targetCols.forEach(col => {
         const header = formatLabel(col)
+        const val = row[col]
         if (col.toLowerCase() === 'password') {
           rowObj[header] = '••••••••'
+        } else if (getFieldType(col) === 'agreement_checkbox') {
+          rowObj[header] = isAgreementChecked(val) ? 'Yes, I Agree' : ''
         } else {
-          const val = row[col]
           rowObj[header] = val !== null && val !== undefined ? String(val) : '-'
         }
       })
@@ -3326,10 +3610,13 @@ const exportPDF = () => {
     
     const body = (targetData || []).map(row => {
       return targetCols.map(col => {
+        const val = row[col]
         if (col.toLowerCase() === 'password') {
           return '••••••••'
         }
-        const val = row[col]
+        if (getFieldType(col) === 'agreement_checkbox') {
+          return isAgreementChecked(val) ? 'Yes, I Agree' : '-'
+        }
         return val !== null && val !== undefined ? String(val) : '-'
       })
     })
@@ -4280,6 +4567,8 @@ const openCreateDialog = () => {
       formData.value[col] = currentUser
     } else if (type === 'toggle') {
       formData.value[col] = true
+    } else if (type === 'agreement_checkbox') {
+      formData.value[col] = ''
     } else if (type === 'status_dropdown' && statusOptions.value.length > 0) {
       formData.value[col] = statusOptions.value[0].value
     } else if (type === 'onsitestatus_dropdown' && onsiteStatusOptions.value.length > 0) {
@@ -4304,10 +4593,6 @@ const openCreateDialog = () => {
     const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
     if (statusCol) {
       formData.value[statusCol] = 'In Progress'
-    }
-    const termsCol = formColumns.value.find(c => c.toLowerCase().includes('termsandconditions'))
-    if (termsCol) {
-      formData.value[termsCol] = 'Agreed'
     }
     const nowIso = new Date().toISOString()
     const tsCol = formColumns.value.find(c => c.toLowerCase() === 'timestamp')
@@ -4409,7 +4694,7 @@ const saveData = async () => {
         governmentValidId: payload.governmentValidId ? String(payload.governmentValidId) : '',
         secondGovernmentValidId: payload.secondGovernmentValidId ? String(payload.secondGovernmentValidId) : '',
         houseFrontPicture: payload.houseFrontPicture ? String(payload.houseFrontPicture) : '',
-        termsAndConditionsAgreement: payload.termsAndConditionsAgreement ? String(payload.termsAndConditionsAgreement) : 'Agreed',
+        termsAndConditionsAgreement: normalizeAgreementValue(payload.termsAndConditionsAgreement),
         firstNearestLandmark: payload.firstNearestLandmark ? String(payload.firstNearestLandmark) : '',
         secondNearestLandmark: payload.secondNearestLandmark ? String(payload.secondNearestLandmark) : '',
         applicablePromo: payload.applicablePromo ? String(payload.applicablePromo) : '',
@@ -4595,6 +4880,8 @@ const openEditDialog = async (record) => {
       editFormData.value[col] = currentUserIdOrName
     } else if (type === 'toggle') {
       editFormData.value[col] = record[col] === true || record[col] === 'true'
+    } else if (type === 'agreement_checkbox') {
+      editFormData.value[col] = isAgreementChecked(record[col]) ? 'Yes, I Agree' : ''
     } else if (type === 'date' && record[col]) {
       const d = new Date(record[col])
       editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
@@ -4681,7 +4968,7 @@ const saveEdit = async () => {
         governmentValidId: payload.governmentValidId ? String(payload.governmentValidId) : '',
         secondGovernmentValidId: payload.secondGovernmentValidId ? String(payload.secondGovernmentValidId) : '',
         houseFrontPicture: payload.houseFrontPicture ? String(payload.houseFrontPicture) : '',
-        termsAndConditionsAgreement: payload.termsAndConditionsAgreement ? String(payload.termsAndConditionsAgreement) : 'Agreed',
+        termsAndConditionsAgreement: normalizeAgreementValue(payload.termsAndConditionsAgreement),
         firstNearestLandmark: payload.firstNearestLandmark ? String(payload.firstNearestLandmark) : '',
         secondNearestLandmark: payload.secondNearestLandmark ? String(payload.secondNearestLandmark) : '',
         applicablePromo: payload.applicablePromo ? String(payload.applicablePromo) : '',
