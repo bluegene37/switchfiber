@@ -794,16 +794,23 @@ const saveProfile = async () => {
       userEmail: profileForm.value.email.trim(),
       email: profileForm.value.email.trim(),
       contactNumber: profileForm.value.contactnumber.trim(),
-      contactnumber: profileForm.value.contactnumber.trim(),
-      // Form Audit Trail Standard: UPDATE (PUT) populates modifiedBy with logged-in user id
-      modifiedBy: userId
+      contactnumber: profileForm.value.contactnumber.trim()
+      // modifiedBy: userId // Excluded for backend migration
     }
 
+    delete updatePayload.createdBy
+    delete updatePayload.created_by
     delete updatePayload.createdDate
     delete updatePayload.createdAt
     delete updatePayload.created_at
+    delete updatePayload.modifiedBy
+    delete updatePayload.modified_by
     delete updatePayload.modifiedDate
     delete updatePayload.modified_at
+    delete updatePayload.lastModified
+    delete updatePayload.last_modified
+    delete updatePayload.lastModifiedBy
+    delete updatePayload.last_modified_by
 
     await apiClient.put(`/Users/${userId}`, updatePayload).catch(async () => {
       return await apiClient.put('/Users', updatePayload)
@@ -866,16 +873,23 @@ const updatePassword = async () => {
     const passwordPayload = {
       ...(existingUser || {}),
       id: userId,
-      password: securityForm.value.newPassword,
-      // Form Audit Trail Standard: UPDATE (PUT) populates modifiedBy with logged-in user id
-      modifiedBy: userId
+      password: securityForm.value.newPassword
+      // modifiedBy: userId // Excluded for backend migration
     }
 
+    delete passwordPayload.createdBy
+    delete passwordPayload.created_by
     delete passwordPayload.createdDate
     delete passwordPayload.createdAt
     delete passwordPayload.created_at
+    delete passwordPayload.modifiedBy
+    delete passwordPayload.modified_by
     delete passwordPayload.modifiedDate
     delete passwordPayload.modified_at
+    delete passwordPayload.lastModified
+    delete passwordPayload.last_modified
+    delete passwordPayload.lastModifiedBy
+    delete passwordPayload.last_modified_by
 
     await apiClient.put(`/Users/${userId}`, passwordPayload).catch(async () => {
       return await apiClient.put('/Users', passwordPayload)

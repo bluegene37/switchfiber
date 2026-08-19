@@ -3509,7 +3509,7 @@ const formSections = computed(() => {
     }))
 })
 
-// Columns for View Details Modal ONLY (includes ALL fields including ID, CreatedBy/Date, ModifiedBy/Date, but deduplicated)
+// Columns for View Details Modal ONLY (excludes system audit fields)
 const viewFormColumns = computed(() => {
   let keys = []
   if (viewFormData.value && typeof viewFormData.value === 'object') {
@@ -3522,6 +3522,9 @@ const viewFormColumns = computed(() => {
   // Deduplicate redundant/paired fields and EF Core navigation objects for View Modal
   keys = deduplicateColumns(keys)
 
+  // Filter out createdBy, modifiedBy, and all system audit fields for UI view
+  keys = keys.filter(k => !isAuditField(k))
+
   const idIndex = keys.findIndex(k => k.toLowerCase() === 'id')
   if (idIndex > 0) {
     const [idCol] = keys.splice(idIndex, 1)
@@ -3532,7 +3535,7 @@ const viewFormColumns = computed(() => {
 
 const viewFormSections = computed(() => {
   if (isApplicationEndpoint.value) {
-    return buildApplicationSections(viewFormColumns.value, { includeAudit: true })
+    return buildApplicationSections(viewFormColumns.value, { includeAudit: false })
   }
 
   const groups = {
@@ -3540,13 +3543,12 @@ const viewFormSections = computed(() => {
     plan: [],
     infra: [],
     network: [],
-    ops: [],
-    audit: []
+    ops: []
   }
 
   viewFormColumns.value.forEach(col => {
     const sec = getColumnSection(col)
-    if (groups[sec]) {
+    if (sec !== 'audit' && groups[sec]) {
       groups[sec].push(col)
     }
   })
@@ -4761,8 +4763,8 @@ const saveData = async () => {
       delete payload.email
     }
 
-    const numericUserId = Number(authStore.user?.id) || 2
-    const loggedInUserId = String(authStore.user?.id || 2)
+    const numericUserId = Number(authStore.user?.id) || 1
+    const loggedInUserId = String(authStore.user?.id || 1)
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
     const nowIso = new Date().toISOString()
     
@@ -4808,41 +4810,17 @@ const saveData = async () => {
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
         remarks: payload.remarks ? String(payload.remarks) : '',
-        modifiedBy: loggedInUserId,
-        modifiedDate: '',
+        // modifiedBy: loggedInUserId, // Excluded for backend migration
+        // modifiedDate: '', // Excluded for backend migration
         userEmail: currentUserEmail
       }
     } else {
-      // Auto-populate createdBy and modifiedBy for backend API with logged-in user numeric ID
-      const createdByCol = allRawColumns.value.find(c => {
-        const l = c.toLowerCase()
-        return l === 'createdby' || l === 'createdbyuserid' || l.includes('createdby')
-      }) || 'createdBy'
-
-      const modifiedByCol = allRawColumns.value.find(c => {
-        const l = c.toLowerCase()
-        return l === 'modifiedby' || l === 'modifiedbyuserid' || l.includes('modifiedby') || l.includes('updatedby')
-      }) || 'modifiedBy'
-
-      const auditUserId = isStringAuditEndpoint.value ? String(numericUserId) : numericUserId
-      payload[createdByCol] = auditUserId
-      payload[modifiedByCol] = auditUserId
-
-      const createdDateCol = allRawColumns.value.find(c => {
-        const l = c.toLowerCase()
-        return l === 'createddate' || l === 'created_date'
+      // Exclude all audit fields (createdBy, modifiedBy, createdDate, modifiedDate, etc.) for backend migration
+      Object.keys(payload).forEach(key => {
+        if (isAuditField(key) && key.toLowerCase() !== 'id') {
+          delete payload[key]
+        }
       })
-      if (createdDateCol) {
-        payload[createdDateCol] = nowIso
-      }
-
-      const modifiedDateCol = allRawColumns.value.find(c => {
-        const l = c.toLowerCase()
-        return l === 'modifieddate' || l === 'modified_date' || l === 'lastmodified'
-      })
-      if (modifiedDateCol) {
-        payload[modifiedDateCol] = nowIso
-      }
 
       if (columns.value.includes('userEmail') && !payload.userEmail) {
         payload.userEmail = currentUserEmail
@@ -4858,7 +4836,7 @@ const saveData = async () => {
         } else if (finalPayload[key] instanceof Date) {
           const d = finalPayload[key]
           finalPayload[key] = d.toISOString()
-        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number') {
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id') {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
@@ -5098,53 +5076,25 @@ const saveEdit = async () => {
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
         remarks: payload.remarks ? String(payload.remarks) : '',
-        modifiedBy: loggedInUserId,
-        modifiedDate: '',
+        // modifiedBy: loggedInUserId, // Excluded for backend migration
+        // modifiedDate: '', // Excluded for backend migration
         userEmail: payload.userEmail || currentUserEmail
       }
     } else {
-      // 1. Remove creation audit fields so updates never overwrite or reset creation audit info
+      // Exclude all audit fields (createdBy, modifiedBy, createdDate, modifiedDate, etc.) for backend migration
       Object.keys(payload).forEach(key => {
-        const lower = key.toLowerCase()
-        if (lower.includes('createdby') || lower.includes('createddate') || lower.includes('created_at') || lower.includes('createdat')) {
+        if (isAuditField(key) && key.toLowerCase() !== 'id') {
           delete payload[key]
         }
       })
 
-      // 2. Identify the modifiedBy column (modifiedBy, modifiedByUserId, updatedBy, etc.)
-      const modifiedByCol = allRawColumns.value.find(c => {
-        const l = c.toLowerCase()
-        return l === 'modifiedby' || l === 'modifiedbyuserid' || l.includes('modifiedby') || l.includes('updatedby')
-      }) || 'modifiedBy'
-
-      // EXPLICITLY set the logged-in user ID (string for string-audit endpoints like Plans, integer for others)
-      const auditUserId = isStringAuditEndpoint.value ? String(numericUserId) : numericUserId
-      payload[modifiedByCol] = auditUserId
-
-      // 3. Set modifiedDate timestamp if present in table schema or OpenAPI
-      const modifiedDateCol = allRawColumns.value.find(c => {
-        const l = c.toLowerCase()
-        return l === 'modifieddate' || l === 'modified_date' || l === 'updateddate' || l === 'lastmodified'
-      }) || 'modifiedDate'
-
-      const hasModifiedDateCol = allRawColumns.value.some(c => {
-        const l = c.toLowerCase()
-        return l === 'modifieddate' || l === 'modified_date' || l === 'updateddate' || l === 'lastmodified'
-      }) || (props.endpoint && (props.endpoint.toLowerCase().includes('router') || props.endpoint.toLowerCase().includes('plan') || props.endpoint.toLowerCase().includes('nap') || props.endpoint.toLowerCase().includes('lcp') || props.endpoint.toLowerCase().includes('vlan')))
-
-      if (hasModifiedDateCol) {
-        payload[modifiedDateCol] = nowIso
-      }
-
       finalPayload = { ...payload }
       Object.keys(finalPayload).forEach(key => {
         if (finalPayload[key] === '' || finalPayload[key] === null || finalPayload[key] === undefined) {
-          if (key !== modifiedByCol && key !== modifiedDateCol) {
-            delete finalPayload[key]
-          }
+          delete finalPayload[key]
         } else if (finalPayload[key] instanceof Date) {
           finalPayload[key] = finalPayload[key].toISOString()
-        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && key !== modifiedByCol) {
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id') {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
@@ -5561,16 +5511,16 @@ const toggleMenuLink = async (menuRow) => {
     
     if (!currentlyLinked) {
       // Create Link: POST to /api/AccesslevelMenu
-      const numericUserId = Number(authStore.user?.id) || 2
+      const numericUserId = Number(authStore.user?.id) || 1
       const payload = {
         accessLevelId: targetAccId,
         menuId: targetMenuId,
         accesslevel_id: targetAccId,
         menu_id: targetMenuId,
         AccessLevelId: targetAccId,
-        MenuId: targetMenuId,
-        createdBy: numericUserId,
-        modifiedBy: numericUserId
+        MenuId: targetMenuId
+        // createdBy: numericUserId, // Excluded for backend migration
+        // modifiedBy: numericUserId // Excluded for backend migration
       }
       
       console.log(`[DynamicApiTable] Creating link POST /api/AccesslevelMenu:`, payload)
