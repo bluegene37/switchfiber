@@ -116,8 +116,9 @@ export const useYourFeatureStore = defineStore('yourFeature', () => {
   const fetchItems = async () => {
     isLoading.value = true
     try {
+      // apiClient already unwraps response data directly
       const response = await YourFeatureService.getAll()
-      items.value = response.data
+      items.value = response || []
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -159,12 +160,23 @@ onMounted(() => {
 ```
 
 ### Step 4: Register Route & Sidebar
-Add your new view component to [index.js](file:///Users/bluegene37/WebstormProjects/switchfiber/src/router/index.js) and a link to [Sidebar.vue](file:///Users/bluegene37/WebstormProjects/switchfiber/src/components/Sidebar.vue) (same as Steps 2 & 3 in Flow 1).
+1. Add your new view component to [index.js](file:///Users/bluegene37/WebstormProjects/switchfiber/src/router/index.js).
+2. Add the navigation item to [Sidebar.vue](file:///Users/bluegene37/WebstormProjects/switchfiber/src/components/Sidebar.vue).
+3. Ensure the new route is included in the Access Level permissions configuration so users can access it without permission blocks.
 
 ---
 
-## 💡 DynamicApiTable Smart Form Controls
+## 📋 Core Architectural Conventions
 
+### 1. Default Sorting Order
+- **Applications (`Applications` / `ApplicationList`)**: Default to **Descending order** (`sortOrder = -1`) based on `id` (newest records first).
+- **All Other Tables (File Maintenance, Access Level, Transactions, etc.)**: Default to **Ascending order** (`sortOrder = 1`) based on `id`.
+
+### 2. Form Audit Trail
+- **CREATE (`POST`)**: Populate `createdBy` and `modifiedBy` with the numeric ID of the currently logged-in user (`authStore.user.id`).
+- **UPDATE (`PUT`)**: Only update `modifiedBy` with `authStore.user.id`. Never overwrite `createdBy` or `createdDate` during updates.
+
+### 3. Smart Form Controls in DynamicApiTable
 When using `DynamicApiTable`, modal input fields are automatically rendered based on column names:
 
 | Naming Keyword | Generated Input Component | Example Columns |
@@ -183,4 +195,6 @@ When using `DynamicApiTable`, modal input fields are automatically rendered base
 - [ ] Route mapped in `FileMaintenance.vue` (or custom view created)
 - [ ] Route added to `src/router/index.js`
 - [ ] Navigation link added to `src/components/Sidebar.vue`
+- [ ] Registered in Access Level menu list for permission authorization
 - [ ] Fallback schema added in `src/models/columns.js` (optional)
+- [ ] Verified audit trail (`createdBy` / `modifiedBy`) and sorting rules

@@ -111,6 +111,8 @@
         :hide-create-button="false"
         hide-status-filter
         create-button-label="Create Application"
+        :default-sort-order="-1"
+        default-sort-field="id"
         @reset-filters="clearAllFilters"
       />
     </div>

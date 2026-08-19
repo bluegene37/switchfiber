@@ -7,7 +7,8 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   },
-  timeout: 15000,
+  // Allow up to 60 seconds for large unpaginated backend datasets, or customize via env
+  timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 60000,
 })
 
 // Request interceptor

@@ -21,7 +21,14 @@ export const useAppStore = defineStore('app', () => {
         data = arrayKey ? data[arrayKey] : []
       }
 
-      recentConnections.value = data.map(app => ({
+      // Sort applications descending by ID (newest first)
+      const sortedData = [...data].sort((a, b) => {
+        const idA = Number(a.id || a.applicationId || 0)
+        const idB = Number(b.id || b.applicationId || 0)
+        return idB - idA
+      })
+
+      recentConnections.value = sortedData.map(app => ({
         id: app.id || app.applicationId,
         name: `${app.firstName || ''} ${app.lastName || ''}`.trim() || 'Unknown',
         contact: app.mobileNumber || 'N/A',

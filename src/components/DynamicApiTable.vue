@@ -1997,7 +1997,7 @@ const props = defineProps({
   },
   defaultSortOrder: {
     type: Number,
-    default: -1 // -1 = Descending (Newest first), 1 = Ascending
+    default: null // null = auto-resolve: -1 (descending) for Applications, 1 (ascending) for other endpoints
   }
 })
 
@@ -2045,6 +2045,11 @@ const fetchSourceKey = computed(() => {
 const isMenuEndpoint = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
   return ep === 'menus' || ep === 'menu'
+})
+
+const isApplicationEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'applications' || ep === 'application'
 })
 
 // Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders
@@ -2911,8 +2916,19 @@ const activeFilterCount = computed(() => {
   return count
 })
 
+const resolveDefaultSortOrder = () => {
+  if (props.defaultSortOrder !== null && props.defaultSortOrder !== undefined) {
+    return props.defaultSortOrder
+  }
+  return isApplicationEndpoint.value ? -1 : 1
+}
+
 const sortField = ref(props.defaultSortField || 'id')
-const sortOrder = ref(props.defaultSortOrder ?? -1)
+const sortOrder = ref(resolveDefaultSortOrder())
+
+watch([() => props.endpoint, () => props.defaultSortOrder], () => {
+  sortOrder.value = resolveDefaultSortOrder()
+})
 
 // Synchronize sortField with the matching casing of the column in displayedColumns
 watch(displayedColumns, (newCols) => {
@@ -2936,8 +2952,11 @@ const clearAllFilters = () => {
   if (props.defaultSortField) {
     const match = displayedColumns.value.find(c => c.toLowerCase() === props.defaultSortField.toLowerCase())
     sortField.value = match || props.defaultSortField
-    sortOrder.value = props.defaultSortOrder ?? -1
+  } else {
+    const matchId = displayedColumns.value.find(c => c.toLowerCase() === 'id')
+    sortField.value = matchId || 'id'
   }
+  sortOrder.value = resolveDefaultSortOrder()
   firstRowIndex.value = 0
   emit('reset-filters')
 }
@@ -3769,11 +3788,6 @@ const getPlanOptions = (col, currentVal) => {
   }))
   return getStableOptionsWithCurrent(baseOptions, currentVal)
 }
-
-const isApplicationEndpoint = computed(() => {
-  const ep = (props.endpoint || '').trim().toLowerCase()
-  return ep === 'applications' || ep === 'application'
-})
 
 const statusOptions = computed(() => {
   if (isApplicationEndpoint.value) {
