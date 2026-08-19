@@ -1194,7 +1194,7 @@
               <DatePicker 
                 v-else-if="getFieldType(col) === 'date'" 
                 :id="`view-${col}`" 
-                :modelValue="viewFormData[col]" 
+                :modelValue="parseDateForPicker(viewFormData[col])" 
                 showIcon 
                 iconDisplay="input"
                 fluid
@@ -1936,6 +1936,7 @@ import { useToast } from 'primevue/usetoast'
 import { EndpointColumns } from '../models/columns'
 import { resolveRequiredFields } from '../models/requiredFields'
 import { useAuthStore } from '../stores/auth'
+import { useUserStore } from '../stores/users'
 import { useTheme } from '../composables/useTheme'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -1943,6 +1944,7 @@ import * as XLSX from 'xlsx'
 
 const toast = useToast()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const { activeColorTheme, THEME_PALETTES } = useTheme()
 
 const props = defineProps({
@@ -2063,6 +2065,23 @@ const isWideForm = computed(() => {
     ep === 'billing' ||
     ep === 'applications' ||
     ep === 'application'
+  )
+})
+
+const isStringAuditEndpoint = computed(() => {
+  const ep = (props.endpoint || '').toLowerCase()
+  return (
+    ep === 'plans' ||
+    ep === 'plan' ||
+    ep === 'applications' ||
+    ep === 'application' ||
+    ep === 'billingdetails' ||
+    ep === 'billingdetail' ||
+    ep === 'joborders' ||
+    ep === 'joborder' ||
+    ep === 'invoices' ||
+    ep === 'invoice' ||
+    ep === 'billingstatus'
   )
 })
 
@@ -2250,6 +2269,13 @@ const normalizeAgreementValue = (val) => {
     }
   }
   return ''
+}
+
+const parseDateForPicker = (val) => {
+  if (!val) return null
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val
+  const d = new Date(val)
+  return isNaN(d.getTime()) ? null : d
 }
 
 function getFieldType(col) {
@@ -3554,6 +3580,8 @@ const exportExcel = () => {
         const val = row[col]
         if (col.toLowerCase() === 'password') {
           rowObj[header] = '••••••••'
+        } else if (isUserRefField(col)) {
+          rowObj[header] = getUserDisplayName(val)
         } else if (getFieldType(col) === 'agreement_checkbox') {
           rowObj[header] = isAgreementChecked(val) ? 'Yes, I Agree' : ''
         } else {
@@ -3632,6 +3660,9 @@ const exportPDF = () => {
         const val = row[col]
         if (col.toLowerCase() === 'password') {
           return '••••••••'
+        }
+        if (isUserRefField(col)) {
+          return getUserDisplayName(val)
         }
         if (getFieldType(col) === 'agreement_checkbox') {
           return isAgreementChecked(val) ? 'Yes, I Agree' : '-'
@@ -3887,7 +3918,11 @@ const fetchRelatedData = async () => {
       }))
     }
     if (userRes.status === 'fulfilled') {
-      usersList.value = unwrap(userRes.value)
+      const unwrappedUsers = unwrap(userRes.value)
+      usersList.value = unwrappedUsers
+      if (Array.isArray(unwrappedUsers) && unwrappedUsers.length > 0) {
+        userStore.users = unwrappedUsers
+      }
     }
 
     // Trigger address data loading in parallel
@@ -4497,21 +4532,59 @@ const isUserRefField = (col) => {
     lower.includes('modifiedby') ||
     lower.includes('updatedby') ||
     lower.includes('processedby') ||
-    lower.includes('verifiedby')
+    lower.includes('verifiedby') ||
+    lower.includes('lastmodifiedby') ||
+    lower === 'createdbyuserid' ||
+    lower === 'modifiedbyuserid' ||
+    lower === 'userid'
   )
 }
 
 const usersMap = computed(() => {
   const map = new Map()
-  ;(usersList.value || []).forEach(u => {
+
+  // 1. Current logged-in user from authStore
+  const cur = authStore.user
+  if (cur) {
+    const curNameParts = [cur.fname || cur.firstName || cur.first_name, cur.lname || cur.lastName || cur.last_name].filter(Boolean)
+    const curName = curNameParts.join(' ').trim() || cur.username || cur.name || cur.email || (cur.id !== undefined ? `User #${cur.id}` : 'Current User')
+    if (cur.id !== undefined && cur.id !== null) {
+      map.set(Number(cur.id), curName)
+      map.set(String(cur.id).trim(), curName)
+    }
+    if (cur.username) {
+      map.set(cur.username.toLowerCase(), curName)
+      map.set(String(cur.username).trim(), curName)
+    }
+    if (cur.email) {
+      map.set(cur.email.toLowerCase(), curName)
+      map.set(String(cur.email).trim(), curName)
+    }
+  }
+
+  // 2. Combine userStore.users and local usersList
+  const combinedList = [...(userStore.users || []), ...(usersList.value || [])]
+  combinedList.forEach(u => {
     if (!u) return
-    const name = (u.fname || u.lname) ? `${u.fname || ''} ${u.lname || ''}`.trim() : (u.username || u.email || String(u.id))
+    const nameParts = [
+      u.fname || u.firstName || u.first_name,
+      u.mname || u.middleName || u.middle_name,
+      u.lname || u.lastName || u.last_name
+    ].filter(Boolean)
+    const fullName = nameParts.join(' ').trim()
+    const name = fullName || u.username || u.name || u.email || (u.id !== undefined ? `User #${u.id}` : 'Unknown User')
     if (u.id !== undefined && u.id !== null) {
       map.set(Number(u.id), name)
       map.set(String(u.id).trim(), name)
     }
-    if (u.username) map.set(u.username.toLowerCase(), name)
-    if (u.email) map.set(u.email.toLowerCase(), name)
+    if (u.username) {
+      map.set(u.username.toLowerCase(), name)
+      map.set(String(u.username).trim(), name)
+    }
+    if (u.email) {
+      map.set(u.email.toLowerCase(), name)
+      map.set(String(u.email).trim(), name)
+    }
   })
   return map
 })
@@ -4520,8 +4593,20 @@ const getUserDisplayName = (val) => {
   if (val === null || val === undefined || val === '') return '-'
   const strVal = String(val).trim()
   if (usersMap.value.has(strVal)) return usersMap.value.get(strVal)
-  if (usersMap.value.has(Number(val))) return usersMap.value.get(Number(val))
+  if (!isNaN(val) && usersMap.value.has(Number(val))) return usersMap.value.get(Number(val))
   if (usersMap.value.has(strVal.toLowerCase())) return usersMap.value.get(strVal.toLowerCase())
+
+  // If the value stored in createdBy / modifiedBy is an ISO date string (from legacy data or seed scripts)
+  const isIsoDate = /^\d{4}-\d{2}-\d{2}/.test(strVal) || (!isNaN(Date.parse(strVal)) && strVal.includes('T') && strVal.includes(':'))
+  if (isIsoDate) {
+    const adminUser = usersMap.value.get(1) || usersMap.value.get(authStore.user?.id) || (authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : null) || authStore.user?.username || 'Administrator'
+    return adminUser
+  }
+
+  // Fallback for numeric IDs not yet loaded
+  if (!isNaN(val) && Number(val) > 0) {
+    return `User #${strVal}`
+  }
   return strVal
 }
 
@@ -4729,23 +4814,35 @@ const saveData = async () => {
       }
     } else {
       // Auto-populate createdBy and modifiedBy for backend API with logged-in user numeric ID
-      const createdByCol = allRawColumns.value.find(c => c.toLowerCase() === 'createdby' || c.toLowerCase().includes('createdby'))
-      const modifiedByCol = allRawColumns.value.find(c => c.toLowerCase() === 'modifiedby' || c.toLowerCase().includes('modifiedby') || c.toLowerCase().includes('updatedby'))
+      const createdByCol = allRawColumns.value.find(c => {
+        const l = c.toLowerCase()
+        return l === 'createdby' || l === 'createdbyuserid' || l.includes('createdby')
+      }) || 'createdBy'
 
-      if (createdByCol) {
-        payload[createdByCol] = numericUserId
-      }
-      if (modifiedByCol) {
-        payload[modifiedByCol] = numericUserId
-      }
+      const modifiedByCol = allRawColumns.value.find(c => {
+        const l = c.toLowerCase()
+        return l === 'modifiedby' || l === 'modifiedbyuserid' || l.includes('modifiedby') || l.includes('updatedby')
+      }) || 'modifiedBy'
 
-      // Date and time are automatically generated by the server. Strip client-supplied audit dates
-      Object.keys(payload).forEach(key => {
-        const lower = key.toLowerCase()
-        if (lower.includes('createddate') || lower.includes('created_at') || lower.includes('createdat') || lower.includes('modifieddate') || lower.includes('modified_at') || lower.includes('updateddate')) {
-          delete payload[key]
-        }
+      const auditUserId = isStringAuditEndpoint.value ? String(numericUserId) : numericUserId
+      payload[createdByCol] = auditUserId
+      payload[modifiedByCol] = auditUserId
+
+      const createdDateCol = allRawColumns.value.find(c => {
+        const l = c.toLowerCase()
+        return l === 'createddate' || l === 'created_date'
       })
+      if (createdDateCol) {
+        payload[createdDateCol] = nowIso
+      }
+
+      const modifiedDateCol = allRawColumns.value.find(c => {
+        const l = c.toLowerCase()
+        return l === 'modifieddate' || l === 'modified_date' || l === 'lastmodified'
+      })
+      if (modifiedDateCol) {
+        payload[modifiedDateCol] = nowIso
+      }
 
       if (columns.value.includes('userEmail') && !payload.userEmail) {
         payload.userEmail = currentUserEmail
@@ -4803,6 +4900,9 @@ const openViewDialog = (record) => {
   viewingRecordId.value = getRecordId(record) || ''
   viewFormData.value = { ...record }
   displayViewDialog.value = true
+  if ((!usersList.value || usersList.value.length === 0) && (!userStore.users || userStore.users.length === 0)) {
+    userStore.fetchUsers().catch(() => {})
+  }
 }
 
 const openEditDialog = async (record) => {
@@ -4952,9 +5052,10 @@ const saveEdit = async () => {
       delete payload.email
     }
 
-    const numericUserId = Number(authStore.user?.id) || 2
-    const loggedInUserId = String(authStore.user?.id || 2)
+    const numericUserId = Number(authStore.user?.id) || 1
+    const loggedInUserId = String(authStore.user?.id || 1)
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
+    const nowIso = new Date().toISOString()
     
     // Clean legacy / alias audit columns and read-only creation audit fields
     delete payload.lastModified
@@ -5002,24 +5103,48 @@ const saveEdit = async () => {
         userEmail: payload.userEmail || currentUserEmail
       }
     } else {
+      // 1. Remove creation audit fields so updates never overwrite or reset creation audit info
       Object.keys(payload).forEach(key => {
         const lower = key.toLowerCase()
         if (lower.includes('createdby') || lower.includes('createddate') || lower.includes('created_at') || lower.includes('createdat')) {
           delete payload[key]
-        } else if (lower.includes('modifiedby') || lower.includes('updatedby')) {
-          payload[key] = numericUserId
-        } else if (lower.includes('modifieddate') || lower.includes('updateddate') || lower.includes('modified_at')) {
-          delete payload[key]
         }
       })
+
+      // 2. Identify the modifiedBy column (modifiedBy, modifiedByUserId, updatedBy, etc.)
+      const modifiedByCol = allRawColumns.value.find(c => {
+        const l = c.toLowerCase()
+        return l === 'modifiedby' || l === 'modifiedbyuserid' || l.includes('modifiedby') || l.includes('updatedby')
+      }) || 'modifiedBy'
+
+      // EXPLICITLY set the logged-in user ID (string for string-audit endpoints like Plans, integer for others)
+      const auditUserId = isStringAuditEndpoint.value ? String(numericUserId) : numericUserId
+      payload[modifiedByCol] = auditUserId
+
+      // 3. Set modifiedDate timestamp if present in table schema or OpenAPI
+      const modifiedDateCol = allRawColumns.value.find(c => {
+        const l = c.toLowerCase()
+        return l === 'modifieddate' || l === 'modified_date' || l === 'updateddate' || l === 'lastmodified'
+      }) || 'modifiedDate'
+
+      const hasModifiedDateCol = allRawColumns.value.some(c => {
+        const l = c.toLowerCase()
+        return l === 'modifieddate' || l === 'modified_date' || l === 'updateddate' || l === 'lastmodified'
+      }) || (props.endpoint && (props.endpoint.toLowerCase().includes('router') || props.endpoint.toLowerCase().includes('plan') || props.endpoint.toLowerCase().includes('nap') || props.endpoint.toLowerCase().includes('lcp') || props.endpoint.toLowerCase().includes('vlan')))
+
+      if (hasModifiedDateCol) {
+        payload[modifiedDateCol] = nowIso
+      }
 
       finalPayload = { ...payload }
       Object.keys(finalPayload).forEach(key => {
         if (finalPayload[key] === '' || finalPayload[key] === null || finalPayload[key] === undefined) {
-          delete finalPayload[key]
+          if (key !== modifiedByCol && key !== modifiedDateCol) {
+            delete finalPayload[key]
+          }
         } else if (finalPayload[key] instanceof Date) {
           finalPayload[key] = finalPayload[key].toISOString()
-        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number') {
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && key !== modifiedByCol) {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
