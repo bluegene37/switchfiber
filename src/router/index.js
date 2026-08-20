@@ -13,6 +13,10 @@ const ROUTE_TITLES = {
   'application-done': 'Done',
   'application-approved': 'Approved',
   application_list: 'All Application',
+  'job-orders': 'All Job Orders',
+  'job-orders-inprogress': 'In Progress',
+  'job-orders-completed': 'Completed',
+  'job-orders-activated': 'Activated',
   job_order: 'Job Order',
   invoice: 'Invoice',
   billing: 'Billing',
@@ -130,6 +134,30 @@ const router = createRouter({
       path: '/application_list',
       name: 'application_list',
       component: () => import('../views/ApplicationList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/job-orders',
+      name: 'job-orders',
+      component: () => import('../views/JobOrderList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/job-orders/inprogress',
+      name: 'job-orders-inprogress',
+      component: () => import('../views/JobOrderList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/job-orders/completed',
+      name: 'job-orders-completed',
+      component: () => import('../views/JobOrderList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/job-orders/activated',
+      name: 'job-orders-activated',
+      component: () => import('../views/JobOrderList.vue'),
       meta: { requiresAuth: true }
     },
     {

@@ -249,12 +249,23 @@ const rawMenuItems = ref([
       { id: 28, name: 'Approved', path: '/application/approved', icon: 'pi-verified' },
     ]
   },
+  {
+    id: 31,
+    name: 'Job Orders',
+    icon: 'pi-clipboard',
+    children: [
+      { id: 32, name: 'All Job Orders', path: '/job-orders', icon: 'pi-list' },
+      { id: 33, name: 'In Progress', path: '/job-orders/inprogress', icon: 'pi-clock' },
+      { id: 34, name: 'Completed', path: '/job-orders/completed', icon: 'pi-check-circle' },
+      { id: 35, name: 'Activated', path: '/job-orders/activated', icon: 'pi-verified' },
+    ]
+  },
   { 
     id: 23,
     name: 'Transaction', 
     icon: 'pi-wallet',
     children: [
-      { id: 17, name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
+      // { id: 17, name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
       { id: 18, name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
       { id: 19, name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
     ]

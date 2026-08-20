@@ -30,7 +30,10 @@ export function useSearch() {
     { id: 'nav-application-inprogress', category: 'Navigation', title: 'In Progress Applications', subtitle: 'Processing customer applications', icon: 'pi pi-clock', route: '/application/in-progress' },
     { id: 'nav-application-done', category: 'Navigation', title: 'Done Applications', subtitle: 'Completed customer applications', icon: 'pi pi-check-circle', route: '/application/done' },
     { id: 'nav-application-approved', category: 'Navigation', title: 'Approved Applications', subtitle: 'Verified & approved customer applications', icon: 'pi pi-verified', route: '/application/approved' },
-    { id: 'nav-job-order', category: 'Navigation', title: 'Job Orders', subtitle: 'Field installation & repair dispatch tickets', icon: 'pi pi-ticket', route: '/job_order' },
+    { id: 'nav-job-orders', category: 'Navigation', title: 'All Job Orders', subtitle: 'Field installation & repair dispatch tickets', icon: 'pi pi-ticket', route: '/job-orders' },
+    { id: 'nav-job-orders-inprogress', category: 'Navigation', title: 'In Progress Job Orders', subtitle: 'Dispatch tickets currently being worked', icon: 'pi pi-clock', route: '/job-orders/inprogress' },
+    { id: 'nav-job-orders-completed', category: 'Navigation', title: 'Completed Job Orders', subtitle: 'Finished installation & repair tickets', icon: 'pi pi-check-circle', route: '/job-orders/completed' },
+    { id: 'nav-job-orders-activated', category: 'Navigation', title: 'Activated Job Orders', subtitle: 'Tickets with activated subscriber service', icon: 'pi pi-verified', route: '/job-orders/activated' },
     { id: 'nav-billing', category: 'Navigation', title: 'Billing & Payments', subtitle: 'Customer billing details & invoices', icon: 'pi pi-credit-card', route: '/billing' },
     { id: 'nav-invoice', category: 'Navigation', title: 'Invoices', subtitle: 'Generated billing invoices & statements', icon: 'pi pi-receipt', route: '/invoice' },
     { id: 'nav-lcp', category: 'Navigation', title: 'LCP Maintenance', subtitle: 'Local Control Point cabinets', icon: 'pi pi-server', route: '/lcp' },
@@ -72,7 +75,7 @@ export function useSearch() {
       title: 'Dispatch New Job Order',
       subtitle: 'Create technical service ticket',
       icon: 'pi pi-send',
-      route: '/job_order'
+      route: '/job-orders'
     }
   ]
 
@@ -207,7 +210,7 @@ export function useSearch() {
       if (appsRes.status === 'fulfilled' && Array.isArray(appsRes.value)) {
         appsRes.value.forEach(app => {
           const name = `${app.firstName || ''} ${app.lastName || ''}`.trim() || app.name || ''
-          const email = app.email || app.mobileNumber || ''
+          const email = app.emailAddress || app.userEmail || app.mobileNumber || ''
           if (name.toLowerCase().includes(lowerQuery) || email.toLowerCase().includes(lowerQuery)) {
             fetched.push({
               id: `app-${app.id || app.applicationId}`,
@@ -223,19 +226,25 @@ export function useSearch() {
         })
       }
 
-      // Process Job Orders
+      // Process Job Orders — matched on the fields the JobOrders schema actually
+      // carries (customer name, account no, contact, username, address, status).
       if (jobsRes.status === 'fulfilled' && Array.isArray(jobsRes.value)) {
         jobsRes.value.forEach(job => {
-          const title = job.jobOrderNo || job.title || `Job Order #${job.id}`
-          const details = job.remarks || job.type || job.status || ''
-          if (title.toLowerCase().includes(lowerQuery) || details.toLowerCase().includes(lowerQuery)) {
+          const customerName = `${job.firstName || ''} ${job.lastName || ''}`.trim()
+          const title = customerName || job.accountNo || `Job Order #${job.id}`
+          const haystack = [
+            customerName, job.accountNo, job.contactNumber, job.username,
+            job.emailAddress, job.applicantEmailAddress, job.address, job.status
+          ].filter(Boolean).join(' ').toLowerCase()
+          if (haystack.includes(lowerQuery)) {
+            const detailParts = [job.status, job.accountNo, job.address].filter(Boolean)
             fetched.push({
               id: `job-${job.id}`,
               category: 'Job Orders',
               title: title,
-              subtitle: `Job Order • ${details}`,
+              subtitle: `Job Order • ${detailParts.join(' • ') || 'No details'}`,
               icon: 'pi pi-ticket',
-              route: '/job_order',
+              route: '/job-orders',
               badge: job.status || 'Job Order',
               badgeClass: 'bg-warning text-dark'
             })

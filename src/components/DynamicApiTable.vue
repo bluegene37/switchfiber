@@ -5234,6 +5234,24 @@ const fetchData = async ({ silent = false } = {}) => {
         menuList.push({ id: 28, name: 'Approved', route: '/application/approved', icon: 'pi pi-verified', description: 'View verified and approved customer applications' })
       }
 
+      const hasAllJobOrders = menuList.some(m => Number(m.id) === 32 || (m.name && m.name.toLowerCase() === 'all job orders'))
+      const hasJobOrdersInProgress = menuList.some(m => Number(m.id) === 33)
+      const hasJobOrdersCompleted = menuList.some(m => Number(m.id) === 34)
+      const hasJobOrdersActivated = menuList.some(m => Number(m.id) === 35)
+
+      if (!hasAllJobOrders) {
+        menuList.push({ id: 32, name: 'All Job Orders', route: '/job-orders', icon: 'pi pi-list', description: 'View all technical dispatch job orders' })
+      }
+      if (!hasJobOrdersInProgress) {
+        menuList.push({ id: 33, name: 'Job Orders In Progress', route: '/job-orders/inprogress', icon: 'pi pi-clock', description: 'View and process in-progress job orders' })
+      }
+      if (!hasJobOrdersCompleted) {
+        menuList.push({ id: 34, name: 'Job Orders Completed', route: '/job-orders/completed', icon: 'pi pi-check-circle', description: 'View completed job orders' })
+      }
+      if (!hasJobOrdersActivated) {
+        menuList.push({ id: 35, name: 'Job Orders Activated', route: '/job-orders/activated', icon: 'pi pi-verified', description: 'View activated job orders' })
+      }
+
       const hasDisconnection = menuList.some(m => Number(m.id) === 30 || (m.name && m.name.toLowerCase() === 'disconnection'))
       if (!hasDisconnection) {
         menuList.push({ id: 30, name: 'Disconnection', route: '/disconnection', icon: 'pi pi-ban', description: 'Review RADIUS subscriber accounts and their enabled / disabled state' })
