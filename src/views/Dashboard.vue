@@ -56,9 +56,10 @@
     <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 p-3 mb-0 small" role="note">
       <i class="pi pi-info-circle mt-1 flex-shrink-0"></i>
       <div>
-        <span class="fw-semibold">The six charts below use sample data.</span>
-        Bandwidth, revenue, node telemetry, and SLA figures are illustrative placeholders — the API does not expose these
-        series yet. The KPI cards and the applications table above/below are live.
+        <span class="fw-semibold">Some charts below use sample data.</span>
+        Bandwidth, plan distribution, revenue, node telemetry, and SLA figures are illustrative placeholders — the API
+        does not expose these series yet. The KPI cards, the four status breakdown charts (Job Orders, Applications,
+        Invoices, Billing), and the applications table are live.
       </div>
     </div>
 
@@ -82,7 +83,20 @@
       </div>
     </div>
 
-    <!-- Main Charts Row 3: Regional Radar & System Health Gauge -->
+    <!-- Main Charts Row 3: Live Status Breakdowns (Applications, Invoices, Billing) -->
+    <div class="row g-4">
+      <div class="col-12 col-lg-6 col-xl-4">
+        <ChartCard title="Application Status Breakdown" :option="applicationsChartOption" />
+      </div>
+      <div class="col-12 col-lg-6 col-xl-4">
+        <ChartCard title="Invoice Status Breakdown" :option="invoicesChartOption" />
+      </div>
+      <div class="col-12 col-lg-6 col-xl-4">
+        <ChartCard title="Billing Status Breakdown" :option="billingChartOption" />
+      </div>
+    </div>
+
+    <!-- Main Charts Row 4: Regional Radar & System Health Gauge -->
     <div class="row g-4">
       <div class="col-12 col-lg-6 col-xl-7">
         <ChartCard title="Regional Node Performance & Latency Radar" :option="nodeRadarChartOption" />
@@ -221,13 +235,29 @@ const liveCounts = ref({
 })
 const failedSources = ref([])
 
-const countOf = (payload) => {
+// Sources whose per-status tallies feed a breakdown doughnut, keyed by the row
+// field that carries the status. `null` tallies mean the fetch has not resolved
+// (or failed) — distinct from "zero records".
+const STATUS_SOURCES = {
+  applications: { path: '/Applications', field: 'status' },
+  jobOrders: { path: '/JobOrders', field: 'status' },
+  invoices: { path: '/Invoices', field: 'invoiceStatus' },
+  billing: { path: '/BillingDetails', field: 'status' }
+}
+const statusTallies = ref({ applications: null, jobOrders: null, invoices: null, billing: null })
+
+const rowsOf = (payload) => {
   let data = payload
   if (data && !Array.isArray(data) && typeof data === 'object') {
     const key = Object.keys(data).find(k => Array.isArray(data[k]))
     data = key ? data[key] : null
   }
-  return Array.isArray(data) ? data.length : null
+  return Array.isArray(data) ? data : null
+}
+
+const countOf = (payload) => {
+  const rows = rowsOf(payload)
+  return rows ? rows.length : null
 }
 
 const loadCounts = async () => {
@@ -237,15 +267,30 @@ const loadCounts = async () => {
     ['activeSessions', '/RadiusSession'],
     ['radiusUsers', '/RadiusUser'],
     ['routers', '/Routers'],
-    ['vlans', '/Vlans']
+    ['vlans', '/Vlans'],
+    ['jobOrders', '/JobOrders'],
+    ['invoices', '/Invoices'],
+    ['billing', '/BillingDetails']
   ]
 
   const failures = []
   await Promise.all(sources.map(async ([key, path]) => {
     try {
-      liveCounts.value[key] = countOf(await apiClient.get(path))
+      const payload = await apiClient.get(path)
+      liveCounts.value[key] = countOf(payload)
+      const statusSource = STATUS_SOURCES[key]
+      if (statusSource) {
+        const tallies = {}
+        ;(rowsOf(payload) || []).forEach(row => {
+          const status = String(row?.[statusSource.field] || '').trim().toLowerCase()
+          if (!status) return
+          tallies[status] = (tallies[status] || 0) + 1
+        })
+        statusTallies.value[key] = tallies
+      }
     } catch {
       liveCounts.value[key] = null
+      if (STATUS_SOURCES[key]) statusTallies.value[key] = null
       failures.push(path)
     }
   }))
@@ -512,19 +557,108 @@ const revenueChartOption = ref({
   ]
 })
 
-// 4. Job Orders Status Breakdown Chart
-const jobOrdersChartOption = ref({
-  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-  legend: { data: ['Completed', 'In Progress', 'Pending'], top: '0%' },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-  xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
-  yAxis: { type: 'value' },
-  series: [
-    { name: 'Completed', type: 'bar', stack: 'total', data: [12, 18, 15, 22, 25, 14, 8], itemStyle: { color: STATUS.success } },
-    { name: 'In Progress', type: 'bar', stack: 'total', data: [5, 7, 6, 8, 10, 4, 3], itemStyle: { color: BRAND.base } },
-    { name: 'Pending', type: 'bar', stack: 'total', data: [3, 4, 2, 5, 4, 2, 1], itemStyle: { color: STATUS.warning } }
-  ]
-})
+// 4. Live Status Breakdown doughnuts — one per transactional endpoint.
+// Canonical statuses keep fixed semantic colours; anything else the backend
+// introduces still shows up, coloured from the brand ramp.
+const titleCaseStatus = (key) => key.replace(/\b\w/g, c => c.toUpperCase())
+
+const buildStatusDoughnut = ({ counts, meta, sourcePath, seriesName, noun }) => {
+  const slices = []
+
+  Object.entries(meta).forEach(([key, m]) => {
+    if (counts && counts[key]) {
+      slices.push({ value: counts[key], name: m.label, itemStyle: { color: m.color } })
+    }
+  })
+  let rampIndex = 0
+  Object.entries(counts || {}).forEach(([key, value]) => {
+    if (meta[key]) return
+    slices.push({ value, name: titleCaseStatus(key), itemStyle: { color: brandRamp[rampIndex++ % brandRamp.length] } })
+  })
+
+  if (slices.length === 0) {
+    const fetchFailed = failedSources.value.includes(sourcePath)
+    return {
+      title: {
+        text: fetchFailed
+          ? `${seriesName} data unavailable`
+          : (counts === null ? `Loading ${noun}…` : `No ${noun} recorded yet`),
+        left: 'center',
+        top: 'middle',
+        textStyle: { fontSize: 13, fontWeight: 'normal', color: '#9ca3af' }
+      }
+    }
+  }
+
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { orient: 'vertical', right: '5%', top: 'center' },
+    series: [
+      {
+        name: seriesName,
+        type: 'pie',
+        radius: ['45%', '75%'],
+        center: ['38%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        emphasis: { label: { show: true, fontSize: '14', fontWeight: 'bold' } },
+        data: slices
+      }
+    ]
+  }
+}
+
+const jobOrdersChartOption = computed(() => buildStatusDoughnut({
+  counts: statusTallies.value.jobOrders,
+  meta: {
+    inprogress: { label: 'In Progress', color: STATUS.warning },
+    completed: { label: 'Completed', color: STATUS.success },
+    activated: { label: 'Activated', color: BRAND.base }
+  },
+  sourcePath: '/JobOrders',
+  seriesName: 'Job Orders',
+  noun: 'job orders'
+}))
+
+const applicationsChartOption = computed(() => buildStatusDoughnut({
+  counts: statusTallies.value.applications,
+  meta: {
+    'in progress': { label: 'In Progress', color: STATUS.warning },
+    done: { label: 'Done', color: STATUS.success },
+    approved: { label: 'Approved', color: BRAND.base }
+  },
+  sourcePath: '/Applications',
+  seriesName: 'Applications',
+  noun: 'applications'
+}))
+
+const invoicesChartOption = computed(() => buildStatusDoughnut({
+  counts: statusTallies.value.invoices,
+  meta: {
+    paid: { label: 'Paid', color: STATUS.success },
+    unpaid: { label: 'Unpaid', color: STATUS.danger },
+    overdue: { label: 'Overdue', color: STATUS.danger },
+    pending: { label: 'Pending', color: STATUS.warning },
+    partial: { label: 'Partial', color: STATUS.warning }
+  },
+  sourcePath: '/Invoices',
+  seriesName: 'Invoices',
+  noun: 'invoices'
+}))
+
+const billingChartOption = computed(() => buildStatusDoughnut({
+  counts: statusTallies.value.billing,
+  meta: {
+    active: { label: 'Active', color: STATUS.success },
+    suspended: { label: 'Suspended', color: STATUS.warning },
+    pending: { label: 'Pending', color: STATUS.warning },
+    disconnected: { label: 'Disconnected', color: STATUS.danger }
+  },
+  sourcePath: '/BillingDetails',
+  seriesName: 'Billing',
+  noun: 'billing accounts'
+}))
 
 // 5. Regional Node Radar Chart
 const nodeRadarChartOption = ref({
