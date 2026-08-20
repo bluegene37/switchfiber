@@ -8,6 +8,7 @@
           <span
             class="badge px-2.5 py-1 rounded-pill small d-flex align-items-center gap-1 border border-opacity-25"
             :class="apiHealth.class"
+            v-tooltip.bottom="failedSourcesSummary"
           >
             <i class="pi pi-circle-fill" style="font-size: 0.5rem;"></i> {{ apiHealth.label }}
           </span>
@@ -211,6 +212,7 @@ import { useToast } from 'primevue/usetoast'
 import { useAppStore } from '../stores/app'
 import apiClient from '../services/api'
 import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR } from '../composables/useTheme'
+import { MONITORED_ENDPOINTS, labelForPath } from '../models/monitoredEndpoints'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
 import DataTable from 'primevue/datatable'
@@ -273,23 +275,7 @@ const countOf = (payload) => {
 }
 
 const loadCounts = async () => {
-  const sources = [
-    ['applications', '/Applications'],
-    ['plans', '/Plans'],
-    ['activeSessions', '/RadiusSession'],
-    ['radiusUsers', '/RadiusUser'],
-    ['routers', '/Routers'],
-    ['vlans', '/Vlans'],
-    ['jobOrders', '/JobOrders'],
-    ['invoices', '/Invoices'],
-    ['billing', '/BillingDetails'],
-    ['lcps', '/Lcps'],
-    ['lcpnaps', '/Lcpnaps'],
-    ['lcpnapports', '/Lcpnapports'],
-    ['naps', '/Naps'],
-    ['ports', '/Ports'],
-    ['users', '/Users']
-  ]
+  const sources = MONITORED_ENDPOINTS.map(e => [e.key, e.path])
 
   const failures = []
   totalCountSources.value = sources.length
@@ -331,6 +317,12 @@ const apiHealth = computed(() => {
     return { label: `Degraded — ${failedSources.value.length} endpoint(s) failing`, class: 'bg-warning bg-opacity-10 text-warning border-warning' }
   }
   return { label: 'Checking…', class: 'bg-secondary bg-opacity-10 text-secondary border-secondary' }
+})
+
+// Hover detail for the health badge: every failing endpoint by name.
+const failedSourcesSummary = computed(() => {
+  if (failedSources.value.length === 0) return null
+  return `Failing: ${failedSources.value.map(labelForPath).join(', ')}`
 })
 
 onMounted(() => {

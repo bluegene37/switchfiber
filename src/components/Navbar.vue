@@ -375,6 +375,7 @@ import { useTheme } from '../composables/useTheme'
 import { useSearch } from '../composables/useSearch'
 import { usePermissions } from '../composables/usePermissions'
 import apiClient from '../services/api'
+import { MONITORED_ENDPOINTS } from '../models/monitoredEndpoints'
 
 const props = defineProps({
   isCollapsed: {
@@ -567,12 +568,9 @@ const notificationContainer = ref(null)
 const notifications = ref([])
 const isCheckingHealth = ref(false)
 
-const HEALTH_CHECKS = [
-  { path: '/Applications', label: 'Applications' },
-  { path: '/JobOrders', label: 'Job Orders' },
-  { path: '/BillingDetails', label: 'Billing Details' },
-  { path: '/RadiusSession', label: 'RADIUS Sessions' }
-]
+// Every monitored endpoint is checked, so the bell reports the same set of
+// failures the Dashboard health badge counts — not just a hand-picked few.
+const HEALTH_CHECKS = MONITORED_ENDPOINTS
 
 const apiDegraded = ref(false)
 
