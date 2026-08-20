@@ -547,6 +547,7 @@
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="col" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
+                <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
               </label>
 
               <!-- Combined Barangay 1 & Barangay 2 Column (Stacked) -->
@@ -952,6 +953,7 @@
                   :fieldId="col"
                   :label="formatLabel(col)"
                   :required="isFieldRequired(col)"
+                  @exif="onPhotoExif('create', col, $event)"
                 />
               </div>
 
@@ -1328,6 +1330,7 @@
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
+                <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
               </label>
 
               <!-- Combined Barangay 1 & Barangay 2 Column in Edit Modal (Stacked) -->
@@ -1760,6 +1763,7 @@
                   :fieldId="`edit-${col}`"
                   :label="formatLabel(col)"
                   :required="isFieldRequired(col)"
+                  @exif="onPhotoExif('edit', col, $event)"
                 />
               </div>
 
@@ -1899,9 +1903,17 @@
           class="img-fluid rounded shadow-sm"
           style="max-height: 70vh; object-fit: contain;"
         />
+        <ExifPanel v-if="tableImageExifVisible" :src="tableImagePreviewUrl" />
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2 flex-wrap">
+          <Button
+            label="EXIF Info"
+            icon="pi pi-info-circle"
+            class="p-button-sm rounded-3 px-3"
+            :class="tableImageExifVisible ? 'p-button-secondary' : 'p-button-outlined p-button-secondary'"
+            @click="tableImageExifVisible = !tableImageExifVisible"
+          />
           <Button
             label="Download"
             icon="pi pi-download"
@@ -1929,6 +1941,7 @@ import phAddressService from '../services/phAddressService'
 import defaultRegions from '../../public/data/philippines/regions.json'
 import defaultProvinces from '../../public/data/philippines/provinces.json'
 import ImageDropzone from './ImageDropzone.vue'
+import ExifPanel from './ExifPanel.vue'
 import { downloadImage, openImageInNewTab } from '../utils/imageActions'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -1947,7 +1960,7 @@ import Popover from 'primevue/popover'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { EndpointColumns } from '../models/columns'
-import { resolveRequiredFields } from '../models/requiredFields'
+import { resolveRequiredFields, resolveEitherOrGroups } from '../models/requiredFields'
 import { useAuthStore } from '../stores/auth'
 import { useUserStore } from '../stores/users'
 import { useTheme } from '../composables/useTheme'
@@ -2147,10 +2160,12 @@ const dt = ref()
 const tableImagePreviewVisible = ref(false)
 const tableImagePreviewUrl = ref('')
 const tableImagePreviewTitle = ref('')
+const tableImageExifVisible = ref(false)
 
 const openImagePreview = (url, title = 'Image Preview') => {
   tableImagePreviewUrl.value = url
   tableImagePreviewTitle.value = title
+  tableImageExifVisible.value = false
   tableImagePreviewVisible.value = true
 }
 
@@ -4200,8 +4215,58 @@ const isFieldRequired = (col) => {
   return true
 }
 
+// Either-or groups: at least one member of each group must be filled, but no
+// member is individually required (Applications: proofOfBilling OR
+// documentPicture, matching the user website's registration wizard).
+const eitherOrGroups = computed(() => resolveEitherOrGroups(props.endpoint, formColumns.value))
+
+const eitherOrGroupFor = (col) => eitherOrGroups.value.find(group => group.includes(col)) || null
+
+/** "Either this or <the other field>" hint shown beside the label. */
+const eitherOrHint = (col) => {
+  const group = eitherOrGroupFor(col)
+  if (!group) return ''
+  const others = group.filter(c => c !== col).map(formatLabel)
+  return `Either this or ${others.join(' / ')}`
+}
+
 const hasFieldError = (scope, col) => Boolean(fieldErrors.value[scope]?.[col])
 const fieldErrorText = (scope, col) => fieldErrors.value[scope]?.[col] || ''
+
+/* ------------------------------------------------------------------
+ * Photo EXIF, per form scope and column. ImageDropzone reads it off the
+ * original file before compression strips it; on save the GPS is folded
+ * into the Application's remarks column (there is no dedicated field),
+ * in the same format the user website's registration wizard writes.
+ * ------------------------------------------------------------------ */
+const photoExifByCol = ref({ create: {}, edit: {} })
+
+const onPhotoExif = (scope, col, meta) => {
+  photoExifByCol.value[scope][normalizeColKey(col)] = meta || null
+}
+
+// The house front photo wins — it is taken at the installation site.
+const PHOTO_GPS_PREFERENCE = ['houseFrontPicture', 'governmentValidId', 'secondGovernmentValidId', 'proofOfBilling', 'documentPicture']
+
+const photoGpsNote = (scope) => {
+  const exif = photoExifByCol.value[scope] || {}
+  for (const key of PHOTO_GPS_PREFERENCE) {
+    const meta = exif[normalizeColKey(key)]
+    if (meta && typeof meta.lat === 'number' && typeof meta.lng === 'number') {
+      const label = key === 'houseFrontPicture' ? 'house photo' : 'photo'
+      return `GPS(${label}) ${meta.lat.toFixed(6)},${meta.lng.toFixed(6)}`
+    }
+  }
+  return ''
+}
+
+/** Remarks with the photo GPS note appended (once — an existing note stays). */
+const withPhotoGps = (scope, remarks) => {
+  const base = remarks ? String(remarks) : ''
+  const note = photoGpsNote(scope)
+  if (!note || base.includes('GPS(')) return base
+  return base ? `${base} | ${note}` : note
+}
 
 const formForScope = (scope) => (scope === 'edit' ? editFormData : formData)
 
@@ -4279,6 +4344,20 @@ const validateRequired = (scope) => {
         missing.push(col)
         return
       }
+    }
+  })
+
+  // Either-or groups: flag every member when the whole group is blank, so the
+  // user sees the requirement on both fields and can satisfy either one.
+  eitherOrGroups.value.forEach(group => {
+    if (group.every(col => isBlank(form[col]))) {
+      const groupLabel = group.map(formatLabel).join(' or ')
+      group.forEach(col => {
+        if (!errors[col]) {
+          errors[col] = `Either ${groupLabel} is required`
+          missing.push(col)
+        }
+      })
     }
   })
 
@@ -4375,6 +4454,18 @@ const watchScopeForFixes = (scope) => {
         } else if (!isBlank(val)) {
           delete remaining[col]
           changed = true
+        }
+      })
+      // An either-or group's errors dissolve as soon as ANY member is filled —
+      // the still-blank partner is no longer missing anything.
+      eitherOrGroups.value.forEach(group => {
+        if (group.some(col => !isBlank(form[col]))) {
+          group.forEach(col => {
+            if (remaining[col] && !isFieldRequired(col)) {
+              delete remaining[col]
+              changed = true
+            }
+          })
         }
       })
       if (changed) fieldErrors.value[scope] = remaining
@@ -4666,6 +4757,7 @@ const openCreateDialog = () => {
   fetchAddressData()
   resetTouchedAddressBlockers('create')
   fieldErrors.value.create = {}
+  photoExifByCol.value.create = {}
   saveError.value = null
   showPasswordState.value = {}
   formData.value = {}
@@ -4825,7 +4917,7 @@ const saveData = async () => {
         visitBy: payload.visitBy ? String(payload.visitBy) : '',
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
-        remarks: payload.remarks ? String(payload.remarks) : '',
+        remarks: withPhotoGps('create', payload.remarks),
         // modifiedBy: loggedInUserId, // Excluded for backend migration
         // modifiedDate: '', // Excluded for backend migration
         userEmail: currentUserEmail
@@ -4902,6 +4994,7 @@ const openViewDialog = (record) => {
 const openEditDialog = async (record) => {
   resetTouchedAddressBlockers('edit')
   fieldErrors.value.edit = {}
+  photoExifByCol.value.edit = {}
   editError.value = null
   showPasswordState.value = {}
   editingRecordId.value = getRecordId(record)
@@ -5091,7 +5184,7 @@ const saveEdit = async () => {
         visitBy: payload.visitBy ? String(payload.visitBy) : '',
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
-        remarks: payload.remarks ? String(payload.remarks) : '',
+        remarks: withPhotoGps('edit', payload.remarks),
         // modifiedBy: loggedInUserId, // Excluded for backend migration
         // modifiedDate: '', // Excluded for backend migration
         userEmail: payload.userEmail || currentUserEmail

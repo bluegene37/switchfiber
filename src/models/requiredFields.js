@@ -60,7 +60,10 @@ const ENDPOINT_OVERRIDES = {
     'emailAddress', 'region', 'city', 'barangay',
     'firstName', 'lastName', 'mobileNumber',
     'installationAddress', 'desiredPlan', 'status',
-    'houseFrontPicture', 'governmentValidId', 'documentPicture'
+    'houseFrontPicture', 'governmentValidId'
+    // documentPicture is NOT hard-required: it forms an either-or pair with
+    // proofOfBilling (see EITHER_OR_GROUPS below), matching the user website's
+    // registration wizard.
   ],
   joborders: [ // schema says 78
     'firstName', 'lastName', 'contactNumber', 'address',
@@ -69,6 +72,18 @@ const ENDPOINT_OVERRIDES = {
   billingdetails: [ // schema says 34
     'fullName', 'contactNumber', 'address',
     'region', 'city', 'barangay', 'plan', 'status'
+  ]
+}
+
+/**
+ * Groups of columns where at least ONE member must be filled in, but no single
+ * member is individually required. Mirrors the user website's registration
+ * wizard, where an applicant provides Proof of Billing OR an Additional
+ * Supporting Document (documentPicture).
+ */
+const EITHER_OR_GROUPS = {
+  applications: [
+    ['proofOfBilling', 'documentPicture']
   ]
 }
 
@@ -121,6 +136,25 @@ export function resolveRequiredFields(endpoint, formColumns = [], mode = 'create
   // Only ever require something the form actually renders. UpdateBarangayRequest
   // demands `city`, for instance, which the Barangays form has no input for.
   return formColumns.filter(col => wanted.has(normalize(col)))
+}
+
+/**
+ * The either-or groups that apply to a form, restricted to columns it actually
+ * renders. A group only makes sense when at least two of its members are on
+ * screen; otherwise it is dropped rather than silently requiring a lone field.
+ *
+ * @param {string} endpoint      the DynamicApiTable `endpoint` prop
+ * @param {string[]} formColumns the columns actually rendered in the form
+ * @returns {string[][]} groups of column names, in `formColumns` order
+ */
+export function resolveEitherOrGroups(endpoint, formColumns = []) {
+  const groups = EITHER_OR_GROUPS[normalize(endpoint)] || []
+  return groups
+    .map(group => {
+      const wanted = new Set(group.map(normalize))
+      return formColumns.filter(col => wanted.has(normalize(col)))
+    })
+    .filter(group => group.length >= 2)
 }
 
 /**
