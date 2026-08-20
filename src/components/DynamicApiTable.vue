@@ -1901,7 +1901,19 @@
         />
       </div>
       <template #footer>
-        <div class="d-flex justify-content-end gap-2">
+        <div class="d-flex justify-content-end gap-2 flex-wrap">
+          <Button
+            label="Download"
+            icon="pi pi-download"
+            class="p-button-sm p-button-outlined p-button-secondary rounded-3 px-3"
+            @click="downloadImage(tableImagePreviewUrl, tableImagePreviewTitle)"
+          />
+          <Button
+            label="Open in New Tab"
+            icon="pi pi-external-link"
+            class="p-button-sm p-button-outlined p-button-secondary rounded-3 px-3"
+            @click="openImageInNewTab(tableImagePreviewUrl)"
+          />
           <Button label="Close" icon="pi pi-times" class="p-button-sm p-button-secondary rounded-3 px-3" @click="tableImagePreviewVisible = false" />
         </div>
       </template>
@@ -1917,6 +1929,7 @@ import phAddressService from '../services/phAddressService'
 import defaultRegions from '../../public/data/philippines/regions.json'
 import defaultProvinces from '../../public/data/philippines/provinces.json'
 import ImageDropzone from './ImageDropzone.vue'
+import { downloadImage, openImageInNewTab } from '../utils/imageActions'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -2199,10 +2212,11 @@ function formatLabel(col) {
     firstnearestlandmark: '1st Nearest Landmark',
     secondnearestlandmark: '2nd Nearest Landmark',
     referrersaccountnumber: "Referrer's Account Number",
-    secondgovernmentvalidid: '2nd Government Valid ID',
-    governmentvalidid: 'Government Valid ID',
+    secondgovernmentvalidid: '2nd Government ID',
+    governmentvalidid: 'Primary Government ID',
     housefrontpicture: 'House Front Picture',
-    documentpicture: 'Document Picture',
+    documentpicture: 'Additional Supporting Document',
+    proofofbilling: 'Proof of Billing',
     applyingfor: 'Applying For',
     visitwithother: 'Visit With (Other)',
     pictureofstatmentbillingfromotherprovider: 'Picture of Statement Billing From Other Provider',
@@ -4736,13 +4750,15 @@ const syncPairedFields = (payload) => {
     if (found) payload.lcpnapport = found.label
   }
 
-  // Ensure picture of statement billing from other provider is synced to backend key
-  const statementBillingVal = payload.pictureofstatmentbillingfromotherprovider || 
-                              payload.pictureOfStatementBillingFromOtherProvider || 
-                              payload.picture_of_statement_billing_from_other_provider || 
+  // Ensure picture of statement billing from other provider is synced to backend
+  // key. proofOfBilling is deliberately NOT a fallback here: since the backend
+  // change it is its own document field, distinct from the legacy provider
+  // statement picture.
+  const statementBillingVal = payload.pictureofstatmentbillingfromotherprovider ||
+                              payload.pictureOfStatementBillingFromOtherProvider ||
+                              payload.picture_of_statement_billing_from_other_provider ||
                               payload.pictureofstatementbillingfromotherprovider ||
-                              payload.statementBilling || 
-                              payload.proofOfBilling || ''
+                              payload.statementBilling || ''
   if (statementBillingVal) {
     payload.pictureofstatmentbillingfromotherprovider = statementBillingVal
   }

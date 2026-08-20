@@ -27,6 +27,15 @@
           <i class="pi pi-eye" style="font-size: 0.85rem;"></i>
         </button>
         <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-1"
+          style="width: 32px; height: 32px;"
+          title="Download Image"
+          @click="downloadImage(modelValue, label)"
+        >
+          <i class="pi pi-download" style="font-size: 0.85rem;"></i>
+        </button>
+        <button
           v-if="!disabled"
           type="button"
           class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center p-1"
@@ -90,16 +99,25 @@
         />
       </div>
       <template #footer>
-        <div class="d-flex justify-content-end gap-2">
-          <a
-            v-if="modelValue && !isBase64(modelValue)"
-            :href="modelValue"
-            target="_blank"
+        <div class="d-flex justify-content-end gap-2 flex-wrap">
+          <button
+            v-if="modelValue"
+            type="button"
             class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+            @click="downloadImage(modelValue, label)"
+          >
+            <i class="pi pi-download"></i>
+            <span>Download</span>
+          </button>
+          <button
+            v-if="modelValue"
+            type="button"
+            class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+            @click="openImageInNewTab(modelValue)"
           >
             <i class="pi pi-external-link"></i>
             <span>Open in New Tab</span>
-          </a>
+          </button>
           <button type="button" class="btn btn-sm btn-primary" @click="showFullPreview = false">
             Close
           </button>
@@ -114,6 +132,7 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Dropzone } from 'dropzone'
 import 'dropzone/dist/dropzone.css'
 import Dialog from 'primevue/dialog'
+import { downloadImage, openImageInNewTab } from '../utils/imageActions'
 
 // Disable dropzone auto discovery
 Dropzone.autoDiscover = false
