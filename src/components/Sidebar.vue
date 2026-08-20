@@ -232,17 +232,21 @@ const route = useRoute()
 const authStore = useAuthStore()
 const { allowedMenuIds, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin } = usePermissions()
 
-// Super admins get told when the menu below is the built-in fallback rather
-// than the stored access level configuration; regular users just see the menu.
+// Anyone on the fallback menu gets told why. Super admins see the full menu
+// (and why they still have it); regular users are down to Dashboard + Settings
+// and are pointed at the person who can fix it.
 const showFallbackWarning = computed(() =>
-  isSuperAdmin.value && hasLoadedPermissions.value && !!permissionsFallbackReason.value
+  hasLoadedPermissions.value && !!permissionsFallbackReason.value
 )
 
 const fallbackWarningText = computed(() => {
-  if (permissionsFallbackReason.value === 'empty') {
-    return 'This is a fallback menu — the access level API returned no menu permissions.'
+  const cause = permissionsFallbackReason.value === 'empty'
+    ? 'the access level API returned no menu permissions'
+    : 'the access level API could not be reached'
+  if (isSuperAdmin.value) {
+    return `This is a fallback menu — ${cause}. You are seeing the full menu because you are a Super Admin user.`
   }
-  return 'This is a fallback menu — the access level API could not be reached.'
+  return `Your menu access could not be loaded — ${cause}. Only Dashboard and Settings are available. You are not a super admin, so please check with your server administrator or the person in charge.`
 })
 
 // Permissions arrive from the API after mount. Until that first response lands,

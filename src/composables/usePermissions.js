@@ -38,6 +38,17 @@ export function usePermissions() {
     return userAccessLevel.value === 1 || String(authStore.user?.role || '').toLowerCase().includes('super')
   })
 
+  // What the menu falls back to when no stored permissions are usable. Super
+  // admins get the full built-in menu so they can still administer the system;
+  // everyone else is held to Dashboard + Settings until the API answers again —
+  // a failed permission lookup must not silently grant a regular user everything.
+  const buildFallbackMenuSet = () => {
+    if (isSuperAdmin.value) {
+      return new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 101, 102, 103])
+    }
+    return new Set([5, 20]) // 5 = Dashboard, 20 = Settings
+  }
+
   const fetchPermissions = async () => {
     if (!authStore.isAuthenticated) {
       allowedMenuIds.value = new Set()
@@ -103,12 +114,12 @@ export function usePermissions() {
         allowedMenuIds.value = allowed
         permissionsFallbackReason.value = null
       } else {
-        allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 101, 102, 103])
+        allowedMenuIds.value = buildFallbackMenuSet()
         permissionsFallbackReason.value = anyFulfilled ? 'empty' : 'error'
       }
     } catch (err) {
       console.warn('[usePermissions] Error fetching access level permissions:', err)
-      allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 101, 102, 103])
+      allowedMenuIds.value = buildFallbackMenuSet()
       permissionsFallbackReason.value = 'error'
     } finally {
       isLoadingPermissions.value = false

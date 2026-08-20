@@ -41,13 +41,14 @@
     <!-- KPI Summary Cards Grid -->
     <div class="row g-3">
       <div class="col-12 col-sm-6 col-xl-2" v-for="stat in kpiStats" :key="stat.title">
-        <StatCard 
-          :title="stat.title" 
-          :value="stat.value" 
-          :trend="stat.trend" 
-          :icon="stat.icon" 
-          :iconBgClass="stat.iconBgClass" 
-          :iconColorClass="stat.iconColorClass" 
+        <StatCard
+          :title="stat.title"
+          :value="stat.value"
+          :trend="stat.trend"
+          :icon="stat.icon"
+          :iconBgClass="stat.iconBgClass"
+          :iconColorClass="stat.iconColorClass"
+          :loading="stat.loading"
         />
       </div>
     </div>
@@ -235,6 +236,10 @@ const liveCounts = ref({
 })
 const failedSources = ref([])
 
+// Per-source in-flight flags so each KPI card can show a shimmer until its own
+// request settles, instead of an em dash that reads as "no data".
+const pendingCounts = ref({})
+
 // Sources whose per-status tallies feed a breakdown doughnut, keyed by the row
 // field that carries the status. `null` tallies mean the fetch has not resolved
 // (or failed) — distinct from "zero records".
@@ -274,6 +279,7 @@ const loadCounts = async () => {
   ]
 
   const failures = []
+  sources.forEach(([key]) => { pendingCounts.value[key] = true })
   await Promise.all(sources.map(async ([key, path]) => {
     try {
       const payload = await apiClient.get(path)
@@ -292,6 +298,8 @@ const loadCounts = async () => {
       liveCounts.value[key] = null
       if (STATUS_SOURCES[key]) statusTallies.value[key] = null
       failures.push(path)
+    } finally {
+      pendingCounts.value[key] = false
     }
   }))
   failedSources.value = failures
@@ -333,6 +341,7 @@ const kpiStats = computed(() => [
   {
     title: 'Applications',
     value: fmt(liveCounts.value.applications),
+    loading: !!pendingCounts.value.applications,
     icon: 'pi-users',
     iconBgClass: 'bg-primary bg-opacity-10',
     iconColorClass: 'text-primary'
@@ -340,6 +349,7 @@ const kpiStats = computed(() => [
   {
     title: 'Active Sessions',
     value: fmt(liveCounts.value.activeSessions),
+    loading: !!pendingCounts.value.activeSessions,
     icon: 'pi-wifi',
     iconBgClass: 'bg-success bg-opacity-10',
     iconColorClass: 'text-success'
@@ -347,6 +357,7 @@ const kpiStats = computed(() => [
   {
     title: 'RADIUS Users',
     value: fmt(liveCounts.value.radiusUsers),
+    loading: !!pendingCounts.value.radiusUsers,
     icon: 'pi-id-card',
     iconBgClass: 'bg-info bg-opacity-10',
     iconColorClass: 'text-info'
@@ -354,6 +365,7 @@ const kpiStats = computed(() => [
   {
     title: 'Active Plans',
     value: fmt(liveCounts.value.plans),
+    loading: !!pendingCounts.value.plans,
     icon: 'pi-tag',
     iconBgClass: 'bg-warning bg-opacity-10',
     iconColorClass: 'text-warning'
@@ -361,6 +373,7 @@ const kpiStats = computed(() => [
   {
     title: 'Routers',
     value: fmt(liveCounts.value.routers),
+    loading: !!pendingCounts.value.routers,
     icon: 'pi-server',
     iconBgClass: 'bg-danger bg-opacity-10',
     iconColorClass: 'text-danger'
@@ -368,6 +381,7 @@ const kpiStats = computed(() => [
   {
     title: 'VLANs',
     value: fmt(liveCounts.value.vlans),
+    loading: !!pendingCounts.value.vlans,
     icon: 'pi-globe',
     iconBgClass: 'bg-secondary bg-opacity-10',
     iconColorClass: 'text-secondary'
