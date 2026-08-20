@@ -56,6 +56,19 @@
 
     <!-- Navigation List -->
     <nav class="flex-grow-1 overflow-y-auto py-3 px-2">
+      <!-- Fallback-menu warning (super admins only): the menu below is the
+           built-in full set, not the stored access level configuration. -->
+      <div
+        v-if="showFallbackWarning"
+        class="alert alert-warning d-flex align-items-start rounded-3 p-2 mb-2 border-warning"
+        :class="isCollapsed ? 'justify-content-center' : 'gap-2'"
+        role="alert"
+        v-tooltip.right="isCollapsed ? fallbackWarningText : null"
+      >
+        <i class="pi pi-exclamation-triangle flex-shrink-0" :class="{ 'mt-1': !isCollapsed }" style="font-size: 0.85rem;"></i>
+        <span v-if="!isCollapsed" style="font-size: 0.72rem; line-height: 1.35;">{{ fallbackWarningText }}</span>
+      </div>
+
       <!-- Loading State (Modern Skeleton Shimmer) -->
       <div v-if="showSkeleton" class="d-flex flex-column gap-2 px-1">
         <div 
@@ -217,7 +230,20 @@ const emit = defineEmits(['close', 'toggle-collapse'])
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const { allowedMenuIds, canAccessSettings, fetchPermissions, hasLoadedPermissions } = usePermissions()
+const { allowedMenuIds, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin } = usePermissions()
+
+// Super admins get told when the menu below is the built-in fallback rather
+// than the stored access level configuration; regular users just see the menu.
+const showFallbackWarning = computed(() =>
+  isSuperAdmin.value && hasLoadedPermissions.value && !!permissionsFallbackReason.value
+)
+
+const fallbackWarningText = computed(() => {
+  if (permissionsFallbackReason.value === 'empty') {
+    return 'This is a fallback menu — the access level API returned no menu permissions.'
+  }
+  return 'This is a fallback menu — the access level API could not be reached.'
+})
 
 // Permissions arrive from the API after mount. Until that first response lands,
 // an empty allowedMenuIds is "not known yet", not "no access" — so show the

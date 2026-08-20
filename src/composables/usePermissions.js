@@ -12,6 +12,11 @@ const unlinkedMenuIds = new Set()
 const isLoadingPermissions = ref(false)
 const hasLoadedOnce = ref(false)
 
+// Why the full fallback menu set was applied instead of stored permissions:
+// 'error' = the access level API could not be reached / failed, 'empty' = the
+// API responded but held no usable rows. `null` = real permissions are active.
+const permissionsFallbackReason = ref(null)
+
 const unwrap = (val) => {
   if (!val) return []
   if (Array.isArray(val)) return val
@@ -36,6 +41,7 @@ export function usePermissions() {
   const fetchPermissions = async () => {
     if (!authStore.isAuthenticated) {
       allowedMenuIds.value = new Set()
+      permissionsFallbackReason.value = null
       // Still a settled answer — callers waiting on the first result should
       // stop showing a loader rather than spin forever.
       hasLoadedOnce.value = true
@@ -45,15 +51,19 @@ export function usePermissions() {
     isLoadingPermissions.value = true
     try {
       const levelId = userAccessLevel.value
+      // No inner .catch here: allSettled records the rejections, which is what
+      // lets an unreachable API ('error') be told apart from an API that
+      // answered with no rows ('empty') when the fallback menu kicks in.
       const requests = []
       if (levelId) {
-        requests.push(apiClient.get(`/AccesslevelMenu/${levelId}`).catch(() => []))
-        requests.push(apiClient.get(`/AccessLevelMenu/${levelId}`).catch(() => []))
+        requests.push(apiClient.get(`/AccesslevelMenu/${levelId}`))
+        requests.push(apiClient.get(`/AccessLevelMenu/${levelId}`))
       }
-      requests.push(apiClient.get('/AccesslevelMenu').catch(() => []))
-      requests.push(apiClient.get('/AccessLevelMenu').catch(() => []))
+      requests.push(apiClient.get('/AccesslevelMenu'))
+      requests.push(apiClient.get('/AccessLevelMenu'))
 
       const responses = await Promise.allSettled(requests)
+      const anyFulfilled = responses.some(r => r.status === 'fulfilled')
       const combined = []
       responses.forEach(r => {
         if (r.status === 'fulfilled') {
@@ -91,12 +101,15 @@ export function usePermissions() {
         })
 
         allowedMenuIds.value = allowed
+        permissionsFallbackReason.value = null
       } else {
         allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 101, 102, 103])
+        permissionsFallbackReason.value = anyFulfilled ? 'empty' : 'error'
       }
     } catch (err) {
       console.warn('[usePermissions] Error fetching access level permissions:', err)
       allowedMenuIds.value = new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 101, 102, 103])
+      permissionsFallbackReason.value = 'error'
     } finally {
       isLoadingPermissions.value = false
       hasLoadedOnce.value = true
@@ -156,6 +169,7 @@ export function usePermissions() {
     allowedMenuIds,
     isLoadingPermissions,
     hasLoadedPermissions: hasLoadedOnce,
+    permissionsFallbackReason,
     isSuperAdmin,
     fetchPermissions,
     canAccess,
