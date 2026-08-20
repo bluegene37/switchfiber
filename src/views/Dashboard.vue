@@ -232,9 +232,16 @@ const liveCounts = ref({
   activeSessions: null,
   radiusUsers: null,
   routers: null,
-  vlans: null
+  vlans: null,
+  lcps: null,
+  lcpnaps: null,
+  lcpnapports: null,
+  naps: null,
+  ports: null,
+  users: null
 })
 const failedSources = ref([])
+const totalCountSources = ref(0)
 
 // Per-source in-flight flags so each KPI card can show a shimmer until its own
 // request settles, instead of an em dash that reads as "no data".
@@ -275,10 +282,17 @@ const loadCounts = async () => {
     ['vlans', '/Vlans'],
     ['jobOrders', '/JobOrders'],
     ['invoices', '/Invoices'],
-    ['billing', '/BillingDetails']
+    ['billing', '/BillingDetails'],
+    ['lcps', '/Lcps'],
+    ['lcpnaps', '/Lcpnaps'],
+    ['lcpnapports', '/Lcpnapports'],
+    ['naps', '/Naps'],
+    ['ports', '/Ports'],
+    ['users', '/Users']
   ]
 
   const failures = []
+  totalCountSources.value = sources.length
   sources.forEach(([key]) => { pendingCounts.value[key] = true })
   await Promise.all(sources.map(async ([key, path]) => {
     try {
@@ -310,7 +324,7 @@ const apiHealth = computed(() => {
   if (failedSources.value.length === 0 && liveCounts.value.plans !== null) {
     return { label: 'Systems Operational', class: 'bg-success bg-opacity-10 text-success border-success' }
   }
-  if (failedSources.value.length >= 3) {
+  if (totalCountSources.value > 0 && failedSources.value.length >= totalCountSources.value / 2) {
     return { label: 'API Unreachable', class: 'bg-danger bg-opacity-10 text-danger border-danger' }
   }
   if (failedSources.value.length > 0) {
@@ -374,7 +388,7 @@ const kpiStats = computed(() => [
     title: 'Routers',
     value: fmt(liveCounts.value.routers),
     loading: !!pendingCounts.value.routers,
-    icon: 'pi-server',
+    icon: 'pi-wifi',
     iconBgClass: 'bg-danger bg-opacity-10',
     iconColorClass: 'text-danger'
   },
@@ -383,6 +397,54 @@ const kpiStats = computed(() => [
     value: fmt(liveCounts.value.vlans),
     loading: !!pendingCounts.value.vlans,
     icon: 'pi-globe',
+    iconBgClass: 'bg-secondary bg-opacity-10',
+    iconColorClass: 'text-secondary'
+  },
+  {
+    title: 'LCPs',
+    value: fmt(liveCounts.value.lcps),
+    loading: !!pendingCounts.value.lcps,
+    icon: 'pi-server',
+    iconBgClass: 'bg-primary bg-opacity-10',
+    iconColorClass: 'text-primary'
+  },
+  {
+    title: 'LCNAPs',
+    value: fmt(liveCounts.value.lcpnaps),
+    loading: !!pendingCounts.value.lcpnaps,
+    icon: 'pi-sitemap',
+    iconBgClass: 'bg-success bg-opacity-10',
+    iconColorClass: 'text-success'
+  },
+  {
+    title: 'LCNAP Ports',
+    value: fmt(liveCounts.value.lcpnapports),
+    loading: !!pendingCounts.value.lcpnapports,
+    icon: 'pi-share-alt',
+    iconBgClass: 'bg-info bg-opacity-10',
+    iconColorClass: 'text-info'
+  },
+  {
+    title: 'NAPs',
+    value: fmt(liveCounts.value.naps),
+    loading: !!pendingCounts.value.naps,
+    icon: 'pi-box',
+    iconBgClass: 'bg-warning bg-opacity-10',
+    iconColorClass: 'text-warning'
+  },
+  {
+    title: 'Ports',
+    value: fmt(liveCounts.value.ports),
+    loading: !!pendingCounts.value.ports,
+    icon: 'pi-link',
+    iconBgClass: 'bg-danger bg-opacity-10',
+    iconColorClass: 'text-danger'
+  },
+  {
+    title: 'Users',
+    value: fmt(liveCounts.value.users),
+    loading: !!pendingCounts.value.users,
+    icon: 'pi-user',
     iconBgClass: 'bg-secondary bg-opacity-10',
     iconColorClass: 'text-secondary'
   }
