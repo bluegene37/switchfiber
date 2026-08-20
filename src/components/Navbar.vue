@@ -235,10 +235,10 @@
 
         <!-- Notification Dropdown Card -->
         <Transition name="dropdown-fade">
-          <div 
-            v-if="isNotificationOpen" 
-            class="position-absolute end-0 mt-2 shadow-lg border rounded-4 bg-body overflow-hidden"
-            style="width: 340px; z-index: 1100; top: 100%;"
+          <div
+            v-if="isNotificationOpen"
+            class="position-absolute end-0 mt-2 shadow-lg border rounded-4 bg-body overflow-hidden notification-dropdown"
+            style="z-index: 1100; top: 100%;"
           >
             <!-- Header -->
             <div class="p-3 bg-body border-bottom d-flex align-items-center justify-content-between">
@@ -665,6 +665,25 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
+/* Right-anchored to the bell on desktop; on phones the bell sits close to the
+   right edge, so a 340px card anchored there ran off the left side of the
+   screen. Below 480px the card pins to the viewport instead, with an even
+   margin on both sides, just under the 60px navbar. */
+.notification-dropdown {
+  width: min(340px, calc(100vw - 1.5rem));
+}
+
+@media (max-width: 479.98px) {
+  .notification-dropdown {
+    position: fixed !important;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 68px !important;
+    width: auto;
+    margin-top: 0 !important;
+  }
+}
+
 .search-input {
   transition: all 0.2s ease;
 }
