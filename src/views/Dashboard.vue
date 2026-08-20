@@ -30,11 +30,14 @@
           </button>
         </div>
 
-        <Button 
-          label="Export Report" 
-          icon="pi pi-download" 
-          class="p-button-secondary p-button-sm p-button-outlined shadow-xs rounded-3" 
-          @click="handleExport" 
+        <Button
+          label="Export Report"
+          icon="pi pi-download"
+          class="p-button-secondary p-button-sm p-button-outlined shadow-xs rounded-3"
+          :disabled="isLoadingCounts"
+          :loading="isLoadingCounts"
+          v-tooltip.bottom="isLoadingCounts ? 'Waiting for live data to finish loading…' : null"
+          @click="handleExport"
         />
       </div>
     </div>
@@ -469,7 +472,24 @@ const getSeverity = (status) => {
   }
 }
 
+const isLoadingCounts = computed(() => Object.values(pendingCounts.value).some(Boolean))
+
 const handleExport = () => {
+  // A report of nothing but placeholders is worse than no report: it looks
+  // broken and can circulate as if it were real figures.
+  const hasAnyData =
+    Object.values(liveCounts.value).some(v => v !== null) ||
+    (recentConnections.value || []).length > 0
+  if (!hasAnyData) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Nothing to export',
+      detail: 'No live data is available — the API is currently unreachable. Try again once the connection recovers.',
+      life: 5000
+    })
+    return
+  }
+
   try {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
     const generatedAt = new Date().toLocaleString()
@@ -484,10 +504,32 @@ const handleExport = () => {
     autoTable(doc, {
       startY: 84,
       head: [['Metric', 'Value']],
-      body: kpiStats.value.map(s => [s.title, String(s.value)]),
+      body: kpiStats.value.map(s => [s.title, s.value === '—' ? 'N/A' : String(s.value)]),
       styles: { fontSize: 9, cellPadding: 5 },
       headStyles: { fillColor: [231, 76, 90] }
     })
+
+    // Live status breakdowns, matching the dashboard doughnuts.
+    const breakdownRows = []
+    ;[
+      ['Job Orders', statusTallies.value.jobOrders],
+      ['Applications', statusTallies.value.applications],
+      ['Invoices', statusTallies.value.invoices],
+      ['Billing', statusTallies.value.billing]
+    ].forEach(([category, tallies]) => {
+      Object.entries(tallies || {}).forEach(([status, count]) => {
+        breakdownRows.push([category, titleCaseStatus(status), String(count)])
+      })
+    })
+    if (breakdownRows.length > 0) {
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 24,
+        head: [['Category', 'Status', 'Count']],
+        body: breakdownRows,
+        styles: { fontSize: 9, cellPadding: 5 },
+        headStyles: { fillColor: [231, 76, 90] }
+      })
+    }
 
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 24,
@@ -498,6 +540,16 @@ const handleExport = () => {
       // Keeps the export honest when the applications endpoint is unavailable.
       ...(recentConnections.value.length ? {} : { body: [['No application records available', '', '', '', '']] })
     })
+
+    // Full disclosure of what was down at export time, so N/A rows are
+    // attributable to an outage rather than read as real zeros.
+    if (failedSources.value.length > 0) {
+      const note = `Unavailable at export time (endpoint failing): ${failedSources.value.map(labelForPath).join(', ')}`
+      doc.setFontSize(8)
+      doc.setTextColor(150)
+      doc.text(doc.splitTextToSize(note, 515), 40, doc.lastAutoTable.finalY + 20)
+      doc.setTextColor(0)
+    }
 
     doc.save(`switchfiber-summary-${new Date().toISOString().slice(0, 10)}.pdf`)
     toast.add({ severity: 'success', summary: 'Report exported', detail: 'The PDF summary has been downloaded.', life: 3000 })
