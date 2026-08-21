@@ -375,7 +375,7 @@ import { useTheme } from '../composables/useTheme'
 import { useSearch } from '../composables/useSearch'
 import { usePermissions } from '../composables/usePermissions'
 import apiClient from '../services/api'
-import { MONITORED_ENDPOINTS } from '../models/monitoredEndpoints'
+import { MONITORED_ENDPOINTS, probePathFor } from '../models/monitoredEndpoints'
 
 const props = defineProps({
   isCollapsed: {
@@ -572,6 +572,11 @@ const isCheckingHealth = ref(false)
 // failures the Dashboard health badge counts — not just a hand-picked few.
 const HEALTH_CHECKS = MONITORED_ENDPOINTS
 
+// A probe only needs to know whether the endpoint answers, so it must not wait
+// out the 60s apiClient default on an endpoint that is effectively down — that
+// slow is a failure worth reporting, not something to keep waiting on.
+const HEALTH_PROBE_TIMEOUT_MS = 15000
+
 const apiDegraded = ref(false)
 
 const refreshNotifications = async () => {
@@ -579,7 +584,7 @@ const refreshNotifications = async () => {
   try {
     const results = await Promise.all(HEALTH_CHECKS.map(async (check) => {
       try {
-        await apiClient.get(check.path)
+        await apiClient.get(probePathFor(check), { timeout: HEALTH_PROBE_TIMEOUT_MS })
         return null
       } catch (err) {
         return {
