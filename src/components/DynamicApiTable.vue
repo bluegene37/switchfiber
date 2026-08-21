@@ -677,17 +677,28 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- LCP NAP name (LCP NAP records): derived from LCP + NAP, not hand-edited -->
+              <InputText
+                v-else-if="getFieldType(col) === 'lcpnap_dropdown' && isLcpNapEndpoint"
+                :id="col"
+                :modelValue="formData[col] || ''"
+                readonly
+                disabled
+                class="w-100 p-inputtext-sm bg-light"
+                placeholder="Auto-filled from LCP and NAP"
+              />
+
               <!-- LCNAP Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'lcpnap_dropdown'" 
-                :id="col" 
-                v-model="formData[col]" 
-                :options="lcpnapsList" 
-                optionLabel="label" 
-                optionValue="value" 
+              <Select
+                v-else-if="getFieldType(col) === 'lcpnap_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="lcpnapsList"
+                optionLabel="label"
+                optionValue="value"
                 :filter="true"
-                placeholder="Select LCNAP" 
-                class="w-100 p-inputtext-sm" 
+                placeholder="Select LCNAP"
+                class="w-100 p-inputtext-sm"
               />
 
               <!-- LCNAP Port Dropdown -->
@@ -1513,17 +1524,28 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- LCP NAP name (LCP NAP records): derived from LCP + NAP, not hand-edited -->
+              <InputText
+                v-else-if="getFieldType(col) === 'lcpnap_dropdown' && isLcpNapEndpoint"
+                :id="`edit-${col}`"
+                :modelValue="editFormData[col] || ''"
+                readonly
+                disabled
+                class="w-100 p-inputtext-sm bg-light"
+                placeholder="Auto-filled from LCP and NAP"
+              />
+
               <!-- LCNAP Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'lcpnap_dropdown'" 
-                :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
-                :options="lcpnapsList" 
-                optionLabel="label" 
-                optionValue="value" 
+              <Select
+                v-else-if="getFieldType(col) === 'lcpnap_dropdown'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="lcpnapsList"
+                optionLabel="label"
+                optionValue="value"
                 :filter="true"
-                placeholder="Select LCNAP" 
-                class="w-100 p-inputtext-sm" 
+                placeholder="Select LCNAP"
+                class="w-100 p-inputtext-sm"
               />
 
               <!-- LCNAP Port Dropdown -->
@@ -4941,6 +4963,29 @@ const onCityChanged = (targetForm) => {
   if (barangayColName.value) form[barangayColName.value] = ''
   updateBarangaysForSelectedCity(cityColName.value ? form[cityColName.value] : null)
 }
+
+// LCP NAP: the record's name is always "<LCP> <NAP>" — the field is read-only
+// in the dialogs and recomputed whenever either part changes
+const syncLcpnapName = (form) => {
+  if (!isLcpNapEndpoint.value || !form) return
+  const lcpCol = formColumns.value.find(c => getFieldType(c) === 'lcp_dropdown')
+  const napCol = formColumns.value.find(c => getFieldType(c) === 'nap_dropdown')
+  const nameCol = formColumns.value.find(c => getFieldType(c) === 'lcpnap_dropdown')
+  if (!nameCol) return
+  const lcp = lcpCol ? String(form[lcpCol] || '').trim() : ''
+  const nap = napCol ? String(form[napCol] || '').trim() : ''
+  form[nameCol] = [lcp, nap].filter(Boolean).join(' ')
+}
+
+watch(
+  () => [formData.value.lcp, formData.value.nap],
+  () => syncLcpnapName(formData.value)
+)
+
+watch(
+  () => [editFormData.value.lcp, editFormData.value.nap],
+  () => syncLcpnapName(editFormData.value)
+)
 
 watch(
   () => formData.value.region || formData.value.regionName || formData.value.region_name,
