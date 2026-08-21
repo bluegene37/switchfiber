@@ -109,7 +109,7 @@
         endpoint="Applications"
         filter-endpoint="/Applications/filter"
         :filter-params="activeFilterParams"
-        server-date-filter
+        :server-date-filter="isServerDateFilterActive"
         :hide-create-button="false"
         hide-status-filter
         create-button-label="Create Application"
@@ -253,15 +253,12 @@ const formatDisplayDate = (dateVal) => {
   return String(dateVal)
 }
 
+const isServerDateFilterActive = computed(() => {
+  return Boolean(selectedStatus.value && selectedStatus.value.trim() !== '')
+})
+
 const activeFilterParams = computed(() => {
   const params = {}
-  // "All" means no status param at all — the request narrows by date only
-  if (selectedStatus.value && selectedStatus.value.trim() !== '') {
-    params.status = selectedStatus.value.trim()
-  }
-  // The date range is mandatory: an unbounded /Applications fetch is too heavy
-  // for the backend, so a missing bound falls back to the current week even if
-  // the UI state was somehow cleared.
   let f = formatDateParam(fromDate.value, false)
   let t = formatDateParam(toDate.value, true)
   if (!f || !t) {
@@ -271,6 +268,14 @@ const activeFilterParams = computed(() => {
   }
   params.fromDate = f
   params.toDate = t
+
+  // When a status is selected (In Progress, Done, Approved), pass status to /Applications/filter
+  if (selectedStatus.value && selectedStatus.value.trim() !== '') {
+    params.status = selectedStatus.value.trim()
+  }
+  // When selectedStatus is empty ("All Application"), no status param is attached and
+  // isServerDateFilterActive is false, so DynamicApiTable queries GET /api/Applications
+  // directly without hitting /Applications/filter, then filters by date client-side.
   return params
 })
 

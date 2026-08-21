@@ -164,6 +164,12 @@ const routeMap = {
     readOnly: true,
     description: 'Review RADIUS subscriber accounts and whether each one is currently enabled or disabled.'
   },
+  '/lcp-nap-locations/records': {
+    title: 'LCP NAP Records',
+    endpoint: 'LCPNapLocations',
+    icon: 'pi-table',
+    description: 'Maintain Local Convergence Point and Network Access Point location records.'
+  },
 }
 
 const config = computed(() => routeMap[route.path] || { title: 'Unknown', endpoint: null, icon: 'pi-list', description: 'Manage records and system configurations.' })

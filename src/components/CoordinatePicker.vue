@@ -36,8 +36,8 @@
     <div class="cpk-controls">
       <button
         type="button"
-        class="btn btn-sm shadow-sm"
-        :class="satellite ? 'btn-primary' : 'btn-light border text-secondary'"
+        class="btn btn-sm rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center"
+        :class="satellite ? 'btn-primary text-white' : 'btn-light border text-secondary bg-body'"
         :title="satellite ? 'Switch to street map' : 'Switch to satellite'"
         @click.stop="satellite = !satellite"
       >
@@ -46,7 +46,7 @@
       <button
         v-if="!readonly && geolocationAvailable"
         type="button"
-        class="btn btn-sm btn-light border text-secondary shadow-sm"
+        class="btn btn-sm btn-light border text-secondary bg-body rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center"
         :disabled="locating"
         title="Pin my current location"
         @click.stop="useMyLocation"

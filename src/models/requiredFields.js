@@ -72,6 +72,9 @@ const ENDPOINT_OVERRIDES = {
   billingdetails: [ // schema says 34
     'fullName', 'contactNumber', 'address',
     'region', 'city', 'barangay', 'plan', 'status'
+  ],
+  lcpnaplocations: [
+    'lcp', 'nap', 'portTotal', 'coordinates'
   ]
 }
 

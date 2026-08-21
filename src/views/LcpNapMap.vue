@@ -8,11 +8,20 @@
           Every LCP cabinet and NAP box on the plant, plotted where it stands in the field.
         </p>
       </div>
-      <!-- Live stats derived from the plotted set -->
-      <div v-if="sites.length" class="d-flex align-items-center gap-2 flex-wrap">
-        <span class="lnm-stat-chip"><i class="pi pi-server"></i>{{ lcpGroups.length }} LCP{{ lcpGroups.length === 1 ? '' : 's' }}</span>
-        <span class="lnm-stat-chip"><i class="pi pi-box"></i>{{ sites.length }} NAP site{{ sites.length === 1 ? '' : 's' }}</span>
-        <span class="lnm-stat-chip"><i class="pi pi-share-alt"></i>{{ totalPorts }} ports</span>
+      <!-- Live stats derived from the plotted set & navigation -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <template v-if="sites.length">
+          <span class="lnm-stat-chip"><i class="pi pi-server"></i>{{ lcpGroups.length }} LCP{{ lcpGroups.length === 1 ? '' : 's' }}</span>
+          <span class="lnm-stat-chip"><i class="pi pi-box"></i>{{ sites.length }} NAP site{{ sites.length === 1 ? '' : 's' }}</span>
+          <span class="lnm-stat-chip"><i class="pi pi-share-alt"></i>{{ totalPorts }} ports</span>
+        </template>
+        <router-link
+          to="/lcp-nap-locations/records"
+          class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-2 shadow-xs fw-medium text-decoration-none ms-sm-1"
+        >
+          <i class="pi pi-table" style="font-size: 0.8rem;"></i>
+          <span>View Records</span>
+        </router-link>
       </div>
     </div>
 
@@ -48,34 +57,36 @@
         </div>
 
         <!-- Base layer -->
-        <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Map style">
+        <div class="d-inline-flex align-items-center gap-1.5 ms-auto">
           <button
             type="button"
-            class="btn"
-            :class="baseLayerMode === 'street' ? 'btn-primary' : 'btn-light border text-secondary'"
+            class="btn btn-sm rounded-3 px-3 py-1 fw-medium text-nowrap d-inline-flex align-items-center gap-1.5 shadow-xs"
+            :class="baseLayerMode === 'street' ? 'btn-primary text-white shadow-sm' : 'btn-light border text-secondary bg-body-tertiary'"
             @click="setBaseLayer('street')"
           >
-            <i class="pi pi-map me-1" style="font-size: 0.8rem;"></i>Street
+            <i class="pi pi-map" style="font-size: 0.75rem;"></i>
+            <span>Street</span>
           </button>
           <button
             type="button"
-            class="btn"
-            :class="baseLayerMode === 'satellite' ? 'btn-primary' : 'btn-light border text-secondary'"
+            class="btn btn-sm rounded-3 px-3 py-1 fw-medium text-nowrap d-inline-flex align-items-center gap-1.5 shadow-xs"
+            :class="baseLayerMode === 'satellite' ? 'btn-primary text-white shadow-sm' : 'btn-light border text-secondary bg-body-tertiary'"
             @click="setBaseLayer('satellite')"
           >
-            <i class="pi pi-globe me-1" style="font-size: 0.8rem;"></i>Satellite
+            <i class="pi pi-globe" style="font-size: 0.75rem;"></i>
+            <span>Satellite</span>
           </button>
         </div>
 
-        <button
-          type="button"
-          class="btn btn-sm btn-light border text-secondary"
-          :disabled="isLoading"
-          title="Reload locations"
+        <Button
+          class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3"
+          v-tooltip.bottom="'Reload locations'"
+          :loading="isLoading"
+          aria-label="Reload locations"
           @click="loadData"
         >
-          <i class="pi pi-refresh" :class="{ 'pi-spin': isLoading }" style="font-size: 0.8rem;"></i>
-        </button>
+          <i v-if="!isLoading" class="pi pi-refresh"></i>
+        </Button>
       </div>
 
       <!-- Unplottable rows notice -->
@@ -263,14 +274,20 @@
 
             <div class="d-flex gap-2">
               <a
-                class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 flex-grow-1 justify-content-center"
+                class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 flex-grow-1 justify-content-center shadow-xs fw-semibold"
                 :href="`https://www.google.com/maps/dir/?api=1&destination=${selectedSite.lat},${selectedSite.lng}`"
                 target="_blank"
                 rel="noopener"
               >
-                <i class="pi pi-directions" style="font-size: 0.8rem;"></i>Open in Google Maps
+                <i class="pi pi-directions" style="font-size: 0.8rem;"></i>
+                <span>Open in Google Maps</span>
               </a>
-              <button type="button" class="btn btn-sm btn-light border text-secondary" :title="copied ? 'Copied' : 'Copy coordinates'" @click="copyCoordinates">
+              <button
+                type="button"
+                class="btn btn-sm btn-light border text-secondary bg-body-tertiary rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center px-2.5"
+                :title="copied ? 'Copied' : 'Copy coordinates'"
+                @click="copyCoordinates"
+              >
                 <i :class="copied ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.8rem;"></i>
               </button>
             </div>
@@ -284,6 +301,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import Button from 'primevue/button'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster'

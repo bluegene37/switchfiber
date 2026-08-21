@@ -330,6 +330,12 @@
             </span>
             <span v-else class="text-muted">-</span>
           </span>
+          <span v-else-if="getFieldType(col) === 'coordinates'">
+            <span v-if="slotProps.data[col]" class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25" :title="slotProps.data[col]">
+              <i class="pi pi-map-marker me-1" style="font-size: 0.65rem;"></i>{{ slotProps.data[col] }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
           <span v-else-if="col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid'">
             {{ getAccessLevelLabel(slotProps.data[col]) }}
           </span>
@@ -946,6 +952,22 @@
                 </div>
               </div>
 
+              <!-- Coordinate Picker -->
+              <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
+                <CoordinatePicker v-model="formData[col]" height="260px" />
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="pi pi-compass" style="font-size: 0.75rem;"></i></span>
+                  <input
+                    :id="col"
+                    v-model="formData[col]"
+                    type="text"
+                    class="form-control form-control-sm rounded-end-3 font-monospace"
+                    :class="{ 'is-invalid': hasFieldError('create', col) }"
+                    placeholder="latitude, longitude (e.g. 14.474414, 121.196214)"
+                  />
+                </div>
+              </div>
+
               <!-- Image Upload (Dropzone) -->
               <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
                 <ImageDropzone
@@ -1205,6 +1227,32 @@
                 disabled
                 class="w-100"
               />
+
+              <!-- Coordinates in View Modal -->
+              <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
+                <CoordinatePicker v-if="viewFormData[col]" :model-value="viewFormData[col]" readonly height="220px" />
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                  <InputText
+                    :id="`view-${col}`"
+                    :modelValue="viewFormData[col] || '-'"
+                    readonly
+                    disabled
+                    class="w-100 p-inputtext-sm bg-light font-monospace"
+                  />
+                  <a
+                    v-if="viewFormData[col]"
+                    :href="`https://www.google.com/maps/dir/?api=1&destination=${String(viewFormData[col]).replace(/\\s/g, '')}`"
+                    target="_blank"
+                    rel="noopener"
+                    class="btn btn-sm btn-outline-primary rounded-3 text-nowrap d-inline-flex align-items-center gap-1.5 px-2.5 py-1"
+                    style="font-size: 0.75rem;"
+                    title="Open in Google Maps"
+                  >
+                    <i class="pi pi-directions" style="font-size: 0.75rem;"></i>
+                    <span>Maps</span>
+                  </a>
+                </div>
+              </div>
 
               <!-- Image Upload (Preview in View Modal) -->
               <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
@@ -1756,6 +1804,22 @@
                 </div>
               </div>
 
+              <!-- Coordinate Picker -->
+              <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
+                <CoordinatePicker v-model="editFormData[col]" height="260px" />
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="pi pi-compass" style="font-size: 0.75rem;"></i></span>
+                  <input
+                    :id="`edit-${col}`"
+                    v-model="editFormData[col]"
+                    type="text"
+                    class="form-control form-control-sm rounded-end-3 font-monospace"
+                    :class="{ 'is-invalid': hasFieldError('edit', col) }"
+                    placeholder="latitude, longitude (e.g. 14.474414, 121.196214)"
+                  />
+                </div>
+              </div>
+
               <!-- Image Upload (Dropzone) -->
               <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
                 <ImageDropzone
@@ -1941,6 +2005,7 @@ import phAddressService from '../services/phAddressService'
 import defaultRegions from '../../public/data/philippines/regions.json'
 import defaultProvinces from '../../public/data/philippines/provinces.json'
 import ImageDropzone from './ImageDropzone.vue'
+import CoordinatePicker from './CoordinatePicker.vue'
 import ExifPanel from './ExifPanel.vue'
 import { downloadImage, openImageInNewTab } from '../utils/imageActions'
 import DataTable from 'primevue/datatable'
@@ -2090,8 +2155,18 @@ const isApplicationEndpoint = computed(() => {
   return ep === 'applications' || ep === 'application'
 })
 
-// Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders
-// & Billing Details — the field-heavy forms) or the standard 2-column modal
+const isLcpNapEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return (
+    ep === 'lcpnaplocations' ||
+    ep === 'lcpnaplocation' ||
+    ep === 'lcp_nap_locations' ||
+    ep === 'lcp_nap_location'
+  )
+})
+
+// Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders,
+// Billing Details & LCP NAP Locations — the field-heavy forms) or the standard 2-column modal
 const isWideForm = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
   return (
@@ -2100,7 +2175,11 @@ const isWideForm = computed(() => {
     ep === 'job_order' ||
     ep === 'billing' ||
     ep === 'applications' ||
-    ep === 'application'
+    ep === 'application' ||
+    ep === 'lcpnaplocations' ||
+    ep === 'lcpnaplocation' ||
+    ep === 'lcp_nap_locations' ||
+    ep === 'lcp_nap_location'
   )
 })
 
@@ -2147,11 +2226,15 @@ const getColumnClass = (col) => {
   if (lower === 'installationaddress' || lower === 'remarks' || lower === 'remark') {
     return 'col-12 col-md-12 col-lg-8'
   }
-  // Wide (3-column) forms keep every field on the same one-third track, image
-  // dropzones and textareas included. Giving those two a half-width span used to
-  // leave the grid ragged: a half-width field landing mid-row pushed the next
-  // third-width field onto a new line and opened gaps down the form.
+  if (type === 'coordinates') {
+    return 'col-12'
+  }
+  // Wide (3-column) forms keep every field on the same one-third track.
+  // Image dropzones divide equally across 3 columns on tablet & desktop.
   if (isWideForm.value) {
+    if (type === 'image_upload') {
+      return 'col-12 col-md-4 col-lg-4'
+    }
     return 'col-12 col-md-6 col-lg-4'
   }
   return (type === 'textarea' || type === 'image_upload') ? 'col-12' : 'col-12 col-md-6'
@@ -2345,6 +2428,15 @@ function getFieldType(col) {
     lower.startsWith('attachment')
   ) {
     return 'image_upload'
+  }
+
+  if (
+    lower === 'coordinates' ||
+    lower === 'coordinate' ||
+    lower === 'addresscoordinates' ||
+    lower === 'address_coordinates'
+  ) {
+    return 'coordinates'
   }
 
   if (lower.includes('email')) {
@@ -2657,6 +2749,42 @@ const CONCISE_ENDPOINT_COLUMNS = {
     'onsiteStatus',
     'billingStatus',
     'dateInstalled'
+  ],
+  LCPNapLocations: [
+    'id',
+    'lcpnap',
+    'lcp',
+    'nap',
+    'portTotal',
+    'coordinates',
+    'street',
+    'barangay',
+    'city',
+    'region'
+  ],
+  LcpNapLocations: [
+    'id',
+    'lcpnap',
+    'lcp',
+    'nap',
+    'portTotal',
+    'coordinates',
+    'street',
+    'barangay',
+    'city',
+    'region'
+  ],
+  lcpnaplocations: [
+    'id',
+    'lcpnap',
+    'lcp',
+    'nap',
+    'portTotal',
+    'coordinates',
+    'street',
+    'barangay',
+    'city',
+    'region'
   ]
 }
 
@@ -3467,6 +3595,47 @@ const APPLICATION_FORM_LAYOUT = [
   }
 ]
 
+const LCPNAP_FORM_LAYOUT = [
+  {
+    key: 'infra',
+    title: 'LCP & NAP Site Details',
+    icon: 'pi pi-server',
+    badgeClass: 'text-primary',
+    columns: [
+      'id',
+      'lcpnap',
+      'lcp',
+      'nap',
+      'portTotal',
+      'userEmail'
+    ]
+  },
+  {
+    key: 'location',
+    title: 'Site Location & Coordinates',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-success',
+    columns: [
+      'coordinates',
+      'region',
+      'city',
+      'barangay',
+      'street'
+    ]
+  },
+  {
+    key: 'photos',
+    title: 'Site Photos',
+    icon: 'pi pi-images',
+    badgeClass: 'text-info',
+    columns: [
+      'image',
+      'image2',
+      'readingImage'
+    ]
+  }
+]
+
 // Arrange `cols` per APPLICATION_FORM_LAYOUT. Matching ignores case and
 // underscores, and any column the layout does not name still renders — under
 // "Additional Details", or in the audit group for the View dialog — so a new
@@ -3525,10 +3694,61 @@ const buildApplicationSections = (cols, { includeAudit = false } = {}) => {
   return sections
 }
 
+const buildLcpNapSections = (cols, { includeAudit = false } = {}) => {
+  const pool = new Map()
+  ;(cols || []).forEach(col => {
+    const key = normalizeColKey(col)
+    if (!pool.has(key)) pool.set(key, col)
+  })
+
+  const sections = []
+  LCPNAP_FORM_LAYOUT.forEach(sec => {
+    const picked = []
+    sec.columns.forEach(wanted => {
+      const key = normalizeColKey(wanted)
+      if (pool.has(key)) {
+        picked.push(pool.get(key))
+        pool.delete(key)
+      }
+    })
+    if (picked.length > 0) {
+      sections.push({ ...sec, columns: picked })
+    }
+  })
+
+  const leftovers = [...pool.values()]
+  const extras = leftovers.filter(col => !isAuditField(col))
+  const auditCols = leftovers.filter(col => isAuditField(col))
+
+  if (extras.length > 0) {
+    sections.push({
+      key: 'extra',
+      title: 'Additional Details',
+      icon: 'pi pi-file',
+      badgeClass: 'text-secondary',
+      columns: extras
+    })
+  }
+  if (includeAudit && auditCols.length > 0) {
+    sections.push({
+      key: 'audit',
+      title: getSectionTitle('audit'),
+      icon: SECTION_META.audit.icon,
+      badgeClass: SECTION_META.audit.badgeClass,
+      columns: auditCols
+    })
+  }
+
+  return sections
+}
+
 // Columns for Create & Edit forms (excludes system audit fields completely)
 const formSections = computed(() => {
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(formColumns.value)
+  }
+  if (isLcpNapEndpoint.value) {
+    return buildLcpNapSections(formColumns.value)
   }
 
   const groups = {
@@ -3584,6 +3804,9 @@ const viewFormColumns = computed(() => {
 const viewFormSections = computed(() => {
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(viewFormColumns.value, { includeAudit: false })
+  }
+  if (isLcpNapEndpoint.value) {
+    return buildLcpNapSections(viewFormColumns.value, { includeAudit: false })
   }
 
   const groups = {
@@ -4859,6 +5082,9 @@ const syncPairedFields = (payload) => {
   if (payload.lcpnapportId) {
     const found = lcpnapportsList.value.find(opt => opt.value === payload.lcpnapportId || opt.id === payload.lcpnapportId)
     if (found) payload.lcpnapport = found.label
+  }
+  if (payload.lcp && payload.nap && !payload.lcpnap) {
+    payload.lcpnap = `${payload.lcp} ${payload.nap}`
   }
 
   // Ensure picture of statement billing from other provider is synced to backend

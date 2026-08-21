@@ -367,5 +367,41 @@ export const EndpointColumns = {
     "otp_secret",
     "shared_users",
     "attributes"
+  ],
+  "LCPNapLocations": [
+    "id",
+    "lcpnap",
+    "lcp",
+    "nap",
+    "portTotal",
+    "coordinates",
+    "street",
+    "barangay",
+    "city",
+    "region",
+    "image",
+    "image2",
+    "readingImage",
+    "userEmail",
+    "modifiedBy",
+    "modifiedDate"
+  ],
+  "LcpNapLocations": [
+    "id",
+    "lcpnap",
+    "lcp",
+    "nap",
+    "portTotal",
+    "coordinates",
+    "street",
+    "barangay",
+    "city",
+    "region",
+    "image",
+    "image2",
+    "readingImage",
+    "userEmail",
+    "modifiedBy",
+    "modifiedDate"
   ]
 }
