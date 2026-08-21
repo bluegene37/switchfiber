@@ -6237,18 +6237,16 @@ const activeLinkedMenuIds = computed(() => {
 const isSuperAdminAccessLevelProtected = (menuRow) => {
   if (!props.selectedAccessLevel || !menuRow) return false
   const targetAccId = Number(
-    props.selectedAccessLevel.id ?? 
-    props.selectedAccessLevel.ID ?? 
-    props.selectedAccessLevel.accessLevelId ?? 
+    props.selectedAccessLevel.id ??
+    props.selectedAccessLevel.ID ??
+    props.selectedAccessLevel.accessLevelId ??
     props.selectedAccessLevel.accesslevel_id
   )
-  const isSuperAdminRole = targetAccId === 1 || String(props.selectedAccessLevel.name || '').toLowerCase().includes('super')
-  
-  const menuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
-  const menuName = String(menuRow.name || menuRow.Name || '').toLowerCase()
-  const isAccessLevelMenu = menuId === 16 || menuName === 'access level' || (menuRow.route || menuRow.path || '').toLowerCase() === '/access_level'
-  
-  return isSuperAdminRole && isAccessLevelMenu
+  // Super Admin has full access by definition: every menu always shows as
+  // granted and none can be toggled — regardless of what AccesslevelMenu rows
+  // exist (or fail to load) for it. Matching by name too covers duplicate
+  // "Super Admin" levels stored under other ids.
+  return targetAccId === 1 || String(props.selectedAccessLevel.name || '').toLowerCase().includes('super')
 }
 
 const isToggleSwitchDisabled = (menuRow) => {
@@ -6260,7 +6258,7 @@ const isToggleSwitchDisabled = (menuRow) => {
 
 const getToggleSwitchTitle = (menuRow) => {
   if (!props.selectedAccessLevel) return 'Select an Access Level on the left table first'
-  if (isSuperAdminAccessLevelProtected(menuRow)) return 'Access Level permission is locked and protected for Super Admin'
+  if (isSuperAdminAccessLevelProtected(menuRow)) return 'Super Admin always has full access — menu permissions are locked'
   return isMenuLinked(menuRow) ? 'Click to Unlink Menu' : 'Click to Link Menu'
 }
 
@@ -6279,7 +6277,7 @@ const toggleMenuLink = async (menuRow) => {
     toast.add({
       severity: 'warn',
       summary: 'Protected Permission',
-      detail: 'Access Level menu permission cannot be disabled for Super Admin.',
+      detail: 'Super Admin always has full access — menu permissions cannot be changed.',
       life: 4000
     })
     return

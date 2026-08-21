@@ -27,6 +27,16 @@ const unwrap = (val) => {
   return []
 }
 
+// Every menu id the front end ships. For Super Admins this IS their
+// permission set; for everyone else it is only the ceiling of what stored
+// rows can grant.
+const FULL_MENU_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 101, 102, 103]
+
+// The name of the user's access level, resolved from the API. Lets a level
+// NAMED "Super Admin" stored under another id (a duplicate row) still be
+// treated as a super admin — the id-1 check alone would miss it.
+const resolvedLevelName = ref('')
+
 export function usePermissions() {
   const authStore = useAuthStore()
 
@@ -35,18 +45,31 @@ export function usePermissions() {
   })
 
   const isSuperAdmin = computed(() => {
-    return userAccessLevel.value === 1 || String(authStore.user?.role || '').toLowerCase().includes('super')
+    return (
+      userAccessLevel.value === 1 ||
+      String(authStore.user?.role || '').toLowerCase().includes('super') ||
+      resolvedLevelName.value.toLowerCase().includes('super')
+    )
   })
 
-  // What the menu falls back to when no stored permissions are usable. Super
-  // admins get the full built-in menu so they can still administer the system;
-  // everyone else is held to Dashboard + Settings until the API answers again —
-  // a failed permission lookup must not silently grant a regular user everything.
-  const buildFallbackMenuSet = () => {
-    if (isSuperAdmin.value) {
-      return new Set([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 101, 102, 103])
+  // What the menu falls back to when no stored permissions are usable:
+  // Dashboard + Settings only, until the API answers again — a failed
+  // permission lookup must not silently grant a regular user everything.
+  // (Super admins never reach the fallback; they always get the full set.)
+  const buildFallbackMenuSet = () => new Set([5, 20]) // 5 = Dashboard, 20 = Settings
+
+  const resolveLevelName = async () => {
+    const levelId = userAccessLevel.value
+    if (!levelId || levelId === 1) {
+      resolvedLevelName.value = ''
+      return
     }
-    return new Set([5, 20]) // 5 = Dashboard, 20 = Settings
+    try {
+      const level = await apiClient.get(`/AccessLevel/${levelId}`)
+      resolvedLevelName.value = String(level?.name || level?.data?.name || '')
+    } catch {
+      resolvedLevelName.value = ''
+    }
   }
 
   const fetchPermissions = async () => {
@@ -61,6 +84,17 @@ export function usePermissions() {
 
     isLoadingPermissions.value = true
     try {
+      await resolveLevelName()
+
+      // Super Admin has every menu by definition — stored AccesslevelMenu rows
+      // (present, missing, or unreachable) never narrow it, and no fallback
+      // warning applies. The Access Level management panel enforces the same
+      // rule from the editing side: Super Admin's menu list is locked to full.
+      if (isSuperAdmin.value) {
+        allowedMenuIds.value = new Set(FULL_MENU_IDS)
+        permissionsFallbackReason.value = null
+        return
+      }
       const levelId = userAccessLevel.value
       // No inner .catch here: allSettled records the rejections, which is what
       // lets an unreachable API ('error') be told apart from an API that

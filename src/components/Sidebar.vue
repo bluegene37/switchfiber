@@ -401,7 +401,11 @@ watch(() => authStore.user, () => {
 
 const filteredMenuItems = computed(() => {
   if (!rawMenuItems.value || !Array.isArray(rawMenuItems.value)) return []
-  const allowed = allowedMenuIds.value || new Set()
+  const allowed = new Set(allowedMenuIds.value || [])
+  // Access Level Management (id 16) is always visible to Super Admins, even
+  // with no AccesslevelMenu row granting it — without this, a Super Admin
+  // could lose the very screen used to fix permissions. Mirrors canAccess().
+  if (isSuperAdmin.value) allowed.add(16)
   return rawMenuItems.value
     .map(item => {
       if (item.children && Array.isArray(item.children)) {

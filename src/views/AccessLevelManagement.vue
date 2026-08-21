@@ -89,7 +89,10 @@ const handleAccessLevelSelect = (row) => {
 }
 
 const handleAccessLevelUnselect = () => {
-  selectedAccessLevel.value = null
+  // Deliberately keep the last selection. The DataTable treats a click as a
+  // selection toggle and can fire row-unselect in the same tick as row-select,
+  // which blanked the menu panel and made the level look unassigned. A blank
+  // panel has no use here — the selection only ever moves to another level.
 }
 
 const openCreateAccessLevel = () => {
