@@ -233,6 +233,8 @@ onMounted(() => {
   map = L.map(mapContainer.value, {
     center: start,
     zoom: parsed.value ? 17 : 13,
+    minZoom: 4,
+    maxZoom: 19,
     attributionControl: true
   })
   // The place search occupies the top-left corner

@@ -57,13 +57,20 @@
       </div>
     </div>
 
+    <!-- Network Plant & LCP NAP Infrastructure Map -->
+    <div class="row g-4">
+      <div class="col-12">
+        <DashboardMapCard />
+      </div>
+    </div>
+
     <!-- Illustrative charts notice: these series are not backed by the API yet. -->
     <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 p-3 mb-0 small" role="note">
       <i class="pi pi-info-circle mt-1 flex-shrink-0"></i>
       <div>
         <span class="fw-semibold">Some charts below use sample data.</span>
         Bandwidth, plan distribution, revenue, node telemetry, and SLA figures are illustrative placeholders — the API
-        does not expose these series yet. The KPI cards, the four status breakdown charts (Job Orders, Applications,
+        does not expose these series yet. The KPI cards, the plant coverage map, the four status breakdown charts (Job Orders, Applications,
         Invoices, Billing), and the applications table are live.
       </div>
     </div>
@@ -218,6 +225,7 @@ import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR } from '.
 import { MONITORED_ENDPOINTS, labelForPath } from '../models/monitoredEndpoints'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
+import DashboardMapCard from '../components/DashboardMapCard.vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'

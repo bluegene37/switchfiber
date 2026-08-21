@@ -604,6 +604,8 @@ onMounted(() => {
   map = L.map(mapContainer.value, {
     center: FALLBACK_CENTER,
     zoom: 13,
+    minZoom: 4,
+    maxZoom: 19,
     zoomControl: true,
     attributionControl: true
   })

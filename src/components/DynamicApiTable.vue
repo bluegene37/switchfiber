@@ -781,18 +781,18 @@
                 class="w-100 p-inputtext-sm" 
               />
 
-              <!-- Region Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'region_dropdown'" 
-                :id="col" 
-                v-model="formData[col]" 
-                :options="createRegionOptions" 
-                optionLabel="label" 
-                optionValue="value" 
+              <!-- Region Dropdown (renders CALABARZON provinces on LCP NAP) -->
+              <Select
+                v-else-if="getFieldType(col) === 'region_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="createRegionOptions"
+                optionLabel="label"
+                optionValue="value"
                 :filter="true"
                 @change="onRegionChanged(formData)"
-                placeholder="Select Region" 
-                class="w-100 p-inputtext-sm" 
+                :placeholder="isLcpNapEndpoint ? 'Select Province' : 'Select Region'"
+                class="w-100 p-inputtext-sm"
               />
 
               <!-- Province Dropdown -->
@@ -972,16 +972,26 @@
               <!-- Coordinate Picker -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
                 <CoordinatePicker v-model="formData[col]" height="260px" />
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="pi pi-compass" style="font-size: 0.75rem;"></i></span>
+                <div class="d-flex flex-wrap align-items-center gap-2">
                   <input
                     :id="col"
                     v-model="formData[col]"
                     type="text"
-                    class="form-control form-control-sm rounded-end-3 font-monospace"
+                    class="form-control form-control-sm rounded-3 font-monospace coord-input"
                     :class="{ 'is-invalid': hasFieldError('create', col) }"
-                    placeholder="latitude, longitude (e.g. 14.474414, 121.196214)"
+                    placeholder="latitude, longitude"
                   />
+                  <button
+                    v-if="isLcpNapEndpoint"
+                    type="button"
+                    class="btn btn-sm btn-outline-primary rounded-3 d-inline-flex align-items-center gap-2 fw-medium"
+                    :disabled="pinFillBusy.create || !formData[col]"
+                    title="Fill Province, City, Barangay and Street from the pinned location"
+                    @click="applyAddressFromPin('create')"
+                  >
+                    <i :class="pinFillBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-map-marker'" style="font-size: 0.75rem;"></i>
+                    <span>Use pin address</span>
+                  </button>
                 </div>
               </div>
 
@@ -1248,13 +1258,14 @@
               <!-- Coordinates in View Modal -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
                 <CoordinatePicker v-if="viewFormData[col]" :model-value="viewFormData[col]" readonly height="220px" />
-                <div class="d-flex align-items-center justify-content-between gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2">
                   <InputText
                     :id="`view-${col}`"
                     :modelValue="viewFormData[col] || '-'"
                     readonly
                     disabled
-                    class="w-100 p-inputtext-sm bg-light font-monospace"
+                    class="p-inputtext-sm bg-light font-monospace"
+                    style="min-width: 200px; max-width: 280px;"
                   />
                   <a
                     v-if="viewFormData[col]"
@@ -1606,18 +1617,18 @@
                 class="w-100 p-inputtext-sm" 
               />
 
-              <!-- Region Dropdown -->
-              <Select 
-                v-else-if="getFieldType(col) === 'region_dropdown'" 
-                :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
-                :options="createRegionOptions" 
-                optionLabel="label" 
-                optionValue="value" 
+              <!-- Region Dropdown (renders CALABARZON provinces on LCP NAP) -->
+              <Select
+                v-else-if="getFieldType(col) === 'region_dropdown'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="createRegionOptions"
+                optionLabel="label"
+                optionValue="value"
                 :filter="true"
                 @change="onRegionChanged(editFormData)"
-                placeholder="Select Region" 
-                class="w-100 p-inputtext-sm" 
+                :placeholder="isLcpNapEndpoint ? 'Select Province' : 'Select Region'"
+                class="w-100 p-inputtext-sm"
               />
 
               <!-- Province Dropdown -->
@@ -1824,16 +1835,26 @@
               <!-- Coordinate Picker -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
                 <CoordinatePicker v-model="editFormData[col]" height="260px" />
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="pi pi-compass" style="font-size: 0.75rem;"></i></span>
+                <div class="d-flex flex-wrap align-items-center gap-2">
                   <input
                     :id="`edit-${col}`"
                     v-model="editFormData[col]"
                     type="text"
-                    class="form-control form-control-sm rounded-end-3 font-monospace"
+                    class="form-control form-control-sm rounded-3 font-monospace coord-input"
                     :class="{ 'is-invalid': hasFieldError('edit', col) }"
-                    placeholder="latitude, longitude (e.g. 14.474414, 121.196214)"
+                    placeholder="latitude, longitude"
                   />
+                  <button
+                    v-if="isLcpNapEndpoint"
+                    type="button"
+                    class="btn btn-sm btn-outline-primary rounded-3 d-inline-flex align-items-center gap-2 fw-medium"
+                    :disabled="pinFillBusy.edit || !editFormData[col]"
+                    title="Fill Province, City, Barangay and Street from the pinned location"
+                    @click="applyAddressFromPin('edit')"
+                  >
+                    <i :class="pinFillBusy.edit ? 'pi pi-spinner pi-spin' : 'pi pi-map-marker'" style="font-size: 0.75rem;"></i>
+                    <span>Use pin address</span>
+                  </button>
                 </div>
               </div>
 
@@ -2249,6 +2270,11 @@ const getColumnClass = (col) => {
   if (type === 'coordinates') {
     return 'col-12'
   }
+  // LCP NAP address quartet shares one row on desktop (2×2 on tablet) so the
+  // Site Location section reads map → coordinates → address left to right.
+  if (isLcpNapEndpoint.value && ['region', 'city', 'barangay', 'street'].includes(lower)) {
+    return 'col-12 col-md-6 col-lg-3'
+  }
   // Wide (3-column) forms keep every field on the same one-third track.
   // Image dropzones divide equally across 3 columns on tablet & desktop.
   if (isWideForm.value) {
@@ -2302,6 +2328,12 @@ function formatLabel(col) {
   // name as a header reads as a contradiction: "Disabled: Enabled".
   if (isRadiusUserEndpoint.value && normalizeColKey(col) === 'disabled') {
     return 'Account State'
+  }
+
+  // The LCP NAP API's `region` column actually stores the PROVINCE (the backend
+  // named it wrong). The payload keeps the `region` key; only the UI renames it.
+  if (isLcpNapEndpoint.value && normalizeColKey(col) === 'region') {
+    return 'Province'
   }
 
   const customOverrides = {
@@ -4452,7 +4484,45 @@ const cityColName = computed(() => formColumns.value.find(c => getFieldType(c) =
 const barangayColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'barangay_dropdown'))
 const statusColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'status_dropdown'))
 
-const createRegionOptions = computed(() => regionsList.value || [])
+// LCP NAP: the backend's `region` column really stores the province, so its
+// dropdown offers CALABARZON provinces (Batangas, Cavite, Laguna, Quezon,
+// Rizal) instead of regions. The saved value is the province name, still sent
+// under the `region` key.
+const CALABARZON_REGION_CODE = '040000000'
+
+const lcpnapProvinceOptions = computed(() =>
+  (defaultFormattedProvinces || []).filter(p => p.regionCode === CALABARZON_REGION_CODE)
+)
+
+const findLcpnapProvince = (val) => {
+  const str = String(val || '').trim().toLowerCase()
+  if (!str) return null
+  return lcpnapProvinceOptions.value.find(p =>
+    String(p.value).toLowerCase() === str || String(p.code).toLowerCase() === str
+  ) || null
+}
+
+const updateCitiesForLcpnapProvince = async (provinceVal) => {
+  const prov = findLcpnapProvince(provinceVal)
+  if (prov) {
+    try {
+      const cList = await phAddressService.getCities(prov.regionCode, prov.code)
+      if (cList && cList.length > 0) {
+        citiesList.value = cList.map(c => ({ label: `${c.name} ${c.isCity ? '(City)' : ''}`, value: c.name, code: c.code, regionCode: c.regionCode, provinceCode: c.provinceCode }))
+        return
+      }
+    } catch (err) {
+      console.error('Error filtering cities for LCP NAP province:', err)
+    }
+  }
+  // No/unknown province (legacy rows store "CALABARZON"): offer every
+  // CALABARZON city rather than stranding the user with an empty dropdown
+  await updateCitiesForSelectedRegion('CALABARZON')
+}
+
+const createRegionOptions = computed(() =>
+  isLcpNapEndpoint.value ? lcpnapProvinceOptions.value : (regionsList.value || [])
+)
 const createProvinceOptions = computed(() => provincesList.value || [])
 const createCityOptions = computed(() => citiesList.value || [])
 const createBarangayOptions = computed(() => barangaysList.value || [])
@@ -4486,7 +4556,7 @@ const isBarangayDisabled = (targetForm) => {
 
 const getCityPlaceholder = (targetForm) => {
   if (isCityDisabled(targetForm)) {
-    return 'Select Region First'
+    return isLcpNapEndpoint.value ? 'Select Province First' : 'Select Region First'
   }
   return 'Select City / Town'
 }
@@ -4820,7 +4890,8 @@ const getAddressStepBlocker = (targetForm, field) => {
   const form = unwrapForm(targetForm)
   if (!form) return null
   if ((field === 'city' || field === 'province') && isCityDisabled(form)) {
-    return { summary: 'Select Region first', detail: 'Please select a Region before selecting City / Municipality.' }
+    const area = isLcpNapEndpoint.value ? 'Province' : 'Region'
+    return { summary: `Select ${area} first`, detail: `Please select a ${area} before selecting City / Municipality.` }
   }
   if (field === 'barangay' && isBarangayDisabled(form)) {
     return { summary: 'Select City first', detail: 'Please select a City / Municipality before selecting Barangay.' }
@@ -4847,7 +4918,12 @@ const onRegionChanged = (targetForm) => {
   if (provinceColName.value) form[provinceColName.value] = ''
   if (cityColName.value) form[cityColName.value] = ''
   if (barangayColName.value) form[barangayColName.value] = ''
-  updateCitiesForSelectedRegion(regionColName.value ? form[regionColName.value] : null)
+  const val = regionColName.value ? form[regionColName.value] : null
+  if (isLcpNapEndpoint.value) {
+    updateCitiesForLcpnapProvince(val)
+  } else {
+    updateCitiesForSelectedRegion(val)
+  }
 }
 
 const onProvinceChanged = (targetForm) => {
@@ -4869,14 +4945,16 @@ const onCityChanged = (targetForm) => {
 watch(
   () => formData.value.region || formData.value.regionName || formData.value.region_name,
   (newRegion) => {
-    updateCitiesForSelectedRegion(newRegion)
+    if (isLcpNapEndpoint.value) updateCitiesForLcpnapProvince(newRegion)
+    else updateCitiesForSelectedRegion(newRegion)
   }
 )
 
 watch(
   () => editFormData.value.region || editFormData.value.regionName || editFormData.value.region_name,
   (newRegion) => {
-    updateCitiesForSelectedRegion(newRegion)
+    if (isLcpNapEndpoint.value) updateCitiesForLcpnapProvince(newRegion)
+    else updateCitiesForSelectedRegion(newRegion)
   }
 )
 
@@ -4917,16 +4995,102 @@ const onCoordinatesChanged = (scope, coords) => {
       if (addr.city && !targetForm.city) {
         targetForm.city = addr.city
       }
-      if (addr.provinceLike?.length && !targetForm.region) {
-        const matchReg = regionOptions.value.find(r => 
-          addr.provinceLike.some(p => String(p).toLowerCase().includes(String(r.label || r.value || '').toLowerCase()))
-        )
-        if (matchReg) targetForm.region = matchReg.value
+      if (addr.provinceLike?.length) {
+        if (isLcpNapEndpoint.value) {
+          // The pin is authoritative for the province — always sync it
+          const matchProv = matchProvinceOption(addr.provinceLike)
+          if (matchProv) targetForm.region = matchProv.value
+        } else if (!targetForm.region) {
+          const matchReg = matchRegionOption(addr.provinceLike)
+          if (matchReg) targetForm.region = matchReg.value
+        }
       }
     } catch {
       // Offline or aborted
     }
   }, 500)
+}
+
+// Nominatim names some regions differently from the PSA dataset
+const REGION_NAME_ALIASES = { 'metro manila': 'ncr', 'national capital region': 'ncr' }
+
+// LCP NAP variant: Nominatim's province ("Rizal") maps straight onto the
+// CALABARZON province options; outside CALABARZON nothing matches, on purpose
+const matchProvinceOption = (provinceLike) => {
+  const probes = (provinceLike || []).map(p => String(p).toLowerCase().trim()).filter(Boolean)
+  if (!probes.length) return null
+  return lcpnapProvinceOptions.value.find(o => probes.includes(String(o.value).toLowerCase())) || null
+}
+
+const matchRegionOption = (provinceLike) => {
+  const probes = (provinceLike || []).map(p => String(p).toLowerCase().trim()).filter(Boolean)
+  probes.push(...probes.map(p => REGION_NAME_ALIASES[p]).filter(Boolean))
+  if (!probes.length) return null
+  const list = regionsList.value || []
+  const exact = list.find(r =>
+    [r.name, r.value, r.regionName].some(n => n && probes.includes(String(n).toLowerCase()))
+  )
+  if (exact) return exact
+  // Substring pass skips short codes (CAR, NCR) — "Caraga" must not match "CAR"
+  return list.find(r =>
+    [r.name, r.value, r.regionName]
+      .map(n => String(n || '').toLowerCase())
+      .filter(n => n.length >= 4)
+      .some(n => probes.some(p => p.includes(n) || n.includes(p)))
+  )
+}
+
+// One-click overwrite: unlike the silent autofill above (which only fills blanks),
+// the "Use pin address" button replaces Region/City/Barangay/Street with whatever
+// the pinned location resolves to.
+const pinFillBusy = ref({ create: false, edit: false })
+
+const applyAddressFromPin = async (scope) => {
+  const targetForm = formForScope(scope).value
+  const coords = targetForm.coordinates || targetForm.coordinate
+  const parsed = parseCoordinates(coords)
+  if (!parsed || pinFillBusy.value[scope]) return
+  pinFillBusy.value[scope] = true
+  try {
+    const addr = await reverseGeocode(parsed.lat, parsed.lng)
+    if (!addr || (!addr.city && !addr.barangay && !addr.street && !addr.provinceLike?.length)) {
+      toast.add({ severity: 'warn', summary: 'No address found', detail: 'The pinned location did not resolve to an address. Try a spot closer to a road.', life: 3500 })
+      return
+    }
+    lastGeocodedCoords = coords
+    if (geocodeTimer) clearTimeout(geocodeTimer)
+    const matchReg = isLcpNapEndpoint.value
+      ? matchProvinceOption(addr.provinceLike)
+      : matchRegionOption(addr.provinceLike)
+    if (matchReg) {
+      targetForm.region = matchReg.value
+      // Load the matched area's city list now so the geocoded city can be
+      // snapped onto a real option ("Manila" → "City of Manila") instead of a
+      // value the Select can't display
+      if (isLcpNapEndpoint.value) await updateCitiesForLcpnapProvince(matchReg.value)
+      else await updateCitiesForSelectedRegion(matchReg.value)
+    }
+    if (addr.city) {
+      const cl = String(addr.city).toLowerCase()
+      const cityOpt = (citiesList.value || []).find(c => {
+        const n = String(c.value || c.name || '').toLowerCase()
+        return n === cl || n.includes(cl) || cl.includes(n)
+      })
+      targetForm.city = cityOpt ? cityOpt.value : addr.city
+      await updateBarangaysForSelectedCity(targetForm.city)
+    }
+    if (addr.barangay) {
+      const bl = String(addr.barangay).toLowerCase()
+      const brgyOpt = (barangaysList.value || []).find(b => String(b.value || '').toLowerCase() === bl)
+      targetForm.barangay = brgyOpt ? brgyOpt.value : addr.barangay
+    }
+    if (addr.street) targetForm.street = addr.street
+    toast.add({ severity: 'success', summary: 'Address filled from pin', detail: addr.label || `${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`, life: 3000 })
+  } catch {
+    toast.add({ severity: 'warn', summary: 'Address lookup failed', detail: 'Could not reach the geocoding service. Check your connection and try again.', life: 3500 })
+  } finally {
+    pinFillBusy.value[scope] = false
+  }
 }
 
 watch(
@@ -5168,17 +5332,26 @@ const openCreateDialog = () => {
       formData.value[tsCol] = nowIso
     }
   }
-  // Default region for Create modal if empty
+  // Default region/province for Create modal if empty
   const createRegCol = formColumns.value.find(c => getFieldType(c) === 'region_dropdown')
   if (createRegCol && !formData.value[createRegCol]) {
-    const defaultRegion = (regionsList.value || []).find(r => 
-      (r.name && r.name.toLowerCase().includes('calabarzon')) ||
-      (r.regionName && r.regionName.toLowerCase().includes('region iv-a')) ||
-      (r.value && r.value.toLowerCase().includes('calabarzon'))
-    ) || (regionsList.value && regionsList.value.length > 0 ? regionsList.value[0] : null)
-    if (defaultRegion) {
-      formData.value[createRegCol] = defaultRegion.value
-      updateCitiesForSelectedRegion(defaultRegion.value)
+    if (isLcpNapEndpoint.value) {
+      // The field holds a PROVINCE here; the plant lives in Binangonan, Rizal
+      const rizal = findLcpnapProvince('Rizal')
+      if (rizal) {
+        formData.value[createRegCol] = rizal.value
+        updateCitiesForLcpnapProvince(rizal.value)
+      }
+    } else {
+      const defaultRegion = (regionsList.value || []).find(r =>
+        (r.name && r.name.toLowerCase().includes('calabarzon')) ||
+        (r.regionName && r.regionName.toLowerCase().includes('region iv-a')) ||
+        (r.value && r.value.toLowerCase().includes('calabarzon'))
+      ) || (regionsList.value && regionsList.value.length > 0 ? regionsList.value[0] : null)
+      if (defaultRegion) {
+        formData.value[createRegCol] = defaultRegion.value
+        updateCitiesForSelectedRegion(defaultRegion.value)
+      }
     }
   }
 
@@ -5380,42 +5553,63 @@ const openEditDialog = async (record) => {
   const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
   const currentUserIdOrName = authStore.user?.id || currentUser
 
-  // 1. Normalize and match Region
+  // 1. Normalize and match Region (LCP NAP: the field stores a PROVINCE)
   const regCol = formColumns.value.find(c => getFieldType(c) === 'region_dropdown')
   const rawRegion = regCol ? editFormData.value[regCol] : (record.region || record.regionName || record.region_name || '')
   let matchedRegionVal = rawRegion
-  if (rawRegion) {
-    const str = String(rawRegion).trim().toLowerCase()
-    const match = (regionsList.value || []).find(r => 
-      (r.name && r.name.toLowerCase() === str) ||
-      (r.value && r.value.toLowerCase() === str) ||
-      (r.code && String(r.code).toLowerCase() === str) ||
-      (r.regionName && r.regionName.toLowerCase() === str) ||
-      (r.name && str.includes(r.name.toLowerCase())) ||
-      (r.regionName && str.includes(r.regionName.toLowerCase())) ||
-      (r.label && r.label.toLowerCase().includes(str))
-    )
-    if (match) {
-      matchedRegionVal = match.value
-      if (regCol) editFormData.value[regCol] = match.value
-    }
-  }
 
-  // If region is still empty/unmatched, default to Region IV-A (CALABARZON) for LCP NAP & Application records
-  if (!matchedRegionVal || (regCol && !editFormData.value[regCol])) {
-    const defaultRegion = (regionsList.value || []).find(r => 
-      (r.name && r.name.toLowerCase().includes('calabarzon')) ||
-      (r.regionName && r.regionName.toLowerCase().includes('region iv-a')) ||
-      (r.value && r.value.toLowerCase().includes('calabarzon'))
-    ) || (regionsList.value && regionsList.value.length > 0 ? regionsList.value[0] : null)
-    if (defaultRegion) {
-      matchedRegionVal = defaultRegion.value
-      if (regCol) editFormData.value[regCol] = defaultRegion.value
+  if (isLcpNapEndpoint.value) {
+    let provMatch = findLcpnapProvince(rawRegion)
+    // Legacy rows saved the literal region ("CALABARZON") — infer the province
+    // from the record's city instead of showing a value that isn't a province
+    if (!provMatch) {
+      const rawCity = record.city || record.cityName || record.city_name || record.municipality || ''
+      const cstr = String(rawCity).trim().toLowerCase()
+      const cityRow = cstr ? (allCitiesFallbackCache || []).find(c =>
+        (c.value && c.value.toLowerCase() === cstr) || (c.label && c.label.toLowerCase().includes(cstr))
+      ) : null
+      if (cityRow?.provinceCode) provMatch = findLcpnapProvince(cityRow.provinceCode)
     }
-  }
+    if (provMatch) {
+      matchedRegionVal = provMatch.value
+      if (regCol) editFormData.value[regCol] = provMatch.value
+    }
+    // 2. Pre-load cities for the province (falls back to all of CALABARZON)
+    await updateCitiesForLcpnapProvince(matchedRegionVal)
+  } else {
+    if (rawRegion) {
+      const str = String(rawRegion).trim().toLowerCase()
+      const match = (regionsList.value || []).find(r =>
+        (r.name && r.name.toLowerCase() === str) ||
+        (r.value && r.value.toLowerCase() === str) ||
+        (r.code && String(r.code).toLowerCase() === str) ||
+        (r.regionName && r.regionName.toLowerCase() === str) ||
+        (r.name && str.includes(r.name.toLowerCase())) ||
+        (r.regionName && str.includes(r.regionName.toLowerCase())) ||
+        (r.label && r.label.toLowerCase().includes(str))
+      )
+      if (match) {
+        matchedRegionVal = match.value
+        if (regCol) editFormData.value[regCol] = match.value
+      }
+    }
 
-  // 2. Pre-load cities for the region
-  await updateCitiesForSelectedRegion(matchedRegionVal)
+    // If region is still empty/unmatched, default to Region IV-A (CALABARZON) for Application records
+    if (!matchedRegionVal || (regCol && !editFormData.value[regCol])) {
+      const defaultRegion = (regionsList.value || []).find(r =>
+        (r.name && r.name.toLowerCase().includes('calabarzon')) ||
+        (r.regionName && r.regionName.toLowerCase().includes('region iv-a')) ||
+        (r.value && r.value.toLowerCase().includes('calabarzon'))
+      ) || (regionsList.value && regionsList.value.length > 0 ? regionsList.value[0] : null)
+      if (defaultRegion) {
+        matchedRegionVal = defaultRegion.value
+        if (regCol) editFormData.value[regCol] = defaultRegion.value
+      }
+    }
+
+    // 2. Pre-load cities for the region
+    await updateCitiesForSelectedRegion(matchedRegionVal)
+  }
 
   // 3. Normalize and match City
   const cCol = formColumns.value.find(c => getFieldType(c) === 'city_dropdown')
@@ -6261,6 +6455,15 @@ defineExpose({
 </script>
 
 <style scoped>
+/* Coordinates read like "14.474414, 121.196214" — cap the input at that width
+   so the "Use pin address" button can sit beside it instead of below the map */
+.coord-input {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 200px;
+  max-width: 280px;
+}
+
 :deep(.p-datatable .p-datatable-thead > tr > th.text-center .p-column-header-content) {
   justify-content: center !important;
 }
