@@ -331,23 +331,27 @@
             <span v-else class="text-muted">-</span>
           </span>
           <span v-else-if="getFieldType(col) === 'coordinates'">
-            <a
-              v-if="slotProps.data[col] && parseCoordinates(slotProps.data[col])"
-              :href="`https://www.google.com/maps/dir/?api=1&destination=${String(slotProps.data[col]).replace(/\s+/g, '')}`"
-              target="_blank"
-              rel="noopener"
-              class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 text-decoration-none d-inline-flex align-items-center gap-1 shadow-xs"
-              :title="`Open in Google Maps (${slotProps.data[col]})`"
-              @click.stop
-            >
-              <i class="pi pi-map-marker" style="font-size: 0.65rem;"></i>
-              <span>{{ slotProps.data[col] }}</span>
-              <i class="pi pi-external-link" style="font-size: 0.55rem;"></i>
-            </a>
-            <span v-else-if="slotProps.data[col]" class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">
-              <i class="pi pi-map-marker me-1" style="font-size: 0.65rem;"></i>{{ slotProps.data[col] }}
-            </span>
-            <span v-else class="text-muted">-</span>
+            <template v-for="coordVal in [getRowCoordinateValue(slotProps.data, col)]" :key="col">
+              <a
+                v-if="coordVal && parseCoordinates(coordVal)"
+                :href="`https://www.google.com/maps/dir/?api=1&destination=${String(coordVal).replace(/\s+/g, '')}`"
+                target="_blank"
+                rel="noopener"
+                class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 text-decoration-none d-inline-flex align-items-center gap-1.5 px-2.5 py-1 shadow-xs fw-semibold"
+                :title="`Open in Google Maps (${coordVal})`"
+                @click.stop
+              >
+                <i class="pi pi-map-marker text-success" style="font-size: 0.7rem;"></i>
+                <span class="font-monospace">{{ coordVal }}</span>
+                <i class="pi pi-external-link text-success" style="font-size: 0.6rem;"></i>
+              </a>
+              <span v-else-if="coordVal" class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2.5 py-1">
+                <i class="pi pi-map-marker me-1" style="font-size: 0.65rem;"></i>{{ coordVal }}
+              </span>
+              <span v-else class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-0.5" style="font-size: 0.75rem;">
+                <i class="pi pi-exclamation-circle me-1" style="font-size: 0.65rem;"></i>No GPS
+              </span>
+            </template>
           </span>
           <span v-else-if="col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid'">
             {{ getAccessLevelLabel(slotProps.data[col]) }}
@@ -2446,11 +2450,27 @@ function getFieldType(col) {
     return 'image_upload'
   }
 
+const getRowCoordinateValue = (row, col) => {
+  if (!row) return null
+  if (col && row[col] !== undefined && row[col] !== null && String(row[col]).trim() !== '') {
+    return String(row[col]).trim()
+  }
+  const fallback = row.coordinates || row.coordinate || row.addressCoordinates || row.address_coordinates || row.gpsCoordinates || row.gps || null
+  return fallback ? String(fallback).trim() : null
+}
+
   if (
     lower === 'coordinates' ||
     lower === 'coordinate' ||
     lower === 'addresscoordinates' ||
-    lower === 'address_coordinates'
+    lower === 'address_coordinates' ||
+    lower === 'gps' ||
+    lower === 'gpscoordinates' ||
+    lower === 'gps_coordinates' ||
+    lower === 'latlng' ||
+    lower === 'lat_lng' ||
+    lower.includes('coordinate') ||
+    lower.includes('coords')
   ) {
     return 'coordinates'
   }
@@ -2821,6 +2841,12 @@ const columns = computed(() => {
       const normKey = col.toLowerCase().replace(/_/g, '')
       if (rawMap.has(normKey)) {
         matchedList.push(rawMap.get(normKey))
+      } else if (normKey === 'coordinates' && rawMap.has('addresscoordinates')) {
+        matchedList.push(rawMap.get('addresscoordinates'))
+      } else if (normKey === 'addresscoordinates' && rawMap.has('coordinates')) {
+        matchedList.push(rawMap.get('coordinates'))
+      } else if (normKey === 'coordinates' && rawMap.has('coordinate')) {
+        matchedList.push(rawMap.get('coordinate'))
       }
     })
     if (matchedList.length > 0) colList = matchedList
@@ -5130,6 +5156,20 @@ const openCreateDialog = () => {
       formData.value[tsCol] = nowIso
     }
   }
+  // Default region for Create modal if empty
+  const createRegCol = formColumns.value.find(c => getFieldType(c) === 'region_dropdown')
+  if (createRegCol && !formData.value[createRegCol]) {
+    const defaultRegion = (regionsList.value || []).find(r => 
+      (r.name && r.name.toLowerCase().includes('calabarzon')) ||
+      (r.regionName && r.regionName.toLowerCase().includes('region iv-a')) ||
+      (r.value && r.value.toLowerCase().includes('calabarzon'))
+    ) || (regionsList.value && regionsList.value.length > 0 ? regionsList.value[0] : null)
+    if (defaultRegion) {
+      formData.value[createRegCol] = defaultRegion.value
+      updateCitiesForSelectedRegion(defaultRegion.value)
+    }
+  }
+
   formData.value.confirmPassword = ''
   displayCreateDialog.value = true
 }
@@ -5338,11 +5378,27 @@ const openEditDialog = async (record) => {
       (r.name && r.name.toLowerCase() === str) ||
       (r.value && r.value.toLowerCase() === str) ||
       (r.code && String(r.code).toLowerCase() === str) ||
-      (r.regionName && r.regionName.toLowerCase() === str)
+      (r.regionName && r.regionName.toLowerCase() === str) ||
+      (r.name && str.includes(r.name.toLowerCase())) ||
+      (r.regionName && str.includes(r.regionName.toLowerCase())) ||
+      (r.label && r.label.toLowerCase().includes(str))
     )
     if (match) {
       matchedRegionVal = match.value
       if (regCol) editFormData.value[regCol] = match.value
+    }
+  }
+
+  // If region is still empty/unmatched, default to Region IV-A (CALABARZON) for LCP NAP & Application records
+  if (!matchedRegionVal || (regCol && !editFormData.value[regCol])) {
+    const defaultRegion = (regionsList.value || []).find(r => 
+      (r.name && r.name.toLowerCase().includes('calabarzon')) ||
+      (r.regionName && r.regionName.toLowerCase().includes('region iv-a')) ||
+      (r.value && r.value.toLowerCase().includes('calabarzon'))
+    ) || (regionsList.value && regionsList.value.length > 0 ? regionsList.value[0] : null)
+    if (defaultRegion) {
+      matchedRegionVal = defaultRegion.value
+      if (regCol) editFormData.value[regCol] = defaultRegion.value
     }
   }
 

@@ -28,11 +28,29 @@ export const LcpNapLocationService = {
   }
 }
 
-// "14.474414, 121.196214" → { lat, lng }, or null when the string is not a
+// "14.474414, 121.196214" → { lat, lng }, or null when the value is not a
 // usable WGS84 pair. Kept here so every consumer rejects bad rows the same way.
 export const parseCoordinates = (value) => {
+  if (!value) return null
+  if (typeof value === 'object') {
+    const lat = Number(value.lat ?? value.latitude)
+    const lng = Number(value.lng ?? value.longitude ?? value.lon)
+    if (Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0)) {
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return { lat, lng }
+      }
+    }
+    if (Array.isArray(value) && value.length === 2) {
+      const [a, b] = value.map(Number)
+      if (Number.isFinite(a) && Number.isFinite(b) && !(a === 0 && b === 0)) {
+        if (a >= -90 && a <= 90 && b >= -180 && b <= 180) return { lat: a, lng: b }
+      }
+    }
+  }
   if (typeof value !== 'string') return null
-  const parts = value.split(',').map(p => Number(p.trim()))
+  const clean = value.replace(/lat:|latitude:|lng:|longitude:|lon:/gi, '').trim()
+  if (!clean) return null
+  const parts = clean.split(/[,;\s]+/).map(p => Number(p.trim())).filter(n => !isNaN(n))
   if (parts.length !== 2 || parts.some(n => !Number.isFinite(n))) return null
   const [lat, lng] = parts
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
