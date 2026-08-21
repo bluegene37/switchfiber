@@ -384,4 +384,9 @@ onBeforeUnmount(() => {
   border-bottom: 2px solid #fff;
   transform: rotate(45deg);
 }
+
+[data-bs-theme='dark'] .cpk-pin-head,
+[data-bs-theme='dark'] .cpk-pin-tip {
+  border-color: #d8dbe0;
+}
 </style>

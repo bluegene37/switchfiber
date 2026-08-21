@@ -4,7 +4,7 @@ import apiClient from '../services/api'
 
 // Menu ids for screens that live in the front end and have no Menus row in the
 // database yet. See fetchPermissions for how these are treated.
-const CLIENT_PROVIDED_MENU_IDS = [29, 30, 32, 33, 34, 35] // 29 = Models, 30 = Disconnection, 32-35 = Job Orders (All / In Progress / Completed / Activated)
+const CLIENT_PROVIDED_MENU_IDS = [29, 30, 32, 33, 34, 35, 36, 37, 38] // 29 = Models, 30 = Disconnection, 32-35 = Job Orders, 36-38 = LCP NAP Locations
 
 // Shared reactive state across all components
 const allowedMenuIds = ref(new Set())
