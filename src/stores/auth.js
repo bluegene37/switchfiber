@@ -8,7 +8,7 @@ import apiClient from '../services/api'
 // false → normal behavior: the login page is shown and credentials are
 //         verified against the API.
 // Development convenience only — never commit or deploy with this set to true.
-export const BYPASS_LOGIN = true
+export const BYPASS_LOGIN = false
 // ────────────────────────────────────────────────────────────────────────────
 
 // The session used while BYPASS_LOGIN is on. accesslevel_id 1 marks it as
