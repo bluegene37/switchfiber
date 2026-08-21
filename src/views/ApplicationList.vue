@@ -48,26 +48,28 @@
           <!-- Date Range Pickers -->
           <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">From:</span>
-            <DatePicker 
-              v-model="fromDate" 
-              showIcon 
+            <DatePicker
+              v-model="fromDate"
+              showIcon
               iconDisplay="input"
               size="small"
-              dateFormat="yy-mm-dd" 
-              placeholder="From Date" 
+              dateFormat="yy-mm-dd"
+              placeholder="From Date"
               class="date-filter-picker"
+              @update:model-value="onManualDateChange"
             />
           </div>
           <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">To:</span>
-            <DatePicker 
-              v-model="toDate" 
-              showIcon 
+            <DatePicker
+              v-model="toDate"
+              showIcon
               iconDisplay="input"
               size="small"
-              dateFormat="yy-mm-dd" 
-              placeholder="To Date" 
+              dateFormat="yy-mm-dd"
+              placeholder="To Date"
               class="date-filter-picker"
+              @update:model-value="onManualDateChange"
             />
           </div>
 
@@ -105,9 +107,9 @@
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="Applications"
-        :filter-endpoint="isDedicatedStatusRoute ? '/Applications/filter' : null"
+        filter-endpoint="/Applications/filter"
         :filter-params="activeFilterParams"
-        :client-status-filter="!isDedicatedStatusRoute"
+        server-date-filter
         :hide-create-button="false"
         hide-status-filter
         create-button-label="Create Application"
@@ -120,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
@@ -142,14 +144,39 @@ const statusTabs = [
   { id: 'approved', label: 'Approved', value: 'Approved', routePath: '/application/approved', icon: 'pi-verified' }
 ]
 
-// Counts for the status tabs, computed by the table over the set it already holds —
-// no second request. Absent until the first fetch settles, so the tabs show no
-// number rather than a misleading zero.
+// Counts for the status tabs. A status-filtered fetch only knows about its own
+// status, so the counts are captured whenever a fetch WITHOUT a status param
+// settles (the "All" tab) and replayed while a status tab is active. Keyed by the
+// date range that produced them: badges hide rather than show numbers belonging
+// to a different range.
+const cachedStatusCounts = ref(null)
+
+const dateRangeKeyOf = (params) => `${params?.fromDate || ''}|${params?.toDate || ''}`
+
+watchEffect(() => {
+  const table = apiTableRef.value
+  if (!table || !table.hasFetched) return
+  const fetched = table.lastFetchedParams
+  if (!fetched || fetched.status) return
+  const sc = table.statusCounts
+  if (!sc) return
+  cachedStatusCounts.value = {
+    rangeKey: dateRangeKeyOf(fetched),
+    total: sc.total,
+    byStatus: { ...sc.byStatus }
+  }
+})
+
 const statusCounts = computed(() => {
   if (isDedicatedStatusRoute.value) return null
-  const table = apiTableRef.value
-  if (!table || !table.hasFetched) return null
-  return table.statusCounts || null
+  const cache = cachedStatusCounts.value
+  if (!cache || cache.rangeKey !== dateRangeKeyOf(activeFilterParams.value)) return null
+  return {
+    countFor: (status) => {
+      const key = String(status || '').trim().toLowerCase()
+      return key ? (cache.byStatus[key] || 0) : cache.total
+    }
+  }
 })
 
 const isDedicatedStatusRoute = computed(() => {
@@ -228,13 +255,22 @@ const formatDisplayDate = (dateVal) => {
 
 const activeFilterParams = computed(() => {
   const params = {}
+  // "All" means no status param at all — the request narrows by date only
   if (selectedStatus.value && selectedStatus.value.trim() !== '') {
     params.status = selectedStatus.value.trim()
   }
-  const f = formatDateParam(fromDate.value, false)
-  if (f) params.fromDate = f
-  const t = formatDateParam(toDate.value, true)
-  if (t) params.toDate = t
+  // The date range is mandatory: an unbounded /Applications fetch is too heavy
+  // for the backend, so a missing bound falls back to the current week even if
+  // the UI state was somehow cleared.
+  let f = formatDateParam(fromDate.value, false)
+  let t = formatDateParam(toDate.value, true)
+  if (!f || !t) {
+    const week = currentWeekBounds()
+    if (!f) f = week.from.toISOString()
+    if (!t) t = week.to.toISOString()
+  }
+  params.fromDate = f
+  params.toDate = t
   return params
 })
 
@@ -255,13 +291,20 @@ const activeFilterSummary = computed(() => {
   return parts.join(' | ')
 })
 
-const applyDatePreset = (preset) => {
-  if (selectedDatePreset.value === preset) {
-    selectedDatePreset.value = ''
-    fromDate.value = null
-    toDate.value = null
-    return
+const currentWeekBounds = () => {
+  const today = new Date()
+  const day = today.getDay()
+  const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
+  return {
+    from: new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0),
+    to: new Date(today.getFullYear(), today.getMonth(), diffToMonday + 6, 23, 59, 59, 999)
   }
+}
+
+const applyDatePreset = (preset) => {
+  // The date filter is mandatory, so re-clicking the active preset keeps it
+  // instead of clearing the range
+  if (selectedDatePreset.value === preset) return
 
   selectedDatePreset.value = preset
   const today = new Date()
@@ -269,15 +312,30 @@ const applyDatePreset = (preset) => {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
     toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
   } else if (preset === 'this_week') {
-    const day = today.getDay()
-    const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth(), diffToMonday + 6, 23, 59, 59, 999)
+    const week = currentWeekBounds()
+    fromDate.value = week.from
+    toDate.value = week.to
   } else if (preset === 'this_month') {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0)
     toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
   }
 }
+
+// A manual pick is a custom range, so the preset highlight no longer applies.
+// (Programmatic assignment from applyDatePreset does not emit this event.)
+const onManualDateChange = () => {
+  selectedDatePreset.value = ''
+}
+
+// The date filter can never be absent: clearing a picker falls back to the week
+watch([fromDate, toDate], ([f, t]) => {
+  if (!f || !t) {
+    const week = currentWeekBounds()
+    selectedDatePreset.value = 'this_week'
+    fromDate.value = week.from
+    toDate.value = week.to
+  }
+})
 
 // Default to 'This Week' filter on initial load
 applyDatePreset('this_week')
@@ -286,9 +344,9 @@ const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''
   }
+  // "Cleared" dates mean the default week, never an unbounded range
   selectedDatePreset.value = ''
-  fromDate.value = null
-  toDate.value = null
+  applyDatePreset('this_week')
 }
 </script>
 

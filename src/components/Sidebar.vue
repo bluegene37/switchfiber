@@ -301,6 +301,15 @@ const rawMenuItems = ref([
     ]
   },
   { id: 30, name: 'Disconnection', path: '/disconnection', icon: 'pi-ban' },
+  {
+    id: 36,
+    name: 'LCP NAP Locations',
+    icon: 'pi-map',
+    children: [
+      { id: 37, name: 'LCP NAP Map', path: '/lcp-nap-locations/map', icon: 'pi-map-marker' },
+      { id: 38, name: 'LCP NAP Records', path: '/lcp-nap-locations/records', icon: 'pi-table' },
+    ]
+  },
   { 
     id: 22,
     name: 'Users Management', 

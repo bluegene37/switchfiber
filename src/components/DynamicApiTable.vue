@@ -2011,6 +2011,14 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // Send `filterParams.fromDate` / `toDate` upstream instead of resolving them in
+  // the browser. Requires a /filter endpoint that honors date bounds — the
+  // Applications backend does since Aug 2026. Keeping this opt-in preserves the
+  // client-side date behavior for endpoints whose /filter has not caught up.
+  serverDateFilter: {
+    type: Boolean,
+    default: false
+  },
   createButtonLabel: {
     type: String,
     default: 'Create'
@@ -2047,12 +2055,13 @@ const DATE_FILTER_ROW_FIELDS = [
   'modifieddate'
 ]
 
-// The subset of `filterParams` that actually reaches the API: date bounds are
-// stripped (see fetchData) and blank values dropped.
+// The subset of `filterParams` that actually reaches the API: blank values are
+// dropped, and date bounds are stripped unless `serverDateFilter` opts them in
+// (see fetchData).
 const serverFilterParams = computed(() => {
   const out = {}
   Object.entries(props.filterParams || {}).forEach(([k, v]) => {
-    if (DATE_FILTER_PARAM_KEYS.includes(k)) return
+    if (!props.serverDateFilter && DATE_FILTER_PARAM_KEYS.includes(k)) return
     if (props.clientStatusFilter && k === 'status') return
     if (v === undefined || v === null || String(v).trim() === '') return
     out[k] = v
@@ -2060,9 +2069,10 @@ const serverFilterParams = computed(() => {
   return out
 })
 
-// Everything that decides which request is issued. Changing date bounds alone
-// leaves this untouched, so switching a date preset re-filters in place instead
-// of firing a redundant request.
+// Everything that decides which request is issued. With client-side dates,
+// changing date bounds alone leaves this untouched, so switching a date preset
+// re-filters in place instead of firing a redundant request; with
+// `serverDateFilter` the bounds are part of the request and a change refetches.
 const fetchSourceKey = computed(() => {
   const p = serverFilterParams.value
   const serialized = Object.keys(p).sort().map(k => `${k}=${p[k]}`).join('&')
@@ -2154,6 +2164,10 @@ const refreshing = ref(false)
 // Stays false until a request has actually settled, so the "no records" panel can
 // never be shown on the strength of an empty initial / cleared dataset alone
 const hasFetched = ref(false)
+// The server params of the fetch that produced `data`, so a parent can tell what
+// scope the loaded rows actually cover (e.g. whether a status narrowed them)
+// without racing the request that a filter change is about to trigger
+const lastFetchedParams = ref(null)
 const error = ref(null)
 const dt = ref()
 
@@ -2901,7 +2915,10 @@ const filteredData = computed(() => {
       })
     }
 
-    if (pFrom || pTo) {
+    // With `serverDateFilter` the response is already date-bounded, and the
+    // server's timezone handling is authoritative — re-filtering here could
+    // drop edge-of-day rows the backend intentionally included.
+    if ((pFrom || pTo) && !props.serverDateFilter) {
       list = list.filter(row => isRowInDateRange(row, pFrom, pTo))
     }
   }
@@ -2929,14 +2946,16 @@ const filteredRecordsCount = computed(() => (filteredData.value || []).length)
 // Row counts per status for a parent that renders its own status tabs. Every other
 // active scope is applied (the date range in particular) but the status filter
 // itself is not, so each number answers "how many rows would that tab show". Only
-// meaningful while `clientStatusFilter` keeps the whole set loaded; a
-// server-filtered response only ever contains one status.
+// meaningful while the loaded set spans every status — i.e. `clientStatusFilter`,
+// or a server fetch made without a status param; a status-filtered response only
+// ever contains one status, so parents cache the counts from their "all" fetch.
 const statusCounts = computed(() => {
   const rows = Array.isArray(data.value) ? data.value : []
   const from = props.filterParams?.fromDate ? new Date(props.filterParams.fromDate).getTime() : null
   const to = props.filterParams?.toDate ? new Date(props.filterParams.toDate).getTime() : null
 
-  const inScope = rows.filter(row => isRowInDateRange(row, from, to))
+  // Server-bounded responses are already inside the date range
+  const inScope = props.serverDateFilter ? rows : rows.filter(row => isRowInDateRange(row, from, to))
   const byStatus = {}
   inScope.forEach(row => {
     const key = rowStatusOf(row).toLowerCase()
@@ -5286,9 +5305,10 @@ const fetchData = async ({ silent = false } = {}) => {
     let url = `/${props.endpoint}`
     let params = undefined
 
-    // The backend /filter endpoints return an empty array as soon as fromDate or
-    // toDate is supplied, even for a range spanning every record, so date bounds
-    // are never sent upstream. They are applied client-side in `filteredData`.
+    // Date bounds only go upstream for endpoints that opted in via
+    // `serverDateFilter` (older /filter backends returned an empty array as soon
+    // as fromDate or toDate was supplied); otherwise `serverFilterParams` has
+    // already stripped them and they are applied client-side in `filteredData`.
     const serverParams = { ...serverFilterParams.value }
 
     if (Object.keys(serverParams).length > 0) {
@@ -5366,6 +5386,19 @@ const fetchData = async ({ silent = false } = {}) => {
         menuList.push({ id: 30, name: 'Disconnection', route: '/disconnection', icon: 'pi pi-ban', description: 'Review RADIUS subscriber accounts and their enabled / disabled state' })
       }
 
+      const hasLcpNapLocations = menuList.some(m => Number(m.id) === 36 || (m.name && m.name.toLowerCase() === 'lcp nap locations'))
+      if (!hasLcpNapLocations) {
+        menuList.push({ id: 36, name: 'LCP NAP Locations', route: '/lcp-nap-locations', icon: 'pi pi-map', description: 'LCP cabinet and NAP box locations — map view and record maintenance' })
+      }
+      const hasLcpNapMap = menuList.some(m => Number(m.id) === 37 || (m.name && m.name.toLowerCase() === 'lcp nap map'))
+      if (!hasLcpNapMap) {
+        menuList.push({ id: 37, name: 'LCP NAP Map', route: '/lcp-nap-locations/map', icon: 'pi pi-map-marker', description: 'Map of LCP cabinets and NAP boxes plotted from their field coordinates' })
+      }
+      const hasLcpNapRecords = menuList.some(m => Number(m.id) === 38 || (m.name && m.name.toLowerCase() === 'lcp nap records'))
+      if (!hasLcpNapRecords) {
+        menuList.push({ id: 38, name: 'LCP NAP Records', route: '/lcp-nap-locations/records', icon: 'pi pi-table', description: 'Create, edit, and delete LCP NAP location records with a map pin picker' })
+      }
+
       const hasApiViewer = menuList.some(m => Number(m.id) === 24 || (m.name && m.name.toLowerCase().includes('api viewer')))
       const hasModels = menuList.some(m => Number(m.id) === 29 || (m.name && m.name.toLowerCase() === 'models'))
       const hasSettings = menuList.some(m => Number(m.id) === 20 || (m.name && m.name.toLowerCase().includes('settings')))
@@ -5397,6 +5430,7 @@ const fetchData = async ({ silent = false } = {}) => {
     data.value = unwrappedData || []
     // The dataset is now confirmed: an empty table from here on really is empty
     hasFetched.value = true
+    lastFetchedParams.value = { ...serverParams }
 
     // Auto-park on the first row when nothing is selected, or when the selected
     // row belongs to a filter the fetch has just replaced
@@ -5835,7 +5869,8 @@ defineExpose({
   fetchData,
   refreshData,
   statusCounts,
-  hasFetched
+  hasFetched,
+  lastFetchedParams
 })
 </script>
 

@@ -33,6 +33,8 @@ const ROUTE_TITLES = {
   access_level: 'Access Level',
   access_level_menu: 'Access Level Menu',
   disconnection: 'Disconnection',
+  'lcp-nap-map': 'LCP NAP Map',
+  'lcp-nap-records': 'LCP NAP Records',
   'api-viewer': 'API Viewer',
   models: 'Models',
   settings: 'Settings',
@@ -206,6 +208,22 @@ const router = createRouter({
       path: '/disconnection',
       name: 'disconnection',
       component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/lcp-nap-locations',
+      redirect: '/lcp-nap-locations/map'
+    },
+    {
+      path: '/lcp-nap-locations/map',
+      name: 'lcp-nap-map',
+      component: () => import('../views/LcpNapMap.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/lcp-nap-locations/records',
+      name: 'lcp-nap-records',
+      component: () => import('../views/LcpNapRecords.vue'),
       meta: { requiresAuth: true }
     },
     {

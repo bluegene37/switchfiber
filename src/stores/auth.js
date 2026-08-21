@@ -2,6 +2,27 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiClient from '../services/api'
 
+// ─── LOGIN BYPASS ───────────────────────────────────────────────────────────
+// true  → the login page is skipped entirely and every visitor gets a
+//         Super Admin dev session (Logout is a no-op while this is on).
+// false → normal behavior: the login page is shown and credentials are
+//         verified against the API.
+// Development convenience only — never commit or deploy with this set to true.
+export const BYPASS_LOGIN = false
+// ────────────────────────────────────────────────────────────────────────────
+
+// The session used while BYPASS_LOGIN is on. accesslevel_id 1 marks it as
+// Super Admin so the full menu and permissions light up.
+const BYPASS_USER = {
+  id: 1,
+  username: 'dev-bypass',
+  fname: 'Dev',
+  lname: 'Bypass',
+  email: '',
+  accesslevel_id: 1,
+  menus: []
+}
+
 // Reads a persisted value, treating the literal strings "null"/"undefined"
 // (written by older builds) as absent.
 const readStored = (key) => {
@@ -19,9 +40,9 @@ const readStoredUser = () => {
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(readStored('token'))
-  const user = ref(readStoredUser())
-  
-  const isAuthenticated = computed(() => !!token.value || (!!user.value && (user.value.id > 0 || !!user.value.username)))
+  const user = ref(readStoredUser() || (BYPASS_LOGIN ? { ...BYPASS_USER } : null))
+
+  const isAuthenticated = computed(() => BYPASS_LOGIN || !!token.value || (!!user.value && (user.value.id > 0 || !!user.value.username)))
 
   const login = async ({ usernameOrEmail, password, rememberMe = false }) => {
     try {
@@ -80,7 +101,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = () => {
     token.value = null
-    user.value = null
+    // While the bypass is on there is no real session to end — keep the dev
+    // user so the app doesn't render an authenticated layout with no user.
+    user.value = BYPASS_LOGIN ? { ...BYPASS_USER } : null
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     sessionStorage.removeItem('token')
