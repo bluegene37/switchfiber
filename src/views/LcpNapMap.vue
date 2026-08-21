@@ -37,7 +37,18 @@
             type="text"
             class="form-control form-control-sm lnm-search-input"
             placeholder="Find an LCP, NAP, street, or barangay"
+            @keydown.esc="searchQuery = ''"
           />
+          <button
+            v-if="searchQuery.trim()"
+            type="button"
+            class="btn btn-sm position-absolute end-0 top-50 translate-middle-y p-1 me-1 text-secondary border-0 bg-transparent shadow-none"
+            style="line-height: 1; z-index: 5;"
+            @click="searchQuery = ''"
+            title="Clear search"
+          >
+            <i class="pi pi-times" style="font-size: 0.65rem;"></i>
+          </button>
           <div v-if="searchQuery.trim() && searchResults.length" class="lnm-search-results shadow">
             <button
               v-for="site in searchResults"
@@ -91,11 +102,11 @@
 
       <!-- Unplottable rows notice -->
       <div v-if="unmappedRows.length && showUnmappedNote" class="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-0 small rounded-3">
-        <i class="pi pi-map-marker mt-1"></i>
+        <i class="pi pi-map-marker mt-1 text-warning"></i>
         <div class="flex-grow-1">
-          {{ unmappedRows.length }} location{{ unmappedRows.length === 1 ? ' has' : 's have' }} no usable coordinates and cannot be plotted:
-          {{ unmappedRows.map(r => r.lcpnap || `record #${r.id}`).join(', ') }}.
-          Fix the coordinates on those records to see them here.
+          <strong>{{ unmappedRows.length }} location{{ unmappedRows.length === 1 ? '' : 's' }}</strong> without valid coordinates cannot be plotted on the map:
+          <span class="text-body fw-medium">{{ unmappedRows.map(r => r.lcpnap || `record #${r.id}`).slice(0, 5).join(', ') }}{{ unmappedRows.length > 5 ? ` and ${unmappedRows.length - 5} more` : '' }}</span>.
+          <router-link to="/lcp-nap-locations/records" class="fw-semibold text-primary text-decoration-underline ms-1">Open records to add pin</router-link>
         </div>
         <button type="button" class="btn-close btn-sm mt-1" aria-label="Dismiss" @click="showUnmappedNote = false"></button>
       </div>
@@ -272,24 +283,33 @@
               Updated {{ formatDate(selectedSite.modifiedDate) }}<span v-if="selectedSite.modifiedBy"> by {{ selectedSite.modifiedBy }}</span>
             </div>
 
-            <div class="d-flex gap-2">
-              <a
-                class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 flex-grow-1 justify-content-center shadow-xs fw-semibold"
-                :href="`https://www.google.com/maps/dir/?api=1&destination=${selectedSite.lat},${selectedSite.lng}`"
-                target="_blank"
-                rel="noopener"
+            <div class="d-flex flex-column gap-2">
+              <div class="d-flex gap-2">
+                <a
+                  class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 flex-grow-1 justify-content-center shadow-xs fw-semibold"
+                  :href="`https://www.google.com/maps/dir/?api=1&destination=${selectedSite.lat},${selectedSite.lng}`"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <i class="pi pi-directions" style="font-size: 0.8rem;"></i>
+                  <span>Open in Google Maps</span>
+                </a>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-light border text-secondary bg-body-tertiary rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center px-2.5"
+                  :title="copied ? 'Copied' : 'Copy coordinates'"
+                  @click="copyCoordinates"
+                >
+                  <i :class="copied ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.8rem;"></i>
+                </button>
+              </div>
+              <router-link
+                :to="{ path: '/lcp-nap-locations/records', query: { search: selectedSite.name } }"
+                class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs text-decoration-none fw-medium"
               >
-                <i class="pi pi-directions" style="font-size: 0.8rem;"></i>
-                <span>Open in Google Maps</span>
-              </a>
-              <button
-                type="button"
-                class="btn btn-sm btn-light border text-secondary bg-body-tertiary rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center px-2.5"
-                :title="copied ? 'Copied' : 'Copy coordinates'"
-                @click="copyCoordinates"
-              >
-                <i :class="copied ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.8rem;"></i>
-              </button>
+                <i class="pi pi-table" style="font-size: 0.75rem;"></i>
+                <span>View Record in Table</span>
+              </router-link>
             </div>
           </div>
         </transition>

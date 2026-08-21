@@ -331,7 +331,20 @@
             <span v-else class="text-muted">-</span>
           </span>
           <span v-else-if="getFieldType(col) === 'coordinates'">
-            <span v-if="slotProps.data[col]" class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25" :title="slotProps.data[col]">
+            <a
+              v-if="slotProps.data[col] && parseCoordinates(slotProps.data[col])"
+              :href="`https://www.google.com/maps/dir/?api=1&destination=${String(slotProps.data[col]).replace(/\s+/g, '')}`"
+              target="_blank"
+              rel="noopener"
+              class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 text-decoration-none d-inline-flex align-items-center gap-1 shadow-xs"
+              :title="`Open in Google Maps (${slotProps.data[col]})`"
+              @click.stop
+            >
+              <i class="pi pi-map-marker" style="font-size: 0.65rem;"></i>
+              <span>{{ slotProps.data[col] }}</span>
+              <i class="pi pi-external-link" style="font-size: 0.55rem;"></i>
+            </a>
+            <span v-else-if="slotProps.data[col]" class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">
               <i class="pi pi-map-marker me-1" style="font-size: 0.65rem;"></i>{{ slotProps.data[col] }}
             </span>
             <span v-else class="text-muted">-</span>
@@ -1999,6 +2012,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import apiClient from '../services/api'
 import { RadiusUserService } from '../services/radiusUsers'
 import phAddressService from '../services/phAddressService'
@@ -2007,6 +2021,8 @@ import defaultProvinces from '../../public/data/philippines/provinces.json'
 import ImageDropzone from './ImageDropzone.vue'
 import CoordinatePicker from './CoordinatePicker.vue'
 import ExifPanel from './ExifPanel.vue'
+import { parseCoordinates } from '../services/lcpNapLocations'
+import { reverseGeocode } from '../services/geocoding'
 import { downloadImage, openImageInNewTab } from '../utils/imageActions'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -2843,8 +2859,17 @@ const firstRowIndex = ref(0)
 const rowsPerPage = ref(50)
 const rowOptions = ref([5, 10, 20, 50, 100])
 
+const route = useRoute()
+const initialQuerySearch = route?.query?.search || route?.query?.q || null
+
 const filters = ref({
-  global: { value: null, matchMode: 'contains' }
+  global: { value: initialQuerySearch ? String(initialQuerySearch).trim() : null, matchMode: 'contains' }
+})
+
+watch(() => route?.query?.search || route?.query?.q, (newSearch) => {
+  if (newSearch !== undefined) {
+    filters.value.global.value = String(newSearch || '').trim() || null
+  }
 })
 
 const densityClass = computed(() => `density-${density.value}`)
@@ -4485,6 +4510,13 @@ const photoExifByCol = ref({ create: {}, edit: {} })
 
 const onPhotoExif = (scope, col, meta) => {
   photoExifByCol.value[scope][normalizeColKey(col)] = meta || null
+  if (meta && typeof meta.lat === 'number' && typeof meta.lng === 'number') {
+    const targetForm = formForScope(scope).value
+    const coordCol = formColumns.value.find(c => getFieldType(c) === 'coordinates')
+    if (coordCol && (!targetForm[coordCol] || !parseCoordinates(targetForm[coordCol]))) {
+      targetForm[coordCol] = `${meta.lat.toFixed(6)}, ${meta.lng.toFixed(6)}`
+    }
+  }
 }
 
 // The house front photo wins — it is taken at the installation site.
@@ -4821,6 +4853,55 @@ watch(
   () => editFormData.value.city || editFormData.value.cityName || editFormData.value.city_name || editFormData.value.municipality,
   (newCity) => {
     updateBarangaysForSelectedCity(newCity)
+  }
+)
+
+let geocodeTimer = null
+let lastGeocodedCoords = ''
+
+const onCoordinatesChanged = (scope, coords) => {
+  if (!isLcpNapEndpoint.value || !coords) return
+  const parsed = parseCoordinates(coords)
+  if (!parsed || coords === lastGeocodedCoords) return
+  if (geocodeTimer) clearTimeout(geocodeTimer)
+  geocodeTimer = setTimeout(async () => {
+    lastGeocodedCoords = coords
+    try {
+      const addr = await reverseGeocode(parsed.lat, parsed.lng)
+      if (!addr) return
+      const targetForm = formForScope(scope).value
+      if (addr.street && !targetForm.street) {
+        targetForm.street = addr.street
+      }
+      if (addr.barangay && !targetForm.barangay) {
+        targetForm.barangay = addr.barangay
+      }
+      if (addr.city && !targetForm.city) {
+        targetForm.city = addr.city
+      }
+      if (addr.provinceLike?.length && !targetForm.region) {
+        const matchReg = regionOptions.value.find(r => 
+          addr.provinceLike.some(p => String(p).toLowerCase().includes(String(r.label || r.value || '').toLowerCase()))
+        )
+        if (matchReg) targetForm.region = matchReg.value
+      }
+    } catch {
+      // Offline or aborted
+    }
+  }, 500)
+}
+
+watch(
+  () => formData.value.coordinates || formData.value.coordinate,
+  (newCoords) => {
+    onCoordinatesChanged('create', newCoords)
+  }
+)
+
+watch(
+  () => editFormData.value.coordinates || editFormData.value.coordinate,
+  (newCoords) => {
+    onCoordinatesChanged('edit', newCoords)
   }
 )
 
