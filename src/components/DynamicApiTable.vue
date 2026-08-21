@@ -982,27 +982,38 @@
 
               <!-- Coordinate Picker -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
-                <CoordinatePicker v-model="formData[col]" height="260px" />
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                  <input
-                    :id="col"
-                    v-model="formData[col]"
-                    type="text"
-                    class="form-control form-control-sm rounded-3 font-monospace coord-input"
-                    :class="{ 'is-invalid': hasFieldError('create', col) }"
-                    placeholder="latitude, longitude"
-                  />
-                  <button
-                    v-if="isLcpNapEndpoint"
-                    type="button"
-                    class="btn btn-sm btn-outline-primary rounded-3 d-inline-flex align-items-center gap-2 fw-medium"
-                    :disabled="pinFillBusy.create || !formData[col]"
-                    title="Fill Province, City, Barangay and Street from the pinned location"
-                    @click="applyAddressFromPin('create')"
-                  >
-                    <i :class="pinFillBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-map-marker'" style="font-size: 0.75rem;"></i>
-                    <span>Use pin address</span>
-                  </button>
+                <CoordinatePicker v-model="formData[col]" height="280px" />
+                <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+                  <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <span class="small text-secondary fw-semibold flex-shrink-0">
+                      <i class="pi pi-compass text-primary me-1"></i>GPS:
+                    </span>
+                    <input
+                      :id="col"
+                      v-model="formData[col]"
+                      type="text"
+                      class="form-control form-control-sm rounded-3 font-monospace coord-input flex-grow-1"
+                      :class="{ 'is-invalid': hasFieldError('create', col) }"
+                      placeholder="latitude, longitude"
+                    />
+                  </div>
+                  <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button
+                      v-if="isLcpNapEndpoint"
+                      type="button"
+                      class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
+                      :disabled="pinFillBusy.create || !formData[col]"
+                      title="Autofill Province, City, Barangay and Street from the pinned location"
+                      @click="applyAddressFromPin('create')"
+                    >
+                      <i :class="pinFillBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-sparkles'" style="font-size: 0.8rem;"></i>
+                      <span>{{ pinFillBusy.create ? 'Filling Address...' : 'Use Pin Address' }}</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-if="resolvedPinPreview.create && isLcpNapEndpoint" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-map-marker text-success" style="font-size: 0.75rem;"></i>
+                  <span class="text-truncate">Pin matches: <strong class="text-body">{{ resolvedPinPreview.create }}</strong></span>
                 </div>
               </div>
 
@@ -1856,27 +1867,38 @@
 
               <!-- Coordinate Picker -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
-                <CoordinatePicker v-model="editFormData[col]" height="260px" />
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                  <input
-                    :id="`edit-${col}`"
-                    v-model="editFormData[col]"
-                    type="text"
-                    class="form-control form-control-sm rounded-3 font-monospace coord-input"
-                    :class="{ 'is-invalid': hasFieldError('edit', col) }"
-                    placeholder="latitude, longitude"
-                  />
-                  <button
-                    v-if="isLcpNapEndpoint"
-                    type="button"
-                    class="btn btn-sm btn-outline-primary rounded-3 d-inline-flex align-items-center gap-2 fw-medium"
-                    :disabled="pinFillBusy.edit || !editFormData[col]"
-                    title="Fill Province, City, Barangay and Street from the pinned location"
-                    @click="applyAddressFromPin('edit')"
-                  >
-                    <i :class="pinFillBusy.edit ? 'pi pi-spinner pi-spin' : 'pi pi-map-marker'" style="font-size: 0.75rem;"></i>
-                    <span>Use pin address</span>
-                  </button>
+                <CoordinatePicker v-model="editFormData[col]" height="280px" />
+                <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+                  <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <span class="small text-secondary fw-semibold flex-shrink-0">
+                      <i class="pi pi-compass text-primary me-1"></i>GPS:
+                    </span>
+                    <input
+                      :id="`edit-${col}`"
+                      v-model="editFormData[col]"
+                      type="text"
+                      class="form-control form-control-sm rounded-3 font-monospace coord-input flex-grow-1"
+                      :class="{ 'is-invalid': hasFieldError('edit', col) }"
+                      placeholder="latitude, longitude"
+                    />
+                  </div>
+                  <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button
+                      v-if="isLcpNapEndpoint"
+                      type="button"
+                      class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
+                      :disabled="pinFillBusy.edit || !editFormData[col]"
+                      title="Autofill Province, City, Barangay and Street from the pinned location"
+                      @click="applyAddressFromPin('edit')"
+                    >
+                      <i :class="pinFillBusy.edit ? 'pi pi-spinner pi-spin' : 'pi pi-sparkles'" style="font-size: 0.8rem;"></i>
+                      <span>{{ pinFillBusy.edit ? 'Filling Address...' : 'Use Pin Address' }}</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-if="resolvedPinPreview.edit && isLcpNapEndpoint" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-map-marker text-success" style="font-size: 0.75rem;"></i>
+                  <span class="text-truncate">Pin matches: <strong class="text-body">{{ resolvedPinPreview.edit }}</strong></span>
                 </div>
               </div>
 
@@ -5019,6 +5041,44 @@ watch(
 
 let geocodeTimer = null
 let lastGeocodedCoords = ''
+const resolvedPinPreview = ref({ create: '', edit: '' })
+
+const normalizeBarangayName = (name) => {
+  if (!name) return ''
+  return String(name)
+    .toLowerCase()
+    .replace(/^(barangay|brgy\.?|bgy\.?)\s+/i, '')
+    .replace(/\s*\(poblacion\)/i, '')
+    .replace(/[^\w\s]/g, '')
+    .trim()
+}
+
+const findBestBarangayMatch = (candidate, options) => {
+  if (!candidate || !options || !options.length) return null
+  const cleanCand = normalizeBarangayName(candidate)
+  const rawLower = String(candidate).trim().toLowerCase()
+
+  // 1. Exact match on value or label
+  let match = options.find(o => 
+    String(o.value || '').trim().toLowerCase() === rawLower ||
+    String(o.label || '').trim().toLowerCase() === rawLower
+  )
+  if (match) return match
+
+  // 2. Normalized prefix stripped match
+  match = options.find(o => {
+    const optClean = normalizeBarangayName(o.value || o.label)
+    return optClean && (optClean === cleanCand || optClean.includes(cleanCand) || cleanCand.includes(optClean))
+  })
+  if (match) return match
+
+  // 3. Substring match
+  match = options.find(o => {
+    const optVal = String(o.value || '').toLowerCase()
+    return (optVal.length >= 4 && rawLower.includes(optVal)) || (rawLower.length >= 4 && optVal.includes(rawLower))
+  })
+  return match || null
+}
 
 const onCoordinatesChanged = (scope, coords) => {
   if (!isLcpNapEndpoint.value || !coords) return
@@ -5031,29 +5091,53 @@ const onCoordinatesChanged = (scope, coords) => {
       const addr = await reverseGeocode(parsed.lat, parsed.lng)
       if (!addr) return
       const targetForm = formForScope(scope).value
+
+      // Region / Province
+      if (addr.provinceLike?.length) {
+        const matchProv = matchProvinceOption(addr.provinceLike)
+        if (matchProv && (!targetForm.region || isLcpNapEndpoint.value)) {
+          targetForm.region = matchProv.value
+          if (isLcpNapEndpoint.value) await updateCitiesForLcpnapProvince(matchProv.value)
+        }
+      }
+
+      // City
+      if (addr.city && !targetForm.city) {
+        const cityQuery = String(addr.city).toLowerCase().trim()
+        const cityClean = cityQuery.replace(/^(city of|municipality of)\s+/i, '').trim()
+        const cityOpt = (citiesList.value || []).find(c => {
+          const n = String(c.value || c.name || '').toLowerCase().trim()
+          const nc = n.replace(/^(city of|municipality of)\s+/i, '').trim()
+          return n === cityQuery || nc === cityClean || n.includes(cityClean) || cityClean.includes(nc)
+        })
+        targetForm.city = cityOpt ? cityOpt.value : addr.city
+        await updateBarangaysForSelectedCity(targetForm.city)
+      }
+
+      // Barangay
+      if (addr.barangay && !targetForm.barangay) {
+        const brgyOpt = findBestBarangayMatch(addr.barangay, barangaysList.value || [])
+        if (brgyOpt) {
+          targetForm.barangay = brgyOpt.value
+        } else {
+          targetForm.barangay = addr.barangay
+          if (!barangaysList.value.some(b => b.value === targetForm.barangay)) {
+            barangaysList.value = [{ label: targetForm.barangay, value: targetForm.barangay }, ...barangaysList.value]
+          }
+        }
+      }
+
+      // Street
       if (addr.street && !targetForm.street) {
         targetForm.street = addr.street
       }
-      if (addr.barangay && !targetForm.barangay) {
-        targetForm.barangay = addr.barangay
-      }
-      if (addr.city && !targetForm.city) {
-        targetForm.city = addr.city
-      }
-      if (addr.provinceLike?.length) {
-        if (isLcpNapEndpoint.value) {
-          // The pin is authoritative for the province — always sync it
-          const matchProv = matchProvinceOption(addr.provinceLike)
-          if (matchProv) targetForm.region = matchProv.value
-        } else if (!targetForm.region) {
-          const matchReg = matchRegionOption(addr.provinceLike)
-          if (matchReg) targetForm.region = matchReg.value
-        }
-      }
+
+      const summaryParts = [targetForm.street, targetForm.barangay ? `Brgy. ${targetForm.barangay}` : '', targetForm.city, targetForm.region].filter(Boolean)
+      resolvedPinPreview.value[scope] = summaryParts.join(', ')
     } catch {
-      // Offline or aborted
+      // Background lookup failed silently
     }
-  }, 500)
+  }, 400)
 }
 
 // Nominatim names some regions differently from the PSA dataset
@@ -5099,39 +5183,76 @@ const applyAddressFromPin = async (scope) => {
   try {
     const addr = await reverseGeocode(parsed.lat, parsed.lng)
     if (!addr || (!addr.city && !addr.barangay && !addr.street && !addr.provinceLike?.length)) {
-      toast.add({ severity: 'warn', summary: 'No address found', detail: 'The pinned location did not resolve to an address. Try a spot closer to a road.', life: 3500 })
+      toast.add({ severity: 'warn', summary: 'No address resolved', detail: 'Could not pinpoint street address for these coordinates. Try dropping the pin closer to a road.', life: 3500 })
       return
     }
     lastGeocodedCoords = coords
     if (geocodeTimer) clearTimeout(geocodeTimer)
+
+    // 1. Region / Province
     const matchReg = isLcpNapEndpoint.value
       ? matchProvinceOption(addr.provinceLike)
       : matchRegionOption(addr.provinceLike)
     if (matchReg) {
       targetForm.region = matchReg.value
-      // Load the matched area's city list now so the geocoded city can be
-      // snapped onto a real option ("Manila" → "City of Manila") instead of a
-      // value the Select can't display
       if (isLcpNapEndpoint.value) await updateCitiesForLcpnapProvince(matchReg.value)
       else await updateCitiesForSelectedRegion(matchReg.value)
     }
-    if (addr.city) {
-      const cl = String(addr.city).toLowerCase()
+
+    // 2. City
+    if (addr.city || addr.rawCity) {
+      const cityQuery = String(addr.city || addr.rawCity).toLowerCase().trim()
+      const cityClean = cityQuery.replace(/^(city of|municipality of)\s+/i, '').trim()
+      
       const cityOpt = (citiesList.value || []).find(c => {
-        const n = String(c.value || c.name || '').toLowerCase()
-        return n === cl || n.includes(cl) || cl.includes(n)
+        const n = String(c.value || c.name || '').toLowerCase().trim()
+        const nc = n.replace(/^(city of|municipality of)\s+/i, '').trim()
+        return n === cityQuery || nc === cityClean || n.includes(cityClean) || cityClean.includes(nc)
       })
-      targetForm.city = cityOpt ? cityOpt.value : addr.city
+
+      if (cityOpt) {
+        targetForm.city = cityOpt.value
+      } else {
+        targetForm.city = addr.city || addr.rawCity
+        if (!citiesList.value.some(c => c.value === targetForm.city)) {
+          citiesList.value = [{ label: targetForm.city, value: targetForm.city }, ...citiesList.value]
+        }
+      }
       await updateBarangaysForSelectedCity(targetForm.city)
     }
-    if (addr.barangay) {
-      const bl = String(addr.barangay).toLowerCase()
-      const brgyOpt = (barangaysList.value || []).find(b => String(b.value || '').toLowerCase() === bl)
-      targetForm.barangay = brgyOpt ? brgyOpt.value : addr.barangay
+
+    // 3. Barangay
+    if (addr.barangay || addr.rawBarangay) {
+      const candidateBrgy = addr.barangay || addr.rawBarangay
+      const brgyOpt = findBestBarangayMatch(candidateBrgy, barangaysList.value || [])
+      
+      if (brgyOpt) {
+        targetForm.barangay = brgyOpt.value
+      } else {
+        targetForm.barangay = candidateBrgy
+        if (!barangaysList.value.some(b => b.value === targetForm.barangay)) {
+          barangaysList.value = [{ label: targetForm.barangay, value: targetForm.barangay }, ...barangaysList.value]
+        }
+      }
     }
-    if (addr.street) targetForm.street = addr.street
-    toast.add({ severity: 'success', summary: 'Address filled from pin', detail: addr.label || `${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`, life: 3000 })
-  } catch {
+
+    // 4. Street
+    if (addr.street) {
+      targetForm.street = addr.street
+    }
+
+    // Summary badge & toast
+    const summaryParts = [targetForm.street, targetForm.barangay ? `Brgy. ${targetForm.barangay}` : '', targetForm.city, targetForm.region].filter(Boolean)
+    resolvedPinPreview.value[scope] = summaryParts.join(', ')
+
+    toast.add({
+      severity: 'success',
+      summary: 'Address Filled from Pin',
+      detail: summaryParts.join(', ') || `${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`,
+      life: 3500
+    })
+  } catch (err) {
+    console.error('Error applying address from pin:', err)
     toast.add({ severity: 'warn', summary: 'Address lookup failed', detail: 'Could not reach the geocoding service. Check your connection and try again.', life: 3500 })
   } finally {
     pinFillBusy.value[scope] = false
@@ -6498,13 +6619,14 @@ defineExpose({
 </script>
 
 <style scoped>
-/* Coordinates read like "14.474414, 121.196214" — cap the input at that width
-   so the "Use pin address" button can sit beside it instead of below the map */
+.lnm-pin-toolbar {
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+}
 .coord-input {
-  flex: 0 1 auto;
-  width: auto;
-  min-width: 200px;
-  max-width: 280px;
+  flex: 1 1 auto;
+  min-width: 180px;
+  background: var(--bs-body-bg);
 }
 
 :deep(.p-datatable .p-datatable-thead > tr > th.text-center .p-column-header-content) {

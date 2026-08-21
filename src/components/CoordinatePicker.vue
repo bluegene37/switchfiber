@@ -2,7 +2,7 @@
   <div class="position-relative rounded-3 overflow-hidden border cpk-shell" :style="{ height }">
     <div ref="mapContainer" class="cpk-map"></div>
 
-    <!-- Place search -->
+    <!-- Place & Coordinate Search Bar -->
     <div v-if="!readonly" class="cpk-search">
       <div class="position-relative">
         <i :class="searching ? 'pi pi-spinner pi-spin' : 'pi pi-search'" class="cpk-search-icon"></i>
@@ -10,12 +10,37 @@
           v-model="searchQuery"
           type="text"
           class="form-control form-control-sm cpk-search-input shadow-sm"
-          placeholder="Search a place or street"
+          placeholder="Search place, street, or paste coordinates..."
           @keydown.enter.prevent="pickFirstResult"
           @keydown.esc="searchResults = []"
         />
+        <button
+          v-if="searchQuery.trim()"
+          type="button"
+          class="btn btn-sm position-absolute end-0 top-50 translate-middle-y p-1 me-1 text-secondary border-0 bg-transparent shadow-none"
+          style="line-height: 1; z-index: 5;"
+          @click="searchQuery = ''; searchResults = []"
+          title="Clear search"
+        >
+          <i class="pi pi-times" style="font-size: 0.65rem;"></i>
+        </button>
       </div>
-      <div v-if="searchResults.length" class="cpk-search-results shadow">
+
+      <!-- Quick Territory Jump Chips -->
+      <div v-if="!searchQuery && !hasPin" class="cpk-territory-chips mt-1.5 d-none d-sm-flex align-items-center gap-1 overflow-x-auto pb-1">
+        <button
+          v-for="chip in TERRITORY_CHIPS"
+          :key="chip.name"
+          type="button"
+          class="btn btn-xs cpk-chip"
+          @click="jumpToTerritory(chip)"
+        >
+          {{ chip.name }}
+        </button>
+      </div>
+
+      <!-- Search Results Dropdown -->
+      <div v-if="searchResults.length" class="cpk-search-results shadow-lg">
         <button
           v-for="(result, i) in searchResults"
           :key="i"
@@ -23,42 +48,81 @@
           class="cpk-search-result"
           @click="pickResult(result)"
         >
-          <i class="pi pi-map-marker" style="font-size: 0.65rem;"></i>
-          <span class="text-truncate">{{ result.label }}</span>
+          <div class="cpk-res-icon d-flex align-items-center justify-content-center rounded-circle flex-shrink-0">
+            <i class="pi pi-map-marker" style="font-size: 0.7rem;"></i>
+          </div>
+          <div class="overflow-hidden">
+            <div class="fw-semibold text-body text-truncate small lh-sm">{{ result.title || result.label }}</div>
+            <div class="text-secondary text-truncate small" style="font-size: 0.7rem;">{{ result.subtitle || result.label }}</div>
+          </div>
         </button>
       </div>
       <div v-else-if="searchQuery.trim().length >= 3 && searchSettled && !searching" class="cpk-search-results shadow">
-        <div class="cpk-search-result" style="cursor: default;">No places found — try a wider search</div>
+        <div class="cpk-search-result text-secondary small py-2 px-3" style="cursor: default;">
+          <i class="pi pi-info-circle me-1"></i> No places found. Try typing a street or municipality name.
+        </div>
       </div>
     </div>
 
-    <!-- Layer + locate controls -->
+    <!-- Map Tool Controls (Layer, Locate, Recenter) -->
     <div class="cpk-controls">
       <button
         type="button"
-        class="btn btn-sm rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center"
-        :class="satellite ? 'btn-primary text-white' : 'btn-light border text-secondary bg-body'"
-        :title="satellite ? 'Switch to street map' : 'Switch to satellite'"
+        class="btn btn-sm rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center cpk-ctrl-btn"
+        :class="satellite ? 'btn-primary text-white shadow-xs' : 'btn-light border text-secondary bg-body'"
+        :title="satellite ? 'Switch to Street map' : 'Switch to Satellite'"
         @click.stop="satellite = !satellite"
       >
-        <i :class="satellite ? 'pi pi-map' : 'pi pi-globe'" style="font-size: 0.75rem;"></i>
+        <i :class="satellite ? 'pi pi-map' : 'pi pi-globe'" style="font-size: 0.8rem;"></i>
       </button>
+
       <button
         v-if="!readonly && geolocationAvailable"
         type="button"
-        class="btn btn-sm btn-light border text-secondary bg-body rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center"
+        class="btn btn-sm btn-light border text-secondary bg-body rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center cpk-ctrl-btn"
         :disabled="locating"
-        title="Pin my current location"
+        title="Pin my current GPS location"
         @click.stop="useMyLocation"
       >
-        <i :class="locating ? 'pi pi-spinner pi-spin' : 'pi pi-crosshairs'" style="font-size: 0.75rem;"></i>
+        <i :class="locating ? 'pi pi-spinner pi-spin text-primary' : 'pi pi-crosshairs'" style="font-size: 0.8rem;"></i>
+      </button>
+
+      <button
+        v-if="hasPin"
+        type="button"
+        class="btn btn-sm btn-light border text-secondary bg-body rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center cpk-ctrl-btn"
+        title="Recenter map on pin"
+        @click.stop="recenterPin"
+      >
+        <i class="pi pi-compass" style="font-size: 0.8rem;"></i>
       </button>
     </div>
 
+    <!-- Pinned Location Bottom Toolbar -->
+    <div v-if="hasPin" class="cpk-pin-bar shadow-sm d-flex align-items-center justify-content-between gap-2">
+      <div class="d-flex align-items-center gap-1.5 overflow-hidden">
+        <span class="cpk-pin-indicator rounded-circle flex-shrink-0"></span>
+        <span class="font-monospace small fw-semibold text-body text-truncate">
+          {{ parsed.lat.toFixed(6) }}, {{ parsed.lng.toFixed(6) }}
+        </span>
+      </div>
+      <div class="d-flex align-items-center gap-1 flex-shrink-0">
+        <button
+          v-if="!readonly"
+          type="button"
+          class="btn btn-xs btn-link text-secondary text-decoration-none p-0 px-1"
+          title="Clear pinned location"
+          @click="clearPin"
+        >
+          <i class="pi pi-trash me-0.5" style="font-size: 0.65rem;"></i> Clear
+        </button>
+      </div>
+    </div>
+
     <!-- Hint until a pin exists -->
-    <div v-if="!readonly && !hasPin" class="cpk-hint shadow-sm">
-      <i class="pi pi-map-marker me-1" style="font-size: 0.7rem;"></i>
-      Click the map to drop the pin — drag it to fine-tune
+    <div v-else-if="!readonly" class="cpk-hint shadow-sm">
+      <i class="pi pi-map-marker text-primary me-1" style="font-size: 0.75rem;"></i>
+      Click anywhere on map to drop pin — drag marker to adjust
     </div>
   </div>
 </template>
@@ -96,7 +160,7 @@ const satellite = ref(false)
 const locating = ref(false)
 const geolocationAvailable = typeof navigator !== 'undefined' && !!navigator.geolocation
 
-// Place search (Nominatim, debounced to stay inside its usage policy)
+// Place search
 const searchQuery = ref('')
 const searchResults = ref([])
 const searching = ref(false)
@@ -104,8 +168,17 @@ const searchSettled = ref(false)
 let searchTimer = null
 let searchAbort = null
 
-// Binangonan, Rizal — where the plant lives; used only until a pin exists
+// Binangonan, Rizal default center
 const FALLBACK_CENTER = [14.4655, 121.1922]
+
+// Quick territory presets in SwitchFiber coverage
+const TERRITORY_CHIPS = [
+  { name: 'Binangonan', coords: [14.4655, 121.1922] },
+  { name: 'Angono', coords: [14.5255, 121.1568] },
+  { name: 'Taytay', coords: [14.5694, 121.1328] },
+  { name: 'Cardona', coords: [14.4856, 121.2289] },
+  { name: 'Antipolo', coords: [14.5842, 121.1763] }
+]
 
 let map = null
 let marker = null
@@ -164,8 +237,27 @@ const placeMarker = (lat, lng, { pan = false } = {}) => {
   if (pan) map.setView([lat, lng], Math.max(map.getZoom(), 17))
 }
 
-// Keep the pin in sync when the value changes from outside (typed coordinates,
-// a different record opened in the same dialog, a form reset)
+const recenterPin = () => {
+  if (parsed.value && map) {
+    map.setView([parsed.value.lat, parsed.value.lng], Math.max(map.getZoom(), 17), { animate: true })
+  }
+}
+
+const clearPin = () => {
+  if (props.readonly) return
+  if (marker && map) {
+    map.removeLayer(marker)
+    marker = null
+  }
+  emit('update:modelValue', '')
+}
+
+const jumpToTerritory = (chip) => {
+  if (!map || !chip?.coords) return
+  map.setView(chip.coords, 14, { animate: true })
+}
+
+// Keep the pin in sync when the value changes from outside
 watch(parsed, (val) => {
   if (!map) return
   if (val) {
@@ -180,7 +272,7 @@ watch(searchQuery, (q) => {
   searchSettled.value = false
   if (searchTimer) clearTimeout(searchTimer)
   if (searchAbort) searchAbort.abort()
-  if (String(q || '').trim().length < 3) {
+  if (String(q || '').trim().length < 2) {
     searchResults.value = []
     searching.value = false
     return
@@ -192,12 +284,11 @@ watch(searchQuery, (q) => {
       searchResults.value = await searchPlaces(q, { signal: searchAbort.signal })
       searchSettled.value = true
     } catch {
-      // Aborted or offline — stale results are worse than none
       searchResults.value = []
     } finally {
       searching.value = false
     }
-  }, 450)
+  }, 400)
 })
 
 const pickResult = (result) => {
@@ -221,7 +312,6 @@ const useMyLocation = () => {
       emitLatLng(pos.coords.latitude, pos.coords.longitude)
     },
     () => {
-      // Denied or unavailable — the map click path still works
       locating.value = false
     },
     { enableHighAccuracy: true, timeout: 10000 }
@@ -237,7 +327,6 @@ onMounted(() => {
     maxZoom: 19,
     attributionControl: true
   })
-  // The place search occupies the top-left corner
   map.zoomControl.setPosition('bottomright')
   applyBaseLayer()
 
@@ -250,8 +339,6 @@ onMounted(() => {
     })
   }
 
-  // Dialogs mount this while animating open at a zero/partial size — refit
-  // whenever the container settles
   resizeObserver = new ResizeObserver(() => map && map.invalidateSize())
   resizeObserver.observe(mapContainer.value)
 })
@@ -285,27 +372,55 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 6px;
 }
+.cpk-ctrl-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}
 .cpk-search {
   position: absolute;
   top: 8px;
   left: 8px;
   z-index: 1001;
-  width: min(260px, calc(100% - 100px));
+  width: min(320px, calc(100% - 100px));
 }
 .cpk-search-icon {
   position: absolute;
-  left: 0.6rem;
+  left: 0.65rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--bs-secondary-color);
   pointer-events: none;
   z-index: 1;
 }
 .cpk-search-input {
-  padding-left: 1.9rem;
+  padding-left: 2rem;
+  padding-right: 1.8rem;
   border-radius: 8px;
   font-size: 0.78rem;
+  background: var(--bs-body-bg);
+}
+.cpk-territory-chips {
+  scrollbar-width: none;
+}
+.cpk-chip {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bs-body-bg) 92%, transparent);
+  border: 1px solid var(--bs-border-color);
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+.cpk-chip:hover {
+  background: var(--bs-primary, #e74c5a);
+  border-color: var(--bs-primary, #e74c5a);
+  color: #fff;
 }
 .cpk-search-results {
   margin-top: 4px;
@@ -313,23 +428,51 @@ onBeforeUnmount(() => {
   border: 1px solid var(--bs-border-color);
   border-radius: 10px;
   overflow: hidden;
-  max-height: 180px;
+  max-height: 200px;
   overflow-y: auto;
 }
 .cpk-search-result {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.6rem;
   width: 100%;
-  padding: 0.4rem 0.6rem;
+  padding: 0.45rem 0.65rem;
   border: 0;
   background: transparent;
   color: var(--bs-body-color);
-  font-size: 0.74rem;
   text-align: left;
+  border-bottom: 1px solid var(--bs-border-color-translucent, rgba(0, 0, 0, 0.05));
+  transition: background-color 0.12s ease;
+}
+.cpk-search-result:last-child {
+  border-bottom: 0;
 }
 .cpk-search-result:hover {
   background: var(--bs-tertiary-bg);
+}
+.cpk-res-icon {
+  width: 22px;
+  height: 22px;
+  background: var(--bs-primary-bg-subtle, #fef2f3);
+  color: var(--bs-primary, #e74c5a);
+}
+.cpk-pin-bar {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  z-index: 1000;
+  background: color-mix(in srgb, var(--bs-body-bg) 95%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  max-width: calc(100% - 100px);
+}
+.cpk-pin-indicator {
+  width: 7px;
+  height: 7px;
+  background: var(--bs-success, #10b981);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
 }
 .cpk-hint {
   position: absolute;
@@ -337,18 +480,22 @@ onBeforeUnmount(() => {
   bottom: 10px;
   transform: translateX(-50%);
   z-index: 1000;
-  background: color-mix(in srgb, var(--bs-body-bg) 92%, transparent);
+  background: color-mix(in srgb, var(--bs-body-bg) 94%, transparent);
   border: 1px solid var(--bs-border-color);
   border-radius: 999px;
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem 0.8rem;
   font-size: 0.72rem;
   color: var(--bs-secondary-color);
   white-space: nowrap;
   pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+.btn-xs {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
 }
 </style>
 
-<!-- The pin is injected by Leaflet outside this component's scope -->
 <style>
 .cpk-pin-wrap {
   background: transparent;
@@ -360,7 +507,7 @@ onBeforeUnmount(() => {
   height: 42px;
   display: flex;
   justify-content: center;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 .cpk-pin-head {
   display: flex;
