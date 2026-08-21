@@ -200,94 +200,247 @@
 
         <!-- Site detail drawer -->
         <transition name="lnm-drawer">
-          <div v-if="selectedSite" class="lnm-drawer shadow">
-            <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
-              <div>
-                <div class="fw-bold text-body lh-sm">{{ selectedSite.name }}</div>
-                <div class="small text-secondary">
-                  {{ [selectedSite.street, selectedSite.barangay ? `Brgy. ${selectedSite.barangay}` : '', selectedSite.city, selectedSite.region].filter(Boolean).join(', ') || 'No address on record' }}
+          <div v-if="selectedSite" class="lnm-drawer shadow-lg" :style="{ '--site-accent': selectedSite.color }">
+            <!-- Accent stripe at top -->
+            <div class="lnm-drawer-accent-bar" :style="{ background: selectedSite.color }"></div>
+
+            <!-- Drawer Header -->
+            <div class="lnm-drawer-header">
+              <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                  <span class="lnm-node-badge" :style="{ '--badge-color': selectedSite.color }">
+                    <span class="lnm-color-dot" :style="{ background: selectedSite.color }"></span>
+                    <span class="fw-bold">{{ selectedSite.lcp || 'LCP Node' }}</span>
+                  </span>
+                  <span v-if="selectedSite.nap" class="badge rounded-pill bg-body-secondary text-body border px-2 py-1 small fw-semibold">
+                    <i class="pi pi-box me-1" style="font-size: 0.65rem;"></i>{{ selectedSite.nap }}
+                  </span>
+                </div>
+
+                <div class="d-flex align-items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-sm rounded-circle text-secondary p-1 lnm-header-btn"
+                    v-tooltip.bottom="'Recenter on map'"
+                    aria-label="Recenter on map"
+                    @click="selectSite(selectedSite, { fly: true })"
+                  >
+                    <i class="pi pi-compass" style="font-size: 0.85rem;"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm rounded-circle text-secondary p-1 lnm-header-btn"
+                    aria-label="Close details"
+                    @click="clearSelection"
+                  >
+                    <i class="pi pi-times" style="font-size: 0.85rem;"></i>
+                  </button>
                 </div>
               </div>
-              <button type="button" class="btn-close" aria-label="Close details" @click="clearSelection"></button>
-            </div>
 
-            <!-- Linked master records: the ids future create / edit flows write against -->
-            <div class="d-flex flex-column gap-2 my-3">
-              <div class="lnm-link-row">
-                <span class="lnm-color-dot" :style="{ background: selectedSite.color }"></span>
-                <span class="fw-semibold">{{ selectedSite.lcp || 'No LCP' }}</span>
-                <span v-if="selectedSite.lcpRecord" class="badge rounded-pill bg-success bg-opacity-10 text-success ms-auto" :title="selectedSite.lcpRecord.description || ''">
-                  <i class="pi pi-link me-1" style="font-size: 0.6rem;"></i>LCP record #{{ selectedSite.lcpRecord.id }}
-                </span>
-                <span v-else class="badge rounded-pill bg-warning bg-opacity-10 text-warning ms-auto" title="No row with this name exists in the LCP master list">
-                  not in LCP list
-                </span>
-              </div>
-              <div class="lnm-link-row">
-                <i class="pi pi-box text-secondary" style="font-size: 0.75rem;"></i>
-                <span class="fw-semibold">{{ selectedSite.nap || 'No NAP' }}</span>
-                <span v-if="selectedSite.napRecord" class="badge rounded-pill bg-success bg-opacity-10 text-success ms-auto" :title="selectedSite.napRecord.description || ''">
-                  <i class="pi pi-link me-1" style="font-size: 0.6rem;"></i>NAP record #{{ selectedSite.napRecord.id }}
-                </span>
-                <span v-else class="badge rounded-pill bg-warning bg-opacity-10 text-warning ms-auto" title="No row with this name exists in the NAP master list">
-                  not in NAP list
+              <!-- Main Title -->
+              <h5 class="fw-bold text-body mb-1 lh-sm">{{ selectedSite.name }}</h5>
+              <div class="d-flex align-items-start gap-1.5 small text-secondary">
+                <i class="pi pi-map-marker mt-0.5 text-primary flex-shrink-0" style="font-size: 0.75rem;"></i>
+                <span class="text-truncate-2">
+                  {{ [selectedSite.street, selectedSite.barangay ? `Brgy. ${selectedSite.barangay}` : '', selectedSite.city, selectedSite.region].filter(Boolean).join(', ') || 'No address on record' }}
                 </span>
               </div>
             </div>
 
-            <!-- Capacity -->
-            <div class="d-flex align-items-center gap-2 mb-3">
-              <span class="lnm-stat-chip"><i class="pi pi-share-alt"></i>{{ selectedSite.portTotal ?? '—' }} ports</span>
-              <span class="lnm-stat-chip text-lowercase"><i class="pi pi-compass"></i>{{ selectedSite.lat.toFixed(6) }}, {{ selectedSite.lng.toFixed(6) }}</span>
+            <!-- Scrollable Content Body -->
+            <div class="lnm-drawer-body flex-grow-1 overflow-y-auto d-flex flex-column gap-3 py-3">
+              
+              <!-- Quick Stats Grid: Capacity & Coordinates -->
+              <div class="row g-2">
+                <!-- Port Capacity -->
+                <div class="col-6">
+                  <div class="lnm-metric-card h-100 p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column justify-content-between">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                      <span class="small text-secondary fw-semibold">Capacity</span>
+                      <div class="lnm-metric-icon rounded-2 d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary">
+                        <i class="pi pi-share-alt" style="font-size: 0.75rem;"></i>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-1">
+                      <span class="fs-5 fw-bold text-body">{{ selectedSite.portTotal ?? '—' }}</span>
+                      <span class="small text-secondary">ports</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- GPS Coordinates with 1-click copy -->
+                <div class="col-6">
+                  <div
+                    class="lnm-metric-card h-100 p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column justify-content-between cursor-pointer"
+                    v-tooltip.bottom="copied ? 'Copied to clipboard!' : 'Click to copy coordinates'"
+                    @click="copyCoordinates"
+                  >
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                      <span class="small text-secondary fw-semibold">Coordinates</span>
+                      <div class="lnm-metric-icon rounded-2 d-flex align-items-center justify-content-center" :class="copied ? 'bg-success bg-opacity-10 text-success' : 'bg-primary bg-opacity-10 text-primary'">
+                        <i :class="copied ? 'pi pi-check' : 'pi pi-copy'" style="font-size: 0.75rem;"></i>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="small fw-semibold font-monospace text-body text-truncate">
+                        {{ selectedSite.lat.toFixed(5) }}, {{ selectedSite.lng.toFixed(5) }}
+                      </div>
+                      <span class="badge bg-opacity-10 p-0 text-success small fw-medium" v-if="copied">Copied!</span>
+                      <span class="small text-secondary text-opacity-75" v-else>WGS84 Pin</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Master Entity Links -->
+              <div class="d-flex flex-column gap-2">
+                <div class="small fw-bold text-secondary text-uppercase tracking-wider" style="font-size: 0.7rem;">Plant Hierarchy</div>
+                <div class="d-flex flex-column gap-1.5">
+                  <!-- LCP Master Entity -->
+                  <div class="lnm-entity-box p-2 rounded-3 border d-flex align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                      <div class="lnm-entity-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" :style="{ background: selectedSite.color + '22', color: selectedSite.color }">
+                        <i class="pi pi-server" style="font-size: 0.75rem;"></i>
+                      </div>
+                      <div class="overflow-hidden">
+                        <div class="small text-secondary lh-1" style="font-size: 0.7rem;">LCP Cabinet</div>
+                        <div class="fw-semibold text-body text-truncate small mt-0.5">{{ selectedSite.lcp || 'Unassigned' }}</div>
+                      </div>
+                    </div>
+                    <span v-if="selectedSite.lcpRecord" class="badge rounded-pill bg-success bg-opacity-10 text-success flex-shrink-0" :title="selectedSite.lcpRecord.description || ''">
+                      <i class="pi pi-link me-1" style="font-size: 0.6rem;"></i>#{{ selectedSite.lcpRecord.id }}
+                    </span>
+                    <span v-else class="badge rounded-pill bg-warning bg-opacity-10 text-warning flex-shrink-0" title="Not linked in LCP master list">
+                      Unlinked
+                    </span>
+                  </div>
+
+                  <!-- NAP Master Entity -->
+                  <div class="lnm-entity-box p-2 rounded-3 border d-flex align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                      <div class="lnm-entity-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-secondary bg-opacity-10 text-secondary">
+                        <i class="pi pi-box" style="font-size: 0.75rem;"></i>
+                      </div>
+                      <div class="overflow-hidden">
+                        <div class="small text-secondary lh-1" style="font-size: 0.7rem;">NAP Enclosure</div>
+                        <div class="fw-semibold text-body text-truncate small mt-0.5">{{ selectedSite.nap || 'Unassigned' }}</div>
+                      </div>
+                    </div>
+                    <span v-if="selectedSite.napRecord" class="badge rounded-pill bg-success bg-opacity-10 text-success flex-shrink-0" :title="selectedSite.napRecord.description || ''">
+                      <i class="pi pi-link me-1" style="font-size: 0.6rem;"></i>#{{ selectedSite.napRecord.id }}
+                    </span>
+                    <span v-else class="badge rounded-pill bg-warning bg-opacity-10 text-warning flex-shrink-0" title="Not linked in NAP master list">
+                      Unlinked
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Structured Location Details -->
+              <div class="lnm-address-card p-2.5 rounded-3 border bg-body-tertiary">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <span class="small fw-bold text-secondary text-uppercase tracking-wider" style="font-size: 0.7rem;">Physical Address</span>
+                  <i class="pi pi-building text-secondary" style="font-size: 0.75rem;"></i>
+                </div>
+                <div class="d-flex flex-column gap-1 small">
+                  <div v-if="selectedSite.street" class="d-flex align-items-start gap-2">
+                    <span class="text-secondary flex-shrink-0" style="min-width: 62px;">Street:</span>
+                    <span class="text-body fw-medium text-break">{{ selectedSite.street }}</span>
+                  </div>
+                  <div v-if="selectedSite.barangay" class="d-flex align-items-start gap-2">
+                    <span class="text-secondary flex-shrink-0" style="min-width: 62px;">Barangay:</span>
+                    <span class="text-body fw-medium">{{ selectedSite.barangay }}</span>
+                  </div>
+                  <div v-if="selectedSite.city" class="d-flex align-items-start gap-2">
+                    <span class="text-secondary flex-shrink-0" style="min-width: 62px;">City/Mun:</span>
+                    <span class="text-body fw-medium">{{ selectedSite.city }}</span>
+                  </div>
+                  <div v-if="selectedSite.region" class="d-flex align-items-start gap-2">
+                    <span class="text-secondary flex-shrink-0" style="min-width: 62px;">Region:</span>
+                    <span class="text-body fw-medium">{{ selectedSite.region }}</span>
+                  </div>
+                  <div v-if="!selectedSite.street && !selectedSite.barangay && !selectedSite.city && !selectedSite.region" class="text-secondary fst-italic">
+                    No physical address registered.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Photos Gallery -->
+              <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="small fw-bold text-secondary text-uppercase tracking-wider" style="font-size: 0.7rem;">Site Photos ({{ selectedSite.photos.length }})</span>
+                  <span v-if="selectedSite.photos.length" class="small text-muted" style="font-size: 0.7rem;">Click to preview</span>
+                </div>
+
+                <div v-if="selectedSite.photos.length" class="row g-2">
+                  <div v-for="photo in selectedSite.photos" :key="photo.label" class="col-4">
+                    <div
+                      v-if="photo.url"
+                      class="lnm-photo-card rounded-3 overflow-hidden border position-relative cursor-pointer"
+                      @click="openPhotoPreview(photo)"
+                    >
+                      <img :src="photo.url" :alt="photo.label" loading="lazy" class="w-100 h-100 object-fit-cover" />
+                      <div class="lnm-photo-overlay d-flex align-items-center justify-content-center">
+                        <i class="pi pi-eye text-white" style="font-size: 0.9rem;"></i>
+                      </div>
+                      <div class="lnm-photo-tag position-absolute bottom-0 start-0 end-0 px-1 py-0.5 text-center small text-white text-truncate">
+                        {{ photo.label }}
+                      </div>
+                    </div>
+                    <div v-else class="lnm-photo-card rounded-3 border border-dashed d-flex flex-column align-items-center justify-content-center p-1 text-center text-secondary bg-body-tertiary">
+                      <i class="pi pi-image text-muted mb-1" style="font-size: 0.85rem;"></i>
+                      <span class="small lh-1 text-truncate w-100" style="font-size: 0.65rem;" :title="photo.path">{{ photo.label }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="p-2.5 rounded-3 border border-dashed text-center text-secondary small bg-body-tertiary">
+                  <i class="pi pi-camera me-1"></i> No photos attached
+                </div>
+              </div>
+
+              <!-- Audit Trail Info -->
+              <div class="d-flex align-items-center gap-1.5 text-secondary small pt-1 border-top" style="font-size: 0.72rem;">
+                <i class="pi pi-history" style="font-size: 0.7rem;"></i>
+                <span class="text-truncate">Updated {{ formatDate(selectedSite.modifiedDate) }}<span v-if="selectedSite.modifiedBy"> by {{ selectedSite.modifiedBy }}</span></span>
+              </div>
             </div>
 
-            <!-- Photos -->
-            <div v-if="selectedSite.photos.length" class="mb-3">
-              <div class="small fw-semibold text-secondary mb-1">Site photos</div>
-              <div class="d-flex flex-wrap gap-2">
-                <template v-for="photo in selectedSite.photos" :key="photo.label">
-                  <a v-if="photo.url" :href="photo.url" target="_blank" rel="noopener" class="lnm-photo" :title="photo.label">
-                    <img :src="photo.url" :alt="photo.label" loading="lazy" />
+            <!-- Drawer Footer Actions -->
+            <div class="lnm-drawer-footer d-flex flex-column gap-2 mt-auto">
+              <!-- Primary Actions: Google Maps & Street View -->
+              <div class="row g-2">
+                <div class="col-6">
+                  <a
+                    class="btn btn-sm btn-primary rounded-3 w-100 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs fw-semibold py-1.5"
+                    :href="`https://www.google.com/maps/dir/?api=1&destination=${selectedSite.lat},${selectedSite.lng}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <i class="pi pi-directions" style="font-size: 0.8rem;"></i>
+                    <span>Directions</span>
                   </a>
-                  <span v-else class="lnm-photo-ref" :title="photo.path">
-                    <i class="pi pi-image" style="font-size: 0.7rem;"></i>{{ photo.label }}
-                  </span>
-                </template>
+                </div>
+                <div class="col-6">
+                  <a
+                    class="btn btn-sm btn-outline-secondary rounded-3 w-100 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs fw-semibold py-1.5"
+                    :href="`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selectedSite.lat},${selectedSite.lng}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <i class="pi pi-eye" style="font-size: 0.8rem;"></i>
+                    <span>Street View</span>
+                  </a>
+                </div>
               </div>
-            </div>
 
-            <!-- Audit -->
-            <div class="small text-secondary mb-3">
-              <i class="pi pi-history me-1" style="font-size: 0.7rem;"></i>
-              Updated {{ formatDate(selectedSite.modifiedDate) }}<span v-if="selectedSite.modifiedBy"> by {{ selectedSite.modifiedBy }}</span>
-            </div>
-
-            <div class="d-flex flex-column gap-2">
-              <div class="d-flex gap-2">
-                <a
-                  class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 flex-grow-1 justify-content-center shadow-xs fw-semibold"
-                  :href="`https://www.google.com/maps/dir/?api=1&destination=${selectedSite.lat},${selectedSite.lng}`"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <i class="pi pi-directions" style="font-size: 0.8rem;"></i>
-                  <span>Open in Google Maps</span>
-                </a>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-light border text-secondary bg-body-tertiary rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center px-2.5"
-                  :title="copied ? 'Copied' : 'Copy coordinates'"
-                  @click="copyCoordinates"
-                >
-                  <i :class="copied ? 'pi pi-check text-success' : 'pi pi-copy'" style="font-size: 0.8rem;"></i>
-                </button>
-              </div>
+              <!-- Secondary Action: Open Table -->
               <router-link
                 :to="{ path: '/lcp-nap-locations/records', query: { search: selectedSite.name } }"
-                class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs text-decoration-none fw-medium"
+                class="btn btn-sm btn-light border text-secondary bg-body-tertiary rounded-3 d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs text-decoration-none fw-medium py-1.5"
               >
                 <i class="pi pi-table" style="font-size: 0.75rem;"></i>
-                <span>View Record in Table</span>
+                <span>Open in Records Table</span>
               </router-link>
             </div>
           </div>
@@ -295,12 +448,74 @@
         </div>
       </div>
     </div>
+
+    <!-- Photo Lightbox Modal Dialog -->
+    <Dialog
+      v-model:visible="previewVisible"
+      modal
+      :header="activePreviewPhoto?.label || 'Site Photo Preview'"
+      :style="{ width: '90vw', maxWidth: '720px' }"
+      class="lnm-preview-dialog rounded-4"
+    >
+      <div class="d-flex flex-column gap-3 text-center">
+        <!-- Photo Container -->
+        <div class="position-relative bg-dark bg-opacity-10 rounded-3 overflow-hidden d-flex align-items-center justify-content-center p-1" style="min-height: 280px; max-height: 58vh;">
+          <img
+            v-if="activePreviewPhoto?.url"
+            :src="activePreviewPhoto.url"
+            :alt="activePreviewPhoto.label"
+            class="img-fluid rounded-3 object-fit-contain w-100"
+            style="max-height: 56vh;"
+          />
+        </div>
+
+        <!-- Photo Selector if multiple photos -->
+        <div v-if="selectedSite && selectedSite.photos.length > 1" class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+          <button
+            v-for="p in selectedSite.photos.filter(p => p.url)"
+            :key="p.label"
+            type="button"
+            class="btn btn-sm rounded-pill px-3 py-1 fw-medium"
+            :class="activePreviewPhoto?.label === p.label ? 'btn-primary text-white shadow-xs' : 'btn-outline-secondary'"
+            @click="activePreviewPhoto = p"
+          >
+            {{ p.label }}
+          </button>
+        </div>
+
+        <!-- EXIF metadata toggle & viewer -->
+        <div v-if="activePreviewPhoto?.url" class="text-start">
+          <div class="d-flex align-items-center justify-content-between border-top pt-2">
+            <button
+              type="button"
+              class="btn btn-sm btn-link text-decoration-none p-0 text-secondary d-inline-flex align-items-center gap-1.5"
+              @click="showExif = !showExif"
+            >
+              <i class="pi pi-camera" style="font-size: 0.8rem;"></i>
+              <span>{{ showExif ? 'Hide Camera & GPS Info' : 'Inspect Camera & GPS Info (EXIF)' }}</span>
+              <i :class="showExif ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" style="font-size: 0.65rem;"></i>
+            </button>
+            <a
+              :href="activePreviewPhoto.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="small text-primary text-decoration-none d-inline-flex align-items-center gap-1"
+            >
+              <span>Full Resolution</span>
+              <i class="pi pi-external-link" style="font-size: 0.7rem;"></i>
+            </a>
+          </div>
+          <ExifPanel v-if="showExif" :src="activePreviewPhoto.url" />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster'
@@ -308,6 +523,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { LcpNapLocationService, parseCoordinates } from '../services/lcpNapLocations'
 import { useTheme } from '../composables/useTheme'
+import ExifPanel from '../components/ExifPanel.vue'
 
 const { isDark } = useTheme()
 
@@ -320,6 +536,15 @@ const showUnmappedNote = ref(true)
 const selectedSite = ref(null)
 const baseLayerMode = ref('street')
 const copied = ref(false)
+const previewVisible = ref(false)
+const activePreviewPhoto = ref(null)
+const showExif = ref(false)
+
+const openPhotoPreview = (photo) => {
+  activePreviewPhoto.value = photo
+  previewVisible.value = true
+  showExif.value = false
+}
 
 let map = null
 let clusterGroup = null
@@ -822,21 +1047,66 @@ onBeforeUnmount(() => {
   right: 12px;
   bottom: 12px;
   z-index: 1045;
-  width: min(330px, calc(100% - 24px));
-  overflow-y: auto;
-  background: var(--bs-body-bg);
+  width: min(380px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  background: color-mix(in srgb, var(--bs-body-bg) 95%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--bs-border-color);
-  border-radius: 14px;
-  padding: 1rem;
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+@media (max-width: 575.98px) {
+  .lnm-drawer {
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    max-height: 82%;
+  }
+}
+.lnm-drawer-accent-bar {
+  height: 4px;
+  width: 100%;
+  flex-shrink: 0;
+}
+.lnm-drawer-header {
+  padding: 0.9rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+  flex-shrink: 0;
+}
+.lnm-drawer-body {
+  padding: 0.85rem 1rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.lnm-drawer-footer {
+  padding: 0.75rem 1rem 0.9rem;
+  background: var(--bs-body-bg);
+  border-top: 1px solid var(--bs-border-color);
+  flex-shrink: 0;
 }
 .lnm-drawer-enter-active,
 .lnm-drawer-leave-active {
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 .lnm-drawer-enter-from,
 .lnm-drawer-leave-to {
-  transform: translateX(24px);
+  transform: translateX(30px);
   opacity: 0;
+}
+@media (max-width: 575.98px) {
+  .lnm-drawer-enter-from,
+  .lnm-drawer-leave-to {
+    transform: translateY(30px);
+    opacity: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .lnm-drawer-enter-active,
@@ -845,39 +1115,87 @@ onBeforeUnmount(() => {
   }
 }
 
-.lnm-link-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--bs-border-color);
-  border-radius: 10px;
-  font-size: 0.82rem;
-}
-
-.lnm-photo {
-  display: block;
-  width: 84px;
-  height: 64px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--bs-border-color);
-}
-.lnm-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.lnm-photo-ref {
+.lnm-node-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.3rem 0.6rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  border: 1px dashed var(--bs-border-color);
-  color: var(--bs-secondary-color);
-  font-size: 0.72rem;
-  max-width: 100%;
+  background: color-mix(in srgb, var(--badge-color, var(--bs-primary)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color, var(--bs-primary)) 30%, transparent);
+  color: var(--badge-color, var(--bs-primary));
+  font-size: 0.75rem;
+}
+.lnm-header-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.lnm-header-btn:hover {
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color) !important;
+}
+
+.lnm-metric-card {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.lnm-metric-card.cursor-pointer:hover {
+  transform: translateY(-1px);
+  border-color: var(--bs-primary-border-subtle, #fdcfd3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.lnm-metric-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.lnm-entity-box {
+  background: var(--bs-body-bg);
+  transition: background-color 0.15s ease;
+}
+.lnm-entity-box:hover {
+  background: var(--bs-tertiary-bg);
+}
+.lnm-entity-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.lnm-photo-card {
+  height: 72px;
+  background: var(--bs-tertiary-bg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.lnm-photo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+}
+.lnm-photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.lnm-photo-card:hover .lnm-photo-overlay {
+  opacity: 1;
+}
+.lnm-photo-tag {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
 
