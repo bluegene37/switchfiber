@@ -2305,6 +2305,11 @@ function formatLabel(col) {
   }
 
   const customOverrides = {
+    coordinates: 'GPS Coordinates',
+    coordinate: 'GPS Coordinates',
+    addresscoordinates: 'GPS Coordinates',
+    lcpnap: 'LCP NAP',
+    porttotal: 'Total Ports',
     fname: 'First Name',
     mname: 'Middle Name',
     lname: 'Last Name',
@@ -2352,10 +2357,15 @@ function formatLabel(col) {
     applyingfor: 'Applying For',
     visitwithother: 'Visit With (Other)',
     pictureofstatmentbillingfromotherprovider: 'Picture of Statement Billing From Other Provider',
-    pictureofstatementbillingfromotherprovider: 'Picture of Statement Billing From Other Provider'
+    pictureofstatementbillingfromotherprovider: 'Picture of Statement Billing From Other Provider',
+    lcpnaplocations: 'LCP NAP Location',
+    lcpnaplocation: 'LCP NAP Location',
+    lcpnapports: 'LCP NAP Port',
+    lcpnapport: 'LCP NAP Port'
   }
-  if (customOverrides[col.toLowerCase()]) {
-    return customOverrides[col.toLowerCase()]
+  const normKey = col.toLowerCase().replace(/_/g, '')
+  if (customOverrides[normKey]) {
+    return customOverrides[normKey]
   }
 
   const acronyms = {
@@ -2368,11 +2378,13 @@ function formatLabel(col) {
     ip: 'IP',
     jo: 'JO',
     splynx: 'Splynx',
-    mikrotik: 'Mikrotik'
+    mikrotik: 'Mikrotik',
+    gps: 'GPS'
   }
   
   const words = col
-    .replace(/([A-Z])/g, ' $1')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
     .replace(/_/g, ' ')
     .trim()
     .split(/\s+/)
@@ -5455,6 +5467,15 @@ const openEditDialog = async (record) => {
     }
   }
 
+  // 7. Normalize and match Coordinates
+  const coordCol = formColumns.value.find(c => getFieldType(c) === 'coordinates')
+  if (coordCol) {
+    const extractedCoords = getRowCoordinateValue(record, coordCol)
+    if (extractedCoords) {
+      editFormData.value[coordCol] = extractedCoords
+    }
+  }
+
   formColumns.value.forEach(col => {
     const type = getFieldType(col)
     const lowerCol = col.toLowerCase()
@@ -5469,7 +5490,9 @@ const openEditDialog = async (record) => {
       const d = new Date(record[col])
       editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
     } else if (record[col] === null || record[col] === undefined) {
-      editFormData.value[col] = ''
+      if (col !== regCol && col !== cCol && col !== bCol && col !== statusCol && col !== coordCol) {
+        editFormData.value[col] = ''
+      }
     }
 
     // Handle mapping of fiber infrastructure & provisioning fields (resolution by Name or ID)
@@ -6289,22 +6312,44 @@ defineExpose({
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge *) {
+  color: inherit !important;
+}
+
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-success),
-:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-success) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-success *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-success),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-success *) {
   color: var(--bs-success-text-emphasis, #0a6b45) !important;
 }
 
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-danger),
-:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-danger) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-danger *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-danger),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-danger *) {
   color: var(--bs-danger-text-emphasis, #b02a37) !important;
 }
 
-:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-secondary),
-:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-secondary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning *),
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning-emphasis),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning-emphasis *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-warning),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-warning *),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-warning-emphasis),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-warning-emphasis *) {
+  color: #7a4f01 !important;
+}
+
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-secondary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-secondary *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-secondary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-secondary *),
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-info),
-:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-info) {
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-info *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-info),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-info *) {
   color: #343a40 !important;
 }
 

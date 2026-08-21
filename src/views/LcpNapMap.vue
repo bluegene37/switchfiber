@@ -28,76 +28,44 @@
     <!-- Map Card -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
       <!-- Toolbar -->
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-        <!-- Site search -->
-        <div class="position-relative lnm-search-wrap">
-          <i class="pi pi-search lnm-search-icon"></i>
-          <input
-            v-model="searchQuery"
-            type="text"
-            class="form-control form-control-sm lnm-search-input"
-            placeholder="Find an LCP, NAP, street, or barangay"
-            @keydown.esc="searchQuery = ''"
-          />
-          <button
-            v-if="searchQuery.trim()"
-            type="button"
-            class="btn btn-sm position-absolute end-0 top-50 translate-middle-y p-1 me-1 text-secondary border-0 bg-transparent shadow-none"
-            style="line-height: 1; z-index: 5;"
-            @click="searchQuery = ''"
-            title="Clear search"
-          >
-            <i class="pi pi-times" style="font-size: 0.65rem;"></i>
-          </button>
-          <div v-if="searchQuery.trim() && searchResults.length" class="lnm-search-results shadow">
+      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+        <div class="d-flex align-items-center gap-2">
+          <span class="small fw-semibold text-secondary text-uppercase tracking-wider">Map Controls</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <!-- Base layer -->
+          <div class="d-inline-flex align-items-center gap-1.5">
             <button
-              v-for="site in searchResults"
-              :key="site.key"
               type="button"
-              class="lnm-search-result"
-              @click="selectSite(site, { fly: true }); searchQuery = ''"
+              class="btn btn-sm rounded-3 px-3 py-1 fw-medium text-nowrap d-inline-flex align-items-center gap-1.5 shadow-xs"
+              :class="baseLayerMode === 'street' ? 'btn-primary text-white shadow-sm' : 'btn-light border text-secondary bg-body-tertiary'"
+              @click="setBaseLayer('street')"
             >
-              <span class="lnm-color-dot" :style="{ background: site.color }"></span>
-              <span class="text-truncate">{{ site.name }}</span>
-              <span class="text-secondary small ms-auto text-nowrap">{{ site.city || site.barangay || '' }}</span>
+              <i class="pi pi-map" style="font-size: 0.75rem;"></i>
+              <span>Street</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm rounded-3 px-3 py-1 fw-medium text-nowrap d-inline-flex align-items-center gap-1.5 shadow-xs"
+              :class="baseLayerMode === 'satellite' ? 'btn-primary text-white shadow-sm' : 'btn-light border text-secondary bg-body-tertiary'"
+              @click="setBaseLayer('satellite')"
+            >
+              <i class="pi pi-globe" style="font-size: 0.75rem;"></i>
+              <span>Satellite</span>
             </button>
           </div>
-          <div v-else-if="searchQuery.trim() && !searchResults.length" class="lnm-search-results shadow">
-            <div class="lnm-search-result text-secondary" style="cursor: default;">No site matches "{{ searchQuery.trim() }}"</div>
-          </div>
-        </div>
 
-        <!-- Base layer -->
-        <div class="d-inline-flex align-items-center gap-1.5 ms-auto">
-          <button
-            type="button"
-            class="btn btn-sm rounded-3 px-3 py-1 fw-medium text-nowrap d-inline-flex align-items-center gap-1.5 shadow-xs"
-            :class="baseLayerMode === 'street' ? 'btn-primary text-white shadow-sm' : 'btn-light border text-secondary bg-body-tertiary'"
-            @click="setBaseLayer('street')"
+          <Button
+            class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3"
+            v-tooltip.bottom="'Reload locations'"
+            :loading="isLoading"
+            aria-label="Reload locations"
+            @click="loadData"
           >
-            <i class="pi pi-map" style="font-size: 0.75rem;"></i>
-            <span>Street</span>
-          </button>
-          <button
-            type="button"
-            class="btn btn-sm rounded-3 px-3 py-1 fw-medium text-nowrap d-inline-flex align-items-center gap-1.5 shadow-xs"
-            :class="baseLayerMode === 'satellite' ? 'btn-primary text-white shadow-sm' : 'btn-light border text-secondary bg-body-tertiary'"
-            @click="setBaseLayer('satellite')"
-          >
-            <i class="pi pi-globe" style="font-size: 0.75rem;"></i>
-            <span>Satellite</span>
-          </button>
+            <i v-if="!isLoading" class="pi pi-refresh"></i>
+          </Button>
         </div>
-
-        <Button
-          class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3"
-          v-tooltip.bottom="'Reload locations'"
-          :loading="isLoading"
-          aria-label="Reload locations"
-          @click="loadData"
-        >
-          <i v-if="!isLoading" class="pi pi-refresh"></i>
-        </Button>
       </div>
 
       <!-- Unplottable rows notice -->
@@ -148,8 +116,19 @@
                 v-model="listQuery"
                 type="text"
                 class="form-control form-control-sm lnm-search-input"
-                :placeholder="listMode === 'group' ? 'Search LCP group' : 'Search LCP NAP'"
+                :placeholder="listMode === 'group' ? 'Search LCP group' : 'Search LCP, NAP, street...'"
+                @keydown.esc="listQuery = ''"
               />
+              <button
+                v-if="listQuery.trim()"
+                type="button"
+                class="btn btn-sm position-absolute end-0 top-50 translate-middle-y p-1 me-1 text-secondary border-0 bg-transparent shadow-none"
+                style="line-height: 1; z-index: 5;"
+                @click="listQuery = ''"
+                title="Clear search"
+              >
+                <i class="pi pi-times" style="font-size: 0.65rem;"></i>
+              </button>
             </div>
           </div>
           <div class="lnm-site-list-body">
@@ -339,7 +318,6 @@ const sites = ref([])
 const unmappedRows = ref([])
 const showUnmappedNote = ref(true)
 const selectedSite = ref(null)
-const searchQuery = ref('')
 const baseLayerMode = ref('street')
 const copied = ref(false)
 
@@ -530,15 +508,13 @@ const lcpGroups = computed(() => {
   return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
 })
 
-// The left panel lists lcpnap names only — the toolbar search covers the
-// wider fields (street, barangay, city)
 const listQuery = ref('')
 const listMode = ref('all') // 'all' = every site | 'group' = LCP groups with counts
 
 const filteredListSites = computed(() => {
   const q = listQuery.value.trim().toLowerCase()
   const list = q
-    ? sites.value.filter(s => String(s.name).toLowerCase().includes(q))
+    ? sites.value.filter(s => [s.name, s.lcp, s.nap, s.street, s.barangay, s.city, s.region].some(v => String(v || '').toLowerCase().includes(q)))
     : sites.value
   return [...list].sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }))
 })
@@ -547,14 +523,6 @@ const filteredGroups = computed(() => {
   const q = listQuery.value.trim().toLowerCase()
   if (!q) return lcpGroups.value
   return lcpGroups.value.filter(g => String(g.name).toLowerCase().includes(q))
-})
-
-const searchResults = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return []
-  return sites.value
-    .filter(s => [s.name, s.lcp, s.nap, s.street, s.barangay, s.city, s.region].some(v => String(v).toLowerCase().includes(q)))
-    .slice(0, 8)
 })
 
 // ---------------------------------------------------------------------------
@@ -815,32 +783,6 @@ onBeforeUnmount(() => {
 .lnm-search-input {
   padding-left: 2rem;
   border-radius: 8px;
-}
-.lnm-search-results {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 1060;
-  background: var(--bs-body-bg);
-  border: 1px solid var(--bs-border-color);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.lnm-search-result {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.45rem 0.7rem;
-  border: 0;
-  background: transparent;
-  color: var(--bs-body-color);
-  font-size: 0.82rem;
-  text-align: left;
-}
-.lnm-search-result:hover {
-  background: var(--bs-tertiary-bg);
 }
 
 .lnm-color-dot {
