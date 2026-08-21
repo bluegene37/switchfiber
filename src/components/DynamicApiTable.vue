@@ -2424,6 +2424,15 @@ const parseDateForPicker = (val) => {
   return isNaN(d.getTime()) ? null : d
 }
 
+const getRowCoordinateValue = (row, col) => {
+  if (!row) return null
+  if (col && row[col] !== undefined && row[col] !== null && String(row[col]).trim() !== '') {
+    return String(row[col]).trim()
+  }
+  const fallback = row.coordinates || row.coordinate || row.addressCoordinates || row.address_coordinates || row.gpsCoordinates || row.gps || null
+  return fallback ? String(fallback).trim() : null
+}
+
 function getFieldType(col) {
   if (!col) return 'text'
   const lower = col.toLowerCase().replace(/_/g, '')
@@ -2449,15 +2458,6 @@ function getFieldType(col) {
   ) {
     return 'image_upload'
   }
-
-const getRowCoordinateValue = (row, col) => {
-  if (!row) return null
-  if (col && row[col] !== undefined && row[col] !== null && String(row[col]).trim() !== '') {
-    return String(row[col]).trim()
-  }
-  const fallback = row.coordinates || row.coordinate || row.addressCoordinates || row.address_coordinates || row.gpsCoordinates || row.gps || null
-  return fallback ? String(fallback).trim() : null
-}
 
   if (
     lower === 'coordinates' ||
