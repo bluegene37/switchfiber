@@ -357,7 +357,7 @@
                     <span class="text-body fw-medium">{{ selectedSite.city }}</span>
                   </div>
                   <div v-if="selectedSite.region" class="d-flex align-items-start gap-2">
-                    <span class="text-secondary flex-shrink-0" style="min-width: 62px;">Region:</span>
+                    <span class="text-secondary flex-shrink-0" style="min-width: 62px;">Province:</span>
                     <span class="text-body fw-medium">{{ selectedSite.region }}</span>
                   </div>
                   <div v-if="!selectedSite.street && !selectedSite.barangay && !selectedSite.city && !selectedSite.region" class="text-secondary fst-italic">
