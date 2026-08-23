@@ -241,6 +241,9 @@ const toast = useToast()
 // renders as an em dash rather than an invented number.
 const liveCounts = ref({
   applications: null,
+  jobOrders: null,
+  invoices: null,
+  billing: null,
   plans: null,
   activeSessions: null,
   radiusUsers: null,
@@ -360,6 +363,14 @@ const kpiStats = computed(() => [
     value: fmt(liveCounts.value.applications),
     loading: !!pendingCounts.value.applications,
     icon: 'pi-users',
+    iconBgClass: 'bg-primary bg-opacity-10',
+    iconColorClass: 'text-primary'
+  },
+  {
+    title: 'Job Orders',
+    value: fmt(liveCounts.value.jobOrders),
+    loading: !!pendingCounts.value.jobOrders,
+    icon: 'pi-ticket',
     iconBgClass: 'bg-primary bg-opacity-10',
     iconColorClass: 'text-primary'
   },

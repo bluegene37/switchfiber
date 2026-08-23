@@ -140,9 +140,9 @@ const TILE_LAYERS = {
 }
 
 const PALETTE = [
-  '#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545',
-  '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0',
-  '#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981'
+  '#e74c5a', '#6f42c1', '#d63384', '#dc3545',
+  '#fd7e14', '#ffc107', '#10b981', '#20c997',
+  '#0ea5e9', '#8b5cf6', '#ec4899', '#f97316'
 ]
 
 const hashString = (str) => {
@@ -161,7 +161,7 @@ const lcpColor = (lcpName) => {
 }
 
 const siteIcon = (site) => {
-  const color = site.color || '#0d6efd'
+  const color = site.color || '#e74c5a'
   const html = `
     <div class="dsh-map-pin" style="--pin-color: ${color}">
       <div class="dsh-pin-head">
@@ -350,7 +350,7 @@ onBeforeUnmount(() => {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--pin-color, #0d6efd);
+  background: var(--pin-color, var(--bs-primary, #e74c5a));
   border: 2px solid #ffffff;
   display: flex;
   align-items: center;
@@ -370,7 +370,7 @@ onBeforeUnmount(() => {
   height: 0;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-top: 6px solid var(--pin-color, #0d6efd);
+  border-top: 6px solid var(--pin-color, var(--bs-primary, #e74c5a));
   margin-top: -1px;
 }
 

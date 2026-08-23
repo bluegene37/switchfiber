@@ -488,6 +488,105 @@ ul.p-select-list-container {
   border-color: var(--bs-primary-hover) !important;
 }
 
+/* Outlined Primary Button Theme Overrides (Replaces Bootstrap Default Blue) */
+.btn-outline-primary,
+.p-button.p-button-outlined.p-button-primary {
+  --bs-btn-color: var(--bs-primary, #e74c5a);
+  --bs-btn-border-color: var(--bs-primary, #e74c5a);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--bs-primary, #e74c5a);
+  --bs-btn-hover-border-color: var(--bs-primary, #e74c5a);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb, 231, 76, 90);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--bs-primary-active, #c02e3c);
+  --bs-btn-active-border-color: var(--bs-primary-active, #c02e3c);
+  --bs-btn-disabled-color: var(--bs-primary, #e74c5a);
+  --bs-btn-disabled-border-color: var(--bs-primary, #e74c5a);
+  color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.btn-check:checked + .btn-outline-primary,
+.btn-check:active + .btn-outline-primary,
+.show > .btn-outline-primary.dropdown-toggle,
+.p-button.p-button-outlined.p-button-primary:hover {
+  background-color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary, #e74c5a) !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-primary:focus,
+.btn-outline-primary.focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb, 231, 76, 90), 0.25) !important;
+}
+
+/* Bootstrap Primary Utilities Overrides */
+.border-primary {
+  border-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.border-primary-subtle {
+  border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
+}
+
+.bg-primary-subtle {
+  background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
+}
+
+.text-primary-emphasis {
+  color: var(--bs-primary-active, #8b1a25) !important;
+}
+
+.link-primary {
+  color: var(--bs-primary, #e74c5a) !important;
+}
+
+.link-primary:hover,
+.link-primary:focus {
+  color: var(--bs-primary-hover, #d63a48) !important;
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: var(--bs-primary, #e74c5a) !important;
+  color: #ffffff !important;
+}
+
+.progress-bar {
+  background-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.alert-primary {
+  background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
+  border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
+  color: var(--bs-primary-active, #8b1a25) !important;
+}
+
+/* Radio Button, Slider & Progress Bar Overrides */
+.p-radiobutton.p-radiobutton-checked .p-radiobutton-box {
+  background-color: var(--bs-primary, #e74c5a) !important;
+  border-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.p-radiobutton.p-radiobutton-checked .p-radiobutton-icon {
+  background-color: #ffffff !important;
+}
+
+.p-slider .p-slider-range {
+  background-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.p-slider .p-slider-handle {
+  border-color: var(--bs-primary, #e74c5a) !important;
+}
+
+.p-progressbar .p-progressbar-value {
+  background-color: var(--bs-primary, #e74c5a) !important;
+}
+
 .p-button-secondary,
 .p-button-outlined {
   border-radius: 10px;
