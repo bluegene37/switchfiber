@@ -334,6 +334,15 @@ const rawMenuItems = ref([
       { id: 13, name: 'Plan', path: '/plan', icon: 'pi-tag' },
     ]
   },
+  {
+    id: 39,
+    name: 'Logs',
+    icon: 'pi-history',
+    children: [
+      { id: 40, name: 'Audit Trail', path: '/logs/audit-trail', icon: 'pi-verified' },
+      { id: 41, name: 'Error Logs', path: '/logs/error-logs', icon: 'pi-exclamation-triangle' },
+    ]
+  },
   { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },
   { id: 29, name: 'Models', path: '/models', icon: 'pi-table' }
 ])

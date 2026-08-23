@@ -35,6 +35,8 @@ const ROUTE_TITLES = {
   disconnection: 'Disconnection',
   'lcp-nap-map': 'LCP NAP Map',
   'lcp-nap-records': 'LCP NAP Records',
+  'audit-trail': 'Audit Trail',
+  'error-logs': 'Error Logs',
   'api-viewer': 'API Viewer',
   models: 'Models',
   settings: 'Settings',
@@ -225,6 +227,24 @@ const router = createRouter({
       name: 'lcp-nap-records',
       component: () => import('../views/LcpNapRecords.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/logs',
+      redirect: '/logs/audit-trail'
+    },
+    {
+      // No Audit Trail API yet — the screen is routed and permissioned now so
+      // the menu entry works; swap the component once the endpoint lands.
+      path: '/logs/audit-trail',
+      name: 'audit-trail',
+      component: () => import('../views/ComingSoon.vue'),
+      meta: { requiresAuth: true, title: 'Audit Trail' }
+    },
+    {
+      path: '/logs/error-logs',
+      name: 'error-logs',
+      component: () => import('../views/ComingSoon.vue'),
+      meta: { requiresAuth: true, title: 'Error Logs' }
     },
     {
       path: '/data-viewer',
