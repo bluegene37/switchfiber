@@ -190,6 +190,8 @@
  * @property {Object} [napNavigation]
  * @property {Object} [vlanNavigation]
  * @property {string} [rowVersion]
+ * @property {integer|string|null} createdBy
+ * @property {string|null} createdDate
  */
 
 /**
@@ -451,6 +453,8 @@
  * @property {string} referrersAccountNumber
  * @property {string} applicationId
  * @property {string} houseFront
+ * @property {integer|string|null} createdBy
+ * @property {string|null} createdDate
  */
 
 /**
@@ -639,3 +643,197 @@
  * @property {string} city
  */
 
+
+/**
+ * @typedef {Object} CreateServiceOrderRequest
+ * @property {string|null} createdDate
+ * @property {string|null} accountNumber
+ * @property {string|null} dateInstalled
+ * @property {string|null} fullName
+ * @property {string|null} contactNumber
+ * @property {string|null} emailAddress
+ * @property {string|null} address
+ * @property {string|null} plan
+ * @property {string|null} provider
+ * @property {string|null} username
+ * @property {string|null} connectionType
+ * @property {string|null} routerModemSN
+ * @property {string|null} lcp
+ * @property {string|null} nap
+ * @property {string|null} port
+ * @property {string|null} vlan
+ * @property {string|null} supportStatus
+ * @property {string|null} concern
+ * @property {string|null} connectionRemarks
+ * @property {string|null} priorityLevel
+ * @property {string|null} visitStatus
+ * @property {string|null} visitBy
+ * @property {string|null} visitWith
+ * @property {string|null} visitWithOthers
+ * @property {string|null} visitRemarks
+ * @property {string|null} modifiedBy
+ * @property {string|null} modifiedDate
+ * @property {string|null} userEmail
+ * @property {string|null} requestedBy
+ * @property {string|null} assignedEmail
+ * @property {string|null} startTimestamp
+ * @property {string|null} stopTimestamp
+ * @property {string|null} duration
+ * @property {string|null} repairCategory
+ * @property {string|null} newRouterModemSN
+ * @property {string|null} newLCP
+ * @property {string|null} newNAP
+ * @property {string|null} newPORT
+ * @property {string|null} newVLAN
+ * @property {string|null} routerModel
+ * @property {string|null} clientSignature
+ * @property {string|null} newPLAN
+ * @property {string|null} supportRemarks
+ * @property {string|null} pulloutRemarks
+ * @property {string|null} pulloutRouterModel
+ * @property {string|null} pulloutRouterModelSN
+ * @property {string|null} pulloutCPESN
+ * @property {string|null} itemName
+ * @property {integer|string|null} itemQuantity
+ * @property {string|null} itemName1
+ * @property {integer|string|null} itemQuantity1
+ * @property {string|null} itemName2
+ * @property {integer|string|null} itemQuantity2
+ * @property {string|null} itemName3
+ * @property {integer|string|null} itemQuantity3
+ * @property {string|null} itemName4
+ * @property {integer|string|null} itemQuantity4
+ * @property {string|null} itemName5
+ * @property {integer|string|null} itemQuantity5
+ * @property {string|null} itemName6
+ * @property {integer|string|null} itemQuantity6
+ * @property {string|null} itemName7
+ * @property {integer|string|null} itemQuantity7
+ * @property {string|null} itemName8
+ * @property {integer|string|null} itemQuantity8
+ * @property {string|null} itemName9
+ * @property {integer|string|null} itemQuantity9
+ * @property {string|null} itemName10
+ * @property {integer|string|null} itemQuantity10
+ * @property {string|null} image1
+ * @property {string|null} image2
+ * @property {string|null} image3
+ * @property {number|string|null} serviceCharge
+ * @property {string|null} barangay
+ * @property {string|null} city
+ * @property {string|null} addressCoordinates
+ * @property {string|null} houseFrontPicture
+ * @property {string|null} techModifiedDate
+ * @property {string|null} assignedBy
+ * @property {string|null} assignedDate
+ */
+
+/**
+ * @typedef {Object} UpdateServiceOrderRequest
+ * @property {string|null} createdDate
+ * @property {string|null} accountNumber
+ * @property {string|null} dateInstalled
+ * @property {string|null} fullName
+ * @property {string|null} contactNumber
+ * @property {string|null} emailAddress
+ * @property {string|null} address
+ * @property {string|null} plan
+ * @property {string|null} provider
+ * @property {string|null} username
+ * @property {string|null} connectionType
+ * @property {string|null} routerModemSN
+ * @property {string|null} lcp
+ * @property {string|null} nap
+ * @property {string|null} port
+ * @property {string|null} vlan
+ * @property {string|null} supportStatus
+ * @property {string|null} concern
+ * @property {string|null} connectionRemarks
+ * @property {string|null} priorityLevel
+ * @property {string|null} visitStatus
+ * @property {string|null} visitBy
+ * @property {string|null} visitWith
+ * @property {string|null} visitWithOthers
+ * @property {string|null} visitRemarks
+ * @property {string|null} modifiedBy
+ * @property {string|null} modifiedDate
+ * @property {string|null} userEmail
+ * @property {string|null} requestedBy
+ * @property {string|null} assignedEmail
+ * @property {string|null} startTimestamp
+ * @property {string|null} stopTimestamp
+ * @property {string|null} duration
+ * @property {string|null} repairCategory
+ * @property {string|null} newRouterModemSN
+ * @property {string|null} newLCP
+ * @property {string|null} newNAP
+ * @property {string|null} newPORT
+ * @property {string|null} newVLAN
+ * @property {string|null} routerModel
+ * @property {string|null} clientSignature
+ * @property {string|null} newPLAN
+ * @property {string|null} supportRemarks
+ * @property {string|null} pulloutRemarks
+ * @property {string|null} pulloutRouterModel
+ * @property {string|null} pulloutRouterModelSN
+ * @property {string|null} pulloutCPESN
+ * @property {string|null} itemName
+ * @property {integer|string|null} itemQuantity
+ * @property {string|null} itemName1
+ * @property {integer|string|null} itemQuantity1
+ * @property {string|null} itemName2
+ * @property {integer|string|null} itemQuantity2
+ * @property {string|null} itemName3
+ * @property {integer|string|null} itemQuantity3
+ * @property {string|null} itemName4
+ * @property {integer|string|null} itemQuantity4
+ * @property {string|null} itemName5
+ * @property {integer|string|null} itemQuantity5
+ * @property {string|null} itemName6
+ * @property {integer|string|null} itemQuantity6
+ * @property {string|null} itemName7
+ * @property {integer|string|null} itemQuantity7
+ * @property {string|null} itemName8
+ * @property {integer|string|null} itemQuantity8
+ * @property {string|null} itemName9
+ * @property {integer|string|null} itemQuantity9
+ * @property {string|null} itemName10
+ * @property {integer|string|null} itemQuantity10
+ * @property {string|null} image1
+ * @property {string|null} image2
+ * @property {string|null} image3
+ * @property {number|string|null} serviceCharge
+ * @property {string|null} barangay
+ * @property {string|null} city
+ * @property {string|null} addressCoordinates
+ * @property {string|null} houseFrontPicture
+ * @property {string|null} techModifiedDate
+ * @property {string|null} assignedBy
+ * @property {string|null} assignedDate
+ */
+
+/**
+ * A single audit trail / error log row.
+ *
+ * The API declares no response schema for /api/LogTrail or /api/LogError, so
+ * this mirrors the live payload. Every row comes back with `id: 0` — the logs
+ * carry no addressable key, which is why the screens are browse-only.
+ *
+ * @typedef {Object} LogEntry
+ * @property {integer} id
+ * @property {string} userId
+ * @property {string} userName
+ * @property {string} action
+ * @property {string} entity
+ * @property {string} entityId
+ * @property {string} ipAddress
+ * @property {string} userAgent
+ * @property {string} requestMethod
+ * @property {string} requestPath
+ * @property {string} requestBody
+ * @property {string} responseStatus
+ * @property {string} timestamp
+ * @property {string} description
+ * @property {integer|null} createdBy
+ * @property {string|null} createdDate
+ */

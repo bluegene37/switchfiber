@@ -249,7 +249,12 @@ const apiEndpoints = ref([
   { name: 'Invoices (Plural)', endpoint: 'Invoices', description: 'Customer billing invoices and statement records' },
   { name: 'Barangays', endpoint: 'Barangays', description: 'Location barangay geographic lookup data' },
   { name: 'Radius Users', endpoint: 'RadiusUser', description: 'RADIUS subscriber user accounts and authentication profiles' },
-  { name: 'Radius Sessions', endpoint: 'RadiusSession', description: 'Active RADIUS accounting sessions and connection state' }
+  { name: 'Radius Sessions', endpoint: 'RadiusSession', description: 'Active RADIUS accounting sessions and connection state' },
+  { name: 'Service Orders', endpoint: 'ServiceOrders', description: 'Post-installation support, repair, and pullout visits' },
+  { name: 'Audit Trail', endpoint: 'LogTrail', description: 'Recorded transaction history across the system' },
+  { name: 'Audit Trail Entities', endpoint: 'LogTrail/GetEntityByDate', description: 'Distinct entity names present in the audit trail' },
+  { name: 'Error Logs', endpoint: 'LogError', description: 'Errors recorded by the API' },
+  { name: 'Error Log Entities', endpoint: 'LogError/GetEntityByDate', description: 'Distinct entity names present in the error logs' }
 ])
 
 const selectedEndpoint = ref(apiEndpoints.value[0].endpoint)

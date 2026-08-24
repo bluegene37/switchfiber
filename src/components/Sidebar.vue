@@ -290,6 +290,9 @@ const rawMenuItems = ref([
       { id: 35, name: 'Activated', path: '/job-orders/activated', icon: 'pi-verified' },
     ]
   },
+  // The /api/ServiceOrders reads are wired up; the screen itself is still to
+  // come, so this lands on the Coming Soon placeholder for now.
+  { id: 49, name: 'Service Orders', path: '/service-orders', icon: 'pi-wrench' },
   { 
     id: 23,
     name: 'Transaction', 
@@ -334,13 +337,28 @@ const rawMenuItems = ref([
       { id: 13, name: 'Plan', path: '/plan', icon: 'pi-tag' },
     ]
   },
+  // Audit Trail and Error Logs are two separate parents, one child per API
+  // endpoint: the unfiltered list, then each of the narrowing lookups.
   {
     id: 39,
-    name: 'Logs',
-    icon: 'pi-history',
+    name: 'Audit Trail',
+    icon: 'pi-verified',
     children: [
-      { id: 40, name: 'Audit Trail', path: '/logs/audit-trail', icon: 'pi-verified' },
-      { id: 41, name: 'Error Logs', path: '/logs/error-logs', icon: 'pi-exclamation-triangle' },
+      { id: 40, name: 'All Audit Trail', path: '/logs/audit-trail', icon: 'pi-list' },
+      { id: 42, name: 'By Transaction Date', path: '/logs/audit-trail/by-date', icon: 'pi-calendar' },
+      { id: 43, name: 'By Entity & Date', path: '/logs/audit-trail/by-entity', icon: 'pi-sitemap' },
+      { id: 44, name: 'By User & Date', path: '/logs/audit-trail/by-user', icon: 'pi-user' },
+    ]
+  },
+  {
+    id: 45,
+    name: 'Error Logs',
+    icon: 'pi-exclamation-triangle',
+    children: [
+      { id: 41, name: 'All Error Logs', path: '/logs/error-logs', icon: 'pi-list' },
+      { id: 46, name: 'By Date Range', path: '/logs/error-logs/by-date', icon: 'pi-calendar' },
+      { id: 47, name: 'By Entity & Date', path: '/logs/error-logs/by-entity', icon: 'pi-sitemap' },
+      { id: 48, name: 'By User & Date', path: '/logs/error-logs/by-user', icon: 'pi-user' },
     ]
   },
   { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },

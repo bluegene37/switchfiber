@@ -35,8 +35,15 @@ const ROUTE_TITLES = {
   disconnection: 'Disconnection',
   'lcp-nap-map': 'LCP NAP Map',
   'lcp-nap-records': 'LCP NAP Records',
-  'audit-trail': 'Audit Trail',
-  'error-logs': 'Error Logs',
+  'audit-trail': 'All Audit Trail',
+  'audit-trail-by-date': 'By Transaction Date',
+  'audit-trail-by-entity': 'By Entity & Date',
+  'audit-trail-by-user': 'By User & Date',
+  'error-logs': 'All Error Logs',
+  'error-logs-by-date': 'By Date Range',
+  'error-logs-by-entity': 'By Entity & Date',
+  'error-logs-by-user': 'By User & Date',
+  'service-orders': 'Service Orders',
   'api-viewer': 'API Viewer',
   models: 'Models',
   settings: 'Settings',
@@ -232,19 +239,64 @@ const router = createRouter({
       path: '/logs',
       redirect: '/logs/audit-trail'
     },
+    // Audit Trail (/api/LogTrail) and Error Logs (/api/LogError) each expose one
+    // unfiltered list plus three narrowing endpoints. Every route below is the
+    // same LogsView, which reads its endpoint and filter controls from the path.
     {
-      // No Audit Trail API yet — the screen is routed and permissioned now so
-      // the menu entry works; swap the component once the endpoint lands.
       path: '/logs/audit-trail',
       name: 'audit-trail',
-      component: () => import('../views/ComingSoon.vue'),
-      meta: { requiresAuth: true, title: 'Audit Trail' }
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'All Audit Trail' }
+    },
+    {
+      path: '/logs/audit-trail/by-date',
+      name: 'audit-trail-by-date',
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'Audit Trail by Transaction Date' }
+    },
+    {
+      path: '/logs/audit-trail/by-entity',
+      name: 'audit-trail-by-entity',
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'Audit Trail by Entity' }
+    },
+    {
+      path: '/logs/audit-trail/by-user',
+      name: 'audit-trail-by-user',
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'Audit Trail by User' }
     },
     {
       path: '/logs/error-logs',
       name: 'error-logs',
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'All Error Logs' }
+    },
+    {
+      path: '/logs/error-logs/by-date',
+      name: 'error-logs-by-date',
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'Error Logs by Date Range' }
+    },
+    {
+      path: '/logs/error-logs/by-entity',
+      name: 'error-logs-by-entity',
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'Error Logs by Entity' }
+    },
+    {
+      path: '/logs/error-logs/by-user',
+      name: 'error-logs-by-user',
+      component: () => import('../views/LogsView.vue'),
+      meta: { requiresAuth: true, title: 'Error Logs by User' }
+    },
+    {
+      // /api/ServiceOrders is wired up as a service and store; the screen is not
+      // built yet, so the menu entry lands on the placeholder for now.
+      path: '/service-orders',
+      name: 'service-orders',
       component: () => import('../views/ComingSoon.vue'),
-      meta: { requiresAuth: true, title: 'Error Logs' }
+      meta: { requiresAuth: true, title: 'Service Orders' }
     },
     {
       path: '/data-viewer',

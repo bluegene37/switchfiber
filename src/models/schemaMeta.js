@@ -357,6 +357,7 @@ export const EndpointSchemaMeta = {
         "barangay",
         "city",
         "region",
+        "planId",
         "remarks",
         "installationFee",
         "contractTemplate",
@@ -367,7 +368,10 @@ export const EndpointSchemaMeta = {
         "verifiedBy",
         "modemRouterSN",
         "provider",
+        "lcpId",
+        "napId",
         "portId",
+        "vlanId",
         "username",
         "visitBy",
         "visitWith",
@@ -423,6 +427,18 @@ export const EndpointSchemaMeta = {
         "referrersAccountNumber",
         "applicationId",
         "houseFront"
+      ]
+    }
+  },
+  "LCPNapLocations": {
+    "create": {
+      "schema": "CreateLCPNapLocationCommand",
+      "required": []
+    },
+    "update": {
+      "schema": "UpdateLCPNapLocationCommand",
+      "required": [
+        "id"
       ]
     }
   },
@@ -550,6 +566,22 @@ export const EndpointSchemaMeta = {
         "brand",
         "model"
       ]
+    }
+  },
+  "ServiceOrders": {
+    "create": {
+      "schema": "CreateServiceOrderRequest",
+      "required": []
+    },
+    "update": {
+      "schema": "UpdateServiceOrderRequest",
+      "required": []
+    }
+  },
+  "Token": {
+    "create": {
+      "schema": "RevokeTokenRequest",
+      "required": []
     }
   },
   "Users": {

@@ -173,8 +173,18 @@ onMounted(() => {
 - **All Other Tables (File Maintenance, Access Level, Transactions, etc.)**: Default to **Ascending order** (`sortOrder = 1`) based on `id`.
 
 ### 2. Form Audit Trail
-- **CREATE (`POST`)**: Populate `createdBy` and `modifiedBy` with the numeric ID of the currently logged-in user (`authStore.user.id`).
-- **UPDATE (`PUT`)**: Only update `modifiedBy` with `authStore.user.id`. Never overwrite `createdBy` or `createdDate` during updates.
+`DynamicApiTable` strips every audit column (`createdBy`, `createdDate`,
+`modifiedBy`, `modifiedDate`, `rowVersion`) from the payload before it is sent —
+the backend fills them in. Endpoints whose DTO still declares them are handled
+by name:
+
+- **Job Orders (`POST` and `PUT`)**: send `createdBy` as the numeric ID of the
+  logged-in user (`authStore.user.id`) and `createdDate` as `null`. The API
+  stamps the timestamp itself and keeps the original creator on an update. See
+  `applyJobOrderCreationAudit` in `DynamicApiTable.vue`.
+- **Every other endpoint**: send nothing. Do not reintroduce audit fields
+  without confirming the DTO asks for them — check `src/models/schemaMeta.js`
+  after running `npm run gen:schema -- --live`.
 
 ### 3. Smart Form Controls in DynamicApiTable
 When using `DynamicApiTable`, modal input fields are automatically rendered based on column names:

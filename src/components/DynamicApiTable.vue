@@ -2241,6 +2241,15 @@ const isApplicationEndpoint = computed(() => {
   return ep === 'applications' || ep === 'application'
 })
 
+// JobOrders took `createdBy` / `createdDate` back into its Create and Update
+// DTOs in Aug 2026, after the backend migration that had dropped them. The
+// generic save path strips every audit column, so these two are re-applied for
+// this endpoint only — see applyJobOrderCreationAudit.
+const isJobOrderEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'joborders' || ep === 'joborder'
+})
+
 const isLcpNapEndpoint = computed(() => {
   const ep = (props.endpoint || '').trim().toLowerCase()
   return (
@@ -2820,6 +2829,23 @@ const BILLING_DETAILS_COLUMNS = [
   'dateInstalled'
 ]
 
+// Audit trail and error log rows share one shape. `requestBody` and `userAgent`
+// are both long enough to wreck the row height, so they stay out of the table
+// and are read in the View Details modal, which lists the whole record. `id` is
+// left out too — the API returns 0 for every log row.
+const LOG_COLUMNS = [
+  'timestamp',
+  'userName',
+  'action',
+  'entity',
+  'entityId',
+  'requestMethod',
+  'requestPath',
+  'responseStatus',
+  'description',
+  'ipAddress'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
@@ -2907,7 +2933,11 @@ const CONCISE_ENDPOINT_COLUMNS = {
     'barangay',
     'city',
     'region'
-  ]
+  ],
+  LogTrail: LOG_COLUMNS,
+  logtrail: LOG_COLUMNS,
+  LogError: LOG_COLUMNS,
+  logerror: LOG_COLUMNS
 }
 
 // Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
@@ -5502,6 +5532,22 @@ const syncPairedFields = (payload) => {
   }
 }
 
+/**
+ * Stamps the creation-audit pair the JobOrders DTO requires again.
+ *
+ * `createdBy` is the numeric id of the signed-in user and `createdDate` is sent
+ * as null on both POST and PUT — the API stamps the timestamp itself and keeps
+ * the original creator on an update. The generic save path drops every audit
+ * column and every null, so this runs last, after that cleanup.
+ *
+ * @param {Object} finalPayload the request body, mutated in place
+ * @param {number} numericUserId `authStore.user.id`, already coerced to a number
+ */
+const applyJobOrderCreationAudit = (finalPayload, numericUserId) => {
+  finalPayload.createdBy = numericUserId
+  finalPayload.createdDate = null
+}
+
 const saveData = async () => {
   saveError.value = null
 
@@ -5594,8 +5640,12 @@ const saveData = async () => {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
+
+      if (isJobOrderEndpoint.value) {
+        applyJobOrderCreationAudit(finalPayload, numericUserId)
+      }
     }
-    
+
     console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, finalPayload)
     await apiClient.post(`/${props.endpoint}`, finalPayload)
 
@@ -5870,6 +5920,10 @@ const saveEdit = async () => {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
+
+      if (isJobOrderEndpoint.value) {
+        applyJobOrderCreationAudit(finalPayload, numericUserId)
+      }
     }
 
     console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, finalPayload)
@@ -6042,6 +6096,26 @@ const fetchData = async ({ silent = false } = {}) => {
       if (!hasLcpNapRecords) {
         menuList.push({ id: 38, name: 'LCP NAP Records', route: '/lcp-nap-locations/records', icon: 'pi pi-table', description: 'Create, edit, and delete LCP NAP location records with a map pin picker' })
       }
+
+      // Audit Trail (/api/LogTrail) and Error Logs (/api/LogError): one row per
+      // endpoint, so an access level can be granted the unfiltered list without
+      // the narrowing lookups, or the other way round.
+      const LOG_MENUS = [
+        { id: 39, name: 'Audit Trail', route: '/logs/audit-trail', icon: 'pi pi-verified', description: 'Recorded transaction history across the system' },
+        { id: 40, name: 'All Audit Trail', route: '/logs/audit-trail', icon: 'pi pi-list', description: 'Every recorded transaction, newest first' },
+        { id: 42, name: 'Audit Trail by Transaction Date', route: '/logs/audit-trail/by-date', icon: 'pi pi-calendar', description: 'Recorded transactions within a date range' },
+        { id: 43, name: 'Audit Trail by Entity & Date', route: '/logs/audit-trail/by-entity', icon: 'pi pi-sitemap', description: 'Recorded transactions for one entity within a date range' },
+        { id: 44, name: 'Audit Trail by User & Date', route: '/logs/audit-trail/by-user', icon: 'pi pi-user', description: 'Recorded transactions by one user within a date range' },
+        { id: 45, name: 'Error Logs', route: '/logs/error-logs', icon: 'pi pi-exclamation-triangle', description: 'Errors recorded by the API' },
+        { id: 41, name: 'All Error Logs', route: '/logs/error-logs', icon: 'pi pi-list', description: 'Every recorded error, newest first' },
+        { id: 46, name: 'Error Logs by Date Range', route: '/logs/error-logs/by-date', icon: 'pi pi-calendar', description: 'Recorded errors within a date range' },
+        { id: 47, name: 'Error Logs by Entity & Date', route: '/logs/error-logs/by-entity', icon: 'pi pi-sitemap', description: 'Recorded errors for one entity within a date range' },
+        { id: 48, name: 'Error Logs by User & Date', route: '/logs/error-logs/by-user', icon: 'pi pi-user', description: 'Recorded errors raised by one user within a date range' },
+        { id: 49, name: 'Service Orders', route: '/service-orders', icon: 'pi pi-wrench', description: 'Post-installation support, repair, and pullout visits' }
+      ]
+      LOG_MENUS.forEach(entry => {
+        if (!menuList.some(m => Number(m.id) === entry.id)) menuList.push(entry)
+      })
 
       const hasApiViewer = menuList.some(m => Number(m.id) === 24 || (m.name && m.name.toLowerCase().includes('api viewer')))
       const hasModels = menuList.some(m => Number(m.id) === 29 || (m.name && m.name.toLowerCase() === 'models'))
