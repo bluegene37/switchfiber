@@ -177,6 +177,7 @@
         scrollable
         :paginator="true"
         :rows="5"
+        paginatorTemplate="PrevPageLink PageLinks NextPageLink"
         class="p-datatable-sm small"
       >
         <template #empty>

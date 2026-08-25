@@ -7000,23 +7000,17 @@ defineExpose({
 }
 
 :deep(.p-paginator-start) {
-  order: 0;
   margin-right: auto !important;
   display: flex !important;
   align-items: center !important;
 }
 
-:deep(.p-paginator-end) {
-  order: 1;
-  display: flex !important;
+:deep(.p-paginator-pages) {
+  display: inline-flex !important;
   align-items: center !important;
-  margin-left: auto !important;
 }
 
-:deep(.p-paginator-content),
-:deep(.p-paginator-pages),
-:deep(.p-paginator-current) {
-  order: 2;
+:deep(.p-paginator-end) {
   display: flex !important;
   align-items: center !important;
   margin-left: 0.5rem !important;
