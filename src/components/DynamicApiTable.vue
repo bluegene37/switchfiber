@@ -511,7 +511,9 @@
               v-if="activeFilterCount > 0" 
               label="Clear Filters" 
               icon="pi pi-filter-slash" 
-              class="p-button-outlined p-button-sm rounded-3 shadow-xs" 
+              severity="secondary"
+              outlined
+              class="p-button-outlined p-button-secondary p-button-sm rounded-3 shadow-xs" 
               @click="clearAllFilters" 
             />
             <Button 
@@ -1417,6 +1419,8 @@
             v-if="!readOnly"
             label="Edit Record"
             icon="pi pi-pencil"
+            severity="primary"
+            outlined
             class="p-button-outlined p-button-primary p-button-sm rounded-3 px-3"
             @click="displayViewDialog = false; openEditDialog(viewFormData)"
           />
