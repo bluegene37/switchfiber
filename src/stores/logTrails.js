@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { LogTrailService } from '../services/logTrails'
+import { DEFAULT_LOG_ENTITIES } from '../models/entities'
 
 export const useLogTrailStore = defineStore('logTrails', () => {
   const logTrails = ref([])
-  // The distinct entity names in the current range, used to fill the Entity
-  // dropdown on the by-entity screen rather than rendered as a table.
-  const entities = ref([])
+  // Local default list of entity names for the dropdown so it works offline
+  // and does not depend on log data presence in a chosen date range.
+  const entities = ref([...DEFAULT_LOG_ENTITIES])
   const isLoading = ref(false)
   const error = ref(null)
 
@@ -26,12 +27,13 @@ export const useLogTrailStore = defineStore('logTrails', () => {
   const fetchEntities = async (dateFrom, dateTo) => {
     try {
       const response = await LogTrailService.getEntities(dateFrom, dateTo)
-      entities.value = Array.isArray(response) ? response.filter(Boolean) : []
+      if (Array.isArray(response) && response.length > 0) {
+        // Merge any newly discovered entities with default list
+        const set = new Set([...DEFAULT_LOG_ENTITIES, ...response.filter(Boolean)])
+        entities.value = Array.from(set)
+      }
     } catch (err) {
-      // A missing entity list only costs the dropdown its options; the log
-      // table beside it still loads, so this must not surface as a page error.
       console.warn('[logTrails] Could not load audit trail entities:', err.message)
-      entities.value = []
     }
   }
 

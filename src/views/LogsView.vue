@@ -21,10 +21,11 @@
           <span class="small text-secondary fw-semibold text-nowrap">Entity:</span>
           <Select
             v-model="selectedEntity"
-            :options="logStore.entities"
+            :options="entityOptions"
             placeholder="Select entity"
             size="small"
             showClear
+            filter
             class="log-filter-select"
           />
         </div>
@@ -138,6 +139,7 @@ import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { useLogTrailStore } from '../stores/logTrails'
 import { useLogErrorStore } from '../stores/logErrors'
 import { useUserStore } from '../stores/users'
+import { DEFAULT_LOG_ENTITIES } from '../models/entities'
 
 const route = useRoute()
 const logTrailStore = useLogTrailStore()
@@ -222,9 +224,15 @@ const routeMap = {
 
 const config = computed(() => routeMap[route.path] || routeMap['/logs/audit-trail'])
 
-// The Entity dropdown is fed by whichever log family the route belongs to —
-// GetEntityByDate answers with a plain list of names, not a table of records.
+// The Entity dropdown uses a saved local list of system entities so it is not
+// dependent on log data existence or date-window availability.
 const logStore = computed(() => (config.value.source === 'error' ? logErrorStore : logTrailStore))
+
+const entityOptions = computed(() =>
+  logStore.value.entities && logStore.value.entities.length > 0
+    ? logStore.value.entities
+    : DEFAULT_LOG_ENTITIES
+)
 
 const selectedEntity = ref(null)
 const selectedUsername = ref(null)
@@ -329,34 +337,12 @@ const clearAllFilters = () => {
   toDate.value = null
 }
 
-// The entity list is itself date-bounded, so it is refreshed whenever the range
-// moves — a name that has dropped out of the window must leave the dropdown too.
-const refreshEntities = () => {
-  if (config.value.filter !== 'entity') return
-  const from = formatDateParam(fromDate.value, false)
-  const to = formatDateParam(toDate.value, true)
-  logStore.value.fetchEntities(from, to)
-}
-
-watch(
-  () => [route.path, fromDate.value, toDate.value],
-  () => {
-    refreshEntities()
-    // A selection made under the previous range may no longer be offered.
-    if (config.value.filter === 'entity' && selectedEntity.value &&
-        !logStore.value.entities.includes(selectedEntity.value)) {
-      selectedEntity.value = null
-    }
-  }
-)
-
 watch(() => route.path, () => {
   selectedEntity.value = null
   selectedUsername.value = null
 })
 
 onMounted(() => {
-  refreshEntities()
   if (!userStore.users || userStore.users.length === 0) {
     userStore.fetchUsers().catch(() => {})
   }
