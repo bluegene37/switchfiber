@@ -931,6 +931,71 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Priority Level Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'priority_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="priorityOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Priority Level" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Support Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'supportstatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="supportStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Support Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Visit Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'visitstatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="visitStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Visit Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Repair Category Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'repaircategory_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="repairCategoryOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Repair Category" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Connection Type Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'connectiontype_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="connectionTypeOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Connection Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
                 <div class="position-relative w-100">
@@ -1770,6 +1835,71 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Priority Level Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'priority_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="priorityOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Priority Level" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Support Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'supportstatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="supportStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Support Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Visit Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'visitstatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="visitStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Visit Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Repair Category Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'repaircategory_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="repairCategoryOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Repair Category" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Connection Type Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'connectiontype_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="connectionTypeOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Connection Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
                 <div class="position-relative w-100">
@@ -2260,8 +2390,18 @@ const isLcpNapEndpoint = computed(() => {
   )
 })
 
+const isServiceOrderEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return (
+    ep === 'serviceorders' ||
+    ep === 'serviceorder' ||
+    ep === 'service_orders' ||
+    ep === 'service_order'
+  )
+})
+
 // Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders,
-// Billing Details & LCP NAP Locations — the field-heavy forms) or the standard 2-column modal
+// Billing Details, LCP NAP Locations & Service Orders — the field-heavy forms) or the standard 2-column modal
 const isWideForm = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
   return (
@@ -2274,7 +2414,11 @@ const isWideForm = computed(() => {
     ep === 'lcpnaplocations' ||
     ep === 'lcpnaplocation' ||
     ep === 'lcp_nap_locations' ||
-    ep === 'lcp_nap_location'
+    ep === 'lcp_nap_location' ||
+    ep === 'serviceorders' ||
+    ep === 'serviceorder' ||
+    ep === 'service_orders' ||
+    ep === 'service_order'
   )
 })
 
@@ -2291,7 +2435,11 @@ const isStringAuditEndpoint = computed(() => {
     ep === 'joborder' ||
     ep === 'invoices' ||
     ep === 'invoice' ||
-    ep === 'billingstatus'
+    ep === 'billingstatus' ||
+    ep === 'serviceorders' ||
+    ep === 'serviceorder' ||
+    ep === 'service_orders' ||
+    ep === 'service_order'
   )
 })
 
@@ -2660,6 +2808,21 @@ function getFieldType(col) {
   if (lower === 'usagetype') {
     return 'usagetype_dropdown'
   }
+  if (lower === 'prioritylevel' || lower === 'priority_level' || lower === 'priority') {
+    return 'priority_dropdown'
+  }
+  if (lower === 'supportstatus' || lower === 'support_status') {
+    return 'supportstatus_dropdown'
+  }
+  if (lower === 'visitstatus' || lower === 'visit_status') {
+    return 'visitstatus_dropdown'
+  }
+  if (lower === 'repaircategory' || lower === 'repair_category') {
+    return 'repaircategory_dropdown'
+  }
+  if (lower === 'connectiontype' || lower === 'connection_type') {
+    return 'connectiontype_dropdown'
+  }
   if (lower.includes('password') || lower === 'pass' || lower === 'pwd') {
     return 'password'
   }
@@ -2937,7 +3100,55 @@ const CONCISE_ENDPOINT_COLUMNS = {
   LogTrail: LOG_COLUMNS,
   logtrail: LOG_COLUMNS,
   LogError: LOG_COLUMNS,
-  logerror: LOG_COLUMNS
+  logerror: LOG_COLUMNS,
+  ServiceOrders: [
+    'id',
+    'accountNumber',
+    'fullName',
+    'contactNumber',
+    'address',
+    'plan',
+    'concern',
+    'priorityLevel',
+    'supportStatus',
+    'visitStatus',
+    'visitBy',
+    'dateInstalled',
+    'barangay',
+    'city'
+  ],
+  serviceorders: [
+    'id',
+    'accountNumber',
+    'fullName',
+    'contactNumber',
+    'address',
+    'plan',
+    'concern',
+    'priorityLevel',
+    'supportStatus',
+    'visitStatus',
+    'visitBy',
+    'dateInstalled',
+    'barangay',
+    'city'
+  ],
+  service_orders: [
+    'id',
+    'accountNumber',
+    'fullName',
+    'contactNumber',
+    'address',
+    'plan',
+    'concern',
+    'priorityLevel',
+    'supportStatus',
+    'visitStatus',
+    'visitBy',
+    'dateInstalled',
+    'barangay',
+    'city'
+  ]
 }
 
 // Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
@@ -3906,6 +4117,188 @@ const buildLcpNapSections = (cols, { includeAudit = false } = {}) => {
   return sections
 }
 
+const SERVICE_ORDER_FORM_LAYOUT = [
+  {
+    key: 'subscriber',
+    title: 'Subscriber & Location',
+    icon: 'pi pi-user',
+    badgeClass: 'text-primary',
+    columns: [
+      'accountNumber',
+      'fullName',
+      'contactNumber',
+      'emailAddress',
+      'address',
+      'barangay',
+      'city',
+      'addressCoordinates',
+      'dateInstalled'
+    ]
+  },
+  {
+    key: 'network',
+    title: 'Subscription & Network Assignment',
+    icon: 'pi pi-wifi',
+    badgeClass: 'text-info',
+    columns: [
+      'plan',
+      'provider',
+      'username',
+      'connectionType',
+      'routerModemSN',
+      'lcp',
+      'nap',
+      'port',
+      'vlan'
+    ]
+  },
+  {
+    key: 'support',
+    title: 'Support Concern & Dispatch',
+    icon: 'pi pi-wrench',
+    badgeClass: 'text-warning',
+    columns: [
+      'concern',
+      'priorityLevel',
+      'supportStatus',
+      'connectionRemarks',
+      'requestedBy',
+      'assignedEmail',
+      'assignedBy',
+      'assignedDate'
+    ]
+  },
+  {
+    key: 'visit',
+    title: 'Field Service & Technical Visit',
+    icon: 'pi pi-calendar',
+    badgeClass: 'text-success',
+    columns: [
+      'visitStatus',
+      'visitBy',
+      'visitWith',
+      'visitWithOthers',
+      'visitRemarks',
+      'startTimestamp',
+      'stopTimestamp',
+      'duration',
+      'repairCategory',
+      'serviceCharge',
+      'supportRemarks'
+    ]
+  },
+  {
+    key: 'equipment',
+    title: 'Equipment Replacement & Pullout',
+    icon: 'pi pi-server',
+    badgeClass: 'text-danger',
+    columns: [
+      'newRouterModemSN',
+      'newLCP',
+      'newNAP',
+      'newPORT',
+      'newVLAN',
+      'routerModel',
+      'newPLAN',
+      'pulloutRemarks',
+      'pulloutRouterModel',
+      'pulloutRouterModelSN',
+      'pulloutCPESN'
+    ]
+  },
+  {
+    key: 'items',
+    title: 'Items & Materials Used',
+    icon: 'pi pi-box',
+    badgeClass: 'text-secondary',
+    columns: [
+      'itemName',
+      'itemQuantity',
+      'itemName1',
+      'itemQuantity1',
+      'itemName2',
+      'itemQuantity2',
+      'itemName3',
+      'itemQuantity3',
+      'itemName4',
+      'itemQuantity4',
+      'itemName5',
+      'itemQuantity5',
+      'itemName6',
+      'itemQuantity6',
+      'itemName7',
+      'itemQuantity7',
+      'itemName8',
+      'itemQuantity8',
+      'itemName9',
+      'itemQuantity9',
+      'itemName10',
+      'itemQuantity10'
+    ]
+  },
+  {
+    key: 'photos',
+    title: 'Photos & Attachments',
+    icon: 'pi pi-images',
+    badgeClass: 'text-dark',
+    columns: [
+      'houseFrontPicture',
+      'image1',
+      'image2',
+      'image3',
+      'clientSignature'
+    ]
+  }
+]
+
+const buildServiceOrderSections = (cols, { includeAudit = false } = {}) => {
+  const pool = new Map()
+  ;(cols || []).forEach(col => {
+    const key = normalizeColKey(col)
+    if (!pool.has(key)) pool.set(key, col)
+  })
+
+  const sections = []
+  SERVICE_ORDER_FORM_LAYOUT.forEach(sec => {
+    const picked = []
+    sec.columns.forEach(wanted => {
+      const key = normalizeColKey(wanted)
+      if (pool.has(key)) {
+        picked.push(pool.get(key))
+        pool.delete(key)
+      }
+    })
+    if (picked.length > 0) {
+      sections.push({ ...sec, columns: picked })
+    }
+  })
+
+  const leftovers = [...pool.values()]
+  const extras = leftovers.filter(col => !isAuditField(col))
+  const auditCols = leftovers.filter(col => isAuditField(col))
+
+  if (extras.length > 0) {
+    sections.push({
+      key: 'extra',
+      title: 'Additional Details',
+      icon: 'pi pi-file',
+      badgeClass: 'text-secondary',
+      columns: extras
+    })
+  }
+  if (includeAudit && auditCols.length > 0) {
+    sections.push({
+      key: 'audit',
+      title: getSectionTitle('audit'),
+      icon: SECTION_META.audit.icon,
+      badgeClass: SECTION_META.audit.badgeClass,
+      columns: auditCols
+    })
+  }
+
+  return sections
+}
+
 // Columns for Create & Edit forms (excludes system audit fields completely)
 const formSections = computed(() => {
   if (isApplicationEndpoint.value) {
@@ -3913,6 +4306,9 @@ const formSections = computed(() => {
   }
   if (isLcpNapEndpoint.value) {
     return buildLcpNapSections(formColumns.value)
+  }
+  if (isServiceOrderEndpoint.value) {
+    return buildServiceOrderSections(formColumns.value)
   }
 
   const groups = {
@@ -3971,6 +4367,9 @@ const viewFormSections = computed(() => {
   }
   if (isLcpNapEndpoint.value) {
     return buildLcpNapSections(viewFormColumns.value, { includeAudit: false })
+  }
+  if (isServiceOrderEndpoint.value) {
+    return buildServiceOrderSections(viewFormColumns.value, { includeAudit: false })
   }
 
   const groups = {
@@ -4290,6 +4689,49 @@ const usageTypeOptions = ref([
   { label: 'Business', value: 'Business' },
   { label: 'Gaming', value: 'Gaming' },
   { label: 'Streaming', value: 'Streaming' }
+])
+
+const priorityOptions = ref([
+  { label: 'Low', value: 'Low' },
+  { label: 'Medium', value: 'Medium' },
+  { label: 'High', value: 'High' },
+  { label: 'Urgent', value: 'Urgent' },
+  { label: 'Critical', value: 'Critical' }
+])
+
+const supportStatusOptions = ref([
+  { label: 'Pending', value: 'Pending' },
+  { label: 'In Progress', value: 'In Progress' },
+  { label: 'Resolved', value: 'Resolved' },
+  { label: 'Closed', value: 'Closed' },
+  { label: 'Cancelled', value: 'Cancelled' }
+])
+
+const visitStatusOptions = ref([
+  { label: 'Scheduled', value: 'Scheduled' },
+  { label: 'Dispatched', value: 'Dispatched' },
+  { label: 'In Progress', value: 'In Progress' },
+  { label: 'Completed', value: 'Completed' },
+  { label: 'Cancelled', value: 'Cancelled' }
+])
+
+const repairCategoryOptions = ref([
+  { label: 'Fiber Cut', value: 'Fiber Cut' },
+  { label: 'Modem Replacement', value: 'Modem Replacement' },
+  { label: 'Port Reassignment', value: 'Port Reassignment' },
+  { label: 'Configuration Issue', value: 'Configuration Issue' },
+  { label: 'Pullout', value: 'Pullout' },
+  { label: 'Hardware Defect', value: 'Hardware Defect' },
+  { label: 'Relocation', value: 'Relocation' },
+  { label: 'Maintenance', value: 'Maintenance' },
+  { label: 'Other', value: 'Other' }
+])
+
+const connectionTypeOptions = ref([
+  { label: 'Fiber Optic', value: 'Fiber' },
+  { label: 'Wireless', value: 'Wireless' },
+  { label: 'Direct', value: 'Direct' },
+  { label: 'Broadband', value: 'Broadband' }
 ])
 
 const fetchRelatedData = async () => {
@@ -5447,6 +5889,16 @@ const openCreateDialog = () => {
       formData.value[col] = billingStatusOptions.value[0].value
     } else if (type === 'usagetype_dropdown' && usageTypeOptions.value.length > 0) {
       formData.value[col] = usageTypeOptions.value[0].value
+    } else if (type === 'priority_dropdown' && priorityOptions.value.length > 0) {
+      formData.value[col] = priorityOptions.value[1]?.value || priorityOptions.value[0].value // 'Medium'
+    } else if (type === 'supportstatus_dropdown' && supportStatusOptions.value.length > 0) {
+      formData.value[col] = supportStatusOptions.value[0].value // 'Pending'
+    } else if (type === 'visitstatus_dropdown' && visitStatusOptions.value.length > 0) {
+      formData.value[col] = visitStatusOptions.value[0].value // 'Scheduled'
+    } else if (type === 'repaircategory_dropdown' && repairCategoryOptions.value.length > 0) {
+      formData.value[col] = repairCategoryOptions.value[0].value
+    } else if (type === 'connectiontype_dropdown' && connectionTypeOptions.value.length > 0) {
+      formData.value[col] = connectionTypeOptions.value[0].value
     } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
       const guestOption = accessLevels.value.find(opt => (opt.nameOnly || opt.label || '').toLowerCase().includes('guest'))
       formData.value[col] = guestOption ? guestOption.value : accessLevels.value[0].value
@@ -5468,6 +5920,21 @@ const openCreateDialog = () => {
     const tsCol = formColumns.value.find(c => c.toLowerCase() === 'timestamp')
     if (tsCol) {
       formData.value[tsCol] = nowIso
+    }
+  }
+
+  if (isServiceOrderEndpoint.value) {
+    const supportCol = formColumns.value.find(c => c.toLowerCase() === 'supportstatus')
+    if (supportCol && !formData.value[supportCol]) {
+      formData.value[supportCol] = 'Pending'
+    }
+    const priorityCol = formColumns.value.find(c => c.toLowerCase() === 'prioritylevel')
+    if (priorityCol && !formData.value[priorityCol]) {
+      formData.value[priorityCol] = 'Medium'
+    }
+    const visitCol = formColumns.value.find(c => c.toLowerCase() === 'visitstatus')
+    if (visitCol && !formData.value[visitCol]) {
+      formData.value[visitCol] = 'Scheduled'
     }
   }
   // Default province for Create modal if empty (the plant lives in Binangonan, Rizal)

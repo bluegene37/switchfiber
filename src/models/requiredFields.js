@@ -75,6 +75,10 @@ const ENDPOINT_OVERRIDES = {
   ],
   lcpnaplocations: [
     'lcp', 'nap', 'portTotal', 'coordinates'
+  ],
+  serviceorders: [ // schema says 60
+    'accountNumber', 'fullName', 'contactNumber', 'address',
+    'plan', 'concern', 'priorityLevel', 'supportStatus', 'visitStatus'
   ]
 }
 

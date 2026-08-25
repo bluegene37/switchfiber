@@ -290,8 +290,6 @@ const rawMenuItems = ref([
       { id: 35, name: 'Activated', path: '/job-orders/activated', icon: 'pi-verified' },
     ]
   },
-  // The /api/ServiceOrders reads are wired up; the screen itself is still to
-  // come, so this lands on the Coming Soon placeholder for now.
   { id: 49, name: 'Service Orders', path: '/service-orders', icon: 'pi-wrench' },
   { 
     id: 23,

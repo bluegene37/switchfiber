@@ -44,6 +44,11 @@ const ROUTE_TITLES = {
   'error-logs-by-entity': 'By Entity & Date',
   'error-logs-by-user': 'By User & Date',
   'service-orders': 'Service Orders',
+  'service-orders-pending': 'Pending Service Orders',
+  'service-orders-inprogress': 'In Progress Service Orders',
+  'service-orders-resolved': 'Resolved Service Orders',
+  'service-orders-completed': 'Completed Service Orders',
+  'service-orders-cancelled': 'Cancelled Service Orders',
   'api-viewer': 'API Viewer',
   models: 'Models',
   settings: 'Settings',
@@ -291,12 +296,40 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Error Logs by User' }
     },
     {
-      // /api/ServiceOrders is wired up as a service and store; the screen is not
-      // built yet, so the menu entry lands on the placeholder for now.
       path: '/service-orders',
       name: 'service-orders',
-      component: () => import('../views/ComingSoon.vue'),
+      component: () => import('../views/ServiceOrderList.vue'),
       meta: { requiresAuth: true, title: 'Service Orders' }
+    },
+    {
+      path: '/service-orders/pending',
+      name: 'service-orders-pending',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'Pending Service Orders' }
+    },
+    {
+      path: '/service-orders/inprogress',
+      name: 'service-orders-inprogress',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'In Progress Service Orders' }
+    },
+    {
+      path: '/service-orders/resolved',
+      name: 'service-orders-resolved',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'Resolved Service Orders' }
+    },
+    {
+      path: '/service-orders/completed',
+      name: 'service-orders-completed',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'Completed Service Orders' }
+    },
+    {
+      path: '/service-orders/cancelled',
+      name: 'service-orders-cancelled',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'Cancelled Service Orders' }
     },
     {
       path: '/data-viewer',

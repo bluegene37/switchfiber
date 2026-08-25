@@ -170,6 +170,24 @@ const routeMap = {
     icon: 'pi-table',
     description: 'Maintain Local Convergence Point and Network Access Point location records.'
   },
+  '/service-orders': {
+    title: 'Service Orders',
+    endpoint: 'ServiceOrders',
+    icon: 'pi-wrench',
+    description: 'Manage subscriber repair requests, technical support tickets, field dispatch visits, and equipment pullouts.'
+  },
+  '/service_orders': {
+    title: 'Service Orders',
+    endpoint: 'ServiceOrders',
+    icon: 'pi-wrench',
+    description: 'Manage subscriber repair requests, technical support tickets, field dispatch visits, and equipment pullouts.'
+  },
+  '/serviceorders': {
+    title: 'Service Orders',
+    endpoint: 'ServiceOrders',
+    icon: 'pi-wrench',
+    description: 'Manage subscriber repair requests, technical support tickets, field dispatch visits, and equipment pullouts.'
+  }
 }
 
 const config = computed(() => routeMap[route.path] || { title: 'Unknown', endpoint: null, icon: 'pi-list', description: 'Manage records and system configurations.' })

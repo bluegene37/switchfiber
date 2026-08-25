@@ -2,11 +2,7 @@ import apiClient from './api'
 
 /**
  * Service Orders — post-installation support, repair, and pullout visits.
- *
- * Only the reads are wired up for now: the menu entry lands ahead of the
- * screen, so nothing calls the write methods yet. They are declared here so the
- * service matches the API surface (`/api/ServiceOrders` supports POST, PUT and
- * DELETE) and the screen, when it arrives, has nothing left to add.
+ * Adheres strictly to REST conventions (/api/ServiceOrders).
  */
 export const ServiceOrderService = {
   getServiceOrders() {
