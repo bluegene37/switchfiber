@@ -4,7 +4,7 @@ import apiClient from '../services/api'
 
 // Menu ids for screens that live in the front end and have no Menus row in the
 // database yet. See fetchPermissions for how these are treated.
-const CLIENT_PROVIDED_MENU_IDS = [29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49] // 29 = Models, 30 = Disconnection, 32-35 = Job Orders, 36-38 = LCP NAP Locations, 39/40/42-44 = Audit Trail, 45/41/46-48 = Error Logs, 49 = Service Orders
+const CLIENT_PROVIDED_MENU_IDS = [29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51] // 29 = Models, 30 = Disconnection, 32-35/50-51 = Job Orders, 36-38 = LCP NAP Locations, 39/40/42-44 = Audit Trail, 45/41/46-48 = Error Logs, 49 = Service Orders
 
 // Shared reactive state across all components
 const allowedMenuIds = ref(new Set())
@@ -30,7 +30,7 @@ const unwrap = (val) => {
 // Every menu id the front end ships. For Super Admins this IS their
 // permission set; for everyone else it is only the ceiling of what stored
 // rows can grant.
-const FULL_MENU_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 101, 102, 103]
+const FULL_MENU_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 101, 102, 103]
 
 // The name of the user's access level, resolved from the API. Lets a level
 // NAMED "Super Admin" stored under another id (a duplicate row) still be

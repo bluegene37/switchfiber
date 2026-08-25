@@ -31,6 +31,8 @@ export function useSearch() {
     { id: 'nav-application-done', category: 'Navigation', title: 'Done Applications', subtitle: 'Completed customer applications', icon: 'pi pi-check-circle', route: '/application/done' },
     { id: 'nav-application-approved', category: 'Navigation', title: 'Approved Applications', subtitle: 'Verified & approved customer applications', icon: 'pi pi-verified', route: '/application/approved' },
     { id: 'nav-job-orders', category: 'Navigation', title: 'All Job Orders', subtitle: 'Field installation & repair dispatch tickets', icon: 'pi pi-ticket', route: '/job-orders' },
+    { id: 'nav-job-orders-applied', category: 'Navigation', title: 'Applied Job Orders', subtitle: 'New subscriber applications & tickets', icon: 'pi pi-file-edit', route: '/job-orders/applied' },
+    { id: 'nav-job-orders-confirmed', category: 'Navigation', title: 'Confirmed Job Orders', subtitle: 'Confirmed job orders scheduled for dispatch', icon: 'pi pi-thumbs-up', route: '/job-orders/confirmed' },
     { id: 'nav-job-orders-inprogress', category: 'Navigation', title: 'In Progress Job Orders', subtitle: 'Dispatch tickets currently being worked', icon: 'pi pi-clock', route: '/job-orders/inprogress' },
     { id: 'nav-job-orders-completed', category: 'Navigation', title: 'Completed Job Orders', subtitle: 'Finished installation & repair tickets', icon: 'pi pi-check-circle', route: '/job-orders/completed' },
     { id: 'nav-job-orders-activated', category: 'Navigation', title: 'Activated Job Orders', subtitle: 'Tickets with activated subscriber service', icon: 'pi pi-verified', route: '/job-orders/activated' },
