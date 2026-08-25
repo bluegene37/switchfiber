@@ -285,8 +285,6 @@ const rawMenuItems = ref([
     icon: 'pi-clipboard',
     children: [
       { id: 32, name: 'All Job Orders', path: '/job-orders', icon: 'pi-list' },
-      { id: 50, name: 'Applied', path: '/job-orders/applied', icon: 'pi-file-edit' },
-      { id: 51, name: 'Confirmed', path: '/job-orders/confirmed', icon: 'pi-thumbs-up' },
       { id: 33, name: 'In Progress', path: '/job-orders/inprogress', icon: 'pi-clock' },
       { id: 34, name: 'Completed', path: '/job-orders/completed', icon: 'pi-check-circle' },
       { id: 35, name: 'Activated', path: '/job-orders/activated', icon: 'pi-verified' },

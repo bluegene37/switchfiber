@@ -138,8 +138,6 @@ const selectedDatePreset = ref('')
 // `inprogress` is stored as one word in the JobOrders status column.
 const statusTabs = [
   { id: 'all', label: 'All Job Orders', value: '', routePath: '/job-orders', icon: 'pi-list' },
-  { id: 'applied', label: 'Applied', value: 'Applied', routePath: '/job-orders/applied', icon: 'pi-file-edit' },
-  { id: 'confirmed', label: 'Confirmed', value: 'Confirmed', routePath: '/job-orders/confirmed', icon: 'pi-thumbs-up' },
   { id: 'inprogress', label: 'In Progress', value: 'inprogress', routePath: '/job-orders/inprogress', icon: 'pi-clock' },
   { id: 'completed', label: 'Completed', value: 'completed', routePath: '/job-orders/completed', icon: 'pi-check-circle' },
   { id: 'activated', label: 'Activated', value: 'activated', routePath: '/job-orders/activated', icon: 'pi-verified' }
@@ -157,37 +155,27 @@ const statusCounts = computed(() => {
 
 const isDedicatedStatusRoute = computed(() => {
   const p = route.path.toLowerCase()
-  return p.includes('/applied') || p.includes('/confirmed') || p.includes('/inprogress') || p.includes('/completed') || p.includes('/activated')
+  return p.includes('/inprogress') || p.includes('/completed') || p.includes('/activated')
 })
 
 const pageTitle = computed(() => {
-  const s = selectedStatus.value.toLowerCase()
-  if (s === 'applied') return 'Applied Job Orders'
-  if (s === 'confirmed') return 'Confirmed Job Orders'
-  if (s === 'inprogress') return 'In Progress Job Orders'
-  if (s === 'completed') return 'Completed Job Orders'
-  if (s === 'activated') return 'Activated Job Orders'
+  if (selectedStatus.value === 'inprogress') return 'In Progress Job Orders'
+  if (selectedStatus.value === 'completed') return 'Completed Job Orders'
+  if (selectedStatus.value === 'activated') return 'Activated Job Orders'
   return 'All Job Orders'
 })
 
 const pageDescription = computed(() => {
-  const s = selectedStatus.value.toLowerCase()
-  if (s === 'applied') return 'View new subscriber applications and job orders submitted for technical validation.'
-  if (s === 'confirmed') return 'View confirmed job orders scheduled for dispatch and site installation.'
-  if (s === 'inprogress') return 'View and process technical dispatch job orders currently in progress.'
-  if (s === 'completed') return 'View completed installation and field service job orders.'
-  if (s === 'activated') return 'View job orders whose subscriber service has been activated.'
+  if (selectedStatus.value === 'inprogress') return 'View and process technical dispatch job orders currently in progress.'
+  if (selectedStatus.value === 'completed') return 'View completed installation and field service job orders.'
+  if (selectedStatus.value === 'activated') return 'View job orders whose subscriber service has been activated.'
   return 'Track technical dispatch work orders, site installations, subscriber repairs, and field service assignments.'
 })
 
 const syncStatusFromRoute = () => {
   const p = route.path.toLowerCase()
   const qStatus = String(route.query.status || '').toLowerCase()
-  if (p.includes('/applied') || qStatus === 'applied') {
-    selectedStatus.value = 'Applied'
-  } else if (p.includes('/confirmed') || qStatus === 'confirmed') {
-    selectedStatus.value = 'Confirmed'
-  } else if (p.includes('/inprogress') || qStatus === 'inprogress' || qStatus === 'in progress' || qStatus === 'in-progress') {
+  if (p.includes('/inprogress') || qStatus === 'inprogress' || qStatus === 'in progress' || qStatus === 'in-progress') {
     selectedStatus.value = 'inprogress'
   } else if (p.includes('/completed') || qStatus === 'completed') {
     selectedStatus.value = 'completed'

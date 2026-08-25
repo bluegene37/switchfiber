@@ -6062,20 +6062,12 @@ const fetchData = async ({ silent = false } = {}) => {
       }
 
       const hasAllJobOrders = menuList.some(m => Number(m.id) === 32 || (m.name && m.name.toLowerCase() === 'all job orders'))
-      const hasJobOrdersApplied = menuList.some(m => Number(m.id) === 50)
-      const hasJobOrdersConfirmed = menuList.some(m => Number(m.id) === 51)
       const hasJobOrdersInProgress = menuList.some(m => Number(m.id) === 33)
       const hasJobOrdersCompleted = menuList.some(m => Number(m.id) === 34)
       const hasJobOrdersActivated = menuList.some(m => Number(m.id) === 35)
 
       if (!hasAllJobOrders) {
         menuList.push({ id: 32, name: 'All Job Orders', route: '/job-orders', icon: 'pi pi-list', description: 'View all technical dispatch job orders' })
-      }
-      if (!hasJobOrdersApplied) {
-        menuList.push({ id: 50, name: 'Job Orders Applied', route: '/job-orders/applied', icon: 'pi pi-file-edit', description: 'View applied job orders' })
-      }
-      if (!hasJobOrdersConfirmed) {
-        menuList.push({ id: 51, name: 'Job Orders Confirmed', route: '/job-orders/confirmed', icon: 'pi pi-thumbs-up', description: 'View confirmed job orders' })
       }
       if (!hasJobOrdersInProgress) {
         menuList.push({ id: 33, name: 'Job Orders In Progress', route: '/job-orders/inprogress', icon: 'pi pi-clock', description: 'View and process in-progress job orders' })
