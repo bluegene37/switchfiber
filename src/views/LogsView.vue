@@ -23,8 +23,8 @@
             v-model="selectedEntity"
             :options="entityOptions"
             :loading="entityOptionsLoading"
-            :placeholder="entityOptionsLoading ? 'Loading entities…' : 'Select entity'"
-            emptyMessage="No entities found in the logs"
+            :placeholder="entityOptionsLoading ? 'Loading entities…' : 'All entities'"
+            emptyMessage="No entities found in the loaded logs"
             size="small"
             showClear
             filter
@@ -120,13 +120,14 @@
       <DynamicApiTable
         v-else
         :endpoint="config.endpoint"
-        :filter-endpoint="config.filterEndpoint"
+        :filter-endpoint="activeFilterEndpoint"
         :filter-params="activeFilterParams"
         :key="route.path"
         read-only
         default-sort-field="timestamp"
         :default-sort-order="-1"
         @reset-filters="clearAllFilters"
+        @data-loaded="onDataLoaded"
       />
     </div>
   </div>
@@ -138,13 +139,9 @@ import { useRoute } from 'vue-router'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
-import { useLogTrailStore } from '../stores/logTrails'
-import { useLogErrorStore } from '../stores/logErrors'
 import { useUserStore } from '../stores/users'
 
 const route = useRoute()
-const logTrailStore = useLogTrailStore()
-const logErrorStore = useLogErrorStore()
 const userStore = useUserStore()
 
 /**
@@ -178,8 +175,9 @@ const routeMap = {
     source: 'trail',
     endpoint: 'LogTrail',
     filterEndpoint: 'LogTrail/GetLogsByEntityAndDate',
+    dateFilterEndpoint: 'LogTrail/GetLogsByTransactionDate',
     filter: 'entity',
-    description: 'Recorded transactions for a single entity within a date range.'
+    description: 'Recorded transactions within a date range, narrowable to a single entity.'
   },
   '/logs/audit-trail/by-user': {
     title: 'Audit Trail by User',
@@ -210,8 +208,9 @@ const routeMap = {
     source: 'error',
     endpoint: 'LogError',
     filterEndpoint: 'LogError/GetLogsByEntityAndDate',
+    dateFilterEndpoint: 'LogError/GetLogsByDateRange',
     filter: 'entity',
-    description: 'Recorded errors for a single entity within a date range.'
+    description: 'Recorded errors within a date range, narrowable to a single entity.'
   },
   '/logs/error-logs/by-user': {
     title: 'Error Logs by User',
@@ -225,25 +224,27 @@ const routeMap = {
 
 const config = computed(() => routeMap[route.path] || routeMap['/logs/audit-trail'])
 
-// The Entity dropdown is grouped out of the downloaded log data itself: the
-// by-entity screens download the full log list once, and the distinct entity
-// values found in it become the options. While that download is in flight the
-// dropdown shows a loading state.
-const logStore = computed(() => (config.value.source === 'error' ? logErrorStore : logTrailStore))
+// The by-entity screens load straight away on the date range alone (via the
+// same date endpoint the by-date screens use) and the Entity dropdown is
+// grouped out of the rows that download returns. Picking an entity then
+// narrows server-side through GetLogsByEntityAndDate; the options keep the
+// wider date-only set so the other entities stay selectable.
+const entityRows = ref(null) // rows of the last date-only fetch; null until one lands
 
-const entityOptions = computed(() => logStore.value.entities)
-const entityOptionsLoading = computed(() => logStore.value.isLoading)
-
-const ensureEntityData = () => {
+const onDataLoaded = ({ rows, params }) => {
   if (config.value.filter !== 'entity') return
-  if (config.value.source === 'error') {
-    if (logErrorStore.logErrors.length === 0 && !logErrorStore.isLoading) {
-      logErrorStore.fetchLogErrors()
-    }
-  } else if (logTrailStore.logTrails.length === 0 && !logTrailStore.isLoading) {
-    logTrailStore.fetchLogTrails()
-  }
+  if (params && params.Entity) return // entity-narrowed fetch — keep the wider option set
+  entityRows.value = rows || []
 }
+
+const entityOptions = computed(() => {
+  const set = new Set()
+  for (const row of entityRows.value || []) {
+    if (row && row.entity) set.add(row.entity)
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
+})
+const entityOptionsLoading = computed(() => entityRows.value === null)
 
 const selectedEntity = ref(null)
 const selectedUsername = ref(null)
@@ -298,17 +299,29 @@ const activeFilterParams = computed(() => {
   return params
 })
 
-// An entity or user endpoint called without its selector returns an empty array,
-// which would read as "no logs" instead of "nothing chosen yet".
+// While no entity is chosen the by-entity screens fall back to the plain date
+// endpoint, so the table can load on the date range alone.
+const activeFilterEndpoint = computed(() =>
+  config.value.filter === 'entity' && !selectedEntity.value
+    ? config.value.dateFilterEndpoint
+    : config.value.filterEndpoint
+)
+
+// A user endpoint called without its selector returns an empty array, which
+// would read as "no logs" instead of "nothing chosen yet". The entity screens
+// only need *some* bound — dates or an entity — since an unbounded fetch of
+// the whole log table is what the date default is there to avoid.
 const isFilterSatisfied = computed(() => {
-  if (config.value.filter === 'entity') return !!selectedEntity.value
+  if (config.value.filter === 'entity') {
+    return !!selectedEntity.value || !!fromDate.value || !!toDate.value
+  }
   if (config.value.filter === 'user') return !!selectedUsername.value
   return true
 })
 
 const filterPrompt = computed(() =>
   config.value.filter === 'entity'
-    ? 'Select an entity to load its log records.'
+    ? 'Pick a date range or an entity to load log records.'
     : 'Select a user to load their log records.'
 )
 
@@ -351,11 +364,13 @@ const clearAllFilters = () => {
 watch(() => route.path, () => {
   selectedEntity.value = null
   selectedUsername.value = null
-  ensureEntityData()
+  // The audit-trail and error-log datasets are different sources, so a stale
+  // option set must not carry over — show the loading state until the new
+  // screen's date-only fetch lands.
+  entityRows.value = null
 })
 
 onMounted(() => {
-  ensureEntityData()
   if (!userStore.users || userStore.users.length === 0) {
     userStore.fetchUsers().catch(() => {})
   }

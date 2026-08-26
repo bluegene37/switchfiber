@@ -2322,7 +2322,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters'])
+const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded'])
 
 // Filter-param keys that are resolved client-side rather than sent to the API.
 const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate']
@@ -6620,6 +6620,10 @@ const fetchData = async ({ silent = false } = {}) => {
     // The dataset is now confirmed: an empty table from here on really is empty
     hasFetched.value = true
     lastFetchedParams.value = { ...serverParams }
+    // Hand the settled rows to the parent with the params that produced them,
+    // so a screen can derive filter options (e.g. log entities) from the data
+    // while knowing what scope the rows cover.
+    emit('data-loaded', { rows: data.value, params: lastFetchedParams.value })
 
     // Auto-park on the first row when nothing is selected, or when the selected
     // row belongs to a filter the fetch has just replaced
