@@ -1,15 +1,22 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { LogTrailService } from '../services/logTrails'
-import { DEFAULT_LOG_ENTITIES } from '../models/entities'
 
 export const useLogTrailStore = defineStore('logTrails', () => {
   const logTrails = ref([])
-  // Local default list of entity names for the dropdown so it works offline
-  // and does not depend on log data presence in a chosen date range.
-  const entities = ref([...DEFAULT_LOG_ENTITIES])
   const isLoading = ref(false)
   const error = ref(null)
+
+  // Distinct entity names grouped out of the downloaded logs — the Entity
+  // dropdown offers exactly what the data contains, so every option is
+  // guaranteed to match at least one log row.
+  const entities = computed(() => {
+    const set = new Set()
+    for (const row of logTrails.value) {
+      if (row && row.entity) set.add(row.entity)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  })
 
   const fetchLogTrails = async () => {
     isLoading.value = true
@@ -24,18 +31,5 @@ export const useLogTrailStore = defineStore('logTrails', () => {
     }
   }
 
-  const fetchEntities = async (dateFrom, dateTo) => {
-    try {
-      const response = await LogTrailService.getEntities(dateFrom, dateTo)
-      if (Array.isArray(response) && response.length > 0) {
-        // Merge any newly discovered entities with default list
-        const set = new Set([...DEFAULT_LOG_ENTITIES, ...response.filter(Boolean)])
-        entities.value = Array.from(set)
-      }
-    } catch (err) {
-      console.warn('[logTrails] Could not load audit trail entities:', err.message)
-    }
-  }
-
-  return { logTrails, entities, isLoading, error, fetchLogTrails, fetchEntities }
+  return { logTrails, entities, isLoading, error, fetchLogTrails }
 })

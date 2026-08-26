@@ -22,7 +22,9 @@
           <Select
             v-model="selectedEntity"
             :options="entityOptions"
-            placeholder="Select entity"
+            :loading="entityOptionsLoading"
+            :placeholder="entityOptionsLoading ? 'Loading entities…' : 'Select entity'"
+            emptyMessage="No entities found in the logs"
             size="small"
             showClear
             filter
@@ -139,7 +141,6 @@ import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { useLogTrailStore } from '../stores/logTrails'
 import { useLogErrorStore } from '../stores/logErrors'
 import { useUserStore } from '../stores/users'
-import { DEFAULT_LOG_ENTITIES } from '../models/entities'
 
 const route = useRoute()
 const logTrailStore = useLogTrailStore()
@@ -224,15 +225,25 @@ const routeMap = {
 
 const config = computed(() => routeMap[route.path] || routeMap['/logs/audit-trail'])
 
-// The Entity dropdown uses a saved local list of system entities so it is not
-// dependent on log data existence or date-window availability.
+// The Entity dropdown is grouped out of the downloaded log data itself: the
+// by-entity screens download the full log list once, and the distinct entity
+// values found in it become the options. While that download is in flight the
+// dropdown shows a loading state.
 const logStore = computed(() => (config.value.source === 'error' ? logErrorStore : logTrailStore))
 
-const entityOptions = computed(() =>
-  logStore.value.entities && logStore.value.entities.length > 0
-    ? logStore.value.entities
-    : DEFAULT_LOG_ENTITIES
-)
+const entityOptions = computed(() => logStore.value.entities)
+const entityOptionsLoading = computed(() => logStore.value.isLoading)
+
+const ensureEntityData = () => {
+  if (config.value.filter !== 'entity') return
+  if (config.value.source === 'error') {
+    if (logErrorStore.logErrors.length === 0 && !logErrorStore.isLoading) {
+      logErrorStore.fetchLogErrors()
+    }
+  } else if (logTrailStore.logTrails.length === 0 && !logTrailStore.isLoading) {
+    logTrailStore.fetchLogTrails()
+  }
+}
 
 const selectedEntity = ref(null)
 const selectedUsername = ref(null)
@@ -340,9 +351,11 @@ const clearAllFilters = () => {
 watch(() => route.path, () => {
   selectedEntity.value = null
   selectedUsername.value = null
+  ensureEntityData()
 })
 
 onMounted(() => {
+  ensureEntityData()
   if (!userStore.users || userStore.users.length === 0) {
     userStore.fetchUsers().catch(() => {})
   }

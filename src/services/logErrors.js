@@ -27,11 +27,5 @@ export const LogErrorService = {
     return apiClient.get('/LogError/GetLogsByUserAndDate', {
       params: { Username: username, DateFrom: dateFrom, DateTo: dateTo }
     })
-  },
-  /** The distinct entity names logged in the range — a lookup, not a log list. */
-  getEntities(dateFrom, dateTo) {
-    return apiClient.get('/LogError/GetEntityByDate', {
-      params: { DateFrom: dateFrom, DateTo: dateTo }
-    })
   }
 }
