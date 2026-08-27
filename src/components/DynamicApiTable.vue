@@ -1138,6 +1138,22 @@
                 placeholder="e.g. 09123456789 or +639123456789" 
               />
 
+              <!-- InputNumber for Monetary / Currency Fields -->
+              <InputNumber 
+                v-else-if="getFieldType(col) === 'currency' || isCurrencyField(col)" 
+                :id="col" 
+                v-model="formData[col]" 
+                fluid
+                size="small"
+                class="w-100" 
+                mode="currency"
+                currency="PHP"
+                locale="en-PH"
+                :minFractionDigits="2"
+                :maxFractionDigits="2"
+                placeholder="₱ 0.00"
+              />
+
               <!-- InputNumber for Numeric Fields -->
               <InputNumber 
                 v-else-if="getFieldType(col) === 'number'" 
@@ -1147,7 +1163,8 @@
                 size="small"
                 class="w-100" 
                 :useGrouping="false"
-                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+                :min="0"
+                :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
               />
 
               <!-- Textarea for Multiline Fields -->
@@ -1155,11 +1172,11 @@
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="col" 
                 v-model="formData[col]" 
-                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress')) && isApplicationEndpoint ? 4 : 3" 
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
                 class="w-100 p-inputtext-sm" 
-                :class="{ 'flex-grow-1': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') }"
-                :style="isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') ? 'min-height: 96px;' : ''"
-                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+                :class="{ 'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') }" 
+                :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
               />
 
               <!-- InputText for Standard / Monospace Fields -->
@@ -1171,8 +1188,8 @@
                 :class="{ 
                   'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
                   'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
-                }"
-                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+                }" 
+                :placeholder="col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)" 
               />
 
               <div
@@ -1217,7 +1234,36 @@
             </span>
           </div>
 
-          <div class="row g-3">
+          <!-- Specialized Materials & Items Table for View Modal -->
+          <div v-if="sec.key === 'items'" class="w-100">
+            <div v-if="viewMaterialsList.length > 0" class="table-responsive rounded-3 border overflow-hidden">
+              <table class="table table-sm table-hover mb-0">
+                <thead class="bg-body-tertiary">
+                  <tr class="small text-secondary fw-semibold">
+                    <th style="width: 50px;" class="ps-3 py-2">#</th>
+                    <th class="py-2">Item / Material Description</th>
+                    <th style="width: 140px;" class="text-end pe-3 py-2">Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in viewMaterialsList" :key="item.index" class="small align-middle">
+                    <td class="ps-3 py-2 text-muted fw-medium">{{ item.index }}</td>
+                    <td class="py-2 fw-medium text-body">{{ item.name }}</td>
+                    <td class="text-end pe-3 py-2">
+                      <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-1 fw-semibold">
+                        {{ item.quantity }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="text-muted small py-3 text-center bg-body-tertiary rounded-3 border border-dashed">
+              <i class="pi pi-box me-1"></i> No items or materials recorded for this order.
+            </div>
+          </div>
+
+          <div v-else class="row g-3">
             <div 
               v-for="col in sec.columns" 
               :key="col" 
@@ -1367,12 +1413,12 @@
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="`view-${col}`" 
                 :modelValue="viewFormData[col]" 
-                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress')) && isApplicationEndpoint ? 4 : 3" 
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
                 readonly
                 disabled
                 class="w-100 p-inputtext-sm bg-light" 
-                :class="{ 'flex-grow-1': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') }"
-                :style="isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') ? 'min-height: 96px;' : ''"
+                :class="{ 'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') }"
+                :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''"
               />
 
               <!-- Password for Password Fields in View Modal -->
@@ -2044,6 +2090,22 @@
                 placeholder="e.g. 09123456789 or +639123456789" 
               />
 
+              <!-- InputNumber for Monetary / Currency Fields -->
+              <InputNumber 
+                v-else-if="getFieldType(col) === 'currency' || isCurrencyField(col)" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                fluid
+                size="small"
+                class="w-100" 
+                mode="currency"
+                currency="PHP"
+                locale="en-PH"
+                :minFractionDigits="2"
+                :maxFractionDigits="2"
+                placeholder="₱ 0.00"
+              />
+
               <!-- InputNumber for Numeric Fields -->
               <InputNumber 
                 v-else-if="getFieldType(col) === 'number'" 
@@ -2053,7 +2115,8 @@
                 size="small"
                 class="w-100" 
                 :useGrouping="false"
-                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+                :min="0"
+                :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
               />
 
               <!-- Textarea for Multiline Fields -->
@@ -2061,10 +2124,10 @@
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="`edit-${col}`" 
                 v-model="editFormData[col]" 
-                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress')) && isApplicationEndpoint ? 4 : 3" 
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
                 class="w-100 p-inputtext-sm" 
-                :class="{ 'flex-grow-1': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') }"
-                :style="isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress') ? 'min-height: 96px;' : ''"
+                :class="{ 'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') }" 
+                :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
               />
 
@@ -2077,8 +2140,8 @@
                 :class="{ 
                   'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
                   'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
-                }"
-                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+                }" 
+                :placeholder="col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)" 
               />
 
               <div
@@ -2470,11 +2533,33 @@ const modalBreakpoints = computed(() => {
 const getColumnClass = (col) => {
   const type = getFieldType(col)
   const lower = (col || '').toLowerCase().replace(/_/g, '')
-  if (lower === 'installationaddress' || lower === 'remarks' || lower === 'remark') {
+  if (
+    lower === 'installationaddress' ||
+    lower === 'remarks' ||
+    lower === 'remark' ||
+    lower === 'connectionremarks' ||
+    lower === 'visitremarks' ||
+    lower === 'supportremarks' ||
+    lower === 'pulloutremarks' ||
+    lower === 'concern'
+  ) {
     return 'col-12 col-md-12 col-lg-8'
+  }
+  if (lower === 'address') {
+    return isWideForm.value ? 'col-12 col-md-12 col-lg-8' : 'col-12'
   }
   if (type === 'coordinates') {
     return 'col-12'
+  }
+  // Items & Materials Name vs Quantity:
+  // Item name takes 8 cols (2/3), quantity takes 4 cols (1/3) so each item pair tiles cleanly on one row
+  if (isServiceOrderEndpoint.value || isJobOrderEndpoint.value) {
+    if (lower.startsWith('itemname')) {
+      return 'col-12 col-md-7 col-lg-8'
+    }
+    if (lower.startsWith('itemquantity')) {
+      return 'col-12 col-md-5 col-lg-4'
+    }
   }
   // LCP NAP address quartet shares one row on desktop (2×2 on tablet) so the
   // Site Location section reads map → coordinates → address left to right.
@@ -2522,11 +2607,12 @@ const openImagePreview = (url, title = 'Image Preview') => {
 function formatLabel(col) {
   if (!col) return ''
 
-  // An application carries both `emailAddress` (the applicant's) and `userEmail`
-  // (the account that recorded it). The shared override below renders userEmail as
-  // "Email Address", which would print the same label twice in one form, so this
-  // endpoint gets the literal field name instead.
-  if (isApplicationEndpoint.value && normalizeColKey(col) === 'useremail') {
+  // Applications and Service Orders both carry `emailAddress` (the subscriber's)
+  // and `userEmail` (the account that recorded it). The shared override below
+  // renders userEmail as "Email Address", which would print the same label twice
+  // in one form and twice in the table header, so these endpoints get the literal
+  // field name instead.
+  if ((isApplicationEndpoint.value || isServiceOrderEndpoint.value) && normalizeColKey(col) === 'useremail') {
     return 'User Email'
   }
 
@@ -2553,9 +2639,11 @@ function formatLabel(col) {
     lname: 'Last Name',
     contactnumber: 'Contact Number',
     accountno: 'Account No.',
+    accountnumber: 'Account Number',
     fullname: 'Full Name',
     accountbalance: 'Account Balance',
     duedate: 'Due Date',
+    dateinstalled: 'Date Installed',
     accesslevel_id: 'Access Level',
     accesslevelid: 'Access Level',
     menu_id: 'Menu',
@@ -2594,12 +2682,66 @@ function formatLabel(col) {
     proofofbilling: 'Proof of Billing',
     applyingfor: 'Applying For',
     visitwithother: 'Visit With (Other)',
+    visitwithothers: 'Visit With (Others)',
     pictureofstatmentbillingfromotherprovider: 'Picture of Statement Billing From Other Provider',
     pictureofstatementbillingfromotherprovider: 'Picture of Statement Billing From Other Provider',
     lcpnaplocations: 'LCP NAP Location',
     lcpnaplocation: 'LCP NAP Location',
     lcpnapports: 'LCP NAP Port',
-    lcpnapport: 'LCP NAP Port'
+    lcpnapport: 'LCP NAP Port',
+    routermodemsn: 'Router/Modem SN',
+    newroutermodemsn: 'New Router/Modem SN',
+    newplan: 'New Plan',
+    newlcp: 'New LCP',
+    newnap: 'New NAP',
+    newport: 'New Port',
+    newvlan: 'New VLAN',
+    routermodel: 'Router Model',
+    pulloutroutermodel: 'Pullout Router Model',
+    pulloutroutermodelsn: 'Pullout Router SN',
+    pulloutcpesn: 'Pullout CPE SN',
+    pulloutremarks: 'Pullout Remarks',
+    servicecharge: 'Service Charge (₱)',
+    supportstatus: 'Support Status',
+    visitstatus: 'Visit Status',
+    prioritylevel: 'Priority Level',
+    connectiontype: 'Connection Type',
+    connectionremarks: 'Connection Remarks',
+    visitremarks: 'Visit Remarks',
+    supportremarks: 'Support Remarks',
+    starttimestamp: 'Start Time',
+    stoptimestamp: 'Stop Time',
+    assignedby: 'Assigned By',
+    assignedemail: 'Assigned Email',
+    assigneddate: 'Assigned Date',
+    requestedby: 'Requested By',
+    repaircategory: 'Repair Category',
+    itemname: 'Item 1 Name',
+    itemquantity: 'Item 1 Quantity',
+    itemname1: 'Item 2 Name',
+    itemquantity1: 'Item 2 Quantity',
+    itemname2: 'Item 3 Name',
+    itemquantity2: 'Item 3 Quantity',
+    itemname3: 'Item 4 Name',
+    itemquantity3: 'Item 4 Quantity',
+    itemname4: 'Item 5 Name',
+    itemquantity4: 'Item 5 Quantity',
+    itemname5: 'Item 6 Name',
+    itemquantity5: 'Item 6 Quantity',
+    itemname6: 'Item 7 Name',
+    itemquantity6: 'Item 7 Quantity',
+    itemname7: 'Item 8 Name',
+    itemquantity7: 'Item 8 Quantity',
+    itemname8: 'Item 9 Name',
+    itemquantity8: 'Item 9 Quantity',
+    itemname9: 'Item 10 Name',
+    itemquantity9: 'Item 10 Quantity',
+    itemname10: 'Item 11 Name',
+    itemquantity10: 'Item 11 Quantity',
+    image1: 'Site Photo 1',
+    image2: 'Site Photo 2',
+    image3: 'Site Photo 3',
+    clientsignature: 'Client Signature'
   }
   const normKey = col.toLowerCase().replace(/_/g, '')
   if (customOverrides[normKey]) {
@@ -2773,19 +2915,19 @@ function getFieldType(col) {
   if (lower === 'lcpnapport_id' || lower === 'lcpnapportid' || lower === 'lcnapport_id' || lower === 'lcnap_port' || lower === 'lcpnapport' || lower === 'lcnapport' || lower === 'lcp_nap_port') {
     return 'lcpnapport_dropdown'
   }
-  if (lower === 'lcp_id' || lower === 'lcpid' || lower === 'lcp') {
+  if (lower === 'lcp_id' || lower === 'lcpid' || lower === 'lcp' || lower === 'newlcp') {
     return 'lcp_dropdown'
   }
-  if (lower === 'nap_id' || lower === 'napid' || lower === 'nap') {
+  if (lower === 'nap_id' || lower === 'napid' || lower === 'nap' || lower === 'newnap') {
     return 'nap_dropdown'
   }
-  if (lower === 'port_id' || lower === 'portid' || lower === 'port') {
+  if (lower === 'port_id' || lower === 'portid' || lower === 'port' || lower === 'newport') {
     return 'port_dropdown'
   }
-  if (lower === 'vlan_id' || lower === 'vlanid' || lower === 'vlan') {
+  if (lower === 'vlan_id' || lower === 'vlanid' || lower === 'vlan' || lower === 'newvlan') {
     return 'vlan_dropdown'
   }
-  if (lower === 'plan_id' || lower === 'planid' || lower === 'choose_plan' || lower === 'chooseplan' || lower === 'plan' || lower === 'desiredplan' || lower === 'desired_plan') {
+  if (lower === 'plan_id' || lower === 'planid' || lower === 'choose_plan' || lower === 'chooseplan' || lower === 'plan' || lower === 'desiredplan' || lower === 'desired_plan' || lower === 'newplan') {
     return 'plan_dropdown'
   }
   if (lower === 'referredby' || lower === 'referred_by') {
@@ -2841,6 +2983,7 @@ function getFieldType(col) {
   if (
     lower.includes('amount') ||
     lower.includes('fee') ||
+    lower.includes('charge') ||
     lower.includes('quantity') ||
     lower.includes('balance') ||
     lower.includes('day') ||
@@ -2855,7 +2998,8 @@ function getFieldType(col) {
   if (
     lower.includes('description') ||
     lower.includes('remark') ||
-    (lower.includes('address') && !lower.includes('email')) ||
+    lower.includes('concern') ||
+    (lower.includes('address') && !lower.includes('email') && !lower.includes('coordinate')) ||
     lower.includes('landmark') ||
     lower.includes('template')
   ) {
@@ -4132,11 +4276,13 @@ const SERVICE_ORDER_FORM_LAYOUT = [
       'fullName',
       'contactNumber',
       'emailAddress',
-      'address',
-      'barangay',
+      'dateInstalled',
+      // City before Barangay so cascading address selection flows naturally
       'city',
-      'addressCoordinates',
-      'dateInstalled'
+      'barangay',
+      'address',
+      // GPS coordinates render full width (`col-12`) with interactive map picker & pin
+      'addressCoordinates'
     ]
   },
   {
@@ -4147,9 +4293,10 @@ const SERVICE_ORDER_FORM_LAYOUT = [
     columns: [
       'plan',
       'provider',
-      'username',
       'connectionType',
+      'username',
       'routerModemSN',
+      'routerModel',
       'lcp',
       'nap',
       'port',
@@ -4162,14 +4309,16 @@ const SERVICE_ORDER_FORM_LAYOUT = [
     icon: 'pi pi-wrench',
     badgeClass: 'text-warning',
     columns: [
-      'concern',
       'priorityLevel',
       'supportStatus',
-      'connectionRemarks',
+      'repairCategory',
       'requestedBy',
-      'assignedEmail',
+      'userEmail',
       'assignedBy',
-      'assignedDate'
+      'assignedEmail',
+      'assignedDate',
+      'concern',
+      'connectionRemarks'
     ]
   },
   {
@@ -4182,12 +4331,11 @@ const SERVICE_ORDER_FORM_LAYOUT = [
       'visitBy',
       'visitWith',
       'visitWithOthers',
-      'visitRemarks',
       'startTimestamp',
       'stopTimestamp',
       'duration',
-      'repairCategory',
       'serviceCharge',
+      'visitRemarks',
       'supportRemarks'
     ]
   },
@@ -4198,16 +4346,15 @@ const SERVICE_ORDER_FORM_LAYOUT = [
     badgeClass: 'text-danger',
     columns: [
       'newRouterModemSN',
+      'newPLAN',
       'newLCP',
       'newNAP',
       'newPORT',
       'newVLAN',
-      'routerModel',
-      'newPLAN',
-      'pulloutRemarks',
       'pulloutRouterModel',
       'pulloutRouterModelSN',
-      'pulloutCPESN'
+      'pulloutCPESN',
+      'pulloutRemarks'
     ]
   },
   {
@@ -4738,20 +4885,32 @@ const connectionTypeOptions = ref([
   { label: 'Broadband', value: 'Broadband' }
 ])
 
-const fetchRelatedData = async () => {
-  try {
-    const unwrap = (val) => {
-      if (!val) return []
-      if (Array.isArray(val)) return val
-      if (typeof val === 'object') {
-        const key = Object.keys(val).find(k => Array.isArray(val[k]))
-        if (key) return val[key]
-      }
-      return []
-    }
+const unwrapList = (val) => {
+  if (!val) return []
+  if (Array.isArray(val)) return val
+  if (typeof val === 'object') {
+    const key = Object.keys(val).find(k => Array.isArray(val[k]))
+    if (key) return val[key]
+  }
+  return []
+}
 
-    const [accRes, menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, userRes, lcnapPortRes] = await Promise.allSettled([
-      apiClient.get('/AccessLevel'),
+// Reference lists that only the Create / Edit / View dialogs read. These used to
+// be fetched on mount, which put eight unbounded requests on every list page
+// load whether or not a dialog was ever opened; the synchronous JSON parse of
+// each response is a main-thread stall, which is what made the sidebar feel
+// unclickable while a page was still loading. They are fetched once, on the
+// first dialog open, and every later open reuses the same result.
+//
+// Single-flight: concurrent opens share one in-flight promise, and a failed
+// batch clears it so the next open retries instead of leaving empty dropdowns.
+let formLookupsPromise = null
+
+const fetchFormLookups = () => {
+  if (formLookupsPromise) return formLookupsPromise
+
+  formLookupsPromise = (async () => {
+    const [menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, lcnapPortRes] = await Promise.allSettled([
       apiClient.get('/Menus'),
       apiClient.get('/Lcpnaps'),
       apiClient.get('/Lcps'),
@@ -4759,60 +4918,96 @@ const fetchRelatedData = async () => {
       apiClient.get('/Ports'),
       apiClient.get('/Vlans'),
       apiClient.get('/Plans'),
-      apiClient.get('/Users'),
       apiClient.get('/Lcpnapports')
     ])
 
-    if (accRes.status === 'fulfilled') {
-      accessLevels.value = unwrap(accRes.value).map(item => ({ 
-        label: item.name || `ID: ${item.id}`, 
-        nameOnly: item.name || `ID: ${item.id}`,
-        value: item.id 
-      }))
-    }
     if (menuRes.status === 'fulfilled') {
-      menusList.value = unwrap(menuRes.value).map(item => ({ label: `${item.name} (${item.route || 'ID: ' + item.id})`, value: item.id }))
+      menusList.value = unwrapList(menuRes.value).map(item => ({ label: `${item.name} (${item.route || 'ID: ' + item.id})`, value: item.id }))
     }
     if (lcnapRes.status === 'fulfilled') {
-      lcpnapsList.value = unwrap(lcnapRes.value).map(item => ({ label: `${item.name || 'LCNAP #' + item.id}`, value: item.name || item.id, id: item.id }))
+      lcpnapsList.value = unwrapList(lcnapRes.value).map(item => ({ label: `${item.name || 'LCNAP #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (lcpRes.status === 'fulfilled') {
-      lcpsList.value = unwrap(lcpRes.value).map(item => ({ label: `${item.name || 'LCP #' + item.id}`, value: item.name || item.id, id: item.id }))
+      lcpsList.value = unwrapList(lcpRes.value).map(item => ({ label: `${item.name || 'LCP #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (napRes.status === 'fulfilled') {
-      napsList.value = unwrap(napRes.value).map(item => ({ label: `${item.name || 'NAP #' + item.id}`, value: item.name || item.id, id: item.id }))
+      napsList.value = unwrapList(napRes.value).map(item => ({ label: `${item.name || 'NAP #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (portRes.status === 'fulfilled') {
-      portsList.value = unwrap(portRes.value).map(item => ({ label: `${item.name || 'Port #' + item.id}`, value: item.name || item.id, id: item.id }))
+      portsList.value = unwrapList(portRes.value).map(item => ({ label: `${item.name || 'Port #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (vlanRes.status === 'fulfilled') {
-      vlansList.value = unwrap(vlanRes.value).map(item => ({ label: `${item.name || 'VLAN #' + item.id}`, value: item.name || item.id, id: item.id }))
+      vlansList.value = unwrapList(vlanRes.value).map(item => ({ label: `${item.name || 'VLAN #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (lcnapPortRes && lcnapPortRes.status === 'fulfilled') {
-      lcpnapportsList.value = unwrap(lcnapPortRes.value).map(item => ({ label: `${item.name || 'LCNAP Port #' + item.id}`, value: item.name || item.id, id: item.id }))
+      lcpnapportsList.value = unwrapList(lcnapPortRes.value).map(item => ({ label: `${item.name || 'LCNAP Port #' + item.id}`, value: item.name || item.id, id: item.id }))
     }
     if (planRes.status === 'fulfilled') {
-      plansList.value = unwrap(planRes.value).map(item => ({ 
-        label: item.name ? `${item.name}${item.amount ? ' (₱' + Number(item.amount).toLocaleString() + ')' : ''}` : `Plan #${item.id}`, 
+      plansList.value = unwrapList(planRes.value).map(item => ({
+        label: item.name ? `${item.name}${item.amount ? ' (₱' + Number(item.amount).toLocaleString() + ')' : ''}` : `Plan #${item.id}`,
         name: item.name || `Plan #${item.id}`,
         id: item.id,
         amount: item.amount,
-        value: item.name || item.id 
+        value: item.name || item.id
       }))
     }
-    if (userRes.status === 'fulfilled') {
-      const unwrappedUsers = unwrap(userRes.value)
+  })().catch(err => {
+    console.error('Error fetching form lookups:', err)
+    formLookupsPromise = null
+  })
+
+  return formLookupsPromise
+}
+
+// AccessLevel and Users resolve labels rendered in the TABLE body — the
+// `accesslevel_id` column and user-reference columns such as verifiedBy and
+// userId — so unlike the dialog lookups above they cannot wait for a dialog to
+// open. They are still requested only on the endpoints whose columns use them,
+// which is what keeps them off every other list page.
+let accessLevelsPromise = null
+
+const fetchAccessLevelsLookup = () => {
+  if (accessLevelsPromise) return accessLevelsPromise
+  accessLevelsPromise = apiClient.get('/AccessLevel')
+    .then(res => {
+      accessLevels.value = unwrapList(res).map(item => ({
+        label: item.name || `ID: ${item.id}`,
+        nameOnly: item.name || `ID: ${item.id}`,
+        value: item.id
+      }))
+    })
+    .catch(err => {
+      console.error('Error fetching access levels:', err)
+      accessLevelsPromise = null
+    })
+  return accessLevelsPromise
+}
+
+let usersLookupPromise = null
+
+const fetchUsersLookup = () => {
+  if (usersLookupPromise) return usersLookupPromise
+  usersLookupPromise = apiClient.get('/Users')
+    .then(res => {
+      const unwrappedUsers = unwrapList(res)
       usersList.value = unwrappedUsers
       if (Array.isArray(unwrappedUsers) && unwrappedUsers.length > 0) {
         userStore.users = unwrappedUsers
       }
-    }
+    })
+    .catch(err => {
+      console.error('Error fetching users:', err)
+      usersLookupPromise = null
+    })
+  return usersLookupPromise
+}
 
-    // Trigger address data loading in parallel
-    fetchAddressData()
-  } catch (err) {
-    console.error('Error fetching related data:', err)
-  }
+// Drops every cached lookup so the next dialog open re-requests it. Used by the
+// manual Refresh button, which previously re-pulled all ten lists inline.
+const invalidateLookups = () => {
+  formLookupsPromise = null
+  accessLevelsPromise = null
+  usersLookupPromise = null
 }
 
 let allBarangaysFallbackCache = null
@@ -5566,7 +5761,7 @@ const pinFillBusy = ref({ create: false, edit: false })
 
 const applyAddressFromPin = async (scope, coordsOverride = null) => {
   const targetForm = formForScope(scope).value
-  const coords = coordsOverride || targetForm.coordinates || targetForm.coordinate
+  const coords = coordsOverride || targetForm.coordinates || targetForm.coordinate || targetForm.addressCoordinates || targetForm.address_coordinates
   const parsed = parseCoordinates(coords)
   if (!parsed || pinFillBusy.value[scope]) return false
   pinFillBusy.value[scope] = true
@@ -5678,14 +5873,14 @@ const confirmMapPicker = async () => {
 }
 
 watch(
-  () => formData.value.coordinates || formData.value.coordinate,
+  () => formData.value.coordinates || formData.value.coordinate || formData.value.addressCoordinates || formData.value.address_coordinates,
   (newCoords) => {
     onCoordinatesChanged('create', newCoords)
   }
 )
 
 watch(
-  () => editFormData.value.coordinates || editFormData.value.coordinate,
+  () => editFormData.value.coordinates || editFormData.value.coordinate || editFormData.value.addressCoordinates || editFormData.value.address_coordinates,
   (newCoords) => {
     onCoordinatesChanged('edit', newCoords)
   }
@@ -5826,16 +6021,62 @@ const getUserDisplayName = (val) => {
   return strVal
 }
 
+const isCurrencyField = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  return lower === 'servicecharge' || lower === 'installationfee' || lower === 'accountbalance' || lower === 'amount' || lower === 'price' || lower === 'balance' || lower.includes('servicecharge')
+}
+
+const viewMaterialsList = computed(() => {
+  if (!viewFormData.value) return []
+  const d = viewFormData.value
+  const list = []
+  const pairs = [
+    { name: 'itemName', qty: 'itemQuantity', index: 1 },
+    { name: 'itemName1', qty: 'itemQuantity1', index: 2 },
+    { name: 'itemName2', qty: 'itemQuantity2', index: 3 },
+    { name: 'itemName3', qty: 'itemQuantity3', index: 4 },
+    { name: 'itemName4', qty: 'itemQuantity4', index: 5 },
+    { name: 'itemName5', qty: 'itemQuantity5', index: 6 },
+    { name: 'itemName6', qty: 'itemQuantity6', index: 7 },
+    { name: 'itemName7', qty: 'itemQuantity7', index: 8 },
+    { name: 'itemName8', qty: 'itemQuantity8', index: 9 },
+    { name: 'itemName9', qty: 'itemQuantity9', index: 10 },
+    { name: 'itemName10', qty: 'itemQuantity10', index: 11 }
+  ]
+  pairs.forEach(p => {
+    const itemVal = d[p.name]
+    const qtyVal = d[p.qty]
+    const hasName = itemVal !== null && itemVal !== undefined && String(itemVal).trim() !== ''
+    const hasQty = qtyVal !== null && qtyVal !== undefined && String(qtyVal).trim() !== ''
+    if (hasName || hasQty) {
+      list.push({
+        index: p.index,
+        name: hasName ? String(itemVal).trim() : '(Unnamed Material)',
+        quantity: hasQty ? qtyVal : 1
+      })
+    }
+  })
+  return list
+})
+
 const formatViewFieldValue = (col, val) => {
   if (val === null || val === undefined || val === '') return '-'
-  if (col.toLowerCase() === 'password' || col.toLowerCase() === 'pass' || col.toLowerCase() === 'pwd') {
+  const lower = col.toLowerCase().replace(/_/g, '')
+  if (lower === 'password' || lower === 'pass' || lower === 'pwd') {
     return '••••••••'
   }
   if (isUserRefField(col)) {
     return getUserDisplayName(val)
   }
-  if (col.toLowerCase() === 'accesslevel_id' || col.toLowerCase() === 'accesslevelid') {
+  if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
     return getAccessLevelLabel(val)
+  }
+  if (isCurrencyField(col) && !isNaN(val)) {
+    return '₱' + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+  if (lower === 'duration' && !isNaN(val)) {
+    return `${val} mins`
   }
 
   // Lookup human-readable labels for infrastructure & dropdown fields
@@ -5864,6 +6105,7 @@ const formatViewFieldValue = (col, val) => {
 
 const openCreateDialog = () => {
   fetchAddressData()
+  fetchFormLookups()
   resetTouchedAddressBlockers('create')
   fieldErrors.value.create = {}
   photoExifByCol.value.create = {}
@@ -5939,6 +6181,14 @@ const openCreateDialog = () => {
     const visitCol = formColumns.value.find(c => c.toLowerCase() === 'visitstatus')
     if (visitCol && !formData.value[visitCol]) {
       formData.value[visitCol] = 'Scheduled'
+    }
+    const reqByCol = formColumns.value.find(c => c.toLowerCase() === 'requestedby')
+    if (reqByCol && !formData.value[reqByCol] && currentUser) {
+      formData.value[reqByCol] = currentUser
+    }
+    const uEmailCol = formColumns.value.find(c => normalizeColKey(c) === 'useremail')
+    if (uEmailCol && !formData.value[uEmailCol]) {
+      formData.value[uEmailCol] = authStore.user?.email || 'admin@switchfiber.com'
     }
   }
   // Default province for Create modal if empty (the plant lives in Binangonan, Rizal)
@@ -6150,6 +6400,7 @@ const getRecordId = (record) => {
 }
 
 const openViewDialog = (record) => {
+  fetchFormLookups()
   viewingRecordId.value = getRecordId(record) || ''
   viewFormData.value = { ...record }
   displayViewDialog.value = true
@@ -6166,6 +6417,18 @@ const openEditDialog = async (record) => {
   showPasswordState.value = {}
   editingRecordId.value = getRecordId(record)
   editFormData.value = { ...record }
+
+  // Shown before the awaits below, not after them. The record's own values are
+  // already in `editFormData`, so the form is usable immediately; waiting for
+  // the lookup and address requests to settle first left the Edit button
+  // looking dead for as long as the slowest of them took.
+  displayEditDialog.value = true
+
+  // Awaited, not fire-and-forget: the infrastructure normalization further down
+  // matches the record's stored value against these lists and skips silently
+  // while they are empty, which would leave the dropdowns showing a raw value.
+  // The dialog is already on screen, so this resolves the dropdowns in place.
+  await fetchFormLookups()
   const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
   const currentUserIdOrName = authStore.user?.id || currentUser
 
@@ -6299,8 +6562,6 @@ const openEditDialog = async (record) => {
   if (pwdCol) {
     editFormData.value.confirmPassword = record[pwdCol] || editFormData.value[pwdCol] || ''
   }
-
-  displayEditDialog.value = true
 }
 
 const saveEdit = async () => {
@@ -6656,7 +6917,10 @@ const refreshData = async () => {
   const previousKey = rowKeyOf(selectedRow.value)
   try {
     await fetchData({ silent: true })
-    await fetchRelatedData()
+    // The dialog lookups are re-requested on the next open rather than here, so
+    // Refresh stays a single request for the rows the user is actually looking at.
+    invalidateLookups()
+    refreshTableLookups()
 
     // Re-point the selection at the freshly fetched row object (same key), so the
     // highlighted row and any parent detail panel stay in sync after the reload.
@@ -7040,10 +7304,29 @@ const fetchCurrentUserPermissions = async () => {
   }
 }
 
+// Whether the CURRENT endpoint renders a column whose label has to be resolved
+// through one of the table-body lookups. `columns` has already dropped the audit
+// fields, so the createdBy / modifiedBy that every endpoint carries do not count
+// here — only columns that actually reach the screen, such as JobOrders'
+// verifiedBy, the log views' userId, and the Users grid's accesslevel_id.
+const needsAccessLevelLookup = computed(() =>
+  columns.value.some(c => normalizeColKey(c) === 'accesslevelid')
+)
+const needsUserLookup = computed(() => columns.value.some(isUserRefField))
+
+const refreshTableLookups = () => {
+  if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
+  if (needsUserLookup.value) fetchUsersLookup()
+}
+
+// Runs immediately off the static fallback columns, then again if the fetched
+// rows turn out to carry a column the fallback list did not declare — so an
+// endpoint missing from EndpointColumns still resolves its labels.
+watch([needsAccessLevelLookup, needsUserLookup], refreshTableLookups, { immediate: true })
+
 onMounted(() => {
   fetchAddressData()
   fetchData()
-  fetchRelatedData()
   fetchAccessLevelMenus()
   fetchCurrentUserPermissions()
   window.addEventListener('accesslevelmenu-updated', fetchCurrentUserPermissions)
