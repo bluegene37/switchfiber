@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🛡️ Security Vulnerabilities
+    url: https://github.com/switchfiber/switchfiber/blob/main/SECURITY.md
+    about: Please report security vulnerabilities privately via our security disclosure process.
+  - name: 💬 SwitchFiber Architecture Discussions
+    url: https://github.com/switchfiber/switchfiber/discussions
+    about: Join the community to discuss architectural patterns, MVVM flows, and feature designs.

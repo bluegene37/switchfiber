@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-const APP_TITLE = 'Switch Fiber'
+const APP_TITLE = 'SwitchFiber Admin'
 
 // Browser-tab label per route, keyed by route name and worded to match the sidebar
 // menu entry that leads there. A route missing from here just shows APP_TITLE.

@@ -1,0 +1,39 @@
+name: 💡 Feature Request
+description: Propose a new feature, view, or enhancement for SwitchFiber Admin
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make SwitchFiber even better? Submit your feature proposal below!
+
+  - type: textarea
+    id: feature_summary
+    attributes:
+      label: Feature Summary & Motivation
+      description: Is your feature request related to a specific operational problem or ISP workflow?
+      placeholder: As an ISP network administrator, I want to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution or workflow you would like to see implemented.
+      placeholder: Detailed description of the proposed UI/UX or API integration...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you've considered.
+      placeholder: Alternative approaches evaluated...
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context / Mockups
+      description: Add any relevant mockups, diagrams, or OpenAPI schema notes.

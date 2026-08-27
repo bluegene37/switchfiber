@@ -1,4 +1,4 @@
-import { EndpointSchemaMeta } from './schemaMeta'
+import { EndpointSchemaMeta } from './schemaMeta.js'
 
 /**
  * Decides which form fields are mandatory.
