@@ -16,7 +16,10 @@
     >
       <div class="d-flex align-items-center gap-2.5 overflow-hidden" :class="{ 'justify-content-center w-100 px-0': isCollapsed }">
         <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 32px; height: 32px; object-fit: contain;" />
-        <span v-if="!isCollapsed" class="text-body fs-5 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
+        <div v-if="!isCollapsed" class="d-flex align-items-center gap-2 overflow-hidden">
+          <span class="text-body fs-5 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">ADMIN</span>
+        </div>
       </div>
       <button 
         type="button" 

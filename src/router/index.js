@@ -392,13 +392,10 @@ router.beforeEach((to) => {
 // Runs after the guard has settled, so a redirected navigation titles the tab with
 // where the user actually landed rather than where they aimed.
 //
-// Page first, brand last — the usual convention (Stripe, Linear, GitHub, Jira).
-// Browser tabs truncate from the right, so the leading text is what stays readable
-// once several tabs are open; putting "Switch Fiber" first would leave every tab
-// showing the same visible prefix.
+// Formats the tab header title as 'SwitchFiber - Admin | [Menu Name]' so the brand and admin role are prominent.
 router.afterEach((to) => {
   const label = ROUTE_TITLES[to.name]
-  document.title = label ? `${label} | ${APP_TITLE}` : APP_TITLE
+  document.title = label ? `SwitchFiber - Admin | ${label}` : 'SwitchFiber - Admin'
 })
 
 // A stale lazy-chunk reference after a redeploy throws on navigation; a single
