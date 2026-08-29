@@ -103,6 +103,23 @@
         </div>
       </div>
 
+      <!-- Widened-window notice: the date range on screen is not the default one,
+           so say which range the rows belong to and offer the week back -->
+      <div v-if="autoWidenLabel" class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0 small rounded-3">
+        <i class="pi pi-calendar-clock mt-1"></i>
+        <div class="flex-grow-1">
+          No applications dated this week, so the range was widened to
+          <strong>{{ autoWidenLabel }}</strong>.
+        </div>
+        <button
+          type="button"
+          class="btn btn-sm btn-link p-0 text-decoration-underline fw-semibold flex-shrink-0"
+          @click="useDefaultWeek"
+        >
+          Back to this week
+        </button>
+      </div>
+
       <!-- Data Table with standard inside-the-card toolbar Create button -->
       <DynamicApiTable
         ref="apiTableRef"
@@ -151,6 +168,20 @@ const statusTabs = [
 // to a different range.
 const cachedStatusCounts = ref(null)
 
+// The date window is mandatory so the page never renders the whole table at
+// once, but a window with nothing in it reads as "the system lost my data": at
+// the time of writing the newest application is 11 days old, so the default
+// week shows 0 of 5000 records. When the default window comes back empty, step
+// it out until the most recent applications are in view and say so.
+const DATE_FALLBACK_STEPS = [
+  { preset: 'this_month', label: 'this month' },
+  { preset: 'last_12_months', label: 'the last 12 months' }
+]
+
+const autoWidenStep = ref(-1)        // -1 = still on the default window
+const autoWidenEnabled = ref(true)   // a hand-picked range is never overridden
+const autoWidenLabel = ref('')
+
 const dateRangeKeyOf = (params) => `${params?.fromDate || ''}|${params?.toDate || ''}`
 
 watchEffect(() => {
@@ -165,6 +196,20 @@ watchEffect(() => {
     total: sc.total,
     byStatus: { ...sc.byStatus }
   }
+})
+
+// Widen only on a settled fetch: `hasFetched` goes false for the duration of a
+// request, so an in-flight window is never mistaken for an empty one.
+watchEffect(() => {
+  const table = apiTableRef.value
+  if (!table || !table.hasFetched || !autoWidenEnabled.value) return
+  if ((table.statusCounts?.total ?? 0) > 0) return
+  if (autoWidenStep.value >= DATE_FALLBACK_STEPS.length - 1) return
+
+  const next = DATE_FALLBACK_STEPS[autoWidenStep.value + 1]
+  autoWidenStep.value += 1
+  autoWidenLabel.value = next.label
+  setDateRange(next.preset)
 })
 
 const statusCounts = computed(() => {
@@ -306,16 +351,13 @@ const currentWeekBounds = () => {
   }
 }
 
-const applyDatePreset = (preset) => {
-  // The date filter is mandatory, so re-clicking the active preset keeps it
-  // instead of clearing the range
-  if (selectedDatePreset.value === preset) return
-
+const setDateRange = (preset) => {
   selectedDatePreset.value = preset
   const today = new Date()
+  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
   if (preset === 'today') {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
+    toDate.value = endOfToday
   } else if (preset === 'this_week') {
     const week = currentWeekBounds()
     fromDate.value = week.from
@@ -323,35 +365,63 @@ const applyDatePreset = (preset) => {
   } else if (preset === 'this_month') {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0)
     toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
+  } else if (preset === 'last_12_months') {
+    // Fallback range only — no toolbar button sets this one.
+    fromDate.value = new Date(today.getFullYear(), today.getMonth() - 11, 1, 0, 0, 0, 0)
+    toDate.value = endOfToday
   }
+}
+
+const applyDatePreset = (preset) => {
+  // The date filter is mandatory, so re-clicking the active preset keeps it
+  // instead of clearing the range
+  if (selectedDatePreset.value === preset) return
+
+  // Picking a window by hand pins it: an empty result is then the answer, not a
+  // problem to fix, so the fallback stands down until the filters are reset.
+  autoWidenEnabled.value = false
+  autoWidenLabel.value = ''
+  setDateRange(preset)
+}
+
+/** Drop the widened window and stay on the default week, empty or not. */
+const useDefaultWeek = () => {
+  autoWidenEnabled.value = false
+  autoWidenLabel.value = ''
+  setDateRange('this_week')
 }
 
 // A manual pick is a custom range, so the preset highlight no longer applies.
 // (Programmatic assignment from applyDatePreset does not emit this event.)
 const onManualDateChange = () => {
   selectedDatePreset.value = ''
+  autoWidenEnabled.value = false
+  autoWidenLabel.value = ''
 }
 
 // The date filter can never be absent: clearing a picker falls back to the week
 watch([fromDate, toDate], ([f, t]) => {
   if (!f || !t) {
-    const week = currentWeekBounds()
-    selectedDatePreset.value = 'this_week'
-    fromDate.value = week.from
-    toDate.value = week.to
+    // No explicit range is the default state, fallback included
+    autoWidenEnabled.value = true
+    autoWidenStep.value = -1
+    autoWidenLabel.value = ''
+    setDateRange('this_week')
   }
 })
 
 // Default to 'This Week' filter on initial load
-applyDatePreset('this_week')
+setDateRange('this_week')
 
 const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''
   }
   // "Cleared" dates mean the default week, never an unbounded range
-  selectedDatePreset.value = ''
-  applyDatePreset('this_week')
+  autoWidenEnabled.value = true
+  autoWidenStep.value = -1
+  autoWidenLabel.value = ''
+  setDateRange('this_week')
 }
 </script>
 
