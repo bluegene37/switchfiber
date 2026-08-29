@@ -12,26 +12,28 @@
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
       <!-- Unified Filter Controls (Status Tabs on Left | Date Range right after divider) -->
       <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom">
-        <!-- Left Side: Status Filter Tabs (Shown only on All Application page) -->
-        <div v-if="!isDedicatedStatusRoute" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
+        <!-- Left Side: Status Filter Tabs, built from the statuses the data
+             actually carries. Shown on every route, including the legacy
+             /application/<status> links, so a dead one still offers a way out. -->
+        <div v-if="statusTabs.length > 1" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
           <button
             v-for="tab in statusTabs"
-            :key="tab.id"
+            :key="tab.value"
             type="button"
             class="btn btn-sm d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1.5 fw-medium text-nowrap status-tab-btn"
             :class="[
-              selectedStatus === tab.value 
-                ? 'btn-primary shadow-sm text-white' 
+              isActiveTab(tab.value)
+                ? 'btn-primary shadow-sm text-white'
                 : 'btn-light border text-secondary bg-body-tertiary hover-tab'
             ]"
             @click="setStatusFilter(tab.value)"
           >
-            <i :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
+            <i v-if="tab.icon" :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
             <span>{{ tab.label }}</span>
             <span
               v-if="statusCounts"
               class="badge rounded-pill status-tab-count"
-              :class="selectedStatus === tab.value
+              :class="isActiveTab(tab.value)
                 ? 'bg-white bg-opacity-25 text-white'
                 : 'bg-secondary bg-opacity-10 text-secondary'"
             >
@@ -41,7 +43,7 @@
         </div>
 
         <!-- Vertical Divider (Shown when Status Tabs are visible) -->
-        <div v-if="!isDedicatedStatusRoute" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
+        <div v-if="statusTabs.length > 1" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
 
         <!-- Date Range Pickers & Presets (Placed directly after divider) -->
         <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -157,12 +159,25 @@ const fromDate = ref(null)
 const toDate = ref(null)
 const selectedDatePreset = ref('')
 
-const statusTabs = [
-  { id: 'all', label: 'All Application', value: '', routePath: '/application', icon: 'pi-list' },
-  { id: 'in_progress', label: 'In Progress', value: 'In Progress', routePath: '/application/in-progress', icon: 'pi-clock' },
-  { id: 'done', label: 'Done', value: 'Done', routePath: '/application/done', icon: 'pi-check-circle' },
-  { id: 'approved', label: 'Approved', value: 'Approved', routePath: '/application/approved', icon: 'pi-verified' }
-]
+// Built from the statuses the data actually carries rather than a hand-written
+// lifecycle. The old list promised In Progress / Done / Approved against a set
+// whose statuses are Schedule / Duplicate / Cancelled / No Facility / No Slot,
+// so three of the four tabs could never match a row. A dynamic strip cannot
+// drift from the data, and picks up a new status the day the backend starts
+// emitting one.
+const statusTabs = computed(() => [
+  { label: 'All Application', value: '', icon: 'pi-list' },
+  ...(apiTableRef.value?.statusVocabulary || []).map(s => ({
+    label: s.label,
+    value: s.value,
+    icon: ''
+  }))
+])
+
+// The active value may arrive from a route slug in different casing than the
+// data uses ('schedule' vs 'Schedule'), so tabs match case-insensitively.
+const isActiveTab = (value) =>
+  String(selectedStatus.value || '').trim().toLowerCase() === String(value || '').trim().toLowerCase()
 
 // The date window is mandatory so the page never renders the whole table at
 // once, but a window with nothing in it reads as "the system lost my data": at
@@ -181,10 +196,8 @@ const autoWidenLabel = ref('')
 // Named for the tab in view, so a status route does not claim there were no
 // applications at all when what it means is none with that status.
 const autoWidenSubject = computed(() => {
-  const tab = statusTabs.find(t => t.value === selectedStatus.value)
-  if (tab && tab.value) return `No ${tab.label.toLowerCase()} applications`
-  if (selectedStatus.value) return `No ${selectedStatus.value.toLowerCase()} applications`
-  return 'No applications'
+  const status = String(selectedStatus.value || '').trim()
+  return status ? `No ${status.toLowerCase()} applications` : 'No applications'
 })
 
 // Widen only on a settled fetch: `hasFetched` goes false for the duration of a
@@ -206,7 +219,6 @@ watchEffect(() => {
 })
 
 const statusCounts = computed(() => {
-  if (isDedicatedStatusRoute.value) return null
   const table = apiTableRef.value
   if (!table || !table.hasFetched) return null
   return table.statusCounts || null
@@ -251,19 +263,18 @@ watch([() => route.path, () => route.query.status], () => {
   syncStatusFromRoute()
 }, { immediate: true })
 
+// Clicking a tab filters in place. On a legacy /application/<status> route it
+// also leaves that route behind, so the URL never disagrees with the tab strip.
 const setStatusFilter = (status) => {
-  selectedStatus.value = status
-}
-
-// Picked from the empty-state hint, so it is a status the loaded set really has:
-// leave the dedicated route behind and show it under All Application.
-const onSelectStatus = (status) => {
   if (isDedicatedStatusRoute.value) {
-    router.push({ path: '/application', query: { status } })
+    router.push(status ? { path: '/application', query: { status } } : { path: '/application' })
     return
   }
   selectedStatus.value = status
 }
+
+// Picked from the empty-state hint — same destination as clicking its tab.
+const onSelectStatus = (status) => setStatusFilter(status)
 
 const formatDateParam = (dateVal, isEnd = false) => {
   if (!dateVal) return undefined

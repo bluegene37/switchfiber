@@ -12,26 +12,28 @@
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
       <!-- Unified Filter Controls (Status Tabs on Left | Date Range right after divider) -->
       <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom">
-        <!-- Left Side: Status Filter Tabs (Shown only on All Job Orders page) -->
-        <div v-if="!isDedicatedStatusRoute" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
+        <!-- Left Side: Status Filter Tabs, built from the statuses the data
+             actually carries. Shown on every route, including the legacy
+             /job-orders/<status> links, so a dead one still offers a way out. -->
+        <div v-if="statusTabs.length > 1" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
           <button
             v-for="tab in statusTabs"
-            :key="tab.id"
+            :key="tab.value"
             type="button"
             class="btn btn-sm d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1.5 fw-medium text-nowrap status-tab-btn"
             :class="[
-              selectedStatus === tab.value
+              isActiveTab(tab.value)
                 ? 'btn-primary shadow-sm text-white'
                 : 'btn-light border text-secondary bg-body-tertiary hover-tab'
             ]"
             @click="setStatusFilter(tab.value)"
           >
-            <i :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
+            <i v-if="tab.icon" :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
             <span>{{ tab.label }}</span>
             <span
               v-if="statusCounts"
               class="badge rounded-pill status-tab-count"
-              :class="selectedStatus === tab.value
+              :class="isActiveTab(tab.value)
                 ? 'bg-white bg-opacity-25 text-white'
                 : 'bg-secondary bg-opacity-10 text-secondary'"
             >
@@ -41,7 +43,7 @@
         </div>
 
         <!-- Vertical Divider (Shown when Status Tabs are visible) -->
-        <div v-if="!isDedicatedStatusRoute" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
+        <div v-if="statusTabs.length > 1" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
 
         <!-- Date Range Pickers & Presets (Placed directly after divider) -->
         <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -155,13 +157,33 @@ const fromDate = ref(null)
 const toDate = ref(null)
 const selectedDatePreset = ref('')
 
-// `inprogress` is stored as one word in the JobOrders status column.
-const statusTabs = [
-  { id: 'all', label: 'All Job Orders', value: '', routePath: '/job-orders', icon: 'pi-list' },
-  { id: 'inprogress', label: 'In Progress', value: 'inprogress', routePath: '/job-orders/inprogress', icon: 'pi-clock' },
-  { id: 'completed', label: 'Completed', value: 'completed', routePath: '/job-orders/completed', icon: 'pi-check-circle' },
-  { id: 'activated', label: 'Activated', value: 'activated', routePath: '/job-orders/activated', icon: 'pi-verified' }
-]
+// The legacy /job-orders/<slug> routes still resolve, so their slugs need a
+// display spelling for the "no record has the status X" message. Real statuses
+// coming off the data already carry their own casing.
+const LEGACY_STATUS_LABELS = {
+  inprogress: 'In Progress',
+  completed: 'Completed',
+  activated: 'Activated'
+}
+
+// Built from the statuses the data actually carries rather than a hand-written
+// lifecycle. The old list promised In Progress / Completed against a set whose
+// only statuses are Activated and Applied, so two of the four tabs could never
+// match a row. A dynamic strip cannot drift from the data, and picks up a new
+// status the day the backend starts emitting one.
+const statusTabs = computed(() => [
+  { label: 'All Job Orders', value: '', icon: 'pi-list' },
+  ...(apiTableRef.value?.statusVocabulary || []).map(s => ({
+    label: s.label,
+    value: s.value,
+    icon: ''
+  }))
+])
+
+// The active value may arrive from a route slug in different casing than the
+// data uses ('activated' vs 'Activated'), so tabs match case-insensitively.
+const isActiveTab = (value) =>
+  String(selectedStatus.value || '').trim().toLowerCase() === String(value || '').trim().toLowerCase()
 
 // The date window is mandatory so the page never renders all 3,900+ job orders at
 // once, but a window with nothing in it reads as "the system lost my data": the
@@ -179,21 +201,17 @@ const autoWidenLabel = ref('')
 
 // Named for the tab in view, so a status route does not claim there were no job
 // orders at all when what it means is none with that status.
-const activeStatusLabel = computed(() => {
-  const tab = statusTabs.find(t => t.value === selectedStatus.value)
-  return tab ? tab.label : selectedStatus.value
-})
+const activeStatusLabel = computed(() => LEGACY_STATUS_LABELS[selectedStatus.value] || selectedStatus.value)
 
 const autoWidenSubject = computed(() => {
-  const tab = statusTabs.find(t => t.value === selectedStatus.value)
-  return tab && tab.value ? `No ${tab.label.toLowerCase()} job orders` : 'No job orders'
+  const status = String(activeStatusLabel.value || '').trim()
+  return status ? `No ${status.toLowerCase()} job orders` : 'No job orders'
 })
 
 // Counts for the status tabs, computed by the table over the set it already holds —
 // no second request. Absent until the first fetch settles, so the tabs show no
 // number rather than a misleading zero.
 const statusCounts = computed(() => {
-  if (isDedicatedStatusRoute.value) return null
   const table = apiTableRef.value
   if (!table || !table.hasFetched) return null
   return table.statusCounts || null
@@ -257,19 +275,18 @@ watch([() => route.path, () => route.query.status], () => {
   syncStatusFromRoute()
 }, { immediate: true })
 
+// Clicking a tab filters in place. On a legacy /job-orders/<status> route it
+// also leaves that route behind, so the URL never disagrees with the tab strip.
 const setStatusFilter = (status) => {
-  selectedStatus.value = status
-}
-
-// Picked from the empty-state hint, so it is a status the loaded set really has:
-// leave the dedicated route behind and show it under All Job Orders.
-const onSelectStatus = (status) => {
   if (isDedicatedStatusRoute.value) {
-    router.push({ path: '/job-orders', query: { status } })
+    router.push(status ? { path: '/job-orders', query: { status } } : { path: '/job-orders' })
     return
   }
   selectedStatus.value = status
 }
+
+// Picked from the empty-state hint — same destination as clicking its tab.
+const onSelectStatus = (status) => setStatusFilter(status)
 
 const formatDateParam = (dateVal, isEnd = false) => {
   if (!dateVal) return undefined

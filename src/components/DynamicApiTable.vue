@@ -511,10 +511,10 @@
             <div class="d-flex flex-wrap justify-content-center gap-2 mb-3" style="max-width: 460px;">
               <button
                 v-for="s in absentStatusHint.available"
-                :key="s.label"
+                :key="s.value"
                 type="button"
                 class="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2"
-                @click="emit('select-status', s.label)"
+                @click="emit('select-status', s.value)"
               >
                 <span>{{ s.label }}</span>
                 <span class="badge rounded-pill text-bg-secondary">{{ s.count }}</span>
@@ -3669,36 +3669,43 @@ const statusCounts = computed(() => {
   }
 })
 
+// Every status the loaded set actually carries, most common first, in the casing
+// the data uses. Deliberately NOT scoped to the date window: the parents build
+// their status tabs from this, and a vocabulary that shrank whenever the window
+// narrowed would make tabs appear and vanish under the user. Per-window counts
+// come from `statusCounts` instead. Blank statuses are excluded — there is
+// nothing to label a tab with. Only meaningful while the loaded set spans every
+// status — i.e. `clientStatusFilter`.
+const statusVocabulary = computed(() => {
+  if (!props.clientStatusFilter) return []
+  const rows = Array.isArray(data.value) ? data.value : []
+  const byStatus = {}
+  rows.forEach(row => {
+    const raw = rowStatusOf(row).trim()
+    const key = raw.toLowerCase()
+    if (!key) return
+    if (!byStatus[key]) byStatus[key] = { value: raw, label: raw, count: 0 }
+    byStatus[key].count += 1
+  })
+  return Object.values(byStatus).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+})
+
 // A status filter that matches nothing *because the value is not in this dataset*
 // is a different problem from a filter that is merely too narrow, and the generic
 // "No matching records found" hides it: the Application tabs asked for
 // 'In Progress' against a set whose statuses are Schedule / Duplicate / Cancelled,
-// so three menus looked permanently broken. Only meaningful while the loaded set
-// spans every status — i.e. `clientStatusFilter`.
+// so three menus looked permanently broken. Reached now only by a stale link or
+// bookmark, since the tabs build themselves from `statusVocabulary`.
 const absentStatusHint = computed(() => {
-  if (!props.clientStatusFilter) return null
   const requested = String(props.filterParams?.status || '').trim()
   if (!requested) return null
-  const requestedLabel = String(props.statusLabel || '').trim() || requested
 
-  const rows = Array.isArray(data.value) ? data.value : []
-  if (!rows.length) return null
-
-  const byStatus = {}
-  rows.forEach(row => {
-    const raw = rowStatusOf(row)
-    const key = raw.trim().toLowerCase()
-    if (!key) return
-    if (!byStatus[key]) byStatus[key] = { label: raw.trim(), count: 0 }
-    byStatus[key].count += 1
-  })
-
-  // Present somewhere in the set: the filter is fine, the window is just narrow.
-  if (byStatus[requested.toLowerCase()]) return null
-
-  const available = Object.values(byStatus).sort((a, b) => b.count - a.count)
+  const available = statusVocabulary.value
   if (!available.length) return null
-  return { requested: requestedLabel, available }
+  // Present somewhere in the set: the filter is fine, the window is just narrow.
+  if (available.some(s => s.value.toLowerCase() === requested.toLowerCase())) return null
+
+  return { requested: String(props.statusLabel || '').trim() || requested, available }
 })
 
 const activeFilterCount = computed(() => {
@@ -7499,6 +7506,7 @@ defineExpose({
   fetchData,
   refreshData,
   statusCounts,
+  statusVocabulary,
   absentStatusHint,
   hasFetched,
   lastFetchedParams
