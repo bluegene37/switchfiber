@@ -20,7 +20,7 @@
           <div class="skeleton-box rounded-3" style="width: 32px; height: 32px;"></div>
           <div class="skeleton-box rounded-3" style="width: 32px; height: 32px;"></div>
           <div class="skeleton-box rounded-3" style="width: 85px; height: 32px;"></div>
-          <div v-if="showCreateButton" class="skeleton-box rounded-3" style="width: 120px; height: 32px;"></div>
+          <div v-if="showToolbarCreateButton" class="skeleton-box rounded-3" style="width: 120px; height: 32px;"></div>
         </div>
       </div>
 
@@ -247,9 +247,25 @@
             </Button>
             <Menu ref="exportMenu" id="export_menu" :model="exportMenuItems" :popup="true" />
 
+            <!-- Rows Per Page: sits with the other table controls rather than
+                 down in the paginator, so page size is set before scrolling
+                 rather than after. -->
+            <div class="d-flex align-items-center gap-1.5">
+              <label :for="`${tableId}-rows-per-page`" class="mb-0 small text-secondary text-nowrap d-none d-md-inline">Rows per page</label>
+              <select
+                :id="`${tableId}-rows-per-page`"
+                v-model="rowsPerPage"
+                class="form-select form-select-sm paginator-rows-select shadow-xs"
+                aria-label="Rows per page"
+                v-tooltip.bottom="'Rows per page'"
+              >
+                <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
+              </select>
+            </div>
+
             <!-- Primary Action: Create Button -->
             <Button 
-              v-if="showCreateButton" 
+              v-if="showToolbarCreateButton" 
               class="p-button-primary p-button-sm rounded-3 px-3 px-sm-3.5 shadow-xs ms-1 fw-semibold d-inline-flex align-items-center gap-1.5" 
               :aria-label="createButtonLabel || 'Create'" 
               @click="openCreateDialog"
@@ -270,16 +286,6 @@
           <span v-if="filteredRecordsCount !== totalRecordsCount" class="badge bg-secondary bg-opacity-10 text-secondary border ms-2" style="font-size: 0.72rem;">
             Filtered from {{ totalRecordsCount }}
           </span>
-        </div>
-      </template>
-
-      <!-- Paginator End: Rows Per Page Selector (Grouped with Navigation) -->
-      <template #paginatorend>
-        <div class="d-flex align-items-center gap-2 my-1">
-          <span class="mb-0 small text-secondary text-nowrap me-1">Rows per page:</span>
-          <select v-model="rowsPerPage" class="form-select form-select-sm paginator-rows-select shadow-xs" aria-label="Rows per page">
-            <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
         </div>
       </template>
 
@@ -2311,7 +2317,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick, useId } from 'vue'
 import { useRoute } from 'vue-router'
 import apiClient from '../services/api'
 import { RadiusUserService } from '../services/radiusUsers'
@@ -2370,6 +2376,13 @@ const props = defineProps({
   hideCreateButton: {
     type: Boolean,
     default: false
+  },
+  // Where the primary Create action is rendered. Parents that surface their own
+  // Create in the filter bar set this false: the toolbar copy goes away, but the
+  // empty-state call to action stays — an empty table still needs a way in.
+  createButtonInToolbar: {
+    type: Boolean,
+    default: true
   },
   // Browse-only surface: no Create, no per-row Edit / Delete, no Edit shortcut in
   // the View dialog. For endpoints that are read-only or whose records carry no
@@ -2555,6 +2568,9 @@ const normalizeColKey = (col) => String(col || '').toLowerCase().replace(/_/g, '
 // A read-only table offers no way in to the create form, whatever the parent asked
 // for with hide-create-button.
 const showCreateButton = computed(() => !props.hideCreateButton && !props.readOnly)
+
+// The toolbar copy specifically — suppressed when the parent renders Create itself.
+const showToolbarCreateButton = computed(() => showCreateButton.value && props.createButtonInToolbar)
 
 const modalStyle = computed(() => {
   if (isWideForm.value) {
@@ -3396,6 +3412,10 @@ const density = ref('default') // 'compact' | 'default' | 'comfortable'
 const visibleColumns = ref([])
 const selectedStatusFilter = ref('')
 const firstRowIndex = ref(0)
+
+// Unique per instance so the rows-per-page label binds to its own select —
+// AccessLevelManagement renders two of these tables on one page.
+const tableId = useId()
 
 const rowsPerPage = ref(50)
 const rowOptions = ref([5, 10, 20, 50, 100])
@@ -7992,20 +8012,22 @@ defineExpose({
 }
 
 .paginator-rows-select {
-  width: 80px !important;
+  /* Options top out at three characters (100), so the box only has to fit that
+     plus the chevron. */
+  width: 62px !important;
   height: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
   padding-top: 0.15rem !important;
   padding-bottom: 0.15rem !important;
-  padding-left: 0.75rem !important;
-  padding-right: 1.8rem !important;
+  padding-left: 0.5rem !important;
+  padding-right: 1.35rem !important;
   font-size: 0.8125rem !important;
   font-weight: 500 !important;
   cursor: pointer !important;
   border-radius: 6px !important;
   background-size: 10px 8px !important;
-  background-position: right 0.5rem center !important;
+  background-position: right 0.4rem center !important;
   text-align: left !important;
   line-height: 24px !important;
 }

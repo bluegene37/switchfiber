@@ -43,11 +43,13 @@
           </button>
         </div>
 
-        <!-- Vertical Divider (Shown when Status Tabs are visible) -->
-        <div v-if="!isDedicatedStatusRoute && statusTabs.length > 1" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
+        <!-- Tabs keep the first line; the date controls and the page's primary
+             action share the next one. -->
+        <div class="w-100"></div>
 
-        <!-- Date Range Pickers & Presets (Placed directly after divider) -->
-        <div class="d-flex align-items-center gap-3 flex-wrap">
+        <!-- Date Range Pickers & Presets, with the page's primary action pinned
+             to the right of the same row. -->
+        <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1">
           <!-- Date Range Pickers -->
           <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">From:</span>
@@ -90,7 +92,18 @@
               {{ preset.label }}
             </button>
           </div>
+
+          <Button
+            class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
+            aria-label="Create Application"
+            @click="openCreateDialog"
+          >
+            <i class="pi pi-plus"></i>
+            <span class="d-none d-sm-inline">Create Application</span>
+            <span class="d-sm-none">Create</span>
+          </Button>
         </div>
+
       </div>
 
       <!-- Widened-window notice: the date range on screen is not the default one,
@@ -122,6 +135,7 @@
         :filter-params="activeFilterParams"
         client-status-filter
         :hide-create-button="false"
+        :create-button-in-toolbar="false"
         hide-status-filter
         create-button-label="Create Application"
         :default-sort-order="-1"
@@ -136,6 +150,7 @@
 <script setup>
 import { ref, computed, watch, watchEffect, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, currentWeekBounds } from '../utils/dateRangePresets'
@@ -143,6 +158,10 @@ import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, currentWeekBounds } fro
 const route = useRoute()
 const router = useRouter()
 const apiTableRef = ref(null)
+
+// The create form lives in DynamicApiTable; the filter-bar button is just
+// another way in to the dialog it already exposes.
+const openCreateDialog = () => apiTableRef.value?.openCreateDialog()
 const fromDatePicker = ref(null)
 
 // PrimeVue opens the overlay when the input takes focus, so focusing it is what
