@@ -2176,7 +2176,7 @@
 
       <div class="d-flex align-items-start gap-3 py-2">
         <i class="pi pi-exclamation-triangle text-danger fs-1"></i>
-        <div class="flex-grow-1 min-w-0">
+        <div class="flex-grow-1 delete-dialog-body">
           <p class="mb-1 fw-medium text-body">Are you sure you want to delete this record?</p>
           <span class="small text-secondary" v-if="recordToDelete">
             Record ID: <strong>{{ recordToDelete.id }}</strong>
@@ -2187,7 +2187,7 @@
           <dl v-if="deleteRecordIdentity.length" class="small mt-2 mb-0">
             <div v-for="f in deleteRecordIdentity" :key="f.key" class="d-flex gap-2">
               <dt class="text-secondary fw-normal flex-shrink-0">{{ f.label }}:</dt>
-              <dd class="mb-0 fw-semibold text-body text-truncate">{{ f.value }}</dd>
+              <dd class="mb-0 fw-semibold text-body text-break delete-dialog-value">{{ f.value }}</dd>
             </div>
           </dl>
 
@@ -7443,6 +7443,16 @@ defineExpose({
 </script>
 
 <style scoped>
+/* Long identity values (descriptions, addresses) have to wrap inside the
+   delete dialog instead of pushing the flex row wider than the modal. */
+.delete-dialog-body {
+  min-width: 0;
+}
+
+.delete-dialog-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .lnm-pin-toolbar {
   background: var(--bs-tertiary-bg);
   border: 1px solid var(--bs-border-color);

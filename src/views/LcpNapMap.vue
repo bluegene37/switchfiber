@@ -131,15 +131,17 @@
               </button>
             </div>
           </div>
-          <div class="lnm-site-list-body">
+          <div ref="listBody" class="lnm-site-list-body">
             <!-- All: one row per site -->
             <template v-if="listMode === 'all'">
               <button
                 v-for="site in filteredListSites"
                 :key="site.key"
+                :data-site-key="site.key"
                 type="button"
                 class="lnm-site-item"
                 :class="{ active: selectedSite?.key === site.key }"
+                :title="`Zoom to ${site.name}`"
                 @click="selectSite(site, { fly: true })"
               >
                 <span class="lnm-color-dot" :style="{ background: site.color }"></span>
@@ -513,7 +515,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import L from 'leaflet'
@@ -528,6 +530,7 @@ import ExifPanel from '../components/ExifPanel.vue'
 const { isDark } = useTheme()
 
 const mapContainer = ref(null)
+const listBody = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
 const sites = ref([])
@@ -551,6 +554,7 @@ let clusterGroup = null
 let activeBaseLayer = null
 let resizeObserver = null
 const markersByKey = new Map()
+const siteByKey = new Map()
 
 // Binangonan, Rizal — the network's home turf; only shown before data arrives
 const FALLBACK_CENTER = [14.4655, 121.1922]
@@ -623,12 +627,22 @@ const napShortLabel = (napName) => {
   return digits ? String(Number(digits)) : '?'
 }
 
+// Marker HTML is built as a string, so anything coming from the API has to be
+// escaped before it lands in it.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[ch]))
+
+// The selected pin carries its own name tag and a pulsing halo — picking a row
+// in the list has to point at one pin unambiguously, not just tint it.
 const siteIcon = (site, selected = false) => L.divIcon({
   className: 'lnm-marker-wrap',
   html: `
     <div class="lnm-marker${selected ? ' lnm-marker-selected' : ''}" style="--mk:${site.color}">
-      <span class="lnm-marker-chip">${napShortLabel(site.nap)}</span>
+      ${selected ? '<span class="lnm-marker-halo"></span>' : ''}
+      <span class="lnm-marker-chip">${escapeHtml(napShortLabel(site.nap))}</span>
       <span class="lnm-marker-tip"></span>
+      ${selected ? `<span class="lnm-marker-label">${escapeHtml(site.name)}</span>` : ''}
     </div>`,
   iconSize: [34, 42],
   iconAnchor: [17, 40],
@@ -757,11 +771,14 @@ const renderMarkers = () => {
   if (!map || !clusterGroup) return
   clusterGroup.clearLayers()
   markersByKey.clear()
+  siteByKey.clear()
+  styledKey = null
 
   sites.value.forEach(site => {
+    siteByKey.set(site.key, site)
     const marker = L.marker([site.lat, site.lng], { icon: siteIcon(site) })
     marker.bindTooltip(
-      `<strong>${site.name}</strong>${site.portTotal != null ? ` · ${site.portTotal} ports` : ''}`,
+      `<strong>${escapeHtml(site.name)}</strong>${site.portTotal != null ? ` · ${escapeHtml(site.portTotal)} ports` : ''}`,
       { direction: 'top', opacity: 0.95 }
     )
     marker.on('click', () => selectSite(site))
@@ -775,10 +792,67 @@ const renderMarkers = () => {
   }
 }
 
+// Which pin currently wears the selected icon, so a selection change only
+// repaints the two pins that changed instead of all 1500-odd of them.
+let styledKey = null
+
 const refreshMarkerIcons = () => {
-  markersByKey.forEach((marker, key) => {
-    const site = sites.value.find(s => s.key === key)
-    if (site) marker.setIcon(siteIcon(site, selectedSite.value?.key === key))
+  const nextKey = selectedSite.value?.key || null
+  const touched = new Set([styledKey, nextKey].filter(Boolean))
+  touched.forEach(key => {
+    const marker = markersByKey.get(key)
+    const site = siteByKey.get(key)
+    if (!marker || !site) return
+    const selected = key === nextKey
+    marker.setIcon(siteIcon(site, selected))
+    // Keep the selected pin (and its name tag) above its neighbours.
+    marker.setZIndexOffset(selected ? 1000 : 0)
+  })
+  styledKey = nextKey
+}
+
+/**
+ * Zoom a picked site settles on: close enough to read the street it stands on,
+ * and the zoom from which clustering is switched off so the pin is on its own.
+ */
+const SELECT_ZOOM = 17
+
+/**
+ * The detail drawer covers the right edge of the map, so centring a pin
+ * dead-centre can park it underneath the drawer. Shift the map centre instead,
+ * which leaves the pin in the free space beside it.
+ */
+const drawerCenterOffset = () => {
+  const size = map.getSize()
+  // Narrow screens: the drawer docks along the bottom, so lift the pin instead.
+  if (size.x < 576) return [0, Math.min(size.y * 0.2, 130)]
+  return [Math.min(392, Math.max(size.x - 24, 0)) / 2, 0]
+}
+
+/**
+ * Centre the map on one site and land at SELECT_ZOOM. The zoom matters as much
+ * as the centring: a pin swallowed by a cluster is not drawn at all, so panning
+ * alone would leave the view on a cluster bubble instead of the site that was
+ * just picked. Clustering is off from SELECT_ZOOM on, so arriving there always
+ * leaves the pin standing on its own.
+ */
+const focusSite = (site, { animate = true } = {}) => {
+  if (!map) return
+  const zoom = Math.max(map.getZoom(), SELECT_ZOOM)
+  const [dx, dy] = drawerCenterOffset()
+  const center = map.unproject(map.project([site.lat, site.lng], zoom).add([dx, dy]), zoom)
+  // The flight runs on requestAnimationFrame, which a backgrounded tab pauses —
+  // jump straight to the site when the map isn't on screen.
+  if (animate && !document.hidden) map.flyTo(center, zoom, { duration: 0.7 })
+  else map.setView(center, zoom, { animate: false })
+}
+
+/** Scroll the sidebar to the site so list and map always agree on what's selected. */
+const scrollListToSelection = (site) => {
+  nextTick(() => {
+    listBody.value
+      ?.querySelector(`[data-site-key="${site.key}"]`)
+      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   })
 }
 
@@ -786,13 +860,9 @@ const selectSite = (site, { fly = false } = {}) => {
   selectedSite.value = site
   copied.value = false
   refreshMarkerIcons()
-  if (map) {
-    if (fly) {
-      map.flyTo([site.lat, site.lng], Math.max(map.getZoom(), 17), { duration: 0.8 })
-    } else {
-      map.panTo([site.lat, site.lng])
-    }
-  }
+  scrollListToSelection(site)
+  if (fly) focusSite(site)
+  else if (map) map.panTo([site.lat, site.lng])
 }
 
 const clearSelection = () => {
@@ -841,6 +911,10 @@ onMounted(() => {
     showCoverageOnHover: false,
     spiderfyOnMaxZoom: true,
     maxClusterRadius: 48,
+    // From street-level zoom on, every site draws as its own pin. Clusters are
+    // useful for reading density from far out, but at the zoom a selected site
+    // lands on they would hide the very pin that was just picked.
+    disableClusteringAtZoom: SELECT_ZOOM,
     // Uniform cluster color regardless of the LCP hues inside — counts read
     // instantly and the per-LCP colors stay meaningful on the leaf markers
     iconCreateFunction: (cluster) => L.divIcon({
@@ -1224,14 +1298,65 @@ onBeforeUnmount(() => {
 }
 .lnm-marker-selected {
   transform: scale(1.18);
+  animation: lnm-marker-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  z-index: 5;
 }
 .lnm-marker-selected .lnm-marker-chip {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--mk) 35%, transparent);
 }
 
+/* Selected-pin identifiers: a pulsing halo to catch the eye and a name tag so
+   the pin reads as the exact row that was clicked in the list. */
+.lnm-marker-halo {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mk) 55%, transparent);
+  animation: lnm-marker-halo 1.7s ease-out infinite;
+  pointer-events: none;
+}
+.lnm-marker-label {
+  position: absolute;
+  top: 43px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 180px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mk);
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+@keyframes lnm-marker-halo {
+  0% { transform: scale(0.55); opacity: 0.7; }
+  100% { transform: scale(2.3); opacity: 0; }
+}
+@keyframes lnm-marker-pop {
+  0% { transform: translateY(-16px) scale(1.35); }
+  60% { transform: translateY(0) scale(1.05); }
+  100% { transform: scale(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lnm-marker-selected { animation: none; }
+  .lnm-marker-halo { animation: none; opacity: 0.45; transform: scale(1.5); }
+}
+
 /* The signature mark: a NAP enclosure chip — rounded box, LCP family color,
    NAP number inside — instead of an anonymous teardrop pin. */
 .lnm-marker-chip {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1275,6 +1400,7 @@ onBeforeUnmount(() => {
 
 [data-bs-theme='dark'] .lnm-marker-chip,
 [data-bs-theme='dark'] .lnm-marker-tip,
+[data-bs-theme='dark'] .lnm-marker-label,
 [data-bs-theme='dark'] .lnm-cluster {
   border-color: #d8dbe0;
 }
