@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const jobOrderView = path.resolve(__dirname, '../src/views/JobOrderList.vue')
+const presetsFile = path.resolve(__dirname, '../src/utils/dateRangePresets.js')
 
 // The widen loop as the view runs it: step the window out until the ACTIVE TAB
 // has rows, or the steps run out. `countFor` stands in for the table's
@@ -93,9 +94,12 @@ describe('JobOrderList.vue is wired to the fallback', () => {
     const content = fs.readFileSync(jobOrderView, 'utf8')
     assert.ok(content.includes("preset: 'this_month'"), 'Missing the this_month step')
     assert.ok(content.includes("preset: 'last_12_months'"), 'Missing the last_12_months step')
-    assert.ok(content.includes("preset === 'last_12_months'"), 'setDateRange must build the 12-month range')
+    assert.ok(content.includes('resolveDatePreset'), 'setDateRange must resolve the step to a range')
     assert.ok(content.includes('useDefaultWeek'), 'Missing the "Back to this week" escape')
     assert.ok(content.includes('autoWidenLabel'), 'Missing the widened-window notice')
+    // The range itself is built in the shared preset module.
+    const presets = fs.readFileSync(presetsFile, 'utf8')
+    assert.ok(presets.includes('last_12_months'), 'Shared presets must define the 12-month range')
   })
 
   test('a hand-picked range pins the window and stands the fallback down', () => {

@@ -56,6 +56,7 @@
           <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">From:</span>
             <DatePicker
+              ref="fromDatePicker"
               v-model="fromDate"
               showIcon
               iconDisplay="input"
@@ -63,6 +64,7 @@
               dateFormat="yy-mm-dd"
               placeholder="From Date"
               class="date-filter-picker"
+              @update:model-value="onManualDateChange"
             />
           </div>
           <div class="d-flex align-items-center gap-2">
@@ -75,33 +77,20 @@
               dateFormat="yy-mm-dd"
               placeholder="To Date"
               class="date-filter-picker"
+              @update:model-value="onManualDateChange"
             />
           </div>
 
-          <div class="d-flex align-items-center gap-1.5 ms-sm-1">
+          <div class="d-flex align-items-center gap-1.5 ms-sm-1 flex-wrap">
             <button
+              v-for="preset in DATE_PRESETS"
+              :key="preset.id"
               type="button"
               class="btn-date-preset"
-              :class="{ 'active': selectedDatePreset === 'today' }"
-              @click="applyDatePreset('today')"
+              :class="{ 'active': selectedDatePreset === preset.id }"
+              @click="applyDatePreset(preset.id)"
             >
-              Today
-            </button>
-            <button
-              type="button"
-              class="btn-date-preset"
-              :class="{ 'active': selectedDatePreset === 'this_week' }"
-              @click="applyDatePreset('this_week')"
-            >
-              This Week
-            </button>
-            <button
-              type="button"
-              class="btn-date-preset"
-              :class="{ 'active': selectedDatePreset === 'this_month' }"
-              @click="applyDatePreset('this_month')"
-            >
-              This Month
+              {{ preset.label }}
             </button>
           </div>
         </div>
@@ -134,12 +123,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { useUserStore } from '../stores/users'
+import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRangePresets'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -325,7 +315,26 @@ const filterPrompt = computed(() =>
     : 'Select a user to load their log records.'
 )
 
+const fromDatePicker = ref(null)
+
+// PrimeVue opens the overlay when the input takes focus, so focusing it is what
+// makes "Custom" do something visible instead of only moving a highlight.
+const focusFromDate = () => {
+  nextTick(() => {
+    const input = fromDatePicker.value?.$el?.querySelector('input')
+    if (input) input.focus()
+  })
+}
+
 const applyDatePreset = (preset) => {
+  // Custom hands the range to the From/To pickers, so it keeps whatever is in
+  // them and re-opens the From picker instead of clearing on a second click.
+  if (preset === CUSTOM_PRESET) {
+    selectedDatePreset.value = CUSTOM_PRESET
+    focusFromDate()
+    return
+  }
+
   if (selectedDatePreset.value === preset) {
     selectedDatePreset.value = ''
     fromDate.value = null
@@ -334,19 +343,16 @@ const applyDatePreset = (preset) => {
   }
 
   selectedDatePreset.value = preset
-  const today = new Date()
-  if (preset === 'today') {
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
-  } else if (preset === 'this_week') {
-    const day = today.getDay()
-    const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth(), diffToMonday + 6, 23, 59, 59, 999)
-  } else if (preset === 'this_month') {
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
-  }
+  const range = resolveDatePreset(preset)
+  if (!range) return
+  fromDate.value = range.from
+  toDate.value = range.to
+}
+
+// A manual pick IS the Custom range, so the highlight moves to that button.
+// (Programmatic assignment from applyDatePreset does not emit this event.)
+const onManualDateChange = () => {
+  selectedDatePreset.value = CUSTOM_PRESET
 }
 
 // Default to 'This Month' — logs accumulate per request, so a wider default

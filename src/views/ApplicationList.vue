@@ -49,6 +49,7 @@
           <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary fw-semibold text-nowrap">From:</span>
             <DatePicker
+              ref="fromDatePicker"
               v-model="fromDate"
               showIcon
               iconDisplay="input"
@@ -74,30 +75,16 @@
           </div>
 
           <!-- Quick Date Presets (Theme-Driven Centralized Highlight) -->
-          <div class="d-flex align-items-center gap-1.5 ms-sm-1">
-            <button 
-              type="button" 
+          <div class="d-flex align-items-center gap-1.5 ms-sm-1 flex-wrap">
+            <button
+              v-for="preset in DATE_PRESETS"
+              :key="preset.id"
+              type="button"
               class="btn-date-preset"
-              :class="{ 'active': selectedDatePreset === 'today' }"
-              @click="applyDatePreset('today')"
+              :class="{ 'active': selectedDatePreset === preset.id }"
+              @click="applyDatePreset(preset.id)"
             >
-              Today
-            </button>
-            <button 
-              type="button" 
-              class="btn-date-preset"
-              :class="{ 'active': selectedDatePreset === 'this_week' }"
-              @click="applyDatePreset('this_week')"
-            >
-              This Week
-            </button>
-            <button 
-              type="button" 
-              class="btn-date-preset"
-              :class="{ 'active': selectedDatePreset === 'this_month' }"
-              @click="applyDatePreset('this_month')"
-            >
-              This Month
+              {{ preset.label }}
             </button>
           </div>
         </div>
@@ -144,14 +131,25 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, watchEffect } from 'vue'
+import { ref, computed, watch, watchEffect, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
+import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, currentWeekBounds } from '../utils/dateRangePresets'
 
 const route = useRoute()
 const router = useRouter()
 const apiTableRef = ref(null)
+const fromDatePicker = ref(null)
+
+// PrimeVue opens the overlay when the input takes focus, so focusing it is what
+// makes "Custom" do something visible instead of only moving a highlight.
+const focusFromDate = () => {
+  nextTick(() => {
+    const input = fromDatePicker.value?.$el?.querySelector('input')
+    if (input) input.focus()
+  })
+}
 
 // Default to 'This Week' on initial load to avoid fetching/rendering massive datasets at once
 const selectedStatus = ref('')
@@ -338,38 +336,26 @@ const activeFilterSummary = computed(() => {
   return parts.join(' | ')
 })
 
-const currentWeekBounds = () => {
-  const today = new Date()
-  const day = today.getDay()
-  const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
-  return {
-    from: new Date(today.getFullYear(), today.getMonth(), diffToMonday, 0, 0, 0, 0),
-    to: new Date(today.getFullYear(), today.getMonth(), diffToMonday + 6, 23, 59, 59, 999)
-  }
-}
-
 const setDateRange = (preset) => {
   selectedDatePreset.value = preset
-  const today = new Date()
-  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
-  if (preset === 'today') {
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
-    toDate.value = endOfToday
-  } else if (preset === 'this_week') {
-    const week = currentWeekBounds()
-    fromDate.value = week.from
-    toDate.value = week.to
-  } else if (preset === 'this_month') {
-    fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
-  } else if (preset === 'last_12_months') {
-    // Fallback range only — no toolbar button sets this one.
-    fromDate.value = new Date(today.getFullYear(), today.getMonth() - 11, 1, 0, 0, 0, 0)
-    toDate.value = endOfToday
-  }
+  // 'custom' has no range of its own: the pickers already hold what the user chose.
+  const range = resolveDatePreset(preset)
+  if (!range) return
+  fromDate.value = range.from
+  toDate.value = range.to
 }
 
 const applyDatePreset = (preset) => {
+  // Custom hands the range to the From/To pickers. Re-clicking it re-opens the
+  // From picker rather than doing nothing, so the button always has an effect.
+  if (preset === CUSTOM_PRESET) {
+    autoWidenEnabled.value = false
+    autoWidenLabel.value = ''
+    selectedDatePreset.value = CUSTOM_PRESET
+    focusFromDate()
+    return
+  }
+
   // The date filter is mandatory, so re-clicking the active preset keeps it
   // instead of clearing the range
   if (selectedDatePreset.value === preset) return
@@ -388,10 +374,10 @@ const useDefaultWeek = () => {
   setDateRange('this_week')
 }
 
-// A manual pick is a custom range, so the preset highlight no longer applies.
-// (Programmatic assignment from applyDatePreset does not emit this event.)
+// A manual pick IS the Custom range, so the highlight moves to that button.
+// (Programmatic assignment from setDateRange does not emit this event.)
 const onManualDateChange = () => {
-  selectedDatePreset.value = ''
+  selectedDatePreset.value = CUSTOM_PRESET
   autoWidenEnabled.value = false
   autoWidenLabel.value = ''
 }
