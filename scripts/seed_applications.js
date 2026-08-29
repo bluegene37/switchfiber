@@ -1,7 +1,7 @@
 import https from 'https';
 
 const agent = new https.Agent({ rejectUnauthorized: false });
-const API_BASE = 'https://103.249.198.43:8090/api';
+const API_BASE = 'https://103.249.198.50:8090/api';
 
 export const applicationsSeedData = [
   {

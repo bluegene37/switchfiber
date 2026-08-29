@@ -632,7 +632,7 @@ watch(canAccessTheme, (allowed) => {
 })
 const user = computed(() => authStore.user)
 
-const apiUrl = ref(import.meta.env.VITE_API_URL || 'https://103.249.198.43:8090')
+const apiUrl = ref(import.meta.env.VITE_API_URL || 'https://103.249.198.50:8090')
 
 const isSavingProfile = ref(false)
 const isUpdatingPassword = ref(false)

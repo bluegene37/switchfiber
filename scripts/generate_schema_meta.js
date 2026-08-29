@@ -21,7 +21,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SPEC_PATH = path.join(ROOT, 'openapi.json')
 const PUBLIC_SPEC_PATH = path.join(ROOT, 'public', 'openapi.json')
 const OUT_PATH = path.join(ROOT, 'src', 'models', 'schemaMeta.js')
-const LIVE_URL = 'https://103.249.198.43:8090/openapi/v1.json'
+const LIVE_URL = 'https://103.249.198.50:8090/openapi/v1.json'
 
 async function refreshFromServer() {
   // The API serves a self-signed certificate; this is a local build step, not runtime.

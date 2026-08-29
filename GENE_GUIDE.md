@@ -453,7 +453,7 @@ All backend calls must adhere to strict REST conventions:
 | `npm run build` | Build optimized production bundles with chunk splitting. |
 | `npm run preview` | Locally preview the production build artifacts. |
 | `npm run gen:schema` | Generate `src/models/schemaMeta.js` from the local `openapi.json` spec. |
-| `npm run gen:schema -- --live` | Fetch the live OpenAPI schema from `https://103.249.198.43:8090/openapi/v1.json` and regenerate `schemaMeta.js`. |
+| `npm run gen:schema -- --live` | Fetch the live OpenAPI schema from `https://103.249.198.50:8090/openapi/v1.json` and regenerate `schemaMeta.js`. |
 | `node scripts/download_ph_data.js` | Download and refresh Philippine PSGC geographic address data (regions, provinces, cities, barangays). |
 | `node scripts/seed_applications.js` | Seed mock subscriber applications for testing and development. |
 
