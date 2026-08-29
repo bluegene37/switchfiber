@@ -160,6 +160,43 @@ describe('Both views are wired to the dynamic strip', () => {
     }
   })
 
+  test('the sidebar no longer navigates by status', () => {
+    const sidebar = fs.readFileSync(path.resolve(__dirname, '../src/components/Sidebar.vue'), 'utf8')
+    for (const dead of [
+      "path: '/application/in-progress'", "path: '/application/done'", "path: '/application/approved'",
+      "path: '/job-orders/inprogress'", "path: '/job-orders/completed'", "path: '/job-orders/activated'"
+    ]) {
+      assert.ok(!sidebar.includes(dead), `Sidebar must not link to ${dead} — status is a filter now`)
+    }
+    // The two list pages themselves stay reachable.
+    assert.ok(sidebar.includes("path: '/application'"), 'All Application must remain')
+    assert.ok(sidebar.includes("path: '/job-orders'"), 'All Job Orders must remain')
+  })
+
+  test('global search no longer offers the status destinations', () => {
+    const search = fs.readFileSync(path.resolve(__dirname, '../src/composables/useSearch.js'), 'utf8')
+    for (const dead of [
+      'nav-application-inprogress', 'nav-application-done', 'nav-application-approved',
+      'nav-job-orders-inprogress', 'nav-job-orders-completed', 'nav-job-orders-activated'
+    ]) {
+      assert.ok(!search.includes(dead), `Search must not offer ${dead}`)
+    }
+    assert.ok(search.includes('nav-application'), 'All Application must stay searchable')
+    assert.ok(search.includes('nav-job-orders'), 'All Job Orders must stay searchable')
+  })
+
+  test('the Access Level Menu picker keeps its menu ids', () => {
+    // Sidebar entries went away, but ids 26/27/28/33/34/35 stay registered so no
+    // AccessLevelMenu row already saved against them is orphaned.
+    const table = fs.readFileSync(tableFile, 'utf8')
+    for (const id of [26, 27, 28, 33, 34, 35]) {
+      assert.ok(
+        new RegExp(`id: ${id},`).test(table),
+        `Menu id ${id} must stay registered for stored permissions`
+      )
+    }
+  })
+
   test('the legacy status routes still resolve rather than 404', () => {
     const router = fs.readFileSync(path.resolve(__dirname, '../src/router/index.js'), 'utf8')
     for (const route of [

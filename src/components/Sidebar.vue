@@ -275,22 +275,20 @@ const rawMenuItems = ref([
     id: 25,
     name: 'Application',
     icon: 'pi-file-edit',
+    // Status lives on the page as a data-driven filter strip, so it is no longer
+    // a navigation concern. The old In Progress / Done / Approved entries named
+    // statuses no application record has ever carried.
     children: [
       { id: 14, name: 'All Application', path: '/application', icon: 'pi-list' },
-      { id: 26, name: 'In Progress', path: '/application/in-progress', icon: 'pi-clock' },
-      { id: 27, name: 'Done', path: '/application/done', icon: 'pi-check-circle' },
-      { id: 28, name: 'Approved', path: '/application/approved', icon: 'pi-verified' },
     ]
   },
   {
     id: 31,
     name: 'Job Orders',
     icon: 'pi-clipboard',
+    // Same as Application: filter on the page, not a menu entry.
     children: [
       { id: 32, name: 'All Job Orders', path: '/job-orders', icon: 'pi-list' },
-      { id: 33, name: 'In Progress', path: '/job-orders/inprogress', icon: 'pi-clock' },
-      { id: 34, name: 'Completed', path: '/job-orders/completed', icon: 'pi-check-circle' },
-      { id: 35, name: 'Activated', path: '/job-orders/activated', icon: 'pi-verified' },
     ]
   },
   { id: 49, name: 'Service Orders', path: '/service-orders', icon: 'pi-wrench' },
