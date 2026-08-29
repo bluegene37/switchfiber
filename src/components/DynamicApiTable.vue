@@ -6903,6 +6903,8 @@ const fetchData = async ({ silent = false } = {}) => {
     }
   } catch (err) {
     if (token !== fetchToken) return
+    // Canceled because the user navigated away — not a data failure.
+    if (err.isCanceled) return
     console.error(`Error for ${props.endpoint}:`, err)
     error.value = err.message || 'Failed to fetch data'
   } finally {

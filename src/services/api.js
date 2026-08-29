@@ -11,11 +11,40 @@ const apiClient = axios.create({
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 60000,
 })
 
+// The app and the API share one origin (Vite proxy in dev, nginx/Vercel
+// rewrites in production), and over HTTP/1.1 a browser opens at most ~6
+// connections per origin. A burst of slow API GETs can occupy every slot and
+// starve the router's lazy view imports — sidebar clicks then appear dead
+// until the API answers or times out. Aborting stale in-flight GETs when a
+// navigation starts frees those sockets so route changes always go through.
+// Requests that must survive navigation opt out with { cancelOnNavigate: false }.
+const navCancellable = new Set()
+
+export const abortPendingNavigationRequests = () => {
+  navCancellable.forEach((controller) => controller.abort())
+  navCancellable.clear()
+}
+
+const releaseNavController = (config) => {
+  if (config?._navAbortController) {
+    navCancellable.delete(config._navAbortController)
+    delete config._navAbortController
+  }
+}
+
 // Request interceptor
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (token && typeof token === 'string' && token.trim()) {
     config.headers.Authorization = `Bearer ${token.trim()}`
+  }
+  // Only reads are cancellable — a mutation must never be killed mid-flight.
+  // A caller-supplied signal is left alone.
+  if ((config.method || 'get').toLowerCase() === 'get' && config.cancelOnNavigate !== false && !config.signal) {
+    const controller = new AbortController()
+    config.signal = controller.signal
+    config._navAbortController = controller
+    navCancellable.add(controller)
   }
   return config
 }, (error) => {
@@ -24,6 +53,7 @@ apiClient.interceptors.request.use((config) => {
 
 // Response interceptor
 apiClient.interceptors.response.use((response) => {
+  releaseNavController(response.config)
   let data = response.data
   if (typeof data === 'string') {
     const trimmed = data.trim()
@@ -37,6 +67,16 @@ apiClient.interceptors.response.use((response) => {
   }
   return data
 }, (error) => {
+  releaseNavController(error.config)
+
+  // A request aborted because the user navigated away is not a failure —
+  // callers check `isCanceled` to skip error states and health reports.
+  if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+    const canceledError = new Error('Request canceled by navigation.')
+    canceledError.isCanceled = true
+    return Promise.reject(canceledError)
+  }
+
   console.error('API Error:', error.response?.status, error.message)
 
   if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {

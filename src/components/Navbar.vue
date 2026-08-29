@@ -587,6 +587,8 @@ const refreshNotifications = async () => {
         await apiClient.get(probePathFor(check), { timeout: HEALTH_PROBE_TIMEOUT_MS })
         return null
       } catch (err) {
+        // A probe aborted by navigating away says nothing about endpoint health.
+        if (err.isCanceled) return null
         return {
           id: check.path,
           title: `${check.label} unavailable`,

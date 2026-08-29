@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { abortPendingNavigationRequests } from '../services/api'
 
 const APP_TITLE = 'SwitchFiber Admin'
 
@@ -377,7 +378,14 @@ const router = createRouter({
 
 // Navigation Guard — returns values instead of calling next(), which is
 // deprecated in Vue Router 5.
-router.beforeEach((to) => {
+router.beforeEach((to, from) => {
+  // Leaving a page kills its in-flight GETs. Without this, a slow API can hold
+  // every connection to our origin and the lazy import of the next view queues
+  // behind them — the click seems ignored until the API answers or times out.
+  if (from.matched.length > 0) {
+    abortPendingNavigationRequests()
+  }
+
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {

@@ -65,7 +65,9 @@ export function usePermissions() {
       return
     }
     try {
-      const level = await apiClient.get(`/AccessLevel/${levelId}`)
+      // Permission lookups fire once on mount and must survive the user
+      // clicking a menu right away — never cancel them on navigation.
+      const level = await apiClient.get(`/AccessLevel/${levelId}`, { cancelOnNavigate: false })
       resolvedLevelName.value = String(level?.name || level?.data?.name || '')
     } catch {
       resolvedLevelName.value = ''
@@ -99,13 +101,15 @@ export function usePermissions() {
       // No inner .catch here: allSettled records the rejections, which is what
       // lets an unreachable API ('error') be told apart from an API that
       // answered with no rows ('empty') when the fallback menu kicks in.
+      // cancelOnNavigate: false — losing these to a quick menu click right
+      // after login would drop a regular user onto the fallback menu.
       const requests = []
       if (levelId) {
-        requests.push(apiClient.get(`/AccesslevelMenu/${levelId}`))
-        requests.push(apiClient.get(`/AccessLevelMenu/${levelId}`))
+        requests.push(apiClient.get(`/AccesslevelMenu/${levelId}`, { cancelOnNavigate: false }))
+        requests.push(apiClient.get(`/AccessLevelMenu/${levelId}`, { cancelOnNavigate: false }))
       }
-      requests.push(apiClient.get('/AccesslevelMenu'))
-      requests.push(apiClient.get('/AccessLevelMenu'))
+      requests.push(apiClient.get('/AccesslevelMenu', { cancelOnNavigate: false }))
+      requests.push(apiClient.get('/AccessLevelMenu', { cancelOnNavigate: false }))
 
       const responses = await Promise.allSettled(requests)
       const anyFulfilled = responses.some(r => r.status === 'fulfilled')
