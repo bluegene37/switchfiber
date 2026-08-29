@@ -2174,14 +2174,24 @@
         <i class="pi pi-exclamation-triangle me-2"></i> {{ deleteError }}
       </div>
 
-      <div class="d-flex align-items-center gap-3 py-2">
+      <div class="d-flex align-items-start gap-3 py-2">
         <i class="pi pi-exclamation-triangle text-danger fs-1"></i>
-        <div>
+        <div class="flex-grow-1 min-w-0">
           <p class="mb-1 fw-medium text-body">Are you sure you want to delete this record?</p>
           <span class="small text-secondary" v-if="recordToDelete">
             Record ID: <strong>{{ recordToDelete.id }}</strong>
-            <span v-if="recordToDelete.fname || recordToDelete.username"> ({{ recordToDelete.fname || recordToDelete.username }})</span>
           </span>
+
+          <!-- An id alone is not enough to catch a mis-click, so name the record
+               the way the person reading this dialog recognizes it. -->
+          <dl v-if="deleteRecordIdentity.length" class="small mt-2 mb-0">
+            <div v-for="f in deleteRecordIdentity" :key="f.key" class="d-flex gap-2">
+              <dt class="text-secondary fw-normal flex-shrink-0">{{ f.label }}:</dt>
+              <dd class="mb-0 fw-semibold text-body text-truncate">{{ f.value }}</dd>
+            </div>
+          </dl>
+
+          <p class="small text-danger mb-0 mt-2">This cannot be undone.</p>
         </div>
       </div>
 
@@ -5441,6 +5451,9 @@ const focusFirstInvalid = async (scope, col) => {
   if (focusable) focusable.focus({ preventScroll: true })
 }
 
+/** How many failing field names the banner spells out before summarizing the rest. */
+const MAX_LISTED_INVALID_FIELDS = 6
+
 /** Surfaces the dialog's error banner, which sits above a tall scroll pane. */
 const scrollErrorBannerIntoView = async (scope) => {
   await nextTick()
@@ -5460,7 +5473,22 @@ const runPreSubmitChecks = async (scope) => {
 
   if (missing.length) {
     const firstCol = missing[0]
-    const errText = fieldErrors.value[scope][firstCol] || `${missing.length} field(s) require attention. Please fix highlighted fields.`
+
+    // Name every field that failed, not just the first. The inline errors
+    // already mark all of them, but a banner reading "Name is required" while
+    // three fields are red sends the user back one submit at a time, and on a
+    // long form the other failures are scrolled out of sight.
+    let errText
+    if (missing.length === 1) {
+      errText = fieldErrors.value[scope][firstCol] || `${formatLabel(firstCol)} requires attention.`
+    } else {
+      const names = missing.map(col => formatLabel(col))
+      const shown = names.slice(0, MAX_LISTED_INVALID_FIELDS)
+      const remaining = names.length - shown.length
+      errText = `${names.length} fields need attention: ${shown.join(', ')}` +
+        (remaining > 0 ? `, and ${remaining} more.` : '.')
+    }
+
     setError(errText)
     toast.add({
       severity: 'warn',
@@ -6684,6 +6712,51 @@ const confirmDelete = (record) => {
   displayDeleteDialog.value = true
 }
 
+/**
+ * Column names that identify a record to a person, most recognizable first.
+ * Compared against names normalized to lowercase with separators stripped, so
+ * `account_no`, `accountNo` and `AccountNO` all match the same entry.
+ */
+const IDENTITY_COLUMNS = [
+  'fullname', 'name', 'firstname', 'fname', 'lastname', 'lname', 'username',
+  'accountno', 'accountnumber', 'emailaddress', 'email',
+  'contactnumber', 'mobilenumber', 'description', 'installationaddress', 'address'
+]
+
+/** How many identifying fields the delete dialog shows before it gets noisy. */
+const MAX_IDENTITY_FIELDS = 3
+
+/**
+ * The fields the delete confirmation names alongside the id.
+ *
+ * Deletes here are permanent — the API hard-deletes and the audit trail keeps
+ * no copy of the row — so the dialog is the only thing standing between a
+ * mis-click and unrecoverable data loss. "Record ID: 1" does not tell anyone
+ * which customer they are about to remove; "Romy Puyot / 202300022" does.
+ */
+const deleteRecordIdentity = computed(() => {
+  const record = recordToDelete.value
+  if (!record || typeof record !== 'object') return []
+
+  const normalize = (key) => String(key).toLowerCase().replace(/[\s_-]/g, '')
+  const columns = Object.keys(record)
+  const picked = []
+
+  for (const wanted of IDENTITY_COLUMNS) {
+    if (picked.length >= MAX_IDENTITY_FIELDS) break
+    const match = columns.find(col => normalize(col) === wanted && !isBlank(record[col]))
+    if (!match || picked.some(p => p.key === match)) continue
+    const value = String(record[match]).trim()
+    picked.push({
+      key: match,
+      label: formatLabel(match),
+      value: value.length > 80 ? `${value.slice(0, 80)}…` : value
+    })
+  }
+
+  return picked
+})
+
 const deleteRecord = async () => {
   const targetId = getRecordId(recordToDelete.value)
   if (targetId === null || targetId === undefined) {
@@ -7104,9 +7177,32 @@ const isMenuLinked = (menuRow) => {
   return activeLinkedMenuIds.value.has(targetMenuId) || activeLinkedMenuIds.value.has(Number(targetMenuId))
 }
 
+/**
+ * Sends a write to `path`, retrying under `altPath` only when the first route
+ * does not exist.
+ *
+ * The two spellings (`/AccesslevelMenu` and `/AccessLevelMenu`) exist because
+ * backends differ on the casing. A 404 is the signal that this backend uses the
+ * other one. Every other status means the route matched and the handler itself
+ * failed, so retrying under a second spelling cannot help — it just doubles the
+ * write load on a broken endpoint and files a second entry in the error log.
+ */
+const writeWithRouteCasingFallback = async (verb, path, altPath, payload) => {
+  try {
+    return payload === undefined
+      ? await apiClient[verb](path)
+      : await apiClient[verb](path, payload)
+  } catch (err) {
+    if (err.status !== 404) throw err
+    return payload === undefined
+      ? await apiClient[verb](altPath)
+      : await apiClient[verb](altPath, payload)
+  }
+}
+
 const toggleMenuLink = async (menuRow) => {
   if (!props.selectedAccessLevel || !menuRow) return
-  
+
   if (isSuperAdminAccessLevelProtected(menuRow)) {
     toast.add({
       severity: 'warn',
@@ -7146,9 +7242,7 @@ const toggleMenuLink = async (menuRow) => {
       // Optimistically add relation to state so UI flips immediately
       accessLevelMenus.value = [...accessLevelMenus.value, payload]
 
-      const res = await apiClient.post('/AccesslevelMenu', payload).catch(async () => {
-        return await apiClient.post('/AccessLevelMenu', payload)
-      })
+      const res = await writeWithRouteCasingFallback('post', '/AccesslevelMenu', '/AccessLevelMenu', payload)
       
       // Refetch from server to sync true ID
       await fetchAccessLevelMenus()
@@ -7182,9 +7276,7 @@ const toggleMenuLink = async (menuRow) => {
       const relId = existingRel ? (existingRel.id ?? existingRel.ID) : null
       if (relId) {
         console.log(`[DynamicApiTable] Removing link DELETE /api/AccesslevelMenu/${relId}`)
-        await apiClient.delete(`/AccesslevelMenu/${relId}`).catch(async () => {
-          await apiClient.delete(`/AccessLevelMenu/${relId}`)
-        })
+        await writeWithRouteCasingFallback('delete', `/AccesslevelMenu/${relId}`, `/AccessLevelMenu/${relId}`)
       } else {
         await apiClient.delete(`/AccesslevelMenu/${targetAccId}/${targetMenuId}`).catch(() => null)
       }

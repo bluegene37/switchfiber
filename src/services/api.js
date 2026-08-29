@@ -51,6 +51,22 @@ apiClient.interceptors.request.use((config) => {
   return Promise.reject(error)
 })
 
+// ASP.NET keys deserializer failures by JSON path (`$.accountNo`) rather than by
+// property name. Strip the path syntax so the user sees the field, not the shape
+// of the request body.
+const cleanFieldName = (field) => String(field).replace(/^\$\./, '').trim() || String(field)
+
+// A .NET deserializer failure arrives as one long sentence naming the request
+// class, the JSON path, the line number and the byte offset. None of that helps
+// the person filling in the form; it only buries the one fact that does.
+const JSON_CONVERT_FAILURE = /The JSON value could not be converted to [^.]+\./i
+
+const simplifyServerFieldError = (message) => {
+  const text = String(message)
+  if (!JSON_CONVERT_FAILURE.test(text)) return text
+  return 'the value entered is not in the format the server expects.'
+}
+
 // Response interceptor
 apiClient.interceptors.response.use((response) => {
   releaseNavController(response.config)
@@ -106,11 +122,21 @@ apiClient.interceptors.response.use((response) => {
     const fieldErrList = []
     Object.entries(error.response.data.errors).forEach(([field, msgs]) => {
       const msgStr = Array.isArray(msgs) ? msgs.join(', ') : String(msgs)
-      fieldErrList.push(`${field}: ${msgStr}`)
+      fieldErrList.push(`${cleanFieldName(field)}: ${simplifyServerFieldError(msgStr)}`)
     })
     if (fieldErrList.length > 0) {
       const detailed = fieldErrList.join(' | ')
       errorMessage = errorMessage ? `${errorMessage} - ${detailed}` : detailed
+    }
+  }
+  if (!errorMessage) {
+    // Several endpoints answer with a bare text body ("An error occurred while
+    // creating the access level menu") rather than a problem-details object.
+    // Without this, that sentence is dropped and the user is shown axios's
+    // "Request failed with status code 500", which says nothing.
+    const raw = error.response?.data
+    if (typeof raw === 'string' && raw.trim() && raw.trim().length <= 300) {
+      errorMessage = raw.trim()
     }
   }
   if (!errorMessage) {
