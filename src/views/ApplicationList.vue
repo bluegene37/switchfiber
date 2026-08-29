@@ -108,7 +108,7 @@
       <div v-if="autoWidenLabel" class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0 small rounded-3">
         <i class="pi pi-calendar-clock mt-1"></i>
         <div class="flex-grow-1">
-          No applications dated this week, so the range was widened to
+          {{ autoWidenSubject }} dated this week, so the range was widened to
           <strong>{{ autoWidenLabel }}</strong>.
         </div>
         <button
@@ -121,18 +121,23 @@
       </div>
 
       <!-- Data Table with standard inside-the-card toolbar Create button -->
+      <!-- Status is resolved client-side on every route: /Applications/filter
+           answers 13,633 rows for status=Schedule against a 5,000-row list, and a
+           status-filtered response cannot tell an empty tab from a status the data
+           has never carried. Keeping the whole set loaded feeds the per-tab counts
+           and the absent-status hint. -->
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="Applications"
-        filter-endpoint="/Applications/filter"
         :filter-params="activeFilterParams"
-        :server-date-filter="isServerDateFilterActive"
+        client-status-filter
         :hide-create-button="false"
         hide-status-filter
         create-button-label="Create Application"
         :default-sort-order="-1"
         default-sort-field="id"
         @reset-filters="clearAllFilters"
+        @select-status="onSelectStatus"
       />
     </div>
   </div>
@@ -161,13 +166,6 @@ const statusTabs = [
   { id: 'approved', label: 'Approved', value: 'Approved', routePath: '/application/approved', icon: 'pi-verified' }
 ]
 
-// Counts for the status tabs. A status-filtered fetch only knows about its own
-// status, so the counts are captured whenever a fetch WITHOUT a status param
-// settles (the "All" tab) and replayed while a status tab is active. Keyed by the
-// date range that produced them: badges hide rather than show numbers belonging
-// to a different range.
-const cachedStatusCounts = ref(null)
-
 // The date window is mandatory so the page never renders the whole table at
 // once, but a window with nothing in it reads as "the system lost my data": at
 // the time of writing the newest application is 11 days old, so the default
@@ -182,20 +180,13 @@ const autoWidenStep = ref(-1)        // -1 = still on the default window
 const autoWidenEnabled = ref(true)   // a hand-picked range is never overridden
 const autoWidenLabel = ref('')
 
-const dateRangeKeyOf = (params) => `${params?.fromDate || ''}|${params?.toDate || ''}`
-
-watchEffect(() => {
-  const table = apiTableRef.value
-  if (!table || !table.hasFetched) return
-  const fetched = table.lastFetchedParams
-  if (!fetched || fetched.status) return
-  const sc = table.statusCounts
-  if (!sc) return
-  cachedStatusCounts.value = {
-    rangeKey: dateRangeKeyOf(fetched),
-    total: sc.total,
-    byStatus: { ...sc.byStatus }
-  }
+// Named for the tab in view, so a status route does not claim there were no
+// applications at all when what it means is none with that status.
+const autoWidenSubject = computed(() => {
+  const tab = statusTabs.find(t => t.value === selectedStatus.value)
+  if (tab && tab.value) return `No ${tab.label.toLowerCase()} applications`
+  if (selectedStatus.value) return `No ${selectedStatus.value.toLowerCase()} applications`
+  return 'No applications'
 })
 
 // Widen only on a settled fetch: `hasFetched` goes false for the duration of a
@@ -203,7 +194,11 @@ watchEffect(() => {
 watchEffect(() => {
   const table = apiTableRef.value
   if (!table || !table.hasFetched || !autoWidenEnabled.value) return
-  if ((table.statusCounts?.total ?? 0) > 0) return
+  const counts = table.statusCounts
+  if (!counts) return
+  // The count the active tab would render, not the row count for the window: the
+  // loaded set spans every status, so a window can hold rows while the tab shows none.
+  if ((counts.countFor(selectedStatus.value) ?? 0) > 0) return
   if (autoWidenStep.value >= DATE_FALLBACK_STEPS.length - 1) return
 
   const next = DATE_FALLBACK_STEPS[autoWidenStep.value + 1]
@@ -214,14 +209,9 @@ watchEffect(() => {
 
 const statusCounts = computed(() => {
   if (isDedicatedStatusRoute.value) return null
-  const cache = cachedStatusCounts.value
-  if (!cache || cache.rangeKey !== dateRangeKeyOf(activeFilterParams.value)) return null
-  return {
-    countFor: (status) => {
-      const key = String(status || '').trim().toLowerCase()
-      return key ? (cache.byStatus[key] || 0) : cache.total
-    }
-  }
+  const table = apiTableRef.value
+  if (!table || !table.hasFetched) return null
+  return table.statusCounts || null
 })
 
 const isDedicatedStatusRoute = computed(() => {
@@ -253,15 +243,27 @@ const syncStatusFromRoute = () => {
   } else if (p.includes('/approved') || qStatus === 'approved') {
     selectedStatus.value = 'Approved'
   } else {
-    selectedStatus.value = ''
+    // Any other status is one the data actually carries (e.g. 'Schedule', reached
+    // from the empty-state hint); matching is case-insensitive downstream.
+    selectedStatus.value = String(route.query.status || '').trim()
   }
 }
 
-watch(() => route.path, () => {
+watch([() => route.path, () => route.query.status], () => {
   syncStatusFromRoute()
 }, { immediate: true })
 
 const setStatusFilter = (status) => {
+  selectedStatus.value = status
+}
+
+// Picked from the empty-state hint, so it is a status the loaded set really has:
+// leave the dedicated route behind and show it under All Application.
+const onSelectStatus = (status) => {
+  if (isDedicatedStatusRoute.value) {
+    router.push({ path: '/application', query: { status } })
+    return
+  }
   selectedStatus.value = status
 }
 
@@ -298,10 +300,6 @@ const formatDisplayDate = (dateVal) => {
   return String(dateVal)
 }
 
-const isServerDateFilterActive = computed(() => {
-  return Boolean(selectedStatus.value && selectedStatus.value.trim() !== '')
-})
-
 const activeFilterParams = computed(() => {
   const params = {}
   let f = formatDateParam(fromDate.value, false)
@@ -314,13 +312,12 @@ const activeFilterParams = computed(() => {
   params.fromDate = f
   params.toDate = t
 
-  // When a status is selected (In Progress, Done, Approved), pass status to /Applications/filter
+  // Resolved client-side by DynamicApiTable (client-status-filter), never sent
+  // upstream: the whole set stays loaded so the tab counts and the absent-status
+  // hint can see every status at once.
   if (selectedStatus.value && selectedStatus.value.trim() !== '') {
     params.status = selectedStatus.value.trim()
   }
-  // When selectedStatus is empty ("All Application"), no status param is attached and
-  // isServerDateFilterActive is false, so DynamicApiTable queries GET /api/Applications
-  // directly without hitting /Applications/filter, then filters by date client-side.
   return params
 })
 
@@ -408,6 +405,14 @@ watch([fromDate, toDate], ([f, t]) => {
     autoWidenLabel.value = ''
     setDateRange('this_week')
   }
+})
+
+// Switching tabs re-opens the question of which window holds that tab's rows.
+watch(selectedStatus, () => {
+  if (!autoWidenEnabled.value) return
+  autoWidenStep.value = -1
+  autoWidenLabel.value = ''
+  setDateRange('this_week')
 })
 
 // Default to 'This Week' filter on initial load

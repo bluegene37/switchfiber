@@ -500,12 +500,35 @@
           <div class="rounded-circle bg-body-tertiary p-3 mb-3 d-inline-flex align-items-center justify-content-center border" style="width: 56px; height: 56px;">
             <i :class="activeFilterCount > 0 ? 'pi pi-search-minus' : 'pi pi-inbox'" class="text-secondary fs-4"></i>
           </div>
-          <h6 class="fw-bold text-body mb-1">
-            {{ activeFilterCount > 0 ? 'No matching records found' : `No records available for ${formatLabel(endpoint)}` }}
-          </h6>
-          <p class="small text-secondary mb-3" style="max-width: 380px;">
-            {{ activeFilterCount > 0 ? 'Try modifying or clearing your search keywords and status filters to find what you are looking for.' : 'There are currently no entries recorded in this dataset.' }}
-          </p>
+          <template v-if="absentStatusHint">
+            <h6 class="fw-bold text-body mb-1">
+              No record has the status &ldquo;{{ absentStatusHint.requested }}&rdquo;
+            </h6>
+            <p class="small text-secondary mb-3" style="max-width: 420px;">
+              That value is not used anywhere in this dataset, so this view will stay
+              empty. The statuses actually in use are below &mdash; pick one to see its records.
+            </p>
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3" style="max-width: 460px;">
+              <button
+                v-for="s in absentStatusHint.available"
+                :key="s.label"
+                type="button"
+                class="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2"
+                @click="emit('select-status', s.label)"
+              >
+                <span>{{ s.label }}</span>
+                <span class="badge rounded-pill text-bg-secondary">{{ s.count }}</span>
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <h6 class="fw-bold text-body mb-1">
+              {{ activeFilterCount > 0 ? 'No matching records found' : `No records available for ${formatLabel(endpoint)}` }}
+            </h6>
+            <p class="small text-secondary mb-3" style="max-width: 380px;">
+              {{ activeFilterCount > 0 ? 'Try modifying or clearing your search keywords and status filters to find what you are looking for.' : 'There are currently no entries recorded in this dataset.' }}
+            </p>
+          </template>
           <div class="d-flex align-items-center gap-2">
             <Button 
               v-if="activeFilterCount > 0" 
@@ -2369,6 +2392,13 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // How the active status filter is spelled in the UI. `filterParams.status` may
+  // be an internal slug ('inprogress'), and the absent-status message quotes the
+  // value back at the user, so it has to read like the tab they clicked.
+  statusLabel: {
+    type: String,
+    default: ''
+  },
   // Send `filterParams.fromDate` / `toDate` upstream instead of resolving them in
   // the browser. Requires a /filter endpoint that honors date bounds — the
   // Applications backend does since Aug 2026. Keeping this opt-in preserves the
@@ -2395,7 +2425,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded'])
+const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded', 'select-status'])
 
 // Filter-param keys that are resolved client-side rather than sent to the API.
 const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate']
@@ -3637,6 +3667,38 @@ const statusCounts = computed(() => {
       return byStatus[key] || 0
     }
   }
+})
+
+// A status filter that matches nothing *because the value is not in this dataset*
+// is a different problem from a filter that is merely too narrow, and the generic
+// "No matching records found" hides it: the Application tabs asked for
+// 'In Progress' against a set whose statuses are Schedule / Duplicate / Cancelled,
+// so three menus looked permanently broken. Only meaningful while the loaded set
+// spans every status — i.e. `clientStatusFilter`.
+const absentStatusHint = computed(() => {
+  if (!props.clientStatusFilter) return null
+  const requested = String(props.filterParams?.status || '').trim()
+  if (!requested) return null
+  const requestedLabel = String(props.statusLabel || '').trim() || requested
+
+  const rows = Array.isArray(data.value) ? data.value : []
+  if (!rows.length) return null
+
+  const byStatus = {}
+  rows.forEach(row => {
+    const raw = rowStatusOf(row)
+    const key = raw.trim().toLowerCase()
+    if (!key) return
+    if (!byStatus[key]) byStatus[key] = { label: raw.trim(), count: 0 }
+    byStatus[key].count += 1
+  })
+
+  // Present somewhere in the set: the filter is fine, the window is just narrow.
+  if (byStatus[requested.toLowerCase()]) return null
+
+  const available = Object.values(byStatus).sort((a, b) => b.count - a.count)
+  if (!available.length) return null
+  return { requested: requestedLabel, available }
 })
 
 const activeFilterCount = computed(() => {
@@ -7437,6 +7499,7 @@ defineExpose({
   fetchData,
   refreshData,
   statusCounts,
+  absentStatusHint,
   hasFetched,
   lastFetchedParams
 })

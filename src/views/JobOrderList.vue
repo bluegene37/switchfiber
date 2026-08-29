@@ -130,10 +130,12 @@
         endpoint="JobOrders"
         :filter-params="activeFilterParams"
         client-status-filter
+        :status-label="activeStatusLabel"
         :hide-create-button="false"
         hide-status-filter
         create-button-label="Create Job Order"
         @reset-filters="clearAllFilters"
+        @select-status="onSelectStatus"
       />
     </div>
   </div>
@@ -141,11 +143,12 @@
 
 <script setup>
 import { ref, computed, watch, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 
 const route = useRoute()
+const router = useRouter()
 const apiTableRef = ref(null)
 
 // Default to 'This Week' on initial load to avoid fetching/rendering massive datasets at once
@@ -178,6 +181,11 @@ const autoWidenLabel = ref('')
 
 // Named for the tab in view, so a status route does not claim there were no job
 // orders at all when what it means is none with that status.
+const activeStatusLabel = computed(() => {
+  const tab = statusTabs.find(t => t.value === selectedStatus.value)
+  return tab ? tab.label : selectedStatus.value
+})
+
 const autoWidenSubject = computed(() => {
   const tab = statusTabs.find(t => t.value === selectedStatus.value)
   return tab && tab.value ? `No ${tab.label.toLowerCase()} job orders` : 'No job orders'
@@ -241,15 +249,27 @@ const syncStatusFromRoute = () => {
   } else if (p.includes('/activated') || qStatus === 'activated') {
     selectedStatus.value = 'activated'
   } else {
-    selectedStatus.value = ''
+    // Any other status is one the data actually carries (e.g. 'Applied', reached
+    // from the empty-state hint); matching is case-insensitive downstream.
+    selectedStatus.value = qStatus || ''
   }
 }
 
-watch(() => route.path, () => {
+watch([() => route.path, () => route.query.status], () => {
   syncStatusFromRoute()
 }, { immediate: true })
 
 const setStatusFilter = (status) => {
+  selectedStatus.value = status
+}
+
+// Picked from the empty-state hint, so it is a status the loaded set really has:
+// leave the dedicated route behind and show it under All Job Orders.
+const onSelectStatus = (status) => {
+  if (isDedicatedStatusRoute.value) {
+    router.push({ path: '/job-orders', query: { status } })
+    return
+  }
   selectedStatus.value = status
 }
 
