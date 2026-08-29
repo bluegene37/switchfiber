@@ -101,6 +101,13 @@ import { useTheme } from '../composables/useTheme'
 
 const { isDark } = useTheme()
 
+// Location names and addresses come from the API, and Leaflet renders a string
+// tooltip via innerHTML, so any markup in them would execute in the admin's
+// session. Escape before interpolating — matches LcpNapMap.vue.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[ch]))
+
 const mapContainer = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
@@ -208,11 +215,12 @@ const renderMarkers = () => {
 
   sites.value.forEach(site => {
     const marker = L.marker([site.lat, site.lng], { icon: siteIcon(site) })
-    const locationName = site.name || `Location #${site.id}`
-    const locAddress = [site.street, site.barangay, site.city].filter(Boolean).join(', ')
+    const locationName = escapeHtml(site.name || `Location #${site.id}`)
+    const locAddress = escapeHtml([site.street, site.barangay, site.city].filter(Boolean).join(', '))
+    const portCount = Number(site.portTotal)
 
     marker.bindTooltip(
-      `<strong>${locationName}</strong>${site.portTotal != null ? ` · ${site.portTotal} ports` : ''}${locAddress ? `<br/><span class="small text-secondary">${locAddress}</span>` : ''}`,
+      `<strong>${locationName}</strong>${Number.isFinite(portCount) ? ` · ${portCount} ports` : ''}${locAddress ? `<br/><span class="small text-secondary">${locAddress}</span>` : ''}`,
       { direction: 'top', opacity: 0.95 }
     )
     clusterGroup.addLayer(marker)
