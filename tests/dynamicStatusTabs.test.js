@@ -160,13 +160,36 @@ describe('Both views are wired to the dynamic strip', () => {
     }
   })
 
-  test('the legacy status routes still resolve rather than 404', () => {
+  test('the dynamic strip is scoped to the All pages', () => {
+    // The per-status menu entries stay until the backend team settles the real
+    // vocabulary, so those routes keep their own titles and are not re-tabbed.
+    for (const [name, file] of [['ApplicationList', applicationView], ['JobOrderList', jobOrderView]]) {
+      const content = fs.readFileSync(file, 'utf8')
+      assert.ok(
+        content.includes('v-if="!isDedicatedStatusRoute && statusTabs.length > 1"'),
+        `${name} must render the strip only on its All page`
+      )
+    }
+  })
+
+  test('the per-status menu entries and their routes are intact', () => {
+    const sidebar = fs.readFileSync(path.resolve(__dirname, '../src/components/Sidebar.vue'), 'utf8')
+    const search = fs.readFileSync(path.resolve(__dirname, '../src/composables/useSearch.js'), 'utf8')
     const router = fs.readFileSync(path.resolve(__dirname, '../src/router/index.js'), 'utf8')
     for (const route of [
       '/application/in-progress', '/application/done', '/application/approved',
       '/job-orders/inprogress', '/job-orders/completed', '/job-orders/activated'
     ]) {
       assert.ok(router.includes(`path: '${route}'`), `${route} must keep working for existing links`)
+      assert.ok(sidebar.includes(`path: '${route}'`), `${route} must stay in the sidebar`)
+      assert.ok(search.includes(`route: '${route}'`), `${route} must stay searchable`)
     }
+  })
+
+  test('a dead status route still explains itself in the empty state', () => {
+    // Without the strip there, the absent-status hint is the only way out.
+    const table = fs.readFileSync(tableFile, 'utf8')
+    assert.ok(table.includes('absentStatusHint'), 'Missing the absent-status hint')
+    assert.ok(table.includes("'select-status'"), 'The hint chips must stay actionable')
   })
 })

@@ -13,9 +13,10 @@
       <!-- Unified Filter Controls (Status Tabs on Left | Date Range right after divider) -->
       <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom">
         <!-- Left Side: Status Filter Tabs, built from the statuses the data
-             actually carries. Shown on every route, including the legacy
-             /application/<status> links, so a dead one still offers a way out. -->
-        <div v-if="statusTabs.length > 1" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
+             actually carries. Scoped to the All page: the dedicated
+             /application/<status> routes keep the menu entries that point at them
+             and explain an absent status in the empty state instead. -->
+        <div v-if="!isDedicatedStatusRoute && statusTabs.length > 1" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
           <button
             v-for="tab in statusTabs"
             :key="tab.value"
@@ -43,7 +44,7 @@
         </div>
 
         <!-- Vertical Divider (Shown when Status Tabs are visible) -->
-        <div v-if="statusTabs.length > 1" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
+        <div v-if="!isDedicatedStatusRoute && statusTabs.length > 1" class="d-none d-lg-block filter-divider text-muted mx-1">|</div>
 
         <!-- Date Range Pickers & Presets (Placed directly after divider) -->
         <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -219,6 +220,7 @@ watchEffect(() => {
 })
 
 const statusCounts = computed(() => {
+  if (isDedicatedStatusRoute.value) return null
   const table = apiTableRef.value
   if (!table || !table.hasFetched) return null
   return table.statusCounts || null

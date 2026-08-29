@@ -1,3 +1,12 @@
+## Git
+
+Never commit. The user commits, always. Do the work, leave it staged or unstaged
+in the working tree, and end by printing the exact git commands to run (add,
+commit with the full message, push) in a copyable block. This applies to every
+change, including reverts and one-line fixes, and to skills that would otherwise
+commit on their own (/qa commits per fix, /ship commits and opens a PR) — run
+their workflow but stop before the commit and hand over the commands.
+
 
 ## Skill routing
 
