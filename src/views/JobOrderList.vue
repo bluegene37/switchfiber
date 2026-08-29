@@ -56,6 +56,7 @@
               dateFormat="yy-mm-dd"
               placeholder="From Date"
               class="date-filter-picker"
+              @update:model-value="onManualDateChange"
             />
           </div>
           <div class="d-flex align-items-center gap-2">
@@ -68,6 +69,7 @@
               dateFormat="yy-mm-dd"
               placeholder="To Date"
               class="date-filter-picker"
+              @update:model-value="onManualDateChange"
             />
           </div>
 
@@ -101,6 +103,23 @@
         </div>
       </div>
 
+      <!-- Widened-window notice: the date range on screen is not the default one,
+           so say which range the rows belong to and offer the week back -->
+      <div v-if="autoWidenLabel" class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0 small rounded-3">
+        <i class="pi pi-calendar-clock mt-1"></i>
+        <div class="flex-grow-1">
+          {{ autoWidenSubject }} dated this week, so the range was widened to
+          <strong>{{ autoWidenLabel }}</strong>.
+        </div>
+        <button
+          type="button"
+          class="btn btn-sm btn-link p-0 text-decoration-underline fw-semibold flex-shrink-0"
+          @click="useDefaultWeek"
+        >
+          Back to this week
+        </button>
+      </div>
+
       <!-- Data Table with standard inside-the-card toolbar Create button -->
       <!-- Status is resolved client-side on every route: the backend's status
            filter lives at /JobOrders/status/{status} (a path segment, not a query
@@ -121,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
@@ -143,6 +162,27 @@ const statusTabs = [
   { id: 'activated', label: 'Activated', value: 'activated', routePath: '/job-orders/activated', icon: 'pi-verified' }
 ]
 
+// The date window is mandatory so the page never renders all 3,900+ job orders at
+// once, but a window with nothing in it reads as "the system lost my data": the
+// default week holds 2 rows while 3,937 sit under Activated, so the Activated tab
+// showed 0 of 3,939. When the active tab comes back empty, step the window out
+// until its rows are in view and say so.
+const DATE_FALLBACK_STEPS = [
+  { preset: 'this_month', label: 'this month' },
+  { preset: 'last_12_months', label: 'the last 12 months' }
+]
+
+const autoWidenStep = ref(-1)        // -1 = still on the default window
+const autoWidenEnabled = ref(true)   // a hand-picked range is never overridden
+const autoWidenLabel = ref('')
+
+// Named for the tab in view, so a status route does not claim there were no job
+// orders at all when what it means is none with that status.
+const autoWidenSubject = computed(() => {
+  const tab = statusTabs.find(t => t.value === selectedStatus.value)
+  return tab && tab.value ? `No ${tab.label.toLowerCase()} job orders` : 'No job orders'
+})
+
 // Counts for the status tabs, computed by the table over the set it already holds —
 // no second request. Absent until the first fetch settles, so the tabs show no
 // number rather than a misleading zero.
@@ -151,6 +191,25 @@ const statusCounts = computed(() => {
   const table = apiTableRef.value
   if (!table || !table.hasFetched) return null
   return table.statusCounts || null
+})
+
+// Widen only on a settled fetch: `hasFetched` goes false for the duration of a
+// request, so an in-flight window is never mistaken for an empty one. The count
+// consulted is the one the active tab would render — with `client-status-filter`
+// the loaded set spans every status, so the window can hold rows while the tab
+// still shows none.
+watchEffect(() => {
+  const table = apiTableRef.value
+  if (!table || !table.hasFetched || !autoWidenEnabled.value) return
+  const counts = table.statusCounts
+  if (!counts) return
+  if ((counts.countFor(selectedStatus.value) ?? 0) > 0) return
+  if (autoWidenStep.value >= DATE_FALLBACK_STEPS.length - 1) return
+
+  const next = DATE_FALLBACK_STEPS[autoWidenStep.value + 1]
+  autoWidenStep.value += 1
+  autoWidenLabel.value = next.label
+  setDateRange(next.preset)
 })
 
 const isDedicatedStatusRoute = computed(() => {
@@ -227,19 +286,13 @@ const activeFilterParams = computed(() => {
   return params
 })
 
-const applyDatePreset = (preset) => {
-  if (selectedDatePreset.value === preset) {
-    selectedDatePreset.value = ''
-    fromDate.value = null
-    toDate.value = null
-    return
-  }
-
+const setDateRange = (preset) => {
   selectedDatePreset.value = preset
   const today = new Date()
+  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
   if (preset === 'today') {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
-    toDate.value = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
+    toDate.value = endOfToday
   } else if (preset === 'this_week') {
     const day = today.getDay()
     const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
@@ -248,19 +301,71 @@ const applyDatePreset = (preset) => {
   } else if (preset === 'this_month') {
     fromDate.value = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0)
     toDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
+  } else if (preset === 'last_12_months') {
+    // Fallback range only — no toolbar button sets this one.
+    fromDate.value = new Date(today.getFullYear(), today.getMonth() - 11, 1, 0, 0, 0, 0)
+    toDate.value = endOfToday
   }
 }
 
+const applyDatePreset = (preset) => {
+  // The date filter is mandatory, so re-clicking the active preset keeps it
+  // instead of clearing the range
+  if (selectedDatePreset.value === preset) return
+
+  // Picking a window by hand pins it: an empty result is then the answer, not a
+  // problem to fix, so the fallback stands down until the filters are reset.
+  autoWidenEnabled.value = false
+  autoWidenLabel.value = ''
+  setDateRange(preset)
+}
+
+/** Drop the widened window and stay on the default week, empty or not. */
+const useDefaultWeek = () => {
+  autoWidenEnabled.value = false
+  autoWidenLabel.value = ''
+  setDateRange('this_week')
+}
+
+// A manual pick is a custom range, so the preset highlight no longer applies.
+// (Programmatic assignment from setDateRange does not emit this event.)
+const onManualDateChange = () => {
+  selectedDatePreset.value = ''
+  autoWidenEnabled.value = false
+  autoWidenLabel.value = ''
+}
+
+// The date filter can never be absent: clearing a picker falls back to the week
+watch([fromDate, toDate], ([f, t]) => {
+  if (!f || !t) {
+    // No explicit range is the default state, fallback included
+    autoWidenEnabled.value = true
+    autoWidenStep.value = -1
+    autoWidenLabel.value = ''
+    setDateRange('this_week')
+  }
+})
+
+// Switching tabs re-opens the question of which window holds that tab's rows.
+watch(selectedStatus, () => {
+  if (!autoWidenEnabled.value) return
+  autoWidenStep.value = -1
+  autoWidenLabel.value = ''
+  setDateRange('this_week')
+})
+
 // Default to 'This Week' filter on initial load
-applyDatePreset('this_week')
+setDateRange('this_week')
 
 const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''
   }
-  selectedDatePreset.value = ''
-  fromDate.value = null
-  toDate.value = null
+  // "Cleared" dates mean the default week, never an unbounded range
+  autoWidenEnabled.value = true
+  autoWidenStep.value = -1
+  autoWidenLabel.value = ''
+  setDateRange('this_week')
 }
 </script>
 
