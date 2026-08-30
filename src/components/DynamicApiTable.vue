@@ -527,6 +527,17 @@
               </button>
             </div>
           </template>
+          <template v-else-if="matchesOutsideDateWindow > 0">
+            <h6 class="fw-bold text-body mb-1">
+              Nothing matches inside the selected dates
+            </h6>
+            <p class="small text-secondary mb-3" style="max-width: 440px;">
+              {{ matchesOutsideDateWindow }}
+              {{ matchesOutsideDateWindow === 1 ? 'record matches' : 'records match' }}
+              outside <strong class="text-body">{{ activeDateRangeLabel }}</strong>.
+              Widen the date range to see {{ matchesOutsideDateWindow === 1 ? 'it' : 'them' }}.
+            </p>
+          </template>
           <template v-else>
             <h6 class="fw-bold text-body mb-1">
               {{ activeFilterCount > 0 ? 'No matching records found' : `No records available for ${formatLabel(endpoint)}` }}
@@ -536,14 +547,21 @@
             </p>
           </template>
           <div class="d-flex align-items-center gap-2">
-            <Button 
-              v-if="activeFilterCount > 0" 
-              label="Clear Filters" 
-              icon="pi pi-filter-slash" 
+            <Button
+              v-if="matchesOutsideDateWindow > 0"
+              label="Search all dates"
+              icon="pi pi-calendar-plus"
+              class="p-button-primary p-button-sm rounded-3 shadow-xs"
+              @click="emit('widen-date-range')"
+            />
+            <Button
+              v-if="activeFilterCount > 0"
+              label="Clear Filters"
+              icon="pi pi-filter-slash"
               severity="secondary"
               outlined
-              class="p-button-outlined p-button-secondary p-button-sm rounded-3 shadow-xs" 
-              @click="clearAllFilters" 
+              class="p-button-outlined p-button-secondary p-button-sm rounded-3 shadow-xs"
+              @click="clearAllFilters"
             />
             <Button 
               v-if="showCreateButton" 
@@ -1299,7 +1317,7 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2 mt-3">
-          <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayCreateDialog = false" />
+          <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="requestDialogClose('create')" />
           <Button :label="`Save ${formatLabel(endpoint)}`" icon="pi pi-check" class="p-button-primary p-button-sm rounded-3 px-3.5 shadow-xs" @click="saveData" :loading="saving" />
         </div>
       </template>
@@ -2316,7 +2334,7 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2 mt-3">
-          <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayEditDialog = false" />
+          <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="requestDialogClose('edit')" />
           <Button label="Save Changes" icon="pi pi-check" class="p-button-primary p-button-sm rounded-3 px-3.5 shadow-xs" @click="saveEdit" :loading="savingEdit" />
         </div>
       </template>
@@ -2358,6 +2376,32 @@
         <div class="d-flex justify-content-end gap-2 mt-3">
           <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayDeleteDialog = false" />
           <Button label="Delete Record" icon="pi pi-trash" class="p-button-danger p-button-sm rounded-3 px-3 shadow-xs" @click="deleteRecord" :loading="deleting" />
+        </div>
+      </template>
+    </Dialog>
+
+    <!-- Discard-changes guard. A long create form represents real typing, and Cancel
+         sits next to Save; closing on the first click threw the lot away silently. -->
+    <Dialog
+      v-model:visible="displayDiscardDialog"
+      modal
+      header="Discard your changes?"
+      :style="{ width: '90vw', maxWidth: '420px' }"
+    >
+      <div class="d-flex align-items-start gap-3 py-2">
+        <i class="pi pi-exclamation-circle text-warning fs-1"></i>
+        <div class="flex-grow-1">
+          <p class="mb-1 fw-medium text-body">
+            {{ discardFieldCount === 1 ? 'One field has' : `${discardFieldCount} fields have` }}
+            unsaved changes.
+          </p>
+          <p class="small text-secondary mb-0">Closing now loses them. Nothing has been saved yet.</p>
+        </div>
+      </div>
+      <template #footer>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <Button label="Keep editing" icon="pi pi-arrow-left" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayDiscardDialog = false" />
+          <Button label="Discard changes" icon="pi pi-trash" class="p-button-danger p-button-sm rounded-3 px-3 shadow-xs" @click="confirmDiscardDialog" />
         </div>
       </template>
     </Dialog>
@@ -2565,10 +2609,18 @@ const props = defineProps({
   defaultSortOrder: {
     type: Number,
     default: null // null = auto-resolve: -1 (descending) for Applications, 1 (ascending) for other endpoints
+  },
+  // Park the selection on the first row once the rows land. Only meaningful for a
+  // master/detail screen whose second pane reads `row-select` (Access Level & Menu
+  // Management). On a plain list nothing consumes the selection, so the row just
+  // renders as a solid brand-red band that reads as an error state — hence opt-in.
+  autoSelectFirstRow: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded', 'select-status'])
+const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded', 'select-status', 'widen-date-range'])
 
 // Filter-param keys that are resolved client-side rather than sent to the API.
 const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate']
@@ -3774,9 +3826,12 @@ const isRowInDateRange = (row, from, to) => {
   return true
 }
 
-const filteredData = computed(() => {
-  if (!Array.isArray(data.value)) return []
-  let list = data.value
+// `applyDateWindow: false` runs every other filter and leaves the date range out, so
+// the empty state can tell "nothing matches this search" apart from "the matches are
+// outside the chosen dates" — the two look identical to the user otherwise.
+const applyFilters = (rows, { applyDateWindow = true } = {}) => {
+  if (!Array.isArray(rows)) return []
+  let list = rows
 
   // Status Filter
   if (selectedStatusFilter.value) {
@@ -3830,30 +3885,70 @@ const filteredData = computed(() => {
     // With `serverDateFilter` the response is already date-bounded, and the
     // server's timezone handling is authoritative — re-filtering here could
     // drop edge-of-day rows the backend intentionally included.
-    if ((pFrom || pTo) && !props.serverDateFilter) {
+    if ((pFrom || pTo) && !props.serverDateFilter && applyDateWindow) {
       list = list.filter(row => isRowInDateRange(row, pFrom, pTo))
     }
   }
 
   // Global Search Filter
+  //
+  // Matched token-by-token rather than as one string: first and last name live in
+  // separate columns, so requiring a single column to contain the whole query meant
+  // "Michelle Apelo" found nothing while "Apelo" found her. Every whitespace-separated
+  // token must match some column, so extra words still narrow the result rather than
+  // widening it, and a one-word search behaves exactly as before.
   const q = (filters.value.global?.value || '').trim().toLowerCase()
   if (q) {
-    list = list.filter(row => {
-      return columns.value.some(col => {
-        const val = row[col]
-        if (val === null || val === undefined) return false
-        if (typeof val === 'object') {
-          return Object.values(val).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q))
-        }
-        return String(val).toLowerCase().includes(q)
-      })
+    const tokens = q.split(/\s+/).filter(Boolean)
+    const rowMatchesToken = (row, token) => columns.value.some(col => {
+      const val = row[col]
+      if (val === null || val === undefined) return false
+      if (typeof val === 'object') {
+        return Object.values(val).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(token))
+      }
+      return String(val).toLowerCase().includes(token)
     })
+    list = list.filter(row => tokens.every(token => rowMatchesToken(row, token)))
   }
 
   return list
-})
+}
+
+const filteredData = computed(() => applyFilters(data.value))
 
 const filteredRecordsCount = computed(() => (filteredData.value || []).length)
+
+// How many rows the current search and status would match if the date window were
+// lifted. Drives the empty state: the paginator says "Filtered from 5000", so a user
+// whose customer is simply outside the chosen dates reasonably concludes the record
+// does not exist. Zero when no date window is narrowing anything.
+const matchesOutsideDateWindow = computed(() => {
+  const hasWindow = Boolean(props.filterParams?.fromDate || props.filterParams?.toDate)
+  if (!hasWindow || props.serverDateFilter) return 0
+  if (filteredRecordsCount.value > 0) return 0
+  return applyFilters(data.value, { applyDateWindow: false }).length
+})
+
+// The window the empty state names back to the user, in the same YYYY-MM-DD spelling
+// the From/To inputs show, so the message points at controls they can see. Formatted
+// from local date parts, not by slicing the ISO string: everything here runs at
+// UTC+8, where a Zulu timestamp for midnight local reads as the previous day.
+const asLocalDateLabel = (value) => {
+  if (!value) return ''
+  const d = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const activeDateRangeLabel = computed(() => {
+  const from = asLocalDateLabel(props.filterParams?.fromDate)
+  const to = asLocalDateLabel(props.filterParams?.toDate)
+  if (from && to) return `${from} to ${to}`
+  if (from) return `on or after ${from}`
+  if (to) return `on or before ${to}`
+  return 'the selected dates'
+})
 
 // Row counts per status for a parent that renders its own status tabs. Every other
 // active scope is applied (the date range in particular) but the status filter
@@ -4214,6 +4309,56 @@ const saveError = ref(null)
 const displayEditDialog = ref(false)
 const editFormData = ref({})
 const editingRecordId = ref(null)
+// The record as it stood when the edit dialog opened, plus the flag that lets a
+// second submit go through once the user has been told about a conflict.
+const editBaseSnapshot = ref(null)
+const editConflictAcknowledged = ref(false)
+
+// Discard-changes guard for the create/edit dialogs.
+const createDialogDefaults = ref({})
+const displayDiscardDialog = ref(false)
+const pendingDiscardScope = ref(null)
+const discardFieldCount = ref(0)
+
+/**
+ * Fields the user has actually changed in this dialog. For an edit that is anything
+ * differing from the record as opened; for a create it is anything non-empty, since
+ * the form starts blank apart from the defaults the dialog itself filled in.
+ */
+const dirtyFieldsFor = (scope) => {
+  const form = formForScope(scope).value || {}
+  if (scope === 'edit') {
+    const base = editBaseSnapshot.value
+    if (!base) return []
+    return formColumns.value.filter(col => String(form[col] ?? '') !== String(base[col] ?? ''))
+  }
+  const seeded = createDialogDefaults.value || {}
+  return formColumns.value.filter(col => {
+    const val = form[col]
+    if (isBlank(val)) return false
+    return String(val) !== String(seeded[col] ?? '')
+  })
+}
+
+/** Cancel, but only silently when there is nothing to lose. */
+const requestDialogClose = (scope) => {
+  const dirty = dirtyFieldsFor(scope)
+  if (!dirty.length) {
+    if (scope === 'edit') displayEditDialog.value = false
+    else displayCreateDialog.value = false
+    return
+  }
+  pendingDiscardScope.value = scope
+  discardFieldCount.value = dirty.length
+  displayDiscardDialog.value = true
+}
+
+const confirmDiscardDialog = () => {
+  if (pendingDiscardScope.value === 'edit') displayEditDialog.value = false
+  else displayCreateDialog.value = false
+  displayDiscardDialog.value = false
+  pendingDiscardScope.value = null
+}
 const savingEdit = ref(false)
 const editError = ref(null)
 
@@ -5497,17 +5642,40 @@ const provincesList = ref(defaultFormattedProvinces)
 const citiesList = ref([])
 const barangaysList = ref([])
 
-const APPLICATION_STATUS_LIST = [
+// Last-resort labels only. Nothing in the Applications or Job Orders data has ever
+// carried these values — the real vocabularies are Schedule / Duplicate / Cancelled /
+// No Facility / No Slot and Activated / Applied — so a form that offered this list
+// wrote a status no tab, filter or report could read back. Kept solely for an empty
+// dataset, where there is no data to learn a vocabulary from.
+const FALLBACK_STATUS_LIST = [
   'In Progress',
   'Done',
   'Approved'
 ]
 
-const DEFAULT_STATUS_LIST = [
-  'In Progress',
-  'Done',
-  'Approved'
-]
+// The statuses the loaded set actually uses, most common first, in the data's own
+// casing. This is the same source the status tabs build from (`statusVocabulary`),
+// but deliberately ungated: the tabs only need it when the parent filters status
+// client-side, whereas the create and edit forms need it on every endpoint or they
+// fall back to writing values the rest of the system cannot read.
+const dataStatusVocabulary = computed(() => {
+  const rows = Array.isArray(data.value) ? data.value : []
+  const byStatus = {}
+  rows.forEach(row => {
+    const raw = rowStatusOf(row).trim()
+    const key = raw.toLowerCase()
+    if (!key) return
+    if (!byStatus[key]) byStatus[key] = { value: raw, count: 0 }
+    byStatus[key].count += 1
+  })
+  return Object.values(byStatus)
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+    .map(s => s.value)
+})
+
+// The status a new record should start in: whatever the existing data most commonly
+// uses. Blank when the set is empty, so validation asks rather than inventing one.
+const defaultNewStatus = computed(() => dataStatusVocabulary.value[0] || '')
 
 const getStableOptionsWithCurrent = (optionsList, currentVal) => {
   const list = Array.isArray(optionsList) ? [...optionsList] : []
@@ -5593,16 +5761,15 @@ const getPlanOptions = (col, currentVal) => {
 }
 
 const statusOptions = computed(() => {
-  if (isApplicationEndpoint.value) {
-    return APPLICATION_STATUS_LIST.map(v => ({ label: v, value: v }))
-  }
-  return DEFAULT_STATUS_LIST.map(v => ({ label: v, value: v }))
+  const vocabulary = dataStatusVocabulary.value
+  const list = vocabulary.length ? vocabulary : FALLBACK_STATUS_LIST
+  return list.map(v => ({ label: v, value: v }))
 })
 
+// Always keep the record's own status selectable, even when it is absent from the
+// loaded page — otherwise opening a record for an unrelated edit silently swaps its
+// status for whatever the list happens to start with, and saving writes that back.
 const editStatusOptions = computed(() => {
-  if (isApplicationEndpoint.value) {
-    return APPLICATION_STATUS_LIST.map(v => ({ label: v, value: v }))
-  }
   const record = editFormData.value || {}
   const statusKey = Object.keys(record).find(k => k.toLowerCase() === 'status') || (statusColName.value || 'status')
   const current = record[statusKey]
@@ -6185,6 +6352,17 @@ const isValidPhoneNumber = (val) => {
   return false
 }
 
+// The email inputs carry type="email", but nothing ever submits the form natively, so
+// the browser's own format check never runs and the field only had to be non-empty.
+// A malformed address here means the applicant is simply never contacted.
+const isValidEmail = (val) => {
+  if (val === null || val === undefined || String(val).trim() === '') return true
+  const str = String(val).trim()
+  if (/\s/.test(str)) return false
+  // One @, a non-empty local part, and a dotted domain with a 2+ char TLD.
+  return /^[^@]+@[^@.]+(\.[^@.]+)*\.[A-Za-z]{2,}$/.test(str)
+}
+
 const fieldWrapId = (scope, col) => `field-${scope}-${col}`
 
 /**
@@ -6216,6 +6394,15 @@ const validateRequired = (scope) => {
     if (type === 'phone' && !isBlank(val)) {
       if (!isValidPhoneNumber(val)) {
         errors[col] = `${formatLabel(col)} must be exactly 11 digits (e.g. 09123456789) or 13 characters (e.g. +639123456789 / +629123456789)`
+        missing.push(col)
+        return
+      }
+    }
+
+    // 3. Email format (required or optional, whenever the field is populated)
+    if (type === 'email' && !isBlank(val)) {
+      if (!isValidEmail(val)) {
+        errors[col] = `${formatLabel(col)} must be a valid email address (e.g. juan.delacruz@example.com)`
         missing.push(col)
         return
       }
@@ -6272,6 +6459,35 @@ const scrollErrorBannerIntoView = async (scope) => {
   scrollIntoDialog(document.getElementById(`form-error-${scope}`))
 }
 
+// The plain `name` column, where the endpoint has one. Master records (NAP, LCP,
+// Port, VLAN, Router, Plan) are identified by this name everywhere else — the plant
+// tables reference them as free text — so two rows sharing one make the reference
+// ambiguous. Endpoints without a bare `name` opt out.
+const nameColumn = () => formColumns.value.find(c => c.toLowerCase() === 'name') || null
+
+/**
+ * A record already using the name being submitted, or null. Checked against the
+ * loaded set, so it is a guard rather than a constraint: the backend enforces no
+ * uniqueness at all, and two operators saving at once can still both get through.
+ */
+const findDuplicateByName = (scope) => {
+  const nameCol = nameColumn()
+  if (!nameCol) return null
+  const form = formForScope(scope).value
+  const candidate = String(form?.[nameCol] ?? '').trim().toLowerCase()
+  if (!candidate) return null
+
+  const rows = Array.isArray(data.value) ? data.value : []
+  const currentId = scope === 'edit' ? editingRecordId.value : null
+  const clash = rows.find(row => {
+    const rowId = getRecordId(row)
+    if (currentId !== null && currentId !== undefined && String(rowId) === String(currentId)) return false
+    return String(row[nameCol] ?? '').trim().toLowerCase() === candidate
+  })
+  if (!clash) return null
+  return { id: getRecordId(clash), name: String(clash[nameCol] ?? '').trim() }
+}
+
 /**
  * Runs before submit. Returns true when the form is good to send; otherwise
  * marks the offending fields and points the user at the first one.
@@ -6315,6 +6531,17 @@ const runPreSubmitChecks = async (scope) => {
   if (passwordsMismatch(scope)) {
     setError('Passwords do not match. Please ensure both password fields are identical.')
     await scrollErrorBannerIntoView(scope)
+    return false
+  }
+
+  const duplicate = findDuplicateByName(scope)
+  if (duplicate) {
+    const nameCol = nameColumn()
+    const msg = `${formatLabel(nameCol)} "${duplicate.name}" is already used by record #${duplicate.id}. Names identify this record everywhere else in the system, so pick a different one.`
+    setError(msg)
+    fieldErrors.value[scope] = { ...(fieldErrors.value[scope] || {}), [nameCol]: 'Already in use' }
+    toast.add({ severity: 'warn', summary: 'Duplicate name', detail: msg, life: 6000 })
+    await focusFirstInvalid(scope, nameCol)
     return false
   }
 
@@ -7091,7 +7318,7 @@ const openCreateDialog = () => {
   if (isApplicationEndpoint.value) {
     const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
     if (statusCol) {
-      formData.value[statusCol] = 'In Progress'
+      formData.value[statusCol] = defaultNewStatus.value
     }
   }
 
@@ -7151,6 +7378,10 @@ const openCreateDialog = () => {
   }
 
   formData.value.confirmPassword = ''
+  // What the dialog seeded on the user's behalf (default province, status, and the
+  // like). The discard guard compares against this so pre-filled defaults alone never
+  // count as unsaved work.
+  createDialogDefaults.value = { ...formData.value }
   displayCreateDialog.value = true
 }
 
@@ -7312,7 +7543,7 @@ const saveData = async () => {
         pictureofstatmentbillingfromotherprovider: payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider ? String(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider) : '',
         referrersAccountNumber: payload.referrersAccountNumber ? String(payload.referrersAccountNumber) : '',
         applyingFor: payload.applyingFor ? String(payload.applyingFor) : '',
-        status: payload.status ? String(payload.status) : 'In Progress',
+        status: payload.status ? String(payload.status) : defaultNewStatus.value,
         visitBy: payload.visitBy ? String(payload.visitBy) : '',
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
@@ -7410,6 +7641,10 @@ const openEditDialog = async (record) => {
   showPasswordState.value = {}
   editingRecordId.value = getRecordId(record)
   editFormData.value = { ...record }
+  // The state this edit is based on. Compared against the server just before the PUT
+  // so a save cannot quietly discard someone else's edit made in the meantime.
+  editBaseSnapshot.value = { ...record }
+  editConflictAcknowledged.value = false
 
   // Shown before the awaits below, not after them. The record's own values are
   // already in `editFormData`, so the form is usable immediately; waiting for
@@ -7489,17 +7724,18 @@ const openEditDialog = async (record) => {
   }
 
   // 6. Normalize and match Status
+  // Preserve the record's stored status verbatim. This used to coerce anything not in
+  // a hardcoded three-value list to 'In Progress', so opening any of the 5,000
+  // applications — every one of which is Schedule / Duplicate / Cancelled / No
+  // Facility / No Slot — and saving an unrelated field rewrote its status to a value
+  // nothing reads back. Match only to normalize casing against the real vocabulary.
   const statusCol = formColumns.value.find(c => getFieldType(c) === 'status_dropdown') || 'status'
   const curStatus = record[statusCol]
-  if (isApplicationEndpoint.value) {
-    if (curStatus) {
-      const match = APPLICATION_STATUS_LIST.find(
-        s => s.toLowerCase() === String(curStatus).trim().toLowerCase()
-      )
-      editFormData.value[statusCol] = match || 'In Progress'
-    } else {
-      editFormData.value[statusCol] = 'In Progress'
-    }
+  if (isApplicationEndpoint.value && curStatus) {
+    const match = dataStatusVocabulary.value.find(
+      s => s.toLowerCase() === String(curStatus).trim().toLowerCase()
+    )
+    editFormData.value[statusCol] = match || curStatus
   }
 
   // 7. Normalize and match Coordinates
@@ -7557,6 +7793,39 @@ const openEditDialog = async (record) => {
   }
 }
 
+/**
+ * True when the record changed on the server since this dialog opened.
+ *
+ * The rows carry a `rowVersion`, but nothing has ever sent it and the API does not
+ * check it, so two people editing the same record both got a success toast and the
+ * later save silently won. Re-reading the record immediately before the PUT is the
+ * part we can do from here; it narrows the race to the gap between this read and the
+ * write rather than closing it, and a real fix belongs in the API.
+ */
+const detectEditConflict = async () => {
+  const base = editBaseSnapshot.value
+  if (!base) return null
+  let current
+  try {
+    current = await apiClient.get(`/${props.endpoint}/${editingRecordId.value}`)
+  } catch {
+    // A failed pre-check must not block a legitimate save.
+    return null
+  }
+  if (!current || typeof current !== 'object') return null
+
+  // Compare only what this form can write, so unrelated server-side bookkeeping
+  // (audit stamps, computed columns) does not raise a false conflict.
+  const changed = formColumns.value.filter(col => {
+    if (getFieldType(col) === 'password') return false
+    const before = base[col]
+    const now = current[col]
+    if (before === undefined && now === undefined) return false
+    return String(before ?? '') !== String(now ?? '')
+  })
+  return changed.length ? { changed, current } : null
+}
+
 const saveEdit = async () => {
   editError.value = null
 
@@ -7567,6 +7836,25 @@ const saveEdit = async () => {
 
   // Required fields and password confirmation, before anything is sent.
   if (!await runPreSubmitChecks('edit')) return
+
+  if (!editConflictAcknowledged.value) {
+    const conflict = await detectEditConflict()
+    if (conflict) {
+      const names = conflict.changed.map(formatLabel)
+      const shown = names.slice(0, MAX_LISTED_INVALID_FIELDS)
+      const remaining = names.length - shown.length
+      const msg = `Someone else changed this record while you had it open (${shown.join(', ')}` +
+        `${remaining > 0 ? `, and ${remaining} more` : ''}). ` +
+        'Saving now would overwrite their changes. Close and reopen to see the current values, or press Save again to overwrite.'
+      editError.value = msg
+      // Let the next Save through: the user has now been told, and the choice to
+      // overwrite is theirs to make.
+      editConflictAcknowledged.value = true
+      toast.add({ severity: 'warn', summary: 'Record changed elsewhere', detail: msg, life: 9000 })
+      await scrollErrorBannerIntoView('edit')
+      return
+    }
+  }
 
   savingEdit.value = true
   try {
@@ -7618,7 +7906,7 @@ const saveEdit = async () => {
         pictureofstatmentbillingfromotherprovider: payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider ? String(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider) : '',
         referrersAccountNumber: payload.referrersAccountNumber ? String(payload.referrersAccountNumber) : '',
         applyingFor: payload.applyingFor ? String(payload.applyingFor) : '',
-        status: payload.status ? String(payload.status) : 'In Progress',
+        status: payload.status ? String(payload.status) : defaultNewStatus.value,
         visitBy: payload.visitBy ? String(payload.visitBy) : '',
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
@@ -7933,7 +8221,7 @@ const fetchData = async ({ silent = false } = {}) => {
       ? data.value.some(row => rowKeyOf(row) === selectedKey)
       : data.value.includes(selectedRow.value)
     if (!selectionSurvives) {
-      if (data.value.length > 0) {
+      if (data.value.length > 0 && props.autoSelectFirstRow) {
         selectedRow.value = data.value[0]
         emit('row-select', data.value[0])
       } else if (selectedRow.value) {

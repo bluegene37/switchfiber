@@ -142,6 +142,7 @@
         default-sort-field="id"
         @reset-filters="clearAllFilters"
         @select-status="onSelectStatus"
+        @widen-date-range="searchAllDates"
       />
     </div>
   </div>
@@ -397,6 +398,17 @@ const applyDatePreset = (preset) => {
   autoWidenEnabled.value = false
   autoWidenLabel.value = ''
   setDateRange(preset)
+}
+
+/**
+ * Open the window to the widest preset so a search stops being silently bounded by
+ * dates. Pins the range like any manual pick, so the auto-widen fallback does not
+ * immediately reel it back in.
+ */
+const searchAllDates = () => {
+  autoWidenEnabled.value = false
+  autoWidenLabel.value = ''
+  setDateRange('last_12_months')
 }
 
 /** Drop the widened window and stay on the default week, empty or not. */

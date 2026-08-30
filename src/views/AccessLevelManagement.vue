@@ -30,8 +30,9 @@
           <div class="card-body p-3">
             <DynamicApiTable 
               ref="accessLevelTableRef"
-              endpoint="AccessLevel" 
+              endpoint="AccessLevel"
               hide-create-button
+              auto-select-first-row
               @row-select="handleAccessLevelSelect"
               @row-unselect="handleAccessLevelUnselect"
             />

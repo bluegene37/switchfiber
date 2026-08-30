@@ -20,7 +20,10 @@
       <div>{{ infoMessage }}</div>
     </div>
 
-    <form @submit.prevent="handleLogin">
+    <!-- novalidate: the browser's own bubble is transient, unstyled, and names only
+         the first empty field. Handing the check to handleLogin puts the message in
+         the same banner a rejected sign-in uses, so both failures read alike. -->
+    <form novalidate @submit.prevent="handleLogin">
       <div class="mb-3">
         <label for="usernameOrEmail" class="form-label small fw-semibold text-secondary">Username or Email</label>
         <div class="login-field-group border rounded-3 bg-body d-flex align-items-center px-3">
@@ -48,7 +51,7 @@
             required 
             class="flex-grow-1 border-0 shadow-none bg-transparent"
             inputClass="form-control border-0 shadow-none bg-transparent ps-0 py-2 w-100"
-            placeholder="••••••••" 
+            placeholder="Enter password"
           />
         </div>
       </div>
@@ -107,7 +110,20 @@ const errorMessage = ref(null)
 const infoMessage = ref(null)
 
 const handleLogin = async () => {
-  if (!usernameOrEmail.value || !password.value) return
+  // Submitting an incomplete form used to return silently, leaving only a red border
+  // on one field and no explanation — the button simply looked broken. Name what is
+  // missing instead, in the same banner a failed sign-in uses.
+  const missingUser = !usernameOrEmail.value.trim()
+  const missingPassword = !password.value
+  if (missingUser || missingPassword) {
+    infoMessage.value = null
+    errorMessage.value = missingUser && missingPassword
+      ? 'Enter your username or email and your password.'
+      : missingUser
+        ? 'Enter your username or email.'
+        : 'Enter your password.'
+    return
+  }
 
   isLoading.value = true
   errorMessage.value = null
