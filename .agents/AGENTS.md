@@ -16,6 +16,9 @@ When developing and integrating API calls across the codebase, strictly adhere t
 ## Menu & Access Level Standards
 - **Always include new menu items in the Access Level menu list**: Whenever new routes or menu items are added to the application, ensure they are registered in the sidebar menu list and included in the Access Level permissions configuration so users can access them without being blocked by permission checks.
 
+## Document & PDF Storage Standards
+- **Always Save Generated Documents to Central Folder**: Whenever generating or saving project documentation, executive reports, architecture guides, or exported PDFs, always save a copy to `Documents/personal_projects/documents/` (full path: `/Users/bluegene37/Documents/personal_projects/documents/`) in addition to any local workspace `docs/` folder.
+
 ## Development & Testing Credentials
 - **SuperAdmin Test Account**:
   - **Username / Email**: `bluegene37`

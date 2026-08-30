@@ -451,7 +451,11 @@ All backend calls must adhere to strict REST conventions:
 ### 5. Access Level & RBAC Standards
 - Whenever adding a new route or menu item, register it in the **Sidebar menu** and include it in the **Access Level permissions configuration**.
 
-### 6. Development & Testing Credentials
+### 6. Document & PDF Storage Standards
+- **Central Documentation Folder**: Whenever creating or generating strategic reports, architecture guides, executive summaries, or exported PDFs, always save a copy to the centralized folder:
+  `~/Documents/personal_projects/documents/` (absolute path: `/Users/bluegene37/Documents/personal_projects/documents/`).
+
+### 7. Development & Testing Credentials
 - **SuperAdmin Account**:
   - **Username / Email**: `bluegene37`
   - **Password**: `1234`
