@@ -4921,7 +4921,7 @@ const buildLcpNapSections = (cols, { includeAudit = false } = {}) => {
 const SERVICE_ORDER_FORM_LAYOUT = [
   {
     key: 'subscriber',
-    title: 'Subscriber & Location',
+    title: 'Subscriber Identity & Contact',
     icon: 'pi pi-user',
     badgeClass: 'text-primary',
     columns: [
@@ -4929,8 +4929,15 @@ const SERVICE_ORDER_FORM_LAYOUT = [
       'fullName',
       'contactNumber',
       'emailAddress',
-      'dateInstalled',
-      // Coordinates placed above address fields so pin selection auto-fills them next
+      'dateInstalled'
+    ]
+  },
+  {
+    key: 'location',
+    title: 'Installation Address & Coordinates',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-success',
+    columns: [
       'addressCoordinates',
       'coordinates',
       'region',
@@ -4963,15 +4970,15 @@ const SERVICE_ORDER_FORM_LAYOUT = [
     icon: 'pi pi-wrench',
     badgeClass: 'text-warning',
     columns: [
-      'priorityLevel',
+      'concern',
       'supportStatus',
+      'priorityLevel',
       'repairCategory',
       'requestedBy',
       'userEmail',
       'assignedBy',
       'assignedEmail',
       'assignedDate',
-      'concern',
       'connectionRemarks'
     ]
   },
@@ -4999,16 +5006,16 @@ const SERVICE_ORDER_FORM_LAYOUT = [
     icon: 'pi pi-server',
     badgeClass: 'text-danger',
     columns: [
+      'pulloutRouterModel',
+      'pulloutRouterModelSN',
+      'pulloutCPESN',
+      'pulloutRemarks',
       'newRouterModemSN',
       'newPLAN',
       'newLCP',
       'newNAP',
       'newPORT',
-      'newVLAN',
-      'pulloutRouterModel',
-      'pulloutRouterModelSN',
-      'pulloutCPESN',
-      'pulloutRemarks'
+      'newVLAN'
     ]
   },
   {

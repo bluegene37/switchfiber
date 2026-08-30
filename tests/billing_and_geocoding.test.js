@@ -132,10 +132,10 @@ describe('Address & Lat/Long Coordinates Auto-Update Suite', () => {
     assert.ok(joCoordIdx < joRegionIdx, 'In Job Orders, addressCoordinates must be before region/address fields')
 
     // Check in Service Orders layout
-    const soSubscriberIdx = content.indexOf("title: 'Subscriber & Location'")
-    assert.ok(soSubscriberIdx > -1)
-    const soCoordIdx = content.indexOf("'addressCoordinates'", soSubscriberIdx)
-    const soCityIdx = content.indexOf("'city'", soSubscriberIdx)
+    const soLayoutIdx = content.indexOf("const SERVICE_ORDER_FORM_LAYOUT")
+    assert.ok(soLayoutIdx > -1)
+    const soCoordIdx = content.indexOf("'addressCoordinates'", soLayoutIdx)
+    const soCityIdx = content.indexOf("'city'", soLayoutIdx)
     assert.ok(soCoordIdx < soCityIdx, 'In Service Orders, addressCoordinates must be before city/address fields')
   })
 })
