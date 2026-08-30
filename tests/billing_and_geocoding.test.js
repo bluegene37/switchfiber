@@ -138,3 +138,47 @@ describe('Address & Lat/Long Coordinates Auto-Update Suite', () => {
     assert.ok(soCoordIdx < soCityIdx, 'In Service Orders, addressCoordinates must be before city/address fields')
   })
 })
+
+describe('Comprehensive Form Layouts & UX Audit Suite', () => {
+  const content = fs.readFileSync(tableFile, 'utf8')
+
+  test('Dedicated layout schemas exist for Plans, Routers, Invoices, Users, and Menus', () => {
+    assert.ok(content.includes('const PLAN_FORM_LAYOUT = ['), 'PLAN_FORM_LAYOUT must be defined')
+    assert.ok(content.includes('const ROUTER_FORM_LAYOUT = ['), 'ROUTER_FORM_LAYOUT must be defined')
+    assert.ok(content.includes('const INVOICE_FORM_LAYOUT = ['), 'INVOICE_FORM_LAYOUT must be defined')
+    assert.ok(content.includes('const USER_FORM_LAYOUT = ['), 'USER_FORM_LAYOUT must be defined')
+    assert.ok(content.includes('const MENU_FORM_LAYOUT = ['), 'MENU_FORM_LAYOUT must be defined')
+  })
+
+  test('Dropdown support for applyingfor, contracttemplate, and invoicestatus are integrated', () => {
+    assert.ok(content.includes('applyingfor_dropdown'), 'applyingfor_dropdown must be handled')
+    assert.ok(content.includes('contracttemplate_dropdown'), 'contracttemplate_dropdown must be handled')
+    assert.ok(content.includes('invoicestatus_dropdown'), 'invoicestatus_dropdown must be handled')
+    assert.ok(content.includes('applyingForOptions'), 'applyingForOptions must be defined')
+    assert.ok(content.includes('contractTemplateOptions'), 'contractTemplateOptions must be defined')
+    assert.ok(content.includes('invoiceStatusOptions'), 'invoiceStatusOptions must be defined')
+  })
+
+  test('Symmetrical 3-column row tiling is enforced in getColumnClass for wide forms', () => {
+    assert.ok(content.includes("return 'col-12 col-md-6 col-lg-4'"), 'Wide forms should return 4 cols for 3-column grid symmetry')
+  })
+
+  test('Job Orders layout includes houseFront in photos section and applicationIdValue', () => {
+    assert.ok(content.includes("'houseFront'"), 'houseFront must be mapped in photos section')
+    assert.ok(content.includes("'applicationIdValue'"), 'applicationIdValue must be mapped in dispatch section')
+  })
+
+  test('Server-side creation and modified date/time/user fields are hidden from Create and Update, and shown only in View Details', () => {
+    // Form columns (Create & Update) excludes audit fields
+    assert.ok(content.includes('const formColumns = computed(() => {'), 'formColumns computed must exist')
+    assert.ok(content.includes('allRawColumns.value.filter(col => !isAuditField(col))'), 'formColumns must exclude isAuditField')
+
+    // View Details includes audit fields
+    assert.ok(content.includes('buildApplicationSections(viewFormColumns.value, { includeAudit: true })'), 'Applications view must include audit')
+    assert.ok(content.includes('buildBillingSections(viewFormColumns.value, { includeAudit: true })'), 'Billing view must include audit')
+    assert.ok(content.includes('buildJobOrderSections(viewFormColumns.value, { includeAudit: true })'), 'Job Orders view must include audit')
+    assert.ok(content.includes('buildServiceOrderSections(viewFormColumns.value, { includeAudit: true })'), 'Service Orders view must include audit')
+  })
+})
+
+

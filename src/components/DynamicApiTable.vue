@@ -1053,6 +1053,45 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Applying For Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'applyingfor_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="applyingForOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Application Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Contract Template Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'contracttemplate_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="contractTemplateOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Contract Template" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Invoice Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'invoicestatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="invoiceStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Invoice Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
                 <div class="position-relative w-100">
@@ -2031,6 +2070,45 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Applying For Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'applyingfor_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="applyingForOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Application Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Contract Template Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'contracttemplate_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="contractTemplateOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Contract Template" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Invoice Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'invoicestatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="invoiceStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Invoice Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Confirm Password Field -->
               <div v-else-if="getFieldType(col) === 'confirm_password'">
                 <div class="position-relative w-100">
@@ -2583,6 +2661,33 @@ const isBillingEndpoint = computed(() => {
   )
 })
 
+const isPlanEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'plans' || ep === 'plan'
+})
+
+const isRouterEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'routers' || ep === 'router'
+})
+
+const isInvoiceEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return (
+    ep === 'invoices' ||
+    ep === 'invoice' ||
+    ep === 'billingstatements' ||
+    ep === 'billingstatement' ||
+    ep === 'billing_statements' ||
+    ep === 'billing_statement'
+  )
+})
+
+const isUserEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'users' || ep === 'user'
+})
+
 // Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders,
 // Billing Details, LCP NAP Locations & Service Orders — the field-heavy forms) or the standard 2-column modal
 const isWideForm = computed(() => {
@@ -2656,25 +2761,13 @@ const modalBreakpoints = computed(() => {
 const getColumnClass = (col) => {
   const type = getFieldType(col)
   const lower = (col || '').toLowerCase().replace(/_/g, '')
-  if (
-    lower === 'installationaddress' ||
-    lower === 'remarks' ||
-    lower === 'remark' ||
-    lower === 'connectionremarks' ||
-    lower === 'visitremarks' ||
-    lower === 'supportremarks' ||
-    lower === 'pulloutremarks' ||
-    lower === 'concern'
-  ) {
-    return 'col-12 col-md-12 col-lg-8'
-  }
-  if (lower === 'address') {
-    return isWideForm.value ? 'col-12 col-md-12 col-lg-8' : 'col-12'
-  }
+
+  // Coordinates & Map always take full width
   if (type === 'coordinates') {
     return 'col-12'
   }
-  // Items & Materials Name vs Quantity:
+
+  // Items & Materials Name vs Quantity (Service Orders & Job Orders):
   // Item name takes 8 cols (2/3), quantity takes 4 cols (1/3) so each item pair tiles cleanly on one row
   if (isServiceOrderEndpoint.value || isJobOrderEndpoint.value) {
     if (lower.startsWith('itemname')) {
@@ -2684,20 +2777,29 @@ const getColumnClass = (col) => {
       return 'col-12 col-md-5 col-lg-4'
     }
   }
+
   // LCP NAP address quartet shares one row on desktop (2×2 on tablet) so the
   // Site Location section reads map → coordinates → address left to right.
   if (isLcpNapEndpoint.value && ['region', 'city', 'barangay', 'street'].includes(lower)) {
     return 'col-12 col-md-6 col-lg-3'
   }
-  // Wide (3-column) forms keep every field on the same one-third track.
+
+  // Wide (3-column) forms keep every field on the same 1-column (1/3 track).
   // Image dropzones divide equally across 3 columns on tablet & desktop.
   if (isWideForm.value) {
     if (type === 'image_upload') {
       return 'col-12 col-md-4 col-lg-4'
     }
+    // Single fields and textareas in wide forms take 1 column (1/3 width)
+    // so 3 fields tile seamlessly per row without awkward empty spaces or jagged breaks!
     return 'col-12 col-md-6 col-lg-4'
   }
-  return (type === 'textarea' || type === 'image_upload') ? 'col-12' : 'col-12 col-md-6'
+
+  // Standard 2-column forms:
+  if (type === 'image_upload') {
+    return 'col-12'
+  }
+  return (type === 'textarea') ? 'col-12' : 'col-12 col-md-6'
 }
 
 const data = ref([])
@@ -3026,6 +3128,15 @@ function getFieldType(col) {
   ) {
     return 'agreement_checkbox'
   }
+  if (lower === 'applyingfor' || lower === 'applying_for') {
+    return 'applyingfor_dropdown'
+  }
+  if (lower === 'contracttemplate' || lower === 'contract_template') {
+    return 'contracttemplate_dropdown'
+  }
+  if (lower === 'invoicestatus' || lower === 'invoice_status' || (isInvoiceEndpoint.value && lower === 'status')) {
+    return 'invoicestatus_dropdown'
+  }
   if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
     return 'accesslevel_dropdown'
   }
@@ -3125,12 +3236,11 @@ function getFieldType(col) {
   }
   // Multiline text fields
   if (
-    lower.includes('description') ||
     lower.includes('remark') ||
     lower.includes('concern') ||
-    (lower.includes('address') && !lower.includes('email') && !lower.includes('coordinate')) ||
-    lower.includes('landmark') ||
-    lower.includes('template')
+    lower.includes('description') ||
+    lower === 'details' ||
+    lower === 'notes'
   ) {
     return 'textarea'
   }
@@ -3215,7 +3325,17 @@ function isCreatedOrModifiedField(col) {
     lower.includes('modified') ||
     lower.includes('updated') ||
     lower.includes('rowversion') ||
-    lower.includes('version')
+    lower.includes('version') ||
+    lower === 'timestamp' ||
+    lower === 'datetime' ||
+    lower === 'createddate' ||
+    lower === 'modifieddate' ||
+    lower === 'createdby' ||
+    lower === 'modifiedby' ||
+    lower === 'lastmodified' ||
+    lower === 'lastmodifiedby' ||
+    lower === 'createdbyuserid' ||
+    lower === 'modifiedbyuserid'
   )
 }
 
@@ -3471,11 +3591,16 @@ const columns = computed(() => {
 
 function isAuditField(col) {
   if (!col) return false
-  const lower = col.toLowerCase()
+  const lower = col.toLowerCase().replace(/_/g, '')
   return (
     lower === 'id' ||
     isCreatedOrModifiedField(col) ||
-    lower.includes('rowversion') || lower === 'rowversion'
+    lower === 'timestamp' ||
+    lower === 'rowversion' ||
+    lower === 'lastmodified' ||
+    lower === 'lastmodifiedby' ||
+    lower === 'createdbyuserid' ||
+    lower === 'modifiedbyuserid'
   )
 }
 
@@ -4286,8 +4411,7 @@ const APPLICATION_FORM_LAYOUT = [
       'visitBy',
       'visitWith',
       'visitWithOther',
-      'remarks',
-      'timestamp'
+      'remarks'
     ]
   }
 ]
@@ -4455,6 +4579,7 @@ const SERVICE_ORDER_FORM_LAYOUT = [
       // Coordinates placed above address fields so pin selection auto-fills them next
       'addressCoordinates',
       'coordinates',
+      'region',
       'city',
       'barangay',
       'address'
@@ -4780,6 +4905,7 @@ const JOB_ORDER_FORM_LAYOUT = [
       'lastName',
       'applicantEmailAddress',
       'emailAddress',
+      'email',
       'contactNumber',
       'secondContactNumber',
       'referredBy',
@@ -4859,6 +4985,7 @@ const JOB_ORDER_FORM_LAYOUT = [
       'usernameStatus',
       'externalId',
       'applicationId',
+      'applicationIdValue',
       'joRemarks',
       'remarks',
       'onsiteRemarks',
@@ -4899,6 +5026,8 @@ const JOB_ORDER_FORM_LAYOUT = [
     icon: 'pi pi-images',
     badgeClass: 'text-dark',
     columns: [
+      'houseFront',
+      'houseFrontPicture',
       'setupImage',
       'speedtestImage',
       'signedContractImage',
@@ -4910,7 +5039,86 @@ const JOB_ORDER_FORM_LAYOUT = [
   }
 ]
 
-const buildJobOrderSections = (cols, { includeAudit = false } = {}) => {
+const PLAN_FORM_LAYOUT = [
+  {
+    key: 'specification',
+    title: 'Plan Specification & Bandwidth',
+    icon: 'pi pi-tag',
+    badgeClass: 'text-primary',
+    columns: ['name', 'description']
+  },
+  {
+    key: 'pricing',
+    title: 'Pricing & Discounting',
+    icon: 'pi pi-dollar',
+    badgeClass: 'text-success',
+    columns: ['amount', 'discountId']
+  }
+]
+
+const ROUTER_FORM_LAYOUT = [
+  {
+    key: 'hardware',
+    title: 'Hardware & Device Information',
+    icon: 'pi pi-box',
+    badgeClass: 'text-primary',
+    columns: ['name', 'brand', 'model', 'description']
+  },
+  {
+    key: 'network',
+    title: 'Network Configuration',
+    icon: 'pi pi-wifi',
+    badgeClass: 'text-info',
+    columns: ['ip']
+  }
+]
+
+const INVOICE_FORM_LAYOUT = [
+  {
+    key: 'invoice',
+    title: 'Invoice & Subscriber Details',
+    icon: 'pi pi-receipt',
+    badgeClass: 'text-primary',
+    columns: ['accountNo', 'status']
+  },
+  {
+    key: 'financials',
+    title: 'Amount & Payment Due Date',
+    icon: 'pi pi-dollar',
+    badgeClass: 'text-success',
+    columns: ['amount', 'dueDate']
+  }
+]
+
+const USER_FORM_LAYOUT = [
+  {
+    key: 'profile',
+    title: 'Personal Information',
+    icon: 'pi pi-user',
+    badgeClass: 'text-primary',
+    columns: ['fname', 'mname', 'lname', 'email', 'contactnumber', 'address']
+  },
+  {
+    key: 'credentials',
+    title: 'Account Security & Role',
+    icon: 'pi pi-lock',
+    badgeClass: 'text-warning',
+    columns: ['username', 'password', 'confirmpassword', 'accesslevel_id', 'active']
+  }
+]
+
+const MENU_FORM_LAYOUT = [
+  {
+    key: 'menu',
+    title: 'Navigation Menu Configuration',
+    icon: 'pi pi-list',
+    badgeClass: 'text-primary',
+    columns: ['name', 'route', 'icon', 'description']
+  }
+]
+
+// Generic layout builder helper for standardized section construction
+const buildLayoutSections = (cols, layout, { includeAudit = false } = {}) => {
   const pool = new Map()
   ;(cols || []).forEach(col => {
     const key = normalizeColKey(col)
@@ -4918,7 +5126,7 @@ const buildJobOrderSections = (cols, { includeAudit = false } = {}) => {
   })
 
   const sections = []
-  JOB_ORDER_FORM_LAYOUT.forEach(sec => {
+  layout.forEach(sec => {
     const picked = []
     sec.columns.forEach(wanted => {
       const key = normalizeColKey(wanted)
@@ -4958,6 +5166,13 @@ const buildJobOrderSections = (cols, { includeAudit = false } = {}) => {
   return sections
 }
 
+const buildJobOrderSections = (cols, opts) => buildLayoutSections(cols, JOB_ORDER_FORM_LAYOUT, opts)
+const buildPlanSections = (cols, opts) => buildLayoutSections(cols, PLAN_FORM_LAYOUT, opts)
+const buildRouterSections = (cols, opts) => buildLayoutSections(cols, ROUTER_FORM_LAYOUT, opts)
+const buildInvoiceSections = (cols, opts) => buildLayoutSections(cols, INVOICE_FORM_LAYOUT, opts)
+const buildUserSections = (cols, opts) => buildLayoutSections(cols, USER_FORM_LAYOUT, opts)
+const buildMenuSections = (cols, opts) => buildLayoutSections(cols, MENU_FORM_LAYOUT, opts)
+
 // Columns for Create & Edit forms (excludes system audit fields completely)
 const formSections = computed(() => {
   if (isApplicationEndpoint.value) {
@@ -4974,6 +5189,21 @@ const formSections = computed(() => {
   }
   if (isServiceOrderEndpoint.value) {
     return buildServiceOrderSections(formColumns.value)
+  }
+  if (isPlanEndpoint.value) {
+    return buildPlanSections(formColumns.value)
+  }
+  if (isRouterEndpoint.value) {
+    return buildRouterSections(formColumns.value)
+  }
+  if (isInvoiceEndpoint.value) {
+    return buildInvoiceSections(formColumns.value)
+  }
+  if (isUserEndpoint.value) {
+    return buildUserSections(formColumns.value)
+  }
+  if (isMenuEndpoint.value) {
+    return buildMenuSections(formColumns.value)
   }
 
   const groups = {
@@ -5013,7 +5243,7 @@ const formSections = computed(() => {
     }))
 })
 
-// Columns for View Details Modal ONLY (excludes system audit fields)
+// Columns for View Details Modal ONLY (displays all record columns including server-side audit fields in audit section)
 const viewFormColumns = computed(() => {
   let keys = []
   if (viewFormData.value && typeof viewFormData.value === 'object') {
@@ -5026,9 +5256,6 @@ const viewFormColumns = computed(() => {
   // Deduplicate redundant/paired fields and EF Core navigation objects for View Modal
   keys = deduplicateColumns(keys)
 
-  // Filter out createdBy, modifiedBy, and all system audit fields for UI view
-  keys = keys.filter(k => !isAuditField(k))
-
   const idIndex = keys.findIndex(k => k.toLowerCase() === 'id')
   if (idIndex > 0) {
     const [idCol] = keys.splice(idIndex, 1)
@@ -5039,19 +5266,34 @@ const viewFormColumns = computed(() => {
 
 const viewFormSections = computed(() => {
   if (isApplicationEndpoint.value) {
-    return buildApplicationSections(viewFormColumns.value, { includeAudit: false })
+    return buildApplicationSections(viewFormColumns.value, { includeAudit: true })
   }
   if (isBillingEndpoint.value) {
-    return buildBillingSections(viewFormColumns.value, { includeAudit: false })
+    return buildBillingSections(viewFormColumns.value, { includeAudit: true })
   }
   if (isJobOrderEndpoint.value) {
-    return buildJobOrderSections(viewFormColumns.value, { includeAudit: false })
+    return buildJobOrderSections(viewFormColumns.value, { includeAudit: true })
   }
   if (isLcpNapEndpoint.value) {
-    return buildLcpNapSections(viewFormColumns.value, { includeAudit: false })
+    return buildLcpNapSections(viewFormColumns.value, { includeAudit: true })
   }
   if (isServiceOrderEndpoint.value) {
-    return buildServiceOrderSections(viewFormColumns.value, { includeAudit: false })
+    return buildServiceOrderSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isPlanEndpoint.value) {
+    return buildPlanSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isRouterEndpoint.value) {
+    return buildRouterSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isInvoiceEndpoint.value) {
+    return buildInvoiceSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isUserEndpoint.value) {
+    return buildUserSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isMenuEndpoint.value) {
+    return buildMenuSections(viewFormColumns.value, { includeAudit: true })
   }
 
   const groups = {
@@ -5059,12 +5301,13 @@ const viewFormSections = computed(() => {
     plan: [],
     infra: [],
     network: [],
-    ops: []
+    ops: [],
+    audit: []
   }
 
   viewFormColumns.value.forEach(col => {
     const sec = getColumnSection(col)
-    if (sec !== 'audit' && groups[sec]) {
+    if (groups[sec]) {
       groups[sec].push(col)
     }
   })
@@ -5389,6 +5632,29 @@ const deliveryStatusOptions = ref([
 const renterOptions = ref([
   { label: 'No (Owner)', value: 'No' },
   { label: 'Yes (Renter)', value: 'Yes' }
+])
+
+const applyingForOptions = ref([
+  { label: 'New Installation', value: 'New Installation' },
+  { label: 'Plan Upgrade', value: 'Plan Upgrade' },
+  { label: 'Transfer of Location', value: 'Transfer of Location' },
+  { label: 'Account Reconnection', value: 'Account Reconnection' },
+  { label: 'Additional Line', value: 'Additional Line' }
+])
+
+const contractTemplateOptions = ref([
+  { label: 'Standard 24-Month Residential', value: 'Standard 24-Month Residential' },
+  { label: 'Standard 12-Month Contract', value: 'Standard 12-Month Contract' },
+  { label: 'No Lock-in (Month-to-Month)', value: 'No Lock-in' },
+  { label: 'Corporate SLA Contract', value: 'Corporate SLA' }
+])
+
+const invoiceStatusOptions = ref([
+  { label: 'Unpaid', value: 'Unpaid' },
+  { label: 'Paid', value: 'Paid' },
+  { label: 'Overdue', value: 'Overdue' },
+  { label: 'Cancelled', value: 'Cancelled' },
+  { label: 'Partially Paid', value: 'Partially Paid' }
 ])
 
 const usageTypeOptions = ref([
@@ -6715,8 +6981,31 @@ const formatViewFieldValue = (col, val) => {
     return `${val} mins`
   }
 
-  // Lookup human-readable labels for infrastructure & dropdown fields
+  // Format server-side timestamps and dates
   const type = getFieldType(col)
+  if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified') && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
+    const d = new Date(val)
+    if (!isNaN(d.getTime())) {
+      if (val.includes('T') || val.includes(':')) {
+        return d.toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        })
+      }
+      return d.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit'
+      })
+    }
+  }
+
+  // Lookup human-readable labels for infrastructure & dropdown fields
   let targetList = null
   if (type === 'vlan_dropdown') targetList = vlansList.value
   else if (type === 'lcp_dropdown') targetList = lcpsList.value
@@ -6755,14 +7044,16 @@ const openCreateDialog = () => {
     const type = getFieldType(col)
     const lowerCol = col.toLowerCase()
 
-    if ((lowerCol.includes('modifiedby') || lowerCol.includes('createdby')) && currentUser) {
-      formData.value[col] = currentUserIdOrName
-    } else if (lowerCol === 'preferredday' && currentUser) {
-      formData.value[col] = currentUser
-    } else if (type === 'toggle') {
+    if (type === 'toggle') {
       formData.value[col] = true
     } else if (type === 'agreement_checkbox') {
       formData.value[col] = ''
+    } else if (type === 'applyingfor_dropdown' && applyingForOptions.value.length > 0) {
+      formData.value[col] = applyingForOptions.value[0].value
+    } else if (type === 'contracttemplate_dropdown' && contractTemplateOptions.value.length > 0) {
+      formData.value[col] = contractTemplateOptions.value[0].value
+    } else if (type === 'invoicestatus_dropdown' && invoiceStatusOptions.value.length > 0) {
+      formData.value[col] = invoiceStatusOptions.value[0].value
     } else if (type === 'status_dropdown' && statusOptions.value.length > 0) {
       formData.value[col] = statusOptions.value[0].value
     } else if (type === 'onsitestatus_dropdown' && onsiteStatusOptions.value.length > 0) {
@@ -6801,11 +7092,6 @@ const openCreateDialog = () => {
     const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
     if (statusCol) {
       formData.value[statusCol] = 'In Progress'
-    }
-    const nowIso = new Date().toISOString()
-    const tsCol = formColumns.value.find(c => c.toLowerCase() === 'timestamp')
-    if (tsCol) {
-      formData.value[tsCol] = nowIso
     }
   }
 
@@ -6927,9 +7213,12 @@ const syncPairedFields = (payload) => {
  * @param {Object} finalPayload the request body, mutated in place
  * @param {number} numericUserId `authStore.user.id`, already coerced to a number
  */
-const applyJobOrderCreationAudit = (finalPayload, numericUserId) => {
-  finalPayload.createdBy = numericUserId
-  finalPayload.createdDate = null
+const applyJobOrderCreationAudit = (finalPayload, numericUserId, mode = 'create') => {
+  if (mode === 'create') {
+    finalPayload.createdBy = numericUserId
+    finalPayload.createdDate = null
+  }
+  finalPayload.modifiedBy = numericUserId
 }
 
 // The server does not own its audit columns. A create or update that omits them
@@ -7360,7 +7649,7 @@ const saveEdit = async () => {
       stampAuditFields(finalPayload, 'update', loggedInUserId)
 
       if (isJobOrderEndpoint.value) {
-        applyJobOrderCreationAudit(finalPayload, numericUserId)
+        applyJobOrderCreationAudit(finalPayload, numericUserId, 'update')
       }
     }
 
