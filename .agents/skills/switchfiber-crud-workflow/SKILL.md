@@ -57,14 +57,19 @@ Ensure the route and ID are present in the `fetchMenus` seed block so users with
 ## 🔒 Mandatory Project Rules
 
 ### 1. Form Audit Trail Standards
-- **CREATE (`POST`)**: Always populate `createdBy` and `modifiedBy` with the **numeric ID of the currently logged-in user** (`authStore.user.id`).
+- **CREATE (`POST`)**: Always populate `createdBy` and `modifiedBy` with the **ID of the currently logged-in user** (`authStore.user.id`).
 - **UPDATE (`PUT`)**: Only update `modifiedBy` with `authStore.user.id`. **NEVER** overwrite `createdBy` or `createdDate` during updates.
+- **UI Form Visibility**: Audit fields are excluded from Create/Edit modals and displayed exclusively in the View Details modal under **System Audit & Timestamp Details**.
 
-### 2. Default Sorting Rules
+### 2. Form Layout & Grid Standards
+- **3-Column Symmetrical Tiling**: Wide modals (`Applications`, `JobOrders`, `BillingDetails`, `ServiceOrders`, `LCPNAPLocations`) tile in clean multiples of 3 (`col-12 col-md-6 col-lg-4`) for all standard inputs and compact textareas to prevent awkward holes and uneven line wraps.
+- **GPS Coordinates & Auto-Geocoding**: Place coordinates/map picker above address fields so selecting a location cascades and auto-fills Region, Province, City/Municipality, Barangay, and Address.
+
+### 3. Default Sorting Rules
 - **Applications (`Applications` / `ApplicationList`)**: Always default to **Descending order** (`sortOrder = -1`) based on `id` (newest first).
 - **All Other Tables (File Maintenance, Access Level, Transactions, etc.)**: Default to **Ascending order** (`sortOrder = 1`) based on `id`.
 
-### 3. API Response Consumption
+### 4. API Response Consumption
 - In custom services and stores, `apiClient` already unwraps `response.data`. Assign results directly:
   ```javascript
   const response = await YourService.getAll()

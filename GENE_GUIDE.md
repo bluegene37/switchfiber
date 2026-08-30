@@ -397,16 +397,23 @@ The `DynamicApiTable.vue` component dynamically generates modal input fields bas
 | Relational ID (`*_id`, `*Id`) | 🔽 `Select (Dropdown)` | `planId`, `routerId`, `lcp_id`, `accesslevel_id` |
 | `amount*`, `*fee*`, `*price*`, `*balance*` | 🔢 `InputNumber` (Currency/Decimal) | `amount`, `installationFee`, `monthlyRate` |
 | `active`, `isActive`, `disabled` | 🔘 `ToggleSwitch` | `active`, `isActive` |
-| `*address*`, `*remarks*`, `description` | 📝 `Textarea` | `remarks`, `address`, `description` |
+| `*remarks*`, multiline descriptions | 📝 `Textarea` (1-Column Compact) | `remarks`, `onsiteRemarks`, `joRemarks` |
+| `applyingFor` | 🔽 `Select (Dropdown)` | `New Installation`, `Plan Upgrade`, `Transfer`, etc. |
+| `contractTemplate` | 🔽 `Select (Dropdown)` | `Standard 24-Month`, `Standard 12-Month`, `No Lock-in`, etc. |
+| `invoiceStatus` / `status` (Invoices) | 🔽 `Select (Dropdown)` | `Unpaid`, `Paid`, `Overdue`, `Cancelled`, `Partially Paid` |
+| `renter` | 🔽 `Select (Dropdown)` | `No (Owner)`, `Yes (Renter)` |
+| `deliveryStatus` | 🔽 `Select (Dropdown)` | `Delivered`, `Pending`, `Sent via Email`, `Sent via SMS`, etc. |
 | `region`, `city`, `barangay` | 🇵🇭 `PhAddressSelect` | Cascading Philippine PSGC address selectors |
-| `*picture*`, `*proof*`, `*image*` | 🖼️ `ImageDropzone` | Base64 file uploader with EXIF metadata parsing |
-| `latitude`, `longitude`, `coordinates` | 📍 `CoordinatePicker` | Interactive map coordinate selector |
+| `*picture*`, `*proof*`, `*image*`, `houseFront` | 🖼️ `ImageDropzone` | Base64 file uploader with EXIF metadata parsing |
+| `latitude`, `longitude`, `coordinates` | 📍 `CoordinatePicker` | Map coordinate selector placed **above address fields** |
 | `email*`, `applicantEmailAddress` | ✉️ `InputText` (`type="email"`) | Email input with regex validation |
 | Default Strings | 🔤 `InputText` | Standard text fields |
 
-### Modal Layout Grid System
-- **3-Column Wide Modal (`isWideForm`)**: Applied automatically to field-heavy entities (`Applications`, `JobOrders`, `BillingDetails`). Modal width: `95vw`, max-width: `1200px`.
-- **2-Column Standard Modal**: Applied to standard entities (`Plans`, `Routers`, `VLANs`, `LCPs`, `Users`). Modal width: `90vw`, max-width: `850px`.
+### Modal Layout & Grid System
+- **3-Column Symmetrical Tiling (`isWideForm`)**: Applied automatically to field-heavy entities (`Applications`, `JobOrders`, `BillingDetails`, `ServiceOrders`, `LCPNAPLocations`). Every single field and textarea takes 1 column (`col-12 col-md-6 col-lg-4`), allowing rows to tile cleanly in multiples of 3 (`4 + 4 + 4 = 12 cols`) without empty holes or jagged wraps. Modal width: `95vw`, max-width: `1200px`.
+- **2-Column Standard Modal**: Applied to standard entities (`Plans`, `Routers`, `VLANs`, `LCPs`, `Users`, `Menus`). Modal width: `90vw`, max-width: `850px`.
+- **Map & Coordinates Placement**: Placed at the top of location sections so that picking a pin or entering lat/long auto-fills the cascading Region, Province, City, Barangay, and Address fields below it.
+- **100% Free Tile Providers**: Utilizes standard OpenStreetMap and Esri World Imagery with zero watermark or API key requirements.
 - **Frozen Actions Column**: Action buttons (`Edit`, `Delete`, `View`) are pinned to the right (`alignFrozen="right" :frozen="true"`), eliminating unnecessary horizontal scrolling.
 
 ---
@@ -421,11 +428,17 @@ All backend calls must adhere to strict REST conventions:
 - **`PUT /api/[Endpoint]/{id}`**: Update an existing record.
 - **`DELETE /api/[Endpoint]/{id}`**: Delete a record.
 
-### 2. Form Audit Trail Standards (Backend Migration)
-- **Automatic Stripping**: `DynamicApiTable` strips audit columns (`createdBy`, `createdDate`, `modifiedBy`, `modifiedDate`, `lastModified`, `rowVersion`) from payloads before submission.
-- **Job Orders Exception**:
-  - `POST` / `PUT`: Sends `createdBy` as the numeric user ID (`authStore.user.id`) and `createdDate` as `null`. The backend stamps the date.
-- **All Other Endpoints**: Do not send audit columns unless the endpoint schema explicitly demands them.
+### 2. Form Audit Trail & Logged-in User ID Standards
+- **Hidden in Create & Edit Forms**: Audit fields (`createdBy`, `modifiedBy`, `createdDate`, `modifiedDate`, `lastModified`, `lastModifiedBy`, `timestamp`, `rowVersion`) are completely filtered out of Create and Update forms.
+- **Exclusively Visible in View Details**: Audit information is displayed under the read-only **🛡️ System Audit & Timestamp Details** section in the View Details modal with formatted local timestamps and resolved user display names.
+- **Create (`POST`)**:
+  - `createdBy` is stamped with the logged-in user ID (`authStore.user.id`).
+  - `modifiedBy` is stamped with the logged-in user ID (`authStore.user.id`).
+  - `createdDate` and `modifiedDate` are stamped with the current local timestamp.
+- **Update (`PUT`)**:
+  - `modifiedBy` is updated with the logged-in user ID (`authStore.user.id`).
+  - `modifiedDate` is updated with the current local timestamp.
+  - **`createdBy` and `createdDate` are preserved and never overwritten**, protecting the original creator record.
 
 ### 3. Default Sorting Order
 - **Applications (`Applications` / `ApplicationList`)**: Default to **Descending order** (`sortOrder = -1`) based on `id` (newest applications first).

@@ -8,8 +8,10 @@ When developing and integrating API calls across the codebase, strictly adhere t
 - **`PUT /api/[Endpoint]/{id}`**: Update an existing record by ID.
 - **`DELETE /api/[Endpoint]/{id}`**: Delete a record by ID.
 
-## Form Audit Trail Standards (Backend Migration)
-For the backend migration, audit columns (`createdBy`, `modifiedBy`, `createdDate`, `modifiedDate`, `lastModified`, `lastModifiedBy`, etc.) are hidden from UI forms, tables, and View modals, and excluded from `POST` (Create) and `PUT` (Update) API payloads so payloads strictly match the new backend schema.
+## Form Audit Trail & User ID Standards
+- **UI Form Visibility**: Audit columns (`createdBy`, `modifiedBy`, `createdDate`, `modifiedDate`, `lastModified`, `lastModifiedBy`, `timestamp`, `rowVersion`) are hidden from Create and Edit dialogs, and displayed exclusively in the View Details modal under **System Audit & Timestamp Details** (read-only and disabled).
+- **Create (`POST`)**: Always populate `createdBy` and `modifiedBy` with the logged-in user ID (`authStore.user.id`).
+- **Update (`PUT`)**: Only update `modifiedBy` with the logged-in user ID. Never overwrite `createdBy` or `createdDate` during updates.
 
 ## Menu & Access Level Standards
 - **Always include new menu items in the Access Level menu list**: Whenever new routes or menu items are added to the application, ensure they are registered in the sidebar menu list and included in the Access Level permissions configuration so users can access them without being blocked by permission checks.
