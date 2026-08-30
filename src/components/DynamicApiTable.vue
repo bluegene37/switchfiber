@@ -6386,6 +6386,40 @@ const applyJobOrderCreationAudit = (finalPayload, numericUserId) => {
   finalPayload.createdDate = null
 }
 
+// The server does not own its audit columns. A create or update that omits them
+// stores `createdBy`/`modifiedBy` blank and leaves `modifiedDate` at
+// 0001-01-01, so the audit trail cannot answer "who changed this" — and the
+// Applications and BillingDetails contracts reject the request outright when
+// ModifiedBy/ModifiedDate are simply absent. Verified against the live API:
+// values sent by the client are stored as given (createdBy/createdDate on POST,
+// modifiedBy/modifiedDate on PUT).
+//
+// Stamping them here is a stopgap. Audit columns belong to the server, which is
+// the only party that can vouch for them; a client can claim to be anyone. When
+// the backend starts stamping them, delete this and the two call sites.
+//
+// Local time, not UTC. The server stores these strings as given and every other
+// timestamp in the database is local (UTC+8), so an ISO/Zulu stamp would file
+// each edit 8 hours in the past — an audit trail that is wrong is worse than an
+// empty one.
+const localAuditTimestamp = (d = new Date()) => {
+  const pad = (n, w = 2) => String(n).padStart(w, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`
+}
+
+const stampAuditFields = (target, mode, loggedInUserId) => {
+  if (!target) return target
+  const stamp = localAuditTimestamp()
+  if (mode === 'create') {
+    target.createdBy = loggedInUserId
+    target.createdDate = stamp
+  }
+  target.modifiedBy = loggedInUserId
+  target.modifiedDate = stamp
+  return target
+}
+
 const saveData = async () => {
   saveError.value = null
 
@@ -6448,12 +6482,14 @@ const saveData = async () => {
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
         remarks: withPhotoGps('create', payload.remarks),
-        // modifiedBy: loggedInUserId, // Excluded for backend migration
-        // modifiedDate: '', // Excluded for backend migration
         userEmail: currentUserEmail
       }
+      // Required by the Applications contract, not optional metadata: omitting
+      // these two is what made every create 400.
+      stampAuditFields(finalPayload, 'create', loggedInUserId)
     } else {
-      // Exclude all audit fields (createdBy, modifiedBy, createdDate, modifiedDate, etc.) for backend migration
+      // Drop whatever audit values came back with the record — they describe the
+      // old state. Fresh ones are stamped below, after the empty-value cleanup.
       Object.keys(payload).forEach(key => {
         if (isAuditField(key) && key.toLowerCase() !== 'id') {
           delete payload[key]
@@ -6479,7 +6515,12 @@ const saveData = async () => {
         }
       })
 
+      // After the cleanup loop: it strips empty values, and an audit stamp must
+      // survive that.
+      stampAuditFields(finalPayload, 'create', loggedInUserId)
+
       if (isJobOrderEndpoint.value) {
+        // Job Orders keep their own numeric createdBy shape.
         applyJobOrderCreationAudit(finalPayload, numericUserId)
       }
     }
@@ -6747,12 +6788,12 @@ const saveEdit = async () => {
         visitWith: payload.visitWith ? String(payload.visitWith) : '',
         visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
         remarks: withPhotoGps('edit', payload.remarks),
-        // modifiedBy: loggedInUserId, // Excluded for backend migration
-        // modifiedDate: '', // Excluded for backend migration
         userEmail: payload.userEmail || currentUserEmail
       }
+      stampAuditFields(finalPayload, 'update', loggedInUserId)
     } else {
-      // Exclude all audit fields (createdBy, modifiedBy, createdDate, modifiedDate, etc.) for backend migration
+      // Drop the record's existing audit values before restamping — they
+      // describe the state this edit is replacing.
       Object.keys(payload).forEach(key => {
         if (isAuditField(key) && key.toLowerCase() !== 'id') {
           delete payload[key]
@@ -6769,6 +6810,8 @@ const saveEdit = async () => {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
+
+      stampAuditFields(finalPayload, 'update', loggedInUserId)
 
       if (isJobOrderEndpoint.value) {
         applyJobOrderCreationAudit(finalPayload, numericUserId)
