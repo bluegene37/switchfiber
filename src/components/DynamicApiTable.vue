@@ -3607,6 +3607,18 @@ const LOG_COLUMNS = [
   'ipAddress'
 ]
 
+const SERVICE_ORDER_COLUMNS = [
+  'id',
+  'accountNumber',
+  'fullName',
+  'contactNumber',
+  'plan',
+  'concern',
+  'supportStatus',
+  'visitStatus',
+  'dateInstalled'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
@@ -3699,57 +3711,11 @@ const CONCISE_ENDPOINT_COLUMNS = {
   logtrail: LOG_COLUMNS,
   LogError: LOG_COLUMNS,
   logerror: LOG_COLUMNS,
-  ServiceOrders: [
-    'id',
-    'accountNumber',
-    'fullName',
-    'contactNumber',
-    'emailAddress',
-    'address',
-    'plan',
-    'username',
-    'concern',
-    'priorityLevel',
-    'supportStatus',
-    'visitStatus',
-    'dateInstalled',
-    'barangay',
-    'city'
-  ],
-  serviceorders: [
-    'id',
-    'accountNumber',
-    'fullName',
-    'contactNumber',
-    'emailAddress',
-    'address',
-    'plan',
-    'username',
-    'concern',
-    'priorityLevel',
-    'supportStatus',
-    'visitStatus',
-    'dateInstalled',
-    'barangay',
-    'city'
-  ],
-  service_orders: [
-    'id',
-    'accountNumber',
-    'fullName',
-    'contactNumber',
-    'emailAddress',
-    'address',
-    'plan',
-    'username',
-    'concern',
-    'priorityLevel',
-    'supportStatus',
-    'visitStatus',
-    'dateInstalled',
-    'barangay',
-    'city'
-  ]
+  ServiceOrders: SERVICE_ORDER_COLUMNS,
+  serviceorders: SERVICE_ORDER_COLUMNS,
+  service_orders: SERVICE_ORDER_COLUMNS,
+  serviceorder: SERVICE_ORDER_COLUMNS,
+  service_order: SERVICE_ORDER_COLUMNS
 }
 
 // Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
