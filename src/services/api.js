@@ -2,13 +2,13 @@ import axios from 'axios'
 
 const apiClient = axios.create({
   // Using relative path '/api' so it hits our Vite proxy defined in vite.config.js
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || '/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   },
   // Allow up to 60 seconds for large unpaginated backend datasets, or customize via env
-  timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 60000,
+  timeout: Number(typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_TIMEOUT) || 60000,
 })
 
 // The app and the API share one origin (Vite proxy in dev, nginx/Vercel

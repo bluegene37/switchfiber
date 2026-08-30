@@ -949,6 +949,32 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Delivery Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'deliverystatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="deliveryStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Delivery Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Renter Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'renter_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="renterOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Renter Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Usage Type Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
@@ -1901,6 +1927,32 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Delivery Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'deliverystatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="deliveryStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Delivery Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Renter Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'renter_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="renterOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Renter Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Usage Type Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
@@ -2520,13 +2572,28 @@ const isServiceOrderEndpoint = computed(() => {
   )
 })
 
+const isBillingEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return (
+    ep === 'billingdetails' ||
+    ep === 'billingdetail' ||
+    ep === 'billing_details' ||
+    ep === 'billing_detail' ||
+    ep === 'billing'
+  )
+})
+
 // Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders,
 // Billing Details, LCP NAP Locations & Service Orders — the field-heavy forms) or the standard 2-column modal
 const isWideForm = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
   return (
     ep === 'joborders' ||
+    ep === 'joborder' ||
     ep === 'billingdetails' ||
+    ep === 'billingdetail' ||
+    ep === 'billing_details' ||
+    ep === 'billing_detail' ||
     ep === 'job_order' ||
     ep === 'billing' ||
     ep === 'applications' ||
@@ -3006,6 +3073,12 @@ function getFieldType(col) {
   }
   if (lower === 'billingstatus') {
     return 'billingstatus_dropdown'
+  }
+  if (lower === 'deliverystatus' || lower === 'delivery_status') {
+    return 'deliverystatus_dropdown'
+  }
+  if (lower === 'renter') {
+    return 'renter_dropdown'
   }
   if (lower === 'usagetype') {
     return 'usagetype_dropdown'
@@ -4162,6 +4235,8 @@ const APPLICATION_FORM_LAYOUT = [
     icon: 'pi pi-map-marker',
     badgeClass: 'text-info',
     columns: [
+      'addressCoordinates',
+      'coordinates',
       'region',
       'city',
       'barangay',
@@ -4239,6 +4314,7 @@ const LCPNAP_FORM_LAYOUT = [
     badgeClass: 'text-success',
     columns: [
       'coordinates',
+      'addressCoordinates',
       'region',
       'city',
       'barangay',
@@ -4376,12 +4452,12 @@ const SERVICE_ORDER_FORM_LAYOUT = [
       'contactNumber',
       'emailAddress',
       'dateInstalled',
-      // City before Barangay so cascading address selection flows naturally
+      // Coordinates placed above address fields so pin selection auto-fills them next
+      'addressCoordinates',
+      'coordinates',
       'city',
       'barangay',
-      'address',
-      // GPS coordinates render full width (`col-12`) with interactive map picker & pin
-      'addressCoordinates'
+      'address'
     ]
   },
   {
@@ -4549,10 +4625,349 @@ const buildServiceOrderSections = (cols, { includeAudit = false } = {}) => {
   return sections
 }
 
+const BILLING_FORM_LAYOUT = [
+  {
+    key: 'customer',
+    title: 'Customer Account & Identity',
+    icon: 'pi pi-user',
+    badgeClass: 'text-primary',
+    columns: [
+      'accountNo',
+      'fullName',
+      'contactNumber',
+      'secondContactNumber',
+      'emailAddress',
+      'userEmail',
+      'renter',
+      'referredBy',
+      'referrersAccountNumber'
+    ]
+  },
+  {
+    key: 'location',
+    title: 'Installation Address & Coordinates',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-success',
+    columns: [
+      'addressCoordinates',
+      'coordinates',
+      'region',
+      'city',
+      'barangay',
+      'address',
+      'location'
+    ]
+  },
+  {
+    key: 'financials',
+    title: 'Billing, Plan & Account Financials',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-info',
+    columns: [
+      'plan',
+      'accountBalance',
+      'balanceUpdateDate',
+      'billingDay',
+      'billingStatus',
+      'deliveryStatus',
+      'status',
+      'dateInstalled',
+      'usageType'
+    ]
+  },
+  {
+    key: 'network',
+    title: 'Network Credentials & Equipment',
+    icon: 'pi pi-wifi',
+    badgeClass: 'text-warning',
+    columns: [
+      'provider',
+      'connectionType',
+      'username',
+      'ip',
+      'routerModel',
+      'routerModemSn'
+    ]
+  },
+  {
+    key: 'infra',
+    title: 'Fiber Terminal & Provisioning',
+    icon: 'pi pi-server',
+    badgeClass: 'text-danger',
+    columns: [
+      'lcp',
+      'nap',
+      'port',
+      'vlan',
+      'lcpNap',
+      'lcpNapPort',
+      'group',
+      'splynxId',
+      'mikrotikId'
+    ]
+  },
+  {
+    key: 'attachments',
+    title: 'Account Attachments & Documents',
+    icon: 'pi pi-images',
+    badgeClass: 'text-secondary',
+    columns: [
+      'attachment1',
+      'attachment2',
+      'attachment3'
+    ]
+  }
+]
+
+const buildBillingSections = (cols, { includeAudit = false } = {}) => {
+  const pool = new Map()
+  ;(cols || []).forEach(col => {
+    const key = normalizeColKey(col)
+    if (!pool.has(key)) pool.set(key, col)
+  })
+
+  const sections = []
+  BILLING_FORM_LAYOUT.forEach(sec => {
+    const picked = []
+    sec.columns.forEach(wanted => {
+      const key = normalizeColKey(wanted)
+      if (pool.has(key)) {
+        picked.push(pool.get(key))
+        pool.delete(key)
+      }
+    })
+    if (picked.length > 0) {
+      sections.push({ ...sec, columns: picked })
+    }
+  })
+
+  const leftovers = [...pool.values()]
+  const extras = leftovers.filter(col => !isAuditField(col))
+  const auditCols = leftovers.filter(col => isAuditField(col))
+
+  if (extras.length > 0) {
+    sections.push({
+      key: 'extra',
+      title: 'Additional Details',
+      icon: 'pi pi-file',
+      badgeClass: 'text-secondary',
+      columns: extras
+    })
+  }
+  if (includeAudit && auditCols.length > 0) {
+    sections.push({
+      key: 'audit',
+      title: getSectionTitle('audit'),
+      icon: SECTION_META.audit.icon,
+      badgeClass: SECTION_META.audit.badgeClass,
+      columns: auditCols
+    })
+  }
+
+  return sections
+}
+
+const JOB_ORDER_FORM_LAYOUT = [
+  {
+    key: 'subscriber',
+    title: 'Subscriber & Applicant Identity',
+    icon: 'pi pi-user',
+    badgeClass: 'text-primary',
+    columns: [
+      'accountNo',
+      'firstName',
+      'middleInitial',
+      'lastName',
+      'applicantEmailAddress',
+      'emailAddress',
+      'contactNumber',
+      'secondContactNumber',
+      'referredBy',
+      'referrersAccountNumber'
+    ]
+  },
+  {
+    key: 'location',
+    title: 'Installation Address & Coordinates',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-success',
+    columns: [
+      'addressCoordinates',
+      'coordinates',
+      'region',
+      'city',
+      'barangay',
+      'address',
+      'location',
+      'installationLandmark'
+    ]
+  },
+  {
+    key: 'plan',
+    title: 'Service Plan, Contract & Billing',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-info',
+    columns: [
+      'planId',
+      'installationFee',
+      'contractTemplate',
+      'billingDay',
+      'preferredDay',
+      'billingStatus',
+      'contractLink'
+    ]
+  },
+  {
+    key: 'network',
+    title: 'Network Credentials & Equipment',
+    icon: 'pi pi-wifi',
+    badgeClass: 'text-warning',
+    columns: [
+      'provider',
+      'connectionType',
+      'username',
+      'ip',
+      'routerModel',
+      'modemRouterSN',
+      'lcpId',
+      'napId',
+      'portId',
+      'vlanId',
+      'lcpnapId',
+      'lcpnapportId'
+    ]
+  },
+  {
+    key: 'dispatch',
+    title: 'Field Service Dispatch & Operations',
+    icon: 'pi pi-check-square',
+    badgeClass: 'text-secondary',
+    columns: [
+      'status',
+      'onsiteStatus',
+      'verifiedBy',
+      'visitBy',
+      'visitWith',
+      'visitWithOther',
+      'assignedEmail',
+      'dateInstalled',
+      'startTimeStamp',
+      'endTimeStamp',
+      'duration',
+      'usageType',
+      'renter',
+      'usernameStatus',
+      'externalId',
+      'applicationId',
+      'joRemarks',
+      'remarks',
+      'onsiteRemarks',
+      'statusRemarks'
+    ]
+  },
+  {
+    key: 'items',
+    title: 'Items & Materials Used',
+    icon: 'pi pi-box',
+    badgeClass: 'text-danger',
+    columns: [
+      'itemName1',
+      'itemQuantity1',
+      'itemName2',
+      'itemQuantity2',
+      'itemName3',
+      'itemQuantity3',
+      'itemName4',
+      'itemQuantity4',
+      'itemName5',
+      'itemQuantity5',
+      'itemName6',
+      'itemQuantity6',
+      'itemName7',
+      'itemQuantity7',
+      'itemName8',
+      'itemQuantity8',
+      'itemName9',
+      'itemQuantity9',
+      'itemName10',
+      'itemQuantity10'
+    ]
+  },
+  {
+    key: 'photos',
+    title: 'Photos, Signatures & Reading Proofs',
+    icon: 'pi pi-images',
+    badgeClass: 'text-dark',
+    columns: [
+      'setupImage',
+      'speedtestImage',
+      'signedContractImage',
+      'boxReadingImage',
+      'routerReadingImage',
+      'portLabelImage',
+      'clientSignature'
+    ]
+  }
+]
+
+const buildJobOrderSections = (cols, { includeAudit = false } = {}) => {
+  const pool = new Map()
+  ;(cols || []).forEach(col => {
+    const key = normalizeColKey(col)
+    if (!pool.has(key)) pool.set(key, col)
+  })
+
+  const sections = []
+  JOB_ORDER_FORM_LAYOUT.forEach(sec => {
+    const picked = []
+    sec.columns.forEach(wanted => {
+      const key = normalizeColKey(wanted)
+      if (pool.has(key)) {
+        picked.push(pool.get(key))
+        pool.delete(key)
+      }
+    })
+    if (picked.length > 0) {
+      sections.push({ ...sec, columns: picked })
+    }
+  })
+
+  const leftovers = [...pool.values()]
+  const extras = leftovers.filter(col => !isAuditField(col))
+  const auditCols = leftovers.filter(col => isAuditField(col))
+
+  if (extras.length > 0) {
+    sections.push({
+      key: 'extra',
+      title: 'Additional Details',
+      icon: 'pi pi-file',
+      badgeClass: 'text-secondary',
+      columns: extras
+    })
+  }
+  if (includeAudit && auditCols.length > 0) {
+    sections.push({
+      key: 'audit',
+      title: getSectionTitle('audit'),
+      icon: SECTION_META.audit.icon,
+      badgeClass: SECTION_META.audit.badgeClass,
+      columns: auditCols
+    })
+  }
+
+  return sections
+}
+
 // Columns for Create & Edit forms (excludes system audit fields completely)
 const formSections = computed(() => {
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(formColumns.value)
+  }
+  if (isBillingEndpoint.value) {
+    return buildBillingSections(formColumns.value)
+  }
+  if (isJobOrderEndpoint.value) {
+    return buildJobOrderSections(formColumns.value)
   }
   if (isLcpNapEndpoint.value) {
     return buildLcpNapSections(formColumns.value)
@@ -4574,6 +4989,17 @@ const formSections = computed(() => {
     if (sec !== 'audit' && groups[sec]) {
       groups[sec].push(col)
     }
+  })
+
+  // Ensure coordinate fields appear before address fields within groups
+  Object.keys(groups).forEach(key => {
+    groups[key].sort((a, b) => {
+      const aIsCoord = getFieldType(a) === 'coordinates'
+      const bIsCoord = getFieldType(b) === 'coordinates'
+      if (aIsCoord && !bIsCoord) return -1
+      if (!aIsCoord && bIsCoord) return 1
+      return 0
+    })
   })
 
   return Object.keys(groups)
@@ -4615,6 +5041,12 @@ const viewFormSections = computed(() => {
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(viewFormColumns.value, { includeAudit: false })
   }
+  if (isBillingEndpoint.value) {
+    return buildBillingSections(viewFormColumns.value, { includeAudit: false })
+  }
+  if (isJobOrderEndpoint.value) {
+    return buildJobOrderSections(viewFormColumns.value, { includeAudit: false })
+  }
   if (isLcpNapEndpoint.value) {
     return buildLcpNapSections(viewFormColumns.value, { includeAudit: false })
   }
@@ -4635,6 +5067,17 @@ const viewFormSections = computed(() => {
     if (sec !== 'audit' && groups[sec]) {
       groups[sec].push(col)
     }
+  })
+
+  // Ensure coordinate fields appear before address fields within groups
+  Object.keys(groups).forEach(key => {
+    groups[key].sort((a, b) => {
+      const aIsCoord = getFieldType(a) === 'coordinates'
+      const bIsCoord = getFieldType(b) === 'coordinates'
+      if (aIsCoord && !bIsCoord) return -1
+      if (!aIsCoord && bIsCoord) return 1
+      return 0
+    })
   })
 
   return Object.keys(groups)
@@ -4932,6 +5375,20 @@ const billingStatusOptions = ref([
   { label: 'Done', value: 'Done' },
   { label: 'Pending', value: 'Pending' },
   { label: 'Approved', value: 'Approved' }
+])
+
+const deliveryStatusOptions = ref([
+  { label: 'Delivered', value: 'Delivered' },
+  { label: 'Pending', value: 'Pending' },
+  { label: 'Sent via Email', value: 'Sent via Email' },
+  { label: 'Sent via SMS', value: 'Sent via SMS' },
+  { label: 'Printed', value: 'Printed' },
+  { label: 'Failed', value: 'Failed' }
+])
+
+const renterOptions = ref([
+  { label: 'No (Owner)', value: 'No' },
+  { label: 'Yes (Renter)', value: 'Yes' }
 ])
 
 const usageTypeOptions = ref([
@@ -5814,7 +6271,7 @@ const onCoordinatesChanged = (scope, coords) => {
       if (!addr) return
       const targetForm = formForScope(scope).value
 
-      // Province (stored under the `region` key)
+      // 1. Province (stored under the `region` key)
       if (addr.provinceLike?.length) {
         const matchProv = matchProvinceOption(addr.provinceLike)
         if (matchProv) {
@@ -5823,38 +6280,71 @@ const onCoordinatesChanged = (scope, coords) => {
         }
       }
 
-      // City
-      if (addr.city && !targetForm.city) {
-        const cityQuery = String(addr.city).toLowerCase().trim()
+      // 2. City
+      if (addr.city || addr.rawCity) {
+        const cityQuery = String(addr.city || addr.rawCity).toLowerCase().trim()
         const cityClean = cityQuery.replace(/^(city of|municipality of)\s+/i, '').trim()
         const cityOpt = (citiesList.value || []).find(c => {
           const n = String(c.value || c.name || '').toLowerCase().trim()
           const nc = n.replace(/^(city of|municipality of)\s+/i, '').trim()
           return n === cityQuery || nc === cityClean || n.includes(cityClean) || cityClean.includes(nc)
         })
-        targetForm.city = cityOpt ? cityOpt.value : addr.city
+        targetForm.city = cityOpt ? cityOpt.value : (addr.city || addr.rawCity)
+        if (!citiesList.value.some(c => c.value === targetForm.city)) {
+          citiesList.value = [{ label: targetForm.city, value: targetForm.city }, ...citiesList.value]
+        }
         await updateBarangaysForSelectedCity(targetForm.city)
       }
 
-      // Barangay
-      if (addr.barangay && !targetForm.barangay) {
-        const brgyOpt = findBestBarangayMatch(addr.barangay, barangaysList.value || [])
+      // 3. Barangay
+      if (addr.barangay || addr.rawBarangay) {
+        const candidateBrgy = addr.barangay || addr.rawBarangay
+        const brgyOpt = findBestBarangayMatch(candidateBrgy, barangaysList.value || [])
         if (brgyOpt) {
           targetForm.barangay = brgyOpt.value
         } else {
-          targetForm.barangay = addr.barangay
+          targetForm.barangay = candidateBrgy
           if (!barangaysList.value.some(b => b.value === targetForm.barangay)) {
             barangaysList.value = [{ label: targetForm.barangay, value: targetForm.barangay }, ...barangaysList.value]
           }
         }
+        if (isApplicationEndpoint.value || targetForm.barangay1 !== undefined) {
+          targetForm.barangay1 = targetForm.barangay
+        }
       }
 
-      // Street (only forms that actually have a street column)
-      if (addr.street && streetColName.value && !targetForm[streetColName.value]) {
-        targetForm[streetColName.value] = addr.street
+      // 4. Street / Installation Address / Address / Location
+      if (addr.street) {
+        if (streetColName.value && (!targetForm[streetColName.value] || scope === 'create')) {
+          targetForm[streetColName.value] = addr.street
+        }
+        const instCol = formColumns.value.find(c => normalizeColKey(c) === 'installationaddress')
+        if (instCol && (!targetForm[instCol] || scope === 'create')) {
+          targetForm[instCol] = addr.street
+        }
+        const addrCol = formColumns.value.find(c => normalizeColKey(c) === 'address')
+        if (addrCol && (!targetForm[addrCol] || scope === 'create')) {
+          targetForm[addrCol] = addr.street
+        }
       }
 
-      const summaryParts = [targetForm.street, targetForm.barangay ? `Brgy. ${targetForm.barangay}` : '', targetForm.city, targetForm.region].filter(Boolean)
+      const locCol = formColumns.value.find(c => normalizeColKey(c) === 'location')
+      if (locCol && (!targetForm[locCol] || scope === 'create')) {
+        const locParts = [addr.street, addr.barangay ? `Brgy. ${addr.barangay}` : '', targetForm.city].filter(Boolean)
+        targetForm[locCol] = locParts.join(', ') || addr.label || ''
+      }
+
+      const activeStreet = (streetColName.value && targetForm[streetColName.value]) ||
+                           targetForm.installationAddress ||
+                           targetForm.address ||
+                           addr.street ||
+                           ''
+      const summaryParts = [
+        activeStreet,
+        targetForm.barangay ? `Brgy. ${targetForm.barangay}` : '',
+        targetForm.city,
+        targetForm.region
+      ].filter(Boolean)
       resolvedPinPreview.value[scope] = summaryParts.join(', ')
     } catch {
       // Background lookup failed silently
@@ -5878,7 +6368,7 @@ const pinFillBusy = ref({ create: false, edit: false })
 
 const applyAddressFromPin = async (scope, coordsOverride = null) => {
   const targetForm = formForScope(scope).value
-  const coords = coordsOverride || targetForm.coordinates || targetForm.coordinate || targetForm.addressCoordinates || targetForm.address_coordinates
+  const coords = coordsOverride || targetForm.coordinates || targetForm.coordinate || targetForm.addressCoordinates || targetForm.address_coordinates || targetForm.gpsCoordinates || targetForm.gps
   const parsed = parseCoordinates(coords)
   if (!parsed || pinFillBusy.value[scope]) return false
   pinFillBusy.value[scope] = true
@@ -5934,15 +6424,44 @@ const applyAddressFromPin = async (scope, coordsOverride = null) => {
           barangaysList.value = [{ label: targetForm.barangay, value: targetForm.barangay }, ...barangaysList.value]
         }
       }
+      if (isApplicationEndpoint.value || targetForm.barangay1 !== undefined) {
+        targetForm.barangay1 = targetForm.barangay
+      }
     }
 
-    // 4. Street (only forms that actually have a street column)
-    if (addr.street && streetColName.value) {
-      targetForm[streetColName.value] = addr.street
+    // 4. Street / Address / InstallationAddress / Location
+    if (addr.street) {
+      if (streetColName.value) {
+        targetForm[streetColName.value] = addr.street
+      }
+      const instCol = formColumns.value.find(c => normalizeColKey(c) === 'installationaddress')
+      if (instCol) {
+        targetForm[instCol] = addr.street
+      }
+      const addrCol = formColumns.value.find(c => normalizeColKey(c) === 'address')
+      if (addrCol) {
+        targetForm[addrCol] = addr.street
+      }
+    }
+
+    const locCol = formColumns.value.find(c => normalizeColKey(c) === 'location')
+    if (locCol) {
+      const locParts = [addr.street, addr.barangay ? `Brgy. ${addr.barangay}` : '', targetForm.city].filter(Boolean)
+      targetForm[locCol] = locParts.join(', ') || addr.label || ''
     }
 
     // Summary badge & toast
-    const summaryParts = [targetForm.street, targetForm.barangay ? `Brgy. ${targetForm.barangay}` : '', targetForm.city, targetForm.region].filter(Boolean)
+    const activeStreet = (streetColName.value && targetForm[streetColName.value]) ||
+                         targetForm.installationAddress ||
+                         targetForm.address ||
+                         addr.street ||
+                         ''
+    const summaryParts = [
+      activeStreet,
+      targetForm.barangay ? `Brgy. ${targetForm.barangay}` : '',
+      targetForm.city,
+      targetForm.region
+    ].filter(Boolean)
     resolvedPinPreview.value[scope] = summaryParts.join(', ')
 
     toast.add({
@@ -5990,14 +6509,14 @@ const confirmMapPicker = async () => {
 }
 
 watch(
-  () => formData.value.coordinates || formData.value.coordinate || formData.value.addressCoordinates || formData.value.address_coordinates,
+  () => formData.value.coordinates || formData.value.coordinate || formData.value.addressCoordinates || formData.value.address_coordinates || formData.value.gpsCoordinates || formData.value.gps || formData.value.gps_coordinates,
   (newCoords) => {
     onCoordinatesChanged('create', newCoords)
   }
 )
 
 watch(
-  () => editFormData.value.coordinates || editFormData.value.coordinate || editFormData.value.addressCoordinates || editFormData.value.address_coordinates,
+  () => editFormData.value.coordinates || editFormData.value.coordinate || editFormData.value.addressCoordinates || editFormData.value.address_coordinates || editFormData.value.gpsCoordinates || editFormData.value.gps || editFormData.value.gps_coordinates,
   (newCoords) => {
     onCoordinatesChanged('edit', newCoords)
   }
@@ -6250,6 +6769,10 @@ const openCreateDialog = () => {
       formData.value[col] = onsiteStatusOptions.value[0].value
     } else if (type === 'billingstatus_dropdown' && billingStatusOptions.value.length > 0) {
       formData.value[col] = billingStatusOptions.value[0].value
+    } else if (type === 'deliverystatus_dropdown' && deliveryStatusOptions.value.length > 0) {
+      formData.value[col] = deliveryStatusOptions.value[0].value
+    } else if (type === 'renter_dropdown' && renterOptions.value.length > 0) {
+      formData.value[col] = renterOptions.value[0].value
     } else if (type === 'usagetype_dropdown' && usageTypeOptions.value.length > 0) {
       formData.value[col] = usageTypeOptions.value[0].value
     } else if (type === 'priority_dropdown' && priorityOptions.value.length > 0) {
@@ -6283,6 +6806,29 @@ const openCreateDialog = () => {
     const tsCol = formColumns.value.find(c => c.toLowerCase() === 'timestamp')
     if (tsCol) {
       formData.value[tsCol] = nowIso
+    }
+  }
+
+  if (isBillingEndpoint.value) {
+    const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
+    if (statusCol && !formData.value[statusCol]) {
+      formData.value[statusCol] = 'Active'
+    }
+    const billingStatusCol = formColumns.value.find(c => c.toLowerCase() === 'billingstatus')
+    if (billingStatusCol && !formData.value[billingStatusCol]) {
+      formData.value[billingStatusCol] = 'Pending'
+    }
+    const deliveryStatusCol = formColumns.value.find(c => c.toLowerCase() === 'deliverystatus')
+    if (deliveryStatusCol && !formData.value[deliveryStatusCol]) {
+      formData.value[deliveryStatusCol] = 'Delivered'
+    }
+    const renterCol = formColumns.value.find(c => c.toLowerCase() === 'renter')
+    if (renterCol && !formData.value[renterCol]) {
+      formData.value[renterCol] = 'No'
+    }
+    const uEmailCol = formColumns.value.find(c => normalizeColKey(c) === 'useremail')
+    if (uEmailCol && !formData.value[uEmailCol]) {
+      formData.value[uEmailCol] = authStore.user?.email || 'admin@switchfiber.com'
     }
   }
 
