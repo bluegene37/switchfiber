@@ -29,6 +29,7 @@
             showClear
             filter
             class="log-filter-select"
+            panelClass="log-filter-select-overlay"
           />
         </div>
 
@@ -45,6 +46,7 @@
             showClear
             filter
             class="log-filter-select"
+            panelClass="log-filter-select-overlay"
           />
         </div>
 
@@ -250,7 +252,7 @@ const usernameOptions = computed(() =>
       const username = u.username || u.userName || ''
       if (!username) return null
       const fullName = [u.fname, u.lname].filter(Boolean).join(' ')
-      return { value: username, label: fullName ? `${username} — ${fullName}` : username }
+      return { value: username, label: fullName || username }
     })
     .filter(Boolean)
 )
@@ -399,7 +401,9 @@ onMounted(() => {
 }
 
 .log-filter-select {
-  width: 220px;
+  width: 175px;
+  min-width: 175px;
+  max-width: 175px;
 }
 
 :deep(.date-filter-picker .p-inputtext),

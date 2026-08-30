@@ -4304,9 +4304,9 @@ const clearAllFilters = () => {
   filters.value.global.value = null
   selectedStatusFilter.value = ''
   connectionFilter.value = ''
-  selectedDatePreset.value = 'all'
-  customDateFrom.value = ''
-  customDateTo.value = ''
+  selectedDatePreset.value = ''
+  internalFromDate.value = null
+  internalToDate.value = null
   if (props.defaultSortField) {
     const match = displayedColumns.value.find(c => c.toLowerCase() === props.defaultSortField.toLowerCase())
     sortField.value = match || props.defaultSortField

@@ -434,6 +434,29 @@ ul.p-select-list-container {
   overflow: hidden !important;
 }
 
+/* Custom overlay sizing for compact filter selects */
+.log-filter-select-overlay {
+  width: 175px !important;
+  min-width: 175px !important;
+  max-width: 175px !important;
+}
+
+.log-filter-select-overlay .p-select-header {
+  padding: 0.35rem 0.5rem !important;
+}
+
+.log-filter-select-overlay .p-select-filter {
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0.5rem !important;
+  height: 28px !important;
+}
+
+.log-filter-select-overlay .p-select-option {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
 .p-select-option,
 .p-dropdown-item {
   padding: 0.45rem 0.75rem !important;
