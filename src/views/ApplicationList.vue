@@ -134,6 +134,7 @@
         endpoint="Applications"
         :filter-params="activeFilterParams"
         client-status-filter
+        :show-top-bar="false"
         :hide-create-button="false"
         :create-button-in-toolbar="false"
         hide-status-filter

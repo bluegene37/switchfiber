@@ -77,20 +77,14 @@ describe('Date range presets', () => {
   })
 
   test('the wide presets actually span more than one month', () => {
-    const three = resolveDatePreset('last_3_months', SUNDAY)
-    assert.equal(iso(three.from), '2026-06-01', 'Three whole months back lands on 1 June')
-    assert.equal(iso(three.to), '2026-08-30', 'and runs through today')
-
     const twelve = resolveDatePreset('last_12_months', SUNDAY)
     assert.equal(iso(twelve.from), '2025-09-01')
     assert.equal(iso(twelve.to), '2026-08-30')
 
-    for (const id of ['last_3_months', 'last_12_months']) {
-      const { from, to } = resolveDatePreset(id, SUNDAY)
-      const months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth())
-      assert.ok(months >= 2, `${id} must reach past the current month, got ${months}`)
-      assert.equal(from.getDate(), 1, `${id} must start on a month boundary so the label stays honest`)
-    }
+    const { from, to } = resolveDatePreset('last_12_months', SUNDAY)
+    const months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth())
+    assert.ok(months >= 2, `last_12_months must reach past the current month, got ${months}`)
+    assert.equal(from.getDate(), 1, 'last_12_months must start on a month boundary so the label stays honest')
   })
 
   test('the 12-month range still matches the auto-widen fallback it replaced', () => {
@@ -104,8 +98,6 @@ describe('Date range presets', () => {
 
   test('a year boundary does not produce a negative month', () => {
     const january = new Date(2026, 0, 15)
-    const three = resolveDatePreset('last_3_months', january)
-    assert.equal(iso(three.from), '2025-11-01')
     const twelve = resolveDatePreset('last_12_months', january)
     assert.equal(iso(twelve.from), '2025-02-01')
   })
@@ -126,7 +118,6 @@ describe('Date range presets', () => {
   })
 
   test('isWideRange marks only the multi-month presets', () => {
-    assert.equal(isWideRange('last_3_months'), true)
     assert.equal(isWideRange('last_12_months'), true)
     assert.equal(isWideRange('this_month'), false)
     assert.equal(isWideRange('this_week'), false)
@@ -137,7 +128,7 @@ describe('Date range presets', () => {
     const ids = DATE_PRESETS.map(p => p.id)
     assert.ok(ids.includes(CUSTOM_PRESET), 'Custom must be offered')
     assert.equal(ids[ids.length - 1], CUSTOM_PRESET, 'Custom belongs after the fixed ranges')
-    assert.ok(ids.includes('last_3_months') && ids.includes('last_12_months'))
+    assert.ok(ids.includes('last_12_months'))
     assert.equal(new Set(ids).size, ids.length, 'Preset ids must be unique')
     for (const p of DATE_PRESETS) {
       assert.ok(p.label && p.label.trim().length, `${p.id} needs a label`)

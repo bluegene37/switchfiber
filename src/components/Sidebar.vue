@@ -87,7 +87,7 @@
 
       <!-- Navigation List -->
       <ul v-else-if="visibleMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0">
-        <li class="nav-item" v-for="item in visibleMenuItems" :key="item.name">
+        <li class="nav-item" v-for="item in visibleMenuItems" :key="item.code || item.name">
           <!-- Item with NO children -->
           <router-link 
             v-if="!item.children"
@@ -124,7 +124,7 @@
             
             <!-- Submenu Items (visible only when expanded and not collapsed) -->
             <ul v-show="isExpanded(item) && !isCollapsed" class="nav flex-column ps-3 ms-3 mt-1 mb-2 gap-1 border-start">
-              <li class="nav-item" v-for="child in item.children" :key="child.name">
+              <li class="nav-item" v-for="child in item.children" :key="child.code || child.name">
                 <router-link 
                   :to="child.path" 
                   class="nav-link d-flex align-items-center rounded text-body opacity-75 sidebar-link text-decoration-none py-1.5 px-2"
@@ -215,6 +215,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { usePermissions } from '../composables/usePermissions'
+import { MENU_CATALOG } from '../constants/menuCatalog'
 import apiClient from '../services/api'
 
 const props = defineProps({
@@ -233,7 +234,7 @@ const emit = defineEmits(['close', 'toggle-collapse'])
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const { allowedMenuIds, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin } = usePermissions()
+const { allowedMenuCodes, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin } = usePermissions()
 
 // Anyone on the fallback menu gets told why. Super admins see the full menu
 // (and why they still have it); regular users are down to Dashboard + Settings
@@ -253,7 +254,7 @@ const fallbackWarningText = computed(() => {
 })
 
 // Permissions arrive from the API after mount. Until that first response lands,
-// an empty allowedMenuIds is "not known yet", not "no access" — so show the
+// an empty allowedMenuCodes is "not known yet", not "no access" — so show the
 // skeleton rather than flashing the empty state at every login.
 const showSkeleton = computed(() => !hasLoadedPermissions.value)
 
@@ -269,129 +270,41 @@ const syncViewport = (e) => { isMobileViewport.value = e.matches }
 
 const isOffscreen = computed(() => isMobileViewport.value && !props.isOpen)
 
-const rawMenuItems = ref([
-  { id: 5, name: 'Dashboard', path: '/dashboard', icon: 'pi-objects-column' },
-  {
-    id: 25,
-    name: 'Application',
-    icon: 'pi-file-edit',
-    children: [
-      { id: 14, name: 'All Application', path: '/application', icon: 'pi-list' },
-      { id: 26, name: 'In Progress', path: '/application/in-progress', icon: 'pi-clock' },
-      { id: 27, name: 'Done', path: '/application/done', icon: 'pi-check-circle' },
-      { id: 28, name: 'Approved', path: '/application/approved', icon: 'pi-verified' },
-    ]
-  },
-  {
-    id: 31,
-    name: 'Job Orders',
-    icon: 'pi-clipboard',
-    children: [
-      { id: 32, name: 'All Job Orders', path: '/job-orders', icon: 'pi-list' },
-      { id: 33, name: 'In Progress', path: '/job-orders/inprogress', icon: 'pi-clock' },
-      { id: 34, name: 'Completed', path: '/job-orders/completed', icon: 'pi-check-circle' },
-      { id: 35, name: 'Activated', path: '/job-orders/activated', icon: 'pi-verified' },
-    ]
-  },
-  { id: 49, name: 'Service Orders', path: '/service-orders', icon: 'pi-wrench' },
-  { 
-    id: 23,
-    name: 'Transaction', 
-    icon: 'pi-wallet',
-    children: [
-      // { id: 17, name: 'Job Order', path: '/job_order', icon: 'pi-clipboard' },
-      { id: 18, name: 'Invoice', path: '/invoice', icon: 'pi-receipt' },
-      { id: 19, name: 'Billing', path: '/billing', icon: 'pi-credit-card' },
-    ]
-  },
-  { id: 30, name: 'Disconnection', path: '/disconnection', icon: 'pi-ban' },
-  {
-    id: 36,
-    name: 'LCP NAP Locations',
-    icon: 'pi-map',
-    children: [
-      { id: 37, name: 'LCP NAP Map', path: '/lcp-nap-locations/map', icon: 'pi-map-marker' },
-      { id: 38, name: 'LCP NAP Records', path: '/lcp-nap-locations/records', icon: 'pi-table' },
-    ]
-  },
-  { 
-    id: 22,
-    name: 'Users Management', 
-    icon: 'pi-users',
-    children: [
-      { id: 15, name: 'User', path: '/user', icon: 'pi-user' },
-      { id: 16, name: 'Access Level', path: '/access_level', icon: 'pi-shield' },
-    ]
-  },
-  { 
-    id: 21,
-    name: 'File Maintenance', 
-    icon: 'pi-folder',
-    children: [
-      { id: 6, name: 'LCP', path: '/lcp', icon: 'pi-server' },
-      { id: 7, name: 'LCNAP', path: '/lcnap', icon: 'pi-sitemap' },
-      { id: 8, name: 'LCNAP Port', path: '/lcnap_port', icon: 'pi-share-alt' },
-      { id: 9, name: 'NAP', path: '/nap', icon: 'pi-box' },
-      { id: 10, name: 'Port', path: '/port', icon: 'pi-link' },
-      { id: 11, name: 'VLan', path: '/vlan', icon: 'pi-globe' },
-      { id: 12, name: 'Router', path: '/router', icon: 'pi-wifi' },
-      { id: 13, name: 'Plan', path: '/plan', icon: 'pi-tag' },
-    ]
-  },
-  // Audit Trail and Error Logs are two separate parents, one child per API
-  // endpoint: the unfiltered list, then each of the narrowing lookups.
-  {
-    id: 39,
-    name: 'Audit Trail',
-    icon: 'pi-verified',
-    children: [
-      { id: 40, name: 'All Audit Trail', path: '/logs/audit-trail', icon: 'pi-list' },
-      { id: 42, name: 'By Transaction Date', path: '/logs/audit-trail/by-date', icon: 'pi-calendar' },
-      { id: 43, name: 'By Entity & Date', path: '/logs/audit-trail/by-entity', icon: 'pi-sitemap' },
-      { id: 44, name: 'By User & Date', path: '/logs/audit-trail/by-user', icon: 'pi-user' },
-    ]
-  },
-  {
-    id: 45,
-    name: 'Error Logs',
-    icon: 'pi-exclamation-triangle',
-    children: [
-      { id: 41, name: 'All Error Logs', path: '/logs/error-logs', icon: 'pi-list' },
-      { id: 46, name: 'By Date Range', path: '/logs/error-logs/by-date', icon: 'pi-calendar' },
-      { id: 47, name: 'By Entity & Date', path: '/logs/error-logs/by-entity', icon: 'pi-sitemap' },
-      { id: 48, name: 'By User & Date', path: '/logs/error-logs/by-user', icon: 'pi-user' },
-    ]
-  },
-  { id: 24, name: 'API Viewer', path: '/data-viewer', icon: 'pi-database' },
-  { id: 29, name: 'Models', path: '/models', icon: 'pi-table' }
-])
+// The menu tree is defined once in the catalog and shared with usePermissions,
+// so a screen's identity, its permission key and its route never drift apart.
+const rawMenuItems = ref(MENU_CATALOG)
 
 // Nothing is expanded up front. A group opens only when the active route is one
 // of its children (see checkAutoExpand) or when the user clicks it.
 const expandedState = ref({})
 
+const getItemKey = (item) => item?.code || item?.id || item?.name || ''
+
 const isExpanded = (item) => {
-  if (!item || !item.id) return false
+  const key = getItemKey(item)
+  if (!key) return false
   // While searching, every surviving group is open so the hits are visible.
   if (isSearchingMenu.value) return true
-  return !!expandedState.value[item.id]
+  return !!expandedState.value[key]
 }
 
 const handleParentClick = (item) => {
-  if (!item || !item.id) return
+  const key = getItemKey(item)
+  if (!key) return
   if (props.isCollapsed) {
     emit('toggle-collapse')
-    expandedState.value[item.id] = true
+    expandedState.value[key] = true
   } else {
-    expandedState.value[item.id] = !expandedState.value[item.id]
+    expandedState.value[key] = !expandedState.value[key]
   }
 }
 
 const checkAutoExpand = (currentPath) => {
   if (!currentPath) return
   rawMenuItems.value.forEach(item => {
-    if (item.children && item.children.some(child => child.path === currentPath)) {
-      expandedState.value[item.id] = true
+    const key = getItemKey(item)
+    if (key && item.children && item.children.some(child => child.path === currentPath)) {
+      expandedState.value[key] = true
     }
   })
 }
@@ -429,21 +342,21 @@ watch(() => authStore.user, () => {
 
 const filteredMenuItems = computed(() => {
   if (!rawMenuItems.value || !Array.isArray(rawMenuItems.value)) return []
-  const allowed = new Set(allowedMenuIds.value || [])
-  // Access Level Management (id 16) is always visible to Super Admins, even
-  // with no AccesslevelMenu row granting it — without this, a Super Admin
-  // could lose the very screen used to fix permissions. Mirrors canAccess().
-  if (isSuperAdmin.value) allowed.add(16)
+  const allowed = new Set(allowedMenuCodes.value || [])
+  // Access Level Management is always visible to Super Admins, even with no
+  // AccesslevelMenu row granting it — without this, a Super Admin could lose the
+  // very screen used to fix permissions. Mirrors canAccess().
+  if (isSuperAdmin.value) allowed.add('users-management.access-level')
   return rawMenuItems.value
     .map(item => {
       if (item.children && Array.isArray(item.children)) {
-        const validChildren = item.children.filter(child => child && allowed.has(child.id))
+        const validChildren = item.children.filter(child => child && (allowed.has(child.code) || allowed.has(item.code)))
         if (validChildren.length > 0) {
           return { ...item, children: validChildren }
         }
         return null
       }
-      return allowed.has(item.id) ? item : null
+      return allowed.has(item.code) ? item : null
     })
     .filter(Boolean)
 })

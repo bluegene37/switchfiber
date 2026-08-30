@@ -173,7 +173,10 @@ describe('Both views are wired to the dynamic strip', () => {
   })
 
   test('the per-status menu entries and their routes are intact', () => {
-    const sidebar = fs.readFileSync(path.resolve(__dirname, '../src/components/Sidebar.vue'), 'utf8')
+    // The sidebar tree lives in the menu catalog, which the sidebar renders and
+    // usePermissions resolves against — one definition, so a screen's route and
+    // its permission key cannot drift apart.
+    const catalog = fs.readFileSync(path.resolve(__dirname, '../src/constants/menuCatalog.js'), 'utf8')
     const search = fs.readFileSync(path.resolve(__dirname, '../src/composables/useSearch.js'), 'utf8')
     const router = fs.readFileSync(path.resolve(__dirname, '../src/router/index.js'), 'utf8')
     for (const route of [
@@ -181,7 +184,7 @@ describe('Both views are wired to the dynamic strip', () => {
       '/job-orders/inprogress', '/job-orders/completed', '/job-orders/activated'
     ]) {
       assert.ok(router.includes(`path: '${route}'`), `${route} must keep working for existing links`)
-      assert.ok(sidebar.includes(`path: '${route}'`), `${route} must stay in the sidebar`)
+      assert.ok(catalog.includes(`path: '${route}'`), `${route} must stay in the menu catalog`)
       assert.ok(search.includes(`route: '${route}'`), `${route} must stay searchable`)
     }
   })

@@ -1,21 +1,40 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import apiClient from '../services/api'
-
-// Menu ids for screens that live in the front end and have no Menus row in the
-// database yet. See fetchPermissions for how these are treated.
-const CLIENT_PROVIDED_MENU_IDS = [29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49] // 29 = Models, 30 = Disconnection, 32-35 = Job Orders, 36-38 = LCP NAP Locations, 39/40/42-44 = Audit Trail, 45/41/46-48 = Error Logs, 49 = Service Orders
+import {
+  ALL_MENU_CODES,
+  MENU_CODE_TO_SERVER_KEY,
+  SERVER_BACKED_MENU_CODES,
+  PARENT_TO_CHILD_CODES,
+  normalizeMenuName,
+  resolveMenuCodesFromName,
+  findPrimaryMenuCodeForName,
+  isSuperAdminRole
+} from '../constants/menuCatalog'
 
 // Shared reactive state across all components
-const allowedMenuIds = ref(new Set())
-const unlinkedMenuIds = new Set()
+const allowedMenuCodes = ref(new Set())
 const isLoadingPermissions = ref(false)
 const hasLoadedOnce = ref(false)
 
-// Why the full fallback menu set was applied instead of stored permissions:
+// Live registry mappings: rebuilt from `/api/Menus` on every permission load.
+// Database IDs can shift, get re-seeded or deleted, so everything resolves
+// dynamically through parsed menu names.
+const menuIdByServerKey = ref(new Map())
+const serverKeyByMenuId = ref(new Map())
+const menuIdToCodes = ref(new Map())
+const codeToMenuIds = ref(new Map())
+const menuIdToName = ref(new Map())
+
+// Why the restricted fallback set was applied instead of stored permissions:
 // 'error' = the access level API could not be reached / failed, 'empty' = the
 // API responded but held no usable rows. `null` = real permissions are active.
 const permissionsFallbackReason = ref(null)
+
+// Menu names present in `/api/Menus` that no catalog entry claims, and catalog
+// entries that found no matching row. Surfaced for diagnostics.
+const unmatchedServerMenus = ref([])
+const unresolvedMenuCodes = ref([])
 
 const unwrap = (val) => {
   if (!val) return []
@@ -27,59 +46,142 @@ const unwrap = (val) => {
   return []
 }
 
-// Every menu id the front end ships. For Super Admins this IS their
-// permission set; for everyone else it is only the ceiling of what stored
-// rows can grant.
-const FULL_MENU_IDS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 101, 102, 103]
-
 // The name of the user's access level, resolved from the API. Lets a level
-// NAMED "Super Admin" stored under another id (a duplicate row) still be
-// treated as a super admin — the id-1 check alone would miss it.
+// NAMED "Super Admin" stored under any ID (e.g. ID 3) still be treated as a super admin.
 const resolvedLevelName = ref('')
 
 export function usePermissions() {
   const authStore = useAuthStore()
 
   const userAccessLevel = computed(() => {
-    return Number(authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 1)
+    return Number(authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 0)
   })
 
   const isSuperAdmin = computed(() => {
     return (
-      userAccessLevel.value === 1 ||
-      String(authStore.user?.role || '').toLowerCase().includes('super') ||
-      resolvedLevelName.value.toLowerCase().includes('super')
+      isSuperAdminRole(resolvedLevelName.value) ||
+      isSuperAdminRole(authStore.user?.role) ||
+      isSuperAdminRole(authStore.user?.accessLevelName) ||
+      userAccessLevel.value === 1 || // backward compatibility
+      userAccessLevel.value === 3    // current Super Admin ID in DB
     )
   })
 
-  // What the menu falls back to when no stored permissions are usable:
-  // Dashboard + Settings only, until the API answers again — a failed
-  // permission lookup must not silently grant a regular user everything.
-  // (Super admins never reach the fallback; they always get the full set.)
-  const buildFallbackMenuSet = () => new Set([5, 20]) // 5 = Dashboard, 20 = Settings
+  // Fallback menu when no stored permissions are usable: Dashboard + Settings only.
+  const buildFallbackMenuSet = () => new Set(['dashboard', 'settings'])
 
   const resolveLevelName = async () => {
     const levelId = userAccessLevel.value
-    if (!levelId || levelId === 1) {
-      resolvedLevelName.value = ''
-      return
+    if (authStore.user?.role || authStore.user?.accessLevelName) {
+      resolvedLevelName.value = String(authStore.user.role || authStore.user.accessLevelName)
     }
+
+    if (!levelId) return
+
     try {
-      // Permission lookups fire once on mount and must survive the user
-      // clicking a menu right away — never cancel them on navigation.
       const level = await apiClient.get(`/AccessLevel/${levelId}`, { cancelOnNavigate: false })
-      resolvedLevelName.value = String(level?.name || level?.data?.name || '')
+      const name = String(level?.name || level?.Name || level?.data?.name || '')
+      if (name) {
+        resolvedLevelName.value = name
+        return
+      }
     } catch {
-      resolvedLevelName.value = ''
+      // Endpoint fallback
     }
+
+    try {
+      const levels = await apiClient.get('/AccessLevel', { cancelOnNavigate: false })
+      const arr = unwrap(levels)
+      const matched = arr.find(l => Number(l.id || l.Id) === levelId)
+      if (matched && (matched.name || matched.Name)) {
+        resolvedLevelName.value = String(matched.name || matched.Name)
+      }
+    } catch {
+      // Retain existing name
+    }
+  }
+
+  /**
+   * Pull `/api/Menus` and index it by intelligently parsed name.
+   * Maps live row IDs to catalog codes and vice versa.
+   */
+  const loadMenuRegistry = async () => {
+    let rows = []
+    try {
+      rows = unwrap(await apiClient.get('/Menus', { cancelOnNavigate: false }))
+    } catch {
+      menuIdByServerKey.value = new Map()
+      serverKeyByMenuId.value = new Map()
+      menuIdToCodes.value = new Map()
+      codeToMenuIds.value = new Map()
+      menuIdToName.value = new Map()
+      return false
+    }
+
+    const byKey = new Map()
+    const byId = new Map()
+    const idToCodesMap = new Map()
+    const codeToIdsMap = new Map()
+    const idToNameMap = new Map()
+
+    rows.forEach(row => {
+      const id = Number(row?.id ?? row?.Id)
+      const rawName = String(row?.name ?? row?.Name ?? '').trim()
+      const key = normalizeMenuName(rawName)
+      if (!key || isNaN(id) || id <= 0) return
+
+      if (!byKey.has(key) || byKey.get(key) > id) byKey.set(key, id)
+      byId.set(id, key)
+      idToNameMap.set(id, rawName)
+
+      // Intelligently parse and resolve codes for this row name
+      const codes = resolveMenuCodesFromName(rawName)
+      idToCodesMap.set(id, codes)
+
+      codes.forEach(code => {
+        if (!codeToIdsMap.has(code)) codeToIdsMap.set(code, [])
+        codeToIdsMap.get(code).push(id)
+      })
+    })
+
+    menuIdByServerKey.value = byKey
+    serverKeyByMenuId.value = byId
+    menuIdToCodes.value = idToCodesMap
+    codeToMenuIds.value = codeToIdsMap
+    menuIdToName.value = idToNameMap
+
+    // Diagnostics
+    const matchedServerNames = new Set()
+    rows.forEach(r => {
+      const name = String(r?.name ?? r?.Name ?? '').trim()
+      const codes = resolveMenuCodesFromName(name)
+      if (codes.length > 0) matchedServerNames.add(name)
+    })
+
+    unmatchedServerMenus.value = rows
+      .map(r => String(r?.name ?? r?.Name ?? '').trim())
+      .filter(name => name && !matchedServerNames.has(name))
+
+    unresolvedMenuCodes.value = SERVER_BACKED_MENU_CODES
+      .filter(code => !codeToIdsMap.has(code))
+
+    return idToCodesMap.size > 0 || rows.length > 0
+  }
+
+  /** The `/api/Menus` id currently representing this code, or null. */
+  const serverIdForCode = (code) => {
+    const ids = codeToMenuIds.value.get(code)
+    if (ids && ids.length > 0) return ids[0]
+    const key = MENU_CODE_TO_SERVER_KEY.get(code)
+    if (!key) return null
+    const id = menuIdByServerKey.value.get(key)
+    return id === undefined ? null : id
   }
 
   const fetchPermissions = async () => {
     if (!authStore.isAuthenticated) {
-      allowedMenuIds.value = new Set()
+      allowedMenuCodes.value = new Set()
       permissionsFallbackReason.value = null
-      // Still a settled answer — callers waiting on the first result should
-      // stop showing a loader rather than spin forever.
       hasLoadedOnce.value = true
       return
     }
@@ -88,21 +190,22 @@ export function usePermissions() {
     try {
       await resolveLevelName()
 
-      // Super Admin has every menu by definition — stored AccesslevelMenu rows
-      // (present, missing, or unreachable) never narrow it, and no fallback
-      // warning applies. The Access Level management panel enforces the same
-      // rule from the editing side: Super Admin's menu list is locked to full.
+      // Super Admin has every menu by definition
       if (isSuperAdmin.value) {
-        allowedMenuIds.value = new Set(FULL_MENU_IDS)
+        await loadMenuRegistry()
+        allowedMenuCodes.value = new Set(ALL_MENU_CODES)
         permissionsFallbackReason.value = null
         return
       }
+
+      const registryLoaded = await loadMenuRegistry()
+      if (!registryLoaded) {
+        allowedMenuCodes.value = buildFallbackMenuSet()
+        permissionsFallbackReason.value = 'error'
+        return
+      }
+
       const levelId = userAccessLevel.value
-      // No inner .catch here: allSettled records the rejections, which is what
-      // lets an unreachable API ('error') be told apart from an API that
-      // answered with no rows ('empty') when the fallback menu kicks in.
-      // cancelOnNavigate: false — losing these to a quick menu click right
-      // after login would drop a regular user onto the fallback menu.
       const requests = []
       if (levelId) {
         requests.push(apiClient.get(`/AccesslevelMenu/${levelId}`, { cancelOnNavigate: false }))
@@ -122,7 +225,7 @@ export function usePermissions() {
       })
 
       const targetIdStr = String(levelId).trim()
-      const granted = combined
+      const grantedIds = combined
         .filter(r => {
           if (!r || typeof r !== 'object') return false
           const accId = String(r.accessLevelId ?? r.accesslevel_id ?? r.AccessLevelId ?? '').trim()
@@ -131,33 +234,47 @@ export function usePermissions() {
         .map(r => Number(r.menuId ?? r.menu_id ?? r.MenuId))
         .filter(id => !isNaN(id) && id > 0)
 
-      if (granted.length > 0) {
-        const allowed = new Set(granted)
+      if (grantedIds.length > 0) {
+        const allowed = new Set()
 
-        // A screen shipped by the front end has no AccesslevelMenu row until an
-        // admin ticks it in Access Level Management, and an unprovisioned id
-        // would otherwise be indistinguishable from a revoked one — hiding the
-        // page from everybody. Grant it only while nothing has ever been said
-        // about it; the moment any access level is given or denied the menu,
-        // the stored configuration takes over.
-        const everProvisioned = new Set(
-          combined
-            .map(r => Number(r?.menuId ?? r?.menu_id ?? r?.MenuId))
-            .filter(id => !isNaN(id) && id > 0)
-        )
-        CLIENT_PROVIDED_MENU_IDS.forEach(id => {
-          if (!everProvisioned.has(id)) allowed.add(id)
+        // Turn granted menu IDs into their resolved catalog codes via name parsing
+        grantedIds.forEach(id => {
+          const codes = menuIdToCodes.value.get(id)
+          if (codes && codes.length > 0) {
+            codes.forEach(code => {
+              allowed.add(code)
+              // If a parent category is granted, grant all its child items
+              if (PARENT_TO_CHILD_CODES.has(code)) {
+                PARENT_TO_CHILD_CODES.get(code).forEach(child => allowed.add(child))
+              }
+            })
+          } else {
+            // Fallback via normalized server key
+            const key = serverKeyByMenuId.value.get(id)
+            if (key) {
+              const matched = resolveMenuCodesFromName(key)
+              matched.forEach(c => allowed.add(c))
+            }
+          }
         })
 
-        allowedMenuIds.value = allowed
+        // Screens with no serverMenu row in the catalog are client features
+        // granted unless explicitly denied
+        ALL_MENU_CODES.forEach(code => {
+          if (!MENU_CODE_TO_SERVER_KEY.has(code) && !codeToMenuIds.value.has(code)) {
+            allowed.add(code)
+          }
+        })
+
+        allowedMenuCodes.value = allowed
         permissionsFallbackReason.value = null
       } else {
-        allowedMenuIds.value = buildFallbackMenuSet()
+        allowedMenuCodes.value = buildFallbackMenuSet()
         permissionsFallbackReason.value = anyFulfilled ? 'empty' : 'error'
       }
     } catch (err) {
       console.warn('[usePermissions] Error fetching access level permissions:', err)
-      allowedMenuIds.value = buildFallbackMenuSet()
+      allowedMenuCodes.value = buildFallbackMenuSet()
       permissionsFallbackReason.value = 'error'
     } finally {
       isLoadingPermissions.value = false
@@ -165,37 +282,50 @@ export function usePermissions() {
     }
   }
 
-  const canAccess = (menuId) => {
-    const id = Number(menuId)
-    // Only the Access Level management module (id: 16) is protected for Super Admin
-    if (id === 16 && isSuperAdmin.value) return true
+  const canAccess = (code) => {
+    // Access Level management is always reachable for a Super Admin
+    if (code === 'users-management.access-level' && isSuperAdmin.value) return true
 
     if (hasLoadedOnce.value) {
-      return allowedMenuIds.value.has(id)
+      return allowedMenuCodes.value.has(code)
     }
     return true
   }
 
-  const canAccessSettings = computed(() => canAccess(20))
-  const canAccessTheme = computed(() => canAccess(103))
-  const canAccessModifyPassword = computed(() => canAccess(101))
-  const canAccessUnmaskPassword = computed(() => canAccess(102))
+  const canAccessSettings = computed(() => canAccess('settings'))
+  const canAccessTheme = computed(() => canAccess('settings.theme'))
+  const canAccessModifyPassword = computed(() => canAccess('settings.modify-password'))
+  const canAccessUnmaskPassword = computed(() => canAccess('settings.unmask-password'))
 
   const handleUpdateEvent = (event) => {
     if (event?.detail && typeof event.detail === 'object') {
-      const { accessLevelId, menuId, linked } = event.detail
-      if (Number(accessLevelId) === userAccessLevel.value) {
-        const idNum = Number(menuId)
-        const nextSet = new Set(allowedMenuIds.value)
-        if (linked) {
-          nextSet.add(idNum)
-          unlinkedMenuIds.delete(idNum)
-        } else {
-          nextSet.delete(idNum)
-          unlinkedMenuIds.add(idNum)
-        }
-        allowedMenuIds.value = nextSet
+      const { accessLevelId, menuId, menuName, linked } = event.detail
+      if (Number(accessLevelId) !== userAccessLevel.value) return
+
+      let codes = []
+      if (menuName) {
+        codes = resolveMenuCodesFromName(menuName)
+      } else if (menuId && menuIdToCodes.value.has(Number(menuId))) {
+        codes = menuIdToCodes.value.get(Number(menuId))
+      } else {
+        const key = serverKeyByMenuId.value.get(Number(menuId))
+        if (key) codes = resolveMenuCodesFromName(key)
       }
+
+      if (!codes || !codes.length) return
+
+      const nextSet = new Set(allowedMenuCodes.value)
+      codes.forEach(code => {
+        if (linked) {
+          nextSet.add(code)
+          if (PARENT_TO_CHILD_CODES.has(code)) {
+            PARENT_TO_CHILD_CODES.get(code).forEach(child => nextSet.add(child))
+          }
+        } else {
+          nextSet.delete(code)
+        }
+      })
+      allowedMenuCodes.value = nextSet
     }
   }
 
@@ -215,12 +345,15 @@ export function usePermissions() {
   }, { deep: true })
 
   return {
-    allowedMenuIds,
+    allowedMenuCodes,
     isLoadingPermissions,
     hasLoadedPermissions: hasLoadedOnce,
     permissionsFallbackReason,
+    unmatchedServerMenus,
+    unresolvedMenuCodes,
     isSuperAdmin,
     fetchPermissions,
+    serverIdForCode,
     canAccess,
     canAccessSettings,
     canAccessTheme,
@@ -228,3 +361,4 @@ export function usePermissions() {
     canAccessUnmaskPassword
   }
 }
+

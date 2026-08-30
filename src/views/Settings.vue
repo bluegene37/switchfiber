@@ -620,7 +620,7 @@ import Password from 'primevue/password'
 
 const authStore = useAuthStore()
 const { isDark, toggleTheme } = useTheme()
-const { canAccessTheme, canAccessSettings } = usePermissions()
+const { canAccessTheme, canAccessSettings, isSuperAdmin } = usePermissions()
 const toast = useToast()
 
 const activeSection = ref(canAccessTheme.value ? 'theme' : 'profile')
@@ -734,7 +734,9 @@ const userInitial = computed(() => {
 
 const userRole = computed(() => {
   if (!user.value) return 'Super Admin'
-  return user.value.role || (user.value.accesslevel_id === 1 ? 'Super Admin' : 'User')
+  if (user.value.role) return user.value.role
+  if (user.value.accessLevelName) return user.value.accessLevelName
+  return isSuperAdmin.value ? 'Super Admin' : 'User'
 })
 
 const profileForm = ref({

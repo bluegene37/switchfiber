@@ -31,6 +31,7 @@
             <DynamicApiTable 
               ref="accessLevelTableRef"
               endpoint="AccessLevel"
+              :show-top-bar="false"
               hide-create-button
               auto-select-first-row
               @row-select="handleAccessLevelSelect"
@@ -61,6 +62,7 @@
             <DynamicApiTable 
               ref="menuTableRef"
               endpoint="Menus" 
+              :show-top-bar="false"
               hide-create-button
               :selected-access-level="selectedAccessLevel"
             />

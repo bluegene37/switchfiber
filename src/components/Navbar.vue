@@ -417,7 +417,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const { isDark, toggleTheme } = useTheme()
-const { canAccessTheme, canAccessSettings } = usePermissions()
+const { canAccessTheme, canAccessSettings, isSuperAdmin } = usePermissions()
 
 // Integrated Global Search Composable
 const {
@@ -551,11 +551,12 @@ onMounted(async () => {
 
 const userRole = computed(() => {
   if (!user.value) return 'Super Admin'
-  const userAccId = Number(user.value.accesslevel_id || user.value.accessLevelId || 1)
-  const found = accessLevelsList.value.find(a => Number(a.id) === userAccId)
-  if (found && found.name) return found.name
+  const userAccId = Number(user.value.accesslevel_id || user.value.accessLevelId || 0)
+  const found = accessLevelsList.value.find(a => Number(a.id || a.Id) === userAccId)
+  if (found && (found.name || found.Name)) return found.name || found.Name
   if (user.value.role) return user.value.role
-  return userAccId === 1 ? 'Super Admin' : `Access Level ${userAccId}`
+  if (user.value.accessLevelName) return user.value.accessLevelName
+  return (userAccId === 1 || userAccId === 3 || isSuperAdmin.value) ? 'Super Admin' : (userAccId ? `Access Level ${userAccId}` : 'User')
 })
 
 // Notifications Dropdown Logic & Dummy Data

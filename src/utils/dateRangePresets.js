@@ -37,14 +37,12 @@ export const DATE_PRESETS = [
   { id: 'today', label: 'Today' },
   { id: 'this_week', label: 'This Week' },
   { id: 'this_month', label: 'This Month' },
-  { id: 'last_3_months', label: 'Last 3 Months' },
   { id: 'last_12_months', label: 'Last 12 Months' },
   { id: CUSTOM_PRESET, label: 'Custom' }
 ]
 
 /** How many months back a `last_N_months` preset reaches. */
 const MONTHS_BACK = {
-  last_3_months: 3,
   last_12_months: 12
 }
 

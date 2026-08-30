@@ -1,0 +1,2294 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 8412
+>>
+stream
+0.200025 w
+0 G
+0.1 0.15 0.19 rg
+42. 786.8899999999999864 m
+553. 786.8899999999999864 l
+556.3137084989847381 786.8899999999999864 559. 784.2037084989847244 559. 780.8899999999999864 c
+559. 707.8899999999999864 l
+559. 704.5762915010152483 555.6862915010152619 701.8899999999999864 553. 701.8899999999999864 c
+42. 701.8899999999999864 l
+38.6862915010152406 701.8899999999999864 36. 705.2037084989847244 36. 707.8899999999999864 c
+36. 780.8899999999999864 l
+36. 784.2037084989847244 39.3137084989847594 786.8899999999999864 42. 786.8899999999999864 c
+h
+f
+BT
+/F2 18 Tf
+20.6999999999999993 TL
+1. g
+50. 758.8899999999999864 Td
+(SwitchFiber ISP Platform Strategy) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.886 0.91 0.941 rg
+50. 740.8899999999999864 Td
+(Industry-Standard Gap Analysis & Multi-Platform Architecture Breakdown) Tj
+ET
+BT
+/F1 8.5 Tf
+9.7749999999999986 TL
+0.796 0.835 0.882 rg
+50. 722.8899999999999864 Td
+(Ecosystem: Admin Console \(Vue\) • Tech Mobile \(Flutter\) • Subscriber Portal \(Vue\) • Core OSS/BSS) Tj
+ET
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.102 0.145 0.188 rg
+36. 684.8899999999999864 Td
+(Executive Summary & Target Architecture) Tj
+ET
+BT
+/F1 8.5 Tf
+9.7749999999999986 TL
+0.118 0.161 0.231 rg
+36. 670.8899999999999864 Td
+(This document outlines modern industry standards for Fiber Internet Service Providers \(ISPs\) benchmarked against leading platforms) Tj
+T* (\(Splynx, Sonar, Ubiquiti UISP, and MikroTik RouterOS\). The analysis is divided across our 3 active repositories and core network) Tj
+T* (automation layers: \(1\) Admin Console \(switchfiber\), \(2\) Technician Mobile App \(switchfibe_tech in Flutter\), \(3\) Subscriber Self-Care Portal) Tj
+T* (\(switchfiberusers in Vue\), and \(4\) Backend OSS/BSS Network Automation.) Tj
+ET
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.906 0.298 0.353 rg
+36. 628.8899999999999864 Td
+(1. Admin Console \(switchfiber — Vue 3 / PrimeVue\)) Tj
+ET
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+36. 620.8899999999999864 95. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+41. 609.0899999999999181 Td
+(Domain Area) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+131. 620.8899999999999864 115. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+136. 609.0899999999999181 Td
+(Current Capabilities) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+246. 620.8899999999999864 213. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+251. 609.0899999999999181 Td
+(Industry-Standard Missing Features) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+459. 620.8899999999999864 100. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+464. 609.0899999999999181 Td
+(Priority & ROI) Tj
+ET
+0. G
+0.200025 w
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 601.6900000000000546 95. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 591.3150000000000546 Td
+(NOC & Optical) Tj
+T* (Telemetry) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+131. 601.6900000000000546 115. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+135. 591.3150000000000546 Td
+(Port tracking, LCP/NAP maps,) Tj
+T* (status filters, basic RADIUS) Tj
+T* (users.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 601.6900000000000546 213. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 591.3150000000000546 Td
+(• Live Optical Power \(Rx/Tx dBm\) telemetry from OLT/ONUs.) Tj
+T* (• Optical Degradation Alerts \(Yellow: -25 to -27 dBm, Red: <) Tj
+T* (-28 dBm\).) Tj
+T* (• Mass Outage / Fiber Cut auto-detection by clustering down) Tj
+T* (ports.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+459. 601.6900000000000546 100. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 591.3150000000000546 Td
+(HIGH) Tj
+T* (Reduces intermittent) Tj
+T* (complaints by 70%.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 550.5650000000000546 95. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 540.1900000000000546 Td
+(Automated Billing &) Tj
+T* (Dunning) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+131. 550.5650000000000546 115. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+135. 540.1900000000000546 Td
+(Invoice creation, payment status) Tj
+T* (dropdown, statement) Tj
+T* (generation.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 550.5650000000000546 213. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 540.1900000000000546 Td
+(• Automated Dunning Lifecycle \(Grace period -> Reminder ->) Tj
+T* (Walled Garden\).) Tj
+T* (• Walled Garden / Captive Portal redirect on MikroTik rather) Tj
+T* (than hard drop.) Tj
+T* (• Dynamic QR Ph / GCash invoice generation.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+459. 550.5650000000000546 100. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 540.1900000000000546 Td
+(CRITICAL) Tj
+T* (Eliminates manual payment) Tj
+T* (tracking & bad debt.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 499.4399999999999977 95. -42.5 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 489.0649999999999977 Td
+(SLA Helpdesk &) Tj
+T* (Ticketing) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+131. 499.4399999999999977 115. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+135. 489.0649999999999977 Td
+(Service Orders for repairs and) Tj
+T* (technician dispatches.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 499.4399999999999977 213. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 489.0649999999999977 Td
+(• Customer Trouble Ticketing with SLA countdown timers.) Tj
+T* (• Automated ticket assignment by barangay / LCP cluster.) Tj
+T* (• Incident Management with mass-broadcast SMS/Viber to) Tj
+T* (affected NAPs.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+459. 499.4399999999999977 100. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 489.0649999999999977 Td
+(HIGH) Tj
+T* (Ensures SLA adherence) Tj
+T* (and customer retention.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 456.9399999999999977 95. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 446.5649999999999977 Td
+(IPAM & Bandwidth) Tj
+T* (Monitoring) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+131. 456.9399999999999977 115. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+135. 446.5649999999999977 Td
+(Static IP column and router) Tj
+T* (model definitions.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 456.9399999999999977 213. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 446.5649999999999977 Td
+(• Subnet Pool Manager \(IPv4 CGNAT, Corporate Static Pools,) Tj
+T* (IPv6 /56 prefixes\).) Tj
+T* (• Embedded live MRTG/Grafana bandwidth traffic graphs per) Tj
+T* (subscriber.) Tj
+T* (• Live MikroTik queue & bandwidth profile syncing.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+459. 456.9399999999999977 100. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 446.5649999999999977 Td
+(MEDIUM) Tj
+T* (Prevents IP conflicts &) Tj
+T* (verifies bandwidth.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 405.8149999999999977 95. -42.5 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 395.4399999999999977 Td
+(Inventory & Asset) Tj
+T* (Tracker) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+131. 405.8149999999999977 115. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+135. 395.4399999999999977 Td
+(Item quantities 1-10 on Job) Tj
+T* (Orders.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 405.8149999999999977 213. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 395.4399999999999977 Td
+(• Centralized Warehouse Inventory \(Fiber drop cables, ONUs,) Tj
+T* (patch cords\).) Tj
+T* (• Auto-deduct stock upon Job Order completion.) Tj
+T* (• Serial number tracking from warehouse to customer home.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+459. 405.8149999999999977 100. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 395.4399999999999977 Td
+(MEDIUM) Tj
+T* (Stops equipment leakage) Tj
+T* (and loss.) Tj
+ET
+0. G
+0.200025 w
+0.78 G
+0. w
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.91 0.3 0.35 rg
+36. 821.8899999999999864 523. -4. re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.102 0.145 0.188 rg
+36. 806.8899999999999864 Td
+(SWITCHFIBER ISP ECOSYSTEM) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+200. 806.8899999999999864 Td
+(Architecture Review & Industry Standards Strategic Roadmap) Tj
+ET
+0.89 0.91 0.94 RG
+0.5 w
+36. 799.8899999999999864 m
+559. 799.8899999999999864 l
+S
+[2. 2.] 0. d
+36. 41.8899999999999864 m
+559. 41.8899999999999864 l
+S
+[] 0. d
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+36. 27.8899999999999864 Td
+(SwitchFiber Admin • Confidential & Strategic Planning Document) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+515. 27.8899999999999864 Td
+(Page 1 of 3) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 13323
+>>
+stream
+0.200025 w
+0. G
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.906 0.298 0.353 rg
+36. 786.8899999999999864 Td
+(2. Field Technician Mobile App \(switchfibe_tech — Flutter\)) Tj
+ET
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+36. 778.8899999999999864 105. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+41. 767.0900000000000318 Td
+(Mobile Module) Tj
+ET
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+141. 778.8899999999999864 105. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+146. 767.0900000000000318 Td
+(Current Capabilities) Tj
+ET
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+246. 778.8899999999999864 203. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+251. 767.0900000000000318 Td
+(Industry-Standard Missing Features) Tj
+ET
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+449. 778.8899999999999864 110. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+454. 767.0900000000000318 Td
+(Technical Implementation) Tj
+ET
+0. G
+0.200025 w
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 759.6899999999999409 105. -59.75 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 749.3149999999999409 Td
+(Optical Signal Reading) Tj
+T* (\(OPM\)) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 759.6899999999999409 105. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 749.3149999999999409 Td
+(Box reading and router) Tj
+T* (reading image upload.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 759.6899999999999409 203. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 749.3149999999999409 Td
+(• Digital Optical Power Meter \(OPM\) reading input with) Tj
+T* (auto-validation.) Tj
+T* (• Real-time signal pass/fail indicator \(Green: -15 to -24) Tj
+T* (dBm\).) Tj
+T* (• Prevents completing job order if signal is worse than -27) Tj
+T* (dBm.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 759.6899999999999409 110. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 749.3149999999999409 Td
+(Flutter Form Validation &) Tj
+T* (Signal Threshold Evaluator) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 699.9400000000000546 105. -42.5 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 689.5650000000000546 Td
+(Barcode & QR Hardware) Tj
+T* (Scan) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+141. 699.9400000000000546 105. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 689.5650000000000546 Td
+(Manual text typing of) Tj
+T* (modemRouterSN and MAC.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 699.9400000000000546 203. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 689.5650000000000546 Td
+(• Camera barcode scanner for instant Serial Number &) Tj
+T* (MAC capture.) Tj
+T* (• Prevents typo mistakes in PPPoE and RADIUS bindings.) Tj
+T* (• 1-tap scan to bind ONU directly from box barcode.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+449. 699.9400000000000546 110. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 689.5650000000000546 Td
+(mobile_scanner or) Tj
+T* (qr_code_scanner package) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 657.4400000000000546 105. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 647.0650000000000546 Td
+(In-App Speed & Latency) Tj
+T* (Test) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 657.4400000000000546 105. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 647.0650000000000546 Td
+(Manual speedtest screenshot) Tj
+T* (upload.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 657.4400000000000546 203. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 647.0650000000000546 Td
+(• Integrated in-app speed test engine.) Tj
+T* (• Auto-records Download \(Mbps\), Upload \(Mbps\), Ping) Tj
+T* (\(ms\), and Jitter.) Tj
+T* (• Cryptographically signs test results with timestamp and) Tj
+T* (GPS coordinates.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 657.4400000000000546 110. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 647.0650000000000546 Td
+(Custom HTTP multi-stream) Tj
+T* (or Ookla Speedtest SDK) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 606.3150000000000546 105. -59.75 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 595.9400000000000546 Td
+(Offline Caching & Local) Tj
+T* (Sync) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+141. 606.3150000000000546 105. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 595.9400000000000546 Td
+(Online network requests.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 606.3150000000000546 203. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 595.9400000000000546 Td
+(• Offline Job Order caching for zero-signal basement /) Tj
+T* (remote areas.) Tj
+T* (• Offline draft storage with auto-sync when 4G/Wi-Fi) Tj
+T* (re-establishes.) Tj
+T* (• Background queue with retry mechanisms for photo) Tj
+T* (uploads.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+449. 606.3150000000000546 110. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 595.9400000000000546 Td
+(Hive / SQLite \(sqflite\)) Tj
+T* (+ Background Sync) Tj
+T* (WorkManager) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 546.5650000000000546 105. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 536.1900000000000546 Td
+(Digital E-Signature &) Tj
+T* (Turnover) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 546.5650000000000546 105. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 536.1900000000000546 Td
+(Client signature image.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 546.5650000000000546 203. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 536.1900000000000546 Td
+(• Interactive smooth finger-signature pad on tablet/phone.) Tj
+T* (• Digital Turnover Certificate generation \(PDF\) emailed to) Tj
+T* (client upon sign-off.) Tj
+T* (• Customer satisfaction star rating \(1-5 stars\) at) Tj
+T* (completion.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 546.5650000000000546 110. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 536.1900000000000546 Td
+(signature package) Tj
+T* (+ in-app PDF rendering) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 495.4399999999999977 105. -33.875 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 485.0649999999999977 Td
+(Turn-by-Turn Fiber) Tj
+T* (Navigation) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+141. 495.4399999999999977 105. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 485.0649999999999977 Td
+(Google Maps directions link.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 495.4399999999999977 203. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 485.0649999999999977 Td
+(• In-app routing to designated NAP pole coordinates.) Tj
+T* (• Shows nearest available NAP box with free ports if) Tj
+T* (assigned port is defective.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+449. 495.4399999999999977 110. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 485.0649999999999977 Td
+(flutter_map / Google Maps) Tj
+T* (SDK) Tj
+T* (+ GPS location stream) Tj
+ET
+0. G
+0.200025 w
+0.78 G
+0. w
+0. G
+0.200025 w
+0. G
+0.200025 w
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.906 0.298 0.353 rg
+36. 443.5649999999999977 Td
+(3. Subscriber Self-Care Portal \(switchfiberusers — Vue\)) Tj
+ET
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+36. 435.5649999999999977 105. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+41. 423.7649999999999864 Td
+(Portal Feature) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+141. 435.5649999999999977 105. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+146. 423.7649999999999864 Td
+(Standard ISP Scope) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+246. 435.5649999999999977 203. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+251. 423.7649999999999864 Td
+(Industry-Standard Missing Features) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+449. 435.5649999999999977 110. -19.1999999999999993 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+454. 423.7649999999999864 Td
+(Subscriber Impact) Tj
+ET
+0. G
+0.200025 w
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 416.3650000000000091 105. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 405.9900000000000091 Td
+(1-Click QR Payment &) Tj
+T* (Webhooks) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 416.3650000000000091 105. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 405.9900000000000091 Td
+(Manual bank transfer /) Tj
+T* (over-the-counter payments.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 416.3650000000000091 203. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 405.9900000000000091 Td
+(• Instant checkout with GCash, Maya, ShopeePay, Credit) Tj
+T* (Card, 7-Eleven.) Tj
+T* (• Dynamic QR Ph on invoice.) Tj
+T* (• Real-time webhook auto-unblocks internet within 60) Tj
+T* (seconds.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 416.3650000000000091 110. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 405.9900000000000091 Td
+(CRITICAL) Tj
+T* (Reduces billing customer) Tj
+T* (inquiries by 80%.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 365.2400000000000091 105. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 354.8650000000000091 Td
+(Live Connection Health) Tj
+T* (Check) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+141. 365.2400000000000091 105. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 354.8650000000000091 Td
+(Subscriber calls hotline when) Tj
+T* (offline.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 365.2400000000000091 203. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 354.8650000000000091 Td
+(• "Is My Fiber Online?" diagnostic widget on dashboard.) Tj
+T* (• Shows live ONU status \(Online, Red LOS, Degraded\) and) Tj
+T* (Optical Power.) Tj
+T* (• Displays ongoing maintenance/outage banners in) Tj
+T* (subscriber's barangay.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+449. 365.2400000000000091 110. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 354.8650000000000091 Td
+(HIGH) Tj
+T* (Eliminates redundant support) Tj
+T* (calls during outages.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 314.1150000000000091 105. -42.5 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 303.7400000000000091 Td
+(Remote Wi-Fi CPE) Tj
+T* (Management) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 314.1150000000000091 105. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 303.7400000000000091 Td
+(Technician required to) Tj
+T* (change Wi-Fi password.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 314.1150000000000091 203. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 303.7400000000000091 Td
+(• Self-service Wi-Fi SSID and password update via TR-069) Tj
+T* (ACS integration.) Tj
+T* (• View connected devices / Wi-Fi signal strength meter.) Tj
+T* (• One-click router remote reboot button.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 314.1150000000000091 110. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 303.7400000000000091 Td
+(HIGH) Tj
+T* (Provides modern smart-home) Tj
+T* (fiber experience.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 271.6150000000000091 105. -59.75 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 261.2400000000000091 Td
+(Invoices & Statement of) Tj
+T* (Account) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+141. 271.6150000000000091 105. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 261.2400000000000091 Td
+(Paper bills or emailed PDFs.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 271.6150000000000091 203. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 261.2400000000000091 Td
+(• Comprehensive billing history with downloadable PDF) Tj
+T* (Official Receipts.) Tj
+T* (• Automated email and SMS notifications when new invoice) Tj
+T* (is generated.) Tj
+T* (• Proof of Payment upload with instant AI/OCR reference) Tj
+T* (verification.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+449. 271.6150000000000091 110. -59.75 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 261.2400000000000091 Td
+(MEDIUM) Tj
+T* (Complies with tax and) Tj
+T* (receipting standards.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 211.8650000000000091 105. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 201.4900000000000091 Td
+(Self-Service Ticket) Tj
+T* (Submission) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 211.8650000000000091 105. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 201.4900000000000091 Td
+(Reporting issues via social) Tj
+T* (media chat.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 211.8650000000000091 203. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 201.4900000000000091 Td
+(• In-app ticket submission with photo upload \(e.g. Red LOS) Tj
+T* (flashing light\).) Tj
+T* (• Real-time technician dispatch tracker \(En route, Arrived,) Tj
+T* (Resolved\).) Tj
+T* (• Speed test history log.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 211.8650000000000091 110. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 201.4900000000000091 Td
+(HIGH) Tj
+T* (Builds trust and transparency.) Tj
+ET
+0. G
+0.200025 w
+0.78 G
+0. w
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.91 0.3 0.35 rg
+36. 821.8899999999999864 523. -4. re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.102 0.145 0.188 rg
+36. 806.8899999999999864 Td
+(SWITCHFIBER ISP ECOSYSTEM) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+200. 806.8899999999999864 Td
+(Architecture Review & Industry Standards Strategic Roadmap) Tj
+ET
+0.89 0.91 0.94 RG
+0.5 w
+36. 799.8899999999999864 m
+559. 799.8899999999999864 l
+S
+[2. 2.] 0. d
+36. 41.8899999999999864 m
+559. 41.8899999999999864 l
+S
+[] 0. d
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+36. 27.8899999999999864 Td
+(SwitchFiber Admin • Confidential & Strategic Planning Document) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+515. 27.8899999999999864 Td
+(Page 2 of 3) Tj
+ET
+endstream
+endobj
+7 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 8 0 R
+>>
+endobj
+8 0 obj
+<<
+/Length 11313
+>>
+stream
+0.200025 w
+0. G
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.906 0.298 0.353 rg
+36. 786.8899999999999864 Td
+(4. Core Network & Backend Integrations \(OSS / BSS Layer\)) Tj
+ET
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+36. 778.8899999999999864 105. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+41. 767.0900000000000318 Td
+(Integration Layer) Tj
+ET
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+141. 778.8899999999999864 105. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+146. 767.0900000000000318 Td
+(Industry Protocol / Tool) Tj
+ET
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+246. 778.8899999999999864 203. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+251. 767.0900000000000318 Td
+(Functional Description) Tj
+ET
+0.1 0.15 0.19 rg
+0.78 G
+0. w
+0.1 0.15 0.19 rg
+449. 778.8899999999999864 110. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+454. 767.0900000000000318 Td
+(Business & Technical) Tj
+T* (Value) Tj
+ET
+0. G
+0.200025 w
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 750.4900000000000091 105. -33.875 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 740.1150000000000091 Td
+(OLT / PON Provisioning) Tj
+T* (Engine) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 750.4900000000000091 105. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 740.1150000000000091 Td
+(SNMP / Telnet / CLI / Netconf) Tj
+T* (\(Huawei, ZTE, VSOL,) Tj
+T* (Fiberhome, Ubiquiti\)) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 750.4900000000000091 203. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 740.1150000000000091 Td
+(Automates ONU authorization on GPON/EPON OLTs.) Tj
+T* (Binds serial number, applies VLAN, assigns line profile,) Tj
+T* (and reads optical Rx/Tx power levels automatically.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 750.4900000000000091 110. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 740.1150000000000091 Td
+(Zero-touch provisioning: field) Tj
+T* (tech connects ONU, system) Tj
+T* (activates line in seconds.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 716.6150000000000091 105. -42.5 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 706.2400000000000091 Td
+(RADIUS & MikroTik) Tj
+T* (RouterOS) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+141. 716.6150000000000091 105. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 706.2400000000000091 Td
+(FreeRADIUS + RouterOS) Tj
+T* (API / CoA) Tj
+T* (\(Change of Authorization\)) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 716.6150000000000091 203. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 706.2400000000000091 Td
+(Manages PPPoE sessions, speed limits \(queues\), and) Tj
+T* (dynamic disconnection/reconnection. Enables Walled) Tj
+T* (Garden redirect for unpaid subscribers.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+449. 716.6150000000000091 110. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 706.2400000000000091 Td
+(Instant bandwidth throttling) Tj
+T* (and real-time) Tj
+T* (auto-reconnection upon) Tj
+T* (payment.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 674.1150000000000091 105. -33.875 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 663.7400000000000091 Td
+(TR-069 / TR-369 \(USP\) ACS) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 674.1150000000000091 105. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 663.7400000000000091 Td
+(GenieACS / OpenACS /) Tj
+T* (CWMP) Tj
+T* (\(HTTP/SOAP/WebSockets\)) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 674.1150000000000091 203. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 663.7400000000000091 Td
+(Auto Configuration Server \(ACS\) for remote Customer) Tj
+T* (Premises Equipment \(CPE\). Pushes Wi-Fi configurations,) Tj
+T* (firmware updates, and gathers diagnostics remotely.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 674.1150000000000091 110. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 663.7400000000000091 Td
+(Eliminates truck rolls for minor) Tj
+T* (Wi-Fi setup or password) Tj
+T* (change requests.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 640.2400000000000091 105. -33.875 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 629.8650000000000091 Td
+(Payment Gateway) Tj
+T* (Aggregators) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+141. 640.2400000000000091 105. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 629.8650000000000091 Td
+(PayMongo / Xendit /) Tj
+T* (Dragonpay / Maya API) Tj
+T* (\(REST Webhooks + QR Ph\)) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+246. 640.2400000000000091 203. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 629.8650000000000091 Td
+(Automated checkout links and webhook listeners that) Tj
+T* (reconcile GCash, Maya, and bank transfers immediately) Tj
+T* (into subscriber ledger.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+449. 640.2400000000000091 110. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 629.8650000000000091 Td
+(100% automated collections) Tj
+T* (with zero manual receipt) Tj
+T* (auditing required.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 606.3650000000000091 105. -33.875 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 595.9900000000000091 Td
+(Omnichannel Notification) Tj
+T* (Gateway) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+141. 606.3650000000000091 105. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+145. 595.9900000000000091 Td
+(Semaphore / Twilio / Viber) Tj
+T* (Business API) Tj
+T* (\(HTTP Webhooks\)) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+246. 606.3650000000000091 203. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+250. 595.9900000000000091 Td
+(Automated multi-channel notifications for billing reminders) Tj
+T* (\(3 days before due date, on due date\), maintenance) Tj
+T* (advisories, and ticket updates.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+449. 606.3650000000000091 110. -33.875 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+453. 595.9900000000000091 Td
+(Drastically lowers default rates) Tj
+T* (and ensures 98%+ delivery) Tj
+T* (rate.) Tj
+ET
+0. G
+0.200025 w
+0.78 G
+0. w
+0. G
+0.200025 w
+0. G
+0.200025 w
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.906 0.298 0.353 rg
+36. 554.4900000000000091 Td
+(5. Strategic Implementation Roadmap & Milestones) Tj
+ET
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+36. 546.4900000000000091 85. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+41. 534.6900000000000546 Td
+(Phase) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+121. 546.4900000000000091 65. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+126. 534.6900000000000546 Td
+(Timeframe) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+186. 546.4900000000000091 183. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+191. 534.6900000000000546 Td
+(Focus Deliverables) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+369. 546.4900000000000091 90. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+374. 534.6900000000000546 Td
+(Target Repositories) Tj
+ET
+0.91 0.3 0.35 rg
+0.78 G
+0. w
+0.91 0.3 0.35 rg
+459. 546.4900000000000091 100. -28.3999999999999986 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+464. 534.6900000000000546 Td
+(Key Performance) Tj
+T* (Metrics \(KPI\)) Tj
+ET
+0. G
+0.200025 w
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 518.0900000000000318 85. -42.5 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 507.7150000000000318 Td
+(Phase 1:) Tj
+T* (Immediate Essentials) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+121. 518.0900000000000318 65. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+125. 507.7150000000000318 Td
+(Month 1 - 2) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+186. 518.0900000000000318 183. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+190. 507.7150000000000318 Td
+(• Payment Gateway Webhooks \(GCash/Maya\).) Tj
+T* (• Automated SMS/Viber Billing Reminders.) Tj
+T* (• QR/Barcode scanner in Flutter tech app.) Tj
+T* (• Optical dBm signal validation fields.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+369. 518.0900000000000318 90. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+373. 507.7150000000000318 Td
+(switchfiber) Tj
+T* (switchfibe_tech) Tj
+T* (switchfiberusers) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+459. 518.0900000000000318 100. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 507.7150000000000318 Td
+(• 80% automated payment) Tj
+T* (reconciliation.) Tj
+T* (• 0 barcode/SN typo errors) Tj
+T* (in Job Orders.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+36. 475.5900000000000318 85. -42.5 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 465.2150000000000318 Td
+(Phase 2:) Tj
+T* (Operational) Tj
+T* (Excellence) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+121. 475.5900000000000318 65. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+125. 465.2150000000000318 Td
+(Month 3 - 4) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+186. 475.5900000000000318 183. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+190. 465.2150000000000318 Td
+(• SLA Helpdesk & Ticketing System.) Tj
+T* (• Walled Garden MikroTik auto-quarantine.) Tj
+T* (• Correlated Mass Outage / Fiber Cut alerts.) Tj
+T* (• Offline sync & Speedtest in tech mobile app.) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+369. 475.5900000000000318 90. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+373. 465.2150000000000318 Td
+(switchfiber) Tj
+T* (switchfibe_tech) Tj
+T* (Backend API) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+459. 475.5900000000000318 100. -42.5 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 465.2150000000000318 Td
+(• Average resolution time <) Tj
+T* (4 hours.) Tj
+T* (• 0 lost offline job orders in) Tj
+T* (field.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+36. 433.0900000000000318 85. -51.125 re
+f
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+40. 422.7150000000000318 Td
+(Phase 3:) Tj
+T* (Advanced) Tj
+T* (Automation) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+121. 433.0900000000000318 65. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+125. 422.7150000000000318 Td
+(Month 5 - 6) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+186. 433.0900000000000318 183. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+190. 422.7150000000000318 Td
+(• OLT 1-Click Auto-Provisioning.) Tj
+T* (• TR-069 Remote Wi-Fi & Router Reboot.) Tj
+T* (• Subscriber Self-Care live line diagnostics.) Tj
+T* (• Live SNMP Bandwidth Graphs.) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+369. 433.0900000000000318 90. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+373. 422.7150000000000318 Td
+(switchfiber) Tj
+T* (switchfiberusers) Tj
+T* (GenieACS / OLT) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+459. 433.0900000000000318 100. -51.125 re
+f
+BT
+/F1 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+463. 422.7150000000000318 Td
+(• 60% reduction in) Tj
+T* (customer support hotline) Tj
+T* (load.) Tj
+T* (• 5-minute zero-touch) Tj
+T* (customer activation.) Tj
+ET
+0. G
+0.200025 w
+0.78 G
+0. w
+0. G
+0.200025 w
+0. G
+0.200025 w
+0.91 0.3 0.35 rg
+36. 821.8899999999999864 523. -4. re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.102 0.145 0.188 rg
+36. 806.8899999999999864 Td
+(SWITCHFIBER ISP ECOSYSTEM) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+200. 806.8899999999999864 Td
+(Architecture Review & Industry Standards Strategic Roadmap) Tj
+ET
+0.89 0.91 0.94 RG
+0.5 w
+36. 799.8899999999999864 m
+559. 799.8899999999999864 l
+S
+[2. 2.] 0. d
+36. 41.8899999999999864 m
+559. 41.8899999999999864 l
+S
+[] 0. d
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+36. 27.8899999999999864 Td
+(SwitchFiber Admin • Confidential & Strategic Planning Document) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+515. 27.8899999999999864 Td
+(Page 3 of 3) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R 7 0 R ]
+/Count 3
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+21 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+22 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 9 0 R
+/F2 10 0 R
+/F3 11 0 R
+/F4 12 0 R
+/F5 13 0 R
+/F6 14 0 R
+/F7 15 0 R
+/F8 16 0 R
+/F9 17 0 R
+/F10 18 0 R
+/F11 19 0 R
+/F12 20 0 R
+/F13 21 0 R
+/F14 22 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+23 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20260830095432+08'00')
+>>
+endobj
+24 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 25
+0000000000 65535 f 
+0000033632 00000 n 
+0000035465 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000008616 00000 n 
+0000008753 00000 n 
+0000022129 00000 n 
+0000022266 00000 n 
+0000033701 00000 n 
+0000033826 00000 n 
+0000033957 00000 n 
+0000034091 00000 n 
+0000034229 00000 n 
+0000034353 00000 n 
+0000034482 00000 n 
+0000034614 00000 n 
+0000034750 00000 n 
+0000034878 00000 n 
+0000035005 00000 n 
+0000035134 00000 n 
+0000035267 00000 n 
+0000035369 00000 n 
+0000035717 00000 n 
+0000035803 00000 n 
+trailer
+<<
+/Size 25
+/Root 24 0 R
+/Info 23 0 R
+/ID [ <78E784CAEE6B945EF6CA445DCE6C5508> <78E784CAEE6B945EF6CA445DCE6C5508> ]
+>>
+startxref
+35907
+%%EOF

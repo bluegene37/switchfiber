@@ -6,12 +6,25 @@
     
     <!-- Standalone Skeleton Loader View (Shown ONLY while data is loading; hides underlying table completely) -->
     <div v-else-if="loading" class="card border-0 shadow-sm rounded-4 overflow-hidden p-3 bg-body">
+      <!-- Top Action / Filter Bar Placeholder (Level 1) -->
+      <div v-if="hasTopBar" class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 border-bottom pb-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <div v-if="isRadiusUserEndpoint" class="d-flex align-items-center gap-2">
+            <div class="skeleton-box rounded-pill" style="width: 70px; height: 32px;"></div>
+            <div class="skeleton-box rounded-pill" style="width: 110px; height: 32px;"></div>
+            <div class="skeleton-box rounded-pill" style="width: 120px; height: 32px;"></div>
+          </div>
+          <div v-if="hasStatusFilter" class="skeleton-box rounded-3" style="width: 140px; height: 32px;"></div>
+          <div v-if="hasDateFilter" class="skeleton-box rounded-3" style="width: 150px; height: 32px;"></div>
+        </div>
+        <div v-if="showTopCreateButton" class="skeleton-box rounded-3 ms-auto" style="width: 130px; height: 32px;"></div>
+      </div>
+
       <!-- Top Row Header Placeholder -->
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 border-bottom pb-3">
-        <!-- Left Side: Search & Quick Filter Skeleton -->
-        <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 flex-md-grow-0">
+        <!-- Left Side: Search Skeleton -->
+        <div class="d-flex align-items-center gap-2 flex-grow-1 flex-md-grow-0">
           <div class="skeleton-box rounded-3" style="width: 240px; height: 32px;"></div>
-          <div class="skeleton-box rounded-3" style="width: 120px; height: 32px;"></div>
         </div>
 
         <!-- Right Side: Tools, Export & Create Skeleton -->
@@ -69,6 +82,132 @@
     
     <!-- Main Data View (Shown when data is loaded) -->
     <div v-else>
+      <!-- Top Action / Filter Bar (Level 1) -->
+      <div 
+        v-if="hasTopBar" 
+        class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-2 border-bottom mb-2 top-action-bar"
+      >
+        <!-- Left: Filters (Radius Connection Filters, Status Dropdown, Date Filter Dropdown, and Reset Filter Button) -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <!-- Connection Filter (RadiusUser only) -->
+          <div v-if="isRadiusUserEndpoint" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
+            <button
+              v-for="opt in CONNECTION_FILTER_OPTIONS"
+              :key="opt.value"
+              type="button"
+              class="btn btn-sm d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1.5 fw-medium text-nowrap connection-filter-btn"
+              :class="[
+                connectionFilter === opt.value
+                  ? 'btn-primary shadow-sm text-white'
+                  : 'btn-light border text-secondary bg-body-tertiary hover-tab'
+              ]"
+              :aria-pressed="connectionFilter === opt.value"
+              v-tooltip.top="opt.value === '' ? 'Show all accounts' : `Show only ${opt.label} accounts`"
+              @click="setConnectionFilter(opt.value)"
+            >
+              <i :class="['pi', opt.icon]" style="font-size: 0.85rem;"></i>
+              <span>{{ opt.label }}</span>
+              <span
+                class="badge rounded-pill connection-filter-count"
+                :class="connectionFilter === opt.value
+                  ? 'bg-white bg-opacity-25 text-white'
+                  : 'bg-secondary bg-opacity-10 text-secondary'"
+              >
+                {{ connectionCounts[opt.countKey] }}
+              </span>
+            </button>
+          </div>
+
+          <!-- Quick Status Filter Dropdown -->
+          <div v-if="hasStatusFilter" class="d-flex align-items-center gap-2">
+            <span class="small text-secondary fw-semibold text-nowrap">Status:</span>
+            <select 
+              v-model="selectedStatusFilter" 
+              class="form-select form-select-sm rounded-3 fw-medium text-body bg-body shadow-xs border status-filter-select" 
+              aria-label="Filter by status"
+            >
+              <option value="">All</option>
+              <option v-for="opt in statusFilterOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Date Range Pickers & Presets (ApplicationList Pill & Calendar Style) -->
+          <div v-if="hasDateFilter" class="d-flex align-items-center gap-3 flex-wrap">
+            <!-- From Date Picker -->
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-secondary fw-semibold text-nowrap">From:</span>
+              <DatePicker
+                ref="fromDatePicker"
+                v-model="internalFromDate"
+                showIcon
+                iconDisplay="input"
+                size="small"
+                dateFormat="yy-mm-dd"
+                placeholder="From Date"
+                class="date-filter-picker"
+                @update:model-value="onManualDateChange"
+              />
+            </div>
+
+            <!-- To Date Picker -->
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-secondary fw-semibold text-nowrap">To:</span>
+              <DatePicker
+                v-model="internalToDate"
+                showIcon
+                iconDisplay="input"
+                size="small"
+                dateFormat="yy-mm-dd"
+                placeholder="To Date"
+                class="date-filter-picker"
+                @update:model-value="onManualDateChange"
+              />
+            </div>
+
+            <!-- Quick Date Presets (Theme-Driven Centralized Highlight Pills) -->
+            <div class="d-flex align-items-center gap-1.5 ms-sm-1 flex-wrap">
+              <button
+                v-for="preset in DATE_PRESETS"
+                :key="preset.id"
+                type="button"
+                class="btn-date-preset"
+                :class="{ 'active': selectedDatePreset === preset.id }"
+                @click="applyDatePreset(preset.id)"
+              >
+                {{ preset.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Filter Count Badge & Reset Button -->
+          <button 
+            v-if="activeFilterCount > 0"
+            type="button" 
+            class="btn btn-sm btn-outline-danger border-dashed rounded-3 d-inline-flex align-items-center gap-1.5 px-2.5 py-1 small shadow-xs"
+            @click="clearAllFilters"
+            v-tooltip.top="'Reset all applied filters'"
+            aria-label="Reset all applied filters"
+          >
+            <i class="pi pi-filter-slash" style="font-size: 0.75rem;"></i>
+            <span>Reset ({{ activeFilterCount }})</span>
+          </button>
+        </div>
+
+        <!-- Right: Primary Action (Create Button) -->
+        <Button 
+          v-if="showTopCreateButton" 
+          class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0" 
+          :aria-label="createButtonLabel || 'Create'" 
+          @click="openCreateDialog"
+        >
+          <i class="pi pi-plus"></i>
+          <span class="d-none d-sm-inline">{{ createButtonLabel || 'Create' }}</span>
+          <span class="d-sm-none">Create</span>
+        </Button>
+      </div>
+
       <!-- Actual DataTable -->
       <DataTable 
         ref="dt"
@@ -94,7 +233,7 @@
       >
       <template #header>
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 gap-md-3 py-1.5 table-toolbar">
-          <!-- Left Zone: Search, Status Quick Filter & Reset Button -->
+          <!-- Left Zone: Search Box -->
           <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 flex-md-grow-0">
             <!-- Enhanced Search Box with Inner Icon & Instant Clear -->
             <div class="position-relative toolbar-search-wrapper">
@@ -118,60 +257,6 @@
                 <i class="pi pi-times" style="font-size: 0.75rem;"></i>
               </button>
             </div>
-
-            <!-- Connection Filter (RadiusUser only), defaulting to All -->
-            <div v-if="isRadiusUserEndpoint" class="d-inline-flex align-items-center gap-1.5">
-              <button
-                v-for="opt in CONNECTION_FILTER_OPTIONS"
-                :key="opt.value"
-                type="button"
-                class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-1.5 px-2.5 py-1 fw-medium text-nowrap connection-filter-btn"
-                :class="connectionFilter === opt.value
-                  ? 'btn-primary text-white shadow-sm'
-                  : 'border text-secondary bg-body-tertiary shadow-xs'"
-                :aria-pressed="connectionFilter === opt.value"
-                v-tooltip.top="opt.value === '' ? 'Show all accounts' : `Show only ${opt.label} accounts`"
-                @click="setConnectionFilter(opt.value)"
-              >
-                <i :class="['pi', opt.icon]" style="font-size: 0.75rem;"></i>
-                <span>{{ opt.label }}</span>
-                <span
-                  class="badge rounded-pill connection-filter-count"
-                  :class="connectionFilter === opt.value
-                    ? 'bg-white bg-opacity-25 text-white'
-                    : 'bg-secondary bg-opacity-10 text-secondary'"
-                >
-                  {{ connectionCounts[opt.countKey] }}
-                </span>
-              </button>
-            </div>
-
-            <!-- Quick Status Filter (when active or status column exists) -->
-            <div v-if="hasStatusFilter" class="toolbar-filter-select">
-              <select 
-                v-model="selectedStatusFilter" 
-                class="form-select form-select-sm rounded-3 fw-medium text-body bg-body shadow-xs border" 
-                aria-label="Filter by status"
-              >
-                <option value="">Status: All</option>
-                <option v-for="opt in statusFilterOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Active Filter Count Badge & Reset Button -->
-            <button 
-              v-if="activeFilterCount > 0"
-              type="button" 
-              class="btn btn-sm btn-outline-danger border-dashed rounded-3 d-inline-flex align-items-center gap-1.5 px-2.5 py-1 small shadow-xs"
-              @click="clearAllFilters"
-              v-tooltip.top="'Reset all applied filters'"
-              aria-label="Reset all applied filters"
-            >
-              <i class="pi pi-filter-slash" style="font-size: 0.75rem;"></i>
-              <span>Reset ({{ activeFilterCount }})</span>
-            </button>
           </div>
 
           <!-- Right Zone: View Controls (Refresh, Density, Columns), Consolidated Export & Primary Action -->
@@ -247,20 +332,28 @@
             </Button>
             <Menu ref="exportMenu" id="export_menu" :model="exportMenuItems" :popup="true" />
 
-            <!-- Rows Per Page: sits with the other table controls rather than
-                 down in the paginator, so page size is set before scrolling
-                 rather than after. -->
-            <div class="d-flex align-items-center gap-1.5">
-              <label :for="`${tableId}-rows-per-page`" class="mb-0 small text-secondary text-nowrap d-none d-md-inline">Rows per page</label>
-              <select
-                :id="`${tableId}-rows-per-page`"
-                v-model="rowsPerPage"
-                class="form-select form-select-sm paginator-rows-select shadow-xs"
-                aria-label="Rows per page"
-                v-tooltip.bottom="'Rows per page'"
-              >
-                <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
-              </select>
+            <!-- Combined Rows Per Page & Dynamic Record Range Summary Counter -->
+            <div class="d-flex align-items-center gap-2 border rounded-3 px-2.5 bg-body-tertiary shadow-xs small table-record-summary-chip">
+              <i class="pi pi-database text-primary opacity-75 flex-shrink-0" style="font-size: 0.8rem;"></i>
+              <span class="text-secondary text-nowrap">
+                Showing <strong class="text-body">{{ recordRangeStart }}</strong> to <strong class="text-body">{{ recordRangeEnd }}</strong> of <strong class="text-body">{{ filteredRecordsCount }}</strong>
+              </span>
+              <span v-if="filteredRecordsCount !== totalRecordsCount" class="badge bg-secondary bg-opacity-10 text-secondary border flex-shrink-0" style="font-size: 0.7rem;">
+                Filtered from {{ totalRecordsCount }}
+              </span>
+              <span class="text-muted opacity-50 d-none d-sm-inline">·</span>
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <label :for="`${tableId}-rows-per-page`" class="mb-0 text-secondary text-nowrap small d-none d-sm-inline">Rows:</label>
+                <select
+                  :id="`${tableId}-rows-per-page`"
+                  v-model="rowsPerPage"
+                  class="form-select form-select-sm paginator-rows-select shadow-none border bg-body"
+                  aria-label="Rows per page"
+                  v-tooltip.bottom="'Rows per page'"
+                >
+                  <option v-for="opt in rowOptions" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+              </div>
             </div>
 
             <!-- Primary Action: Create Button -->
@@ -2543,6 +2636,7 @@ import { resolveRequiredFields, resolveEitherOrGroups } from '../models/required
 import { useAuthStore } from '../stores/auth'
 import { useUserStore } from '../stores/users'
 import { useTheme } from '../composables/useTheme'
+import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, startOfDay, endOfDay } from '../utils/dateRangePresets'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -2566,16 +2660,20 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  showTopBar: {
+    type: Boolean,
+    default: true
+  },
   hideCreateButton: {
     type: Boolean,
     default: false
   },
-  // Where the primary Create action is rendered. Parents that surface their own
-  // Create in the filter bar set this false: the toolbar copy goes away, but the
-  // empty-state call to action stays — an empty table still needs a way in.
+  // Where the primary Create action is rendered. Defaults to false so primary
+  // Create actions are rendered consistently at the top of the card or filter bar,
+  // while the empty-state call to action stays when the table has 0 records.
   createButtonInToolbar: {
     type: Boolean,
-    default: true
+    default: false
   },
   // Browse-only surface: no Create, no per-row Edit / Delete, no Edit shortcut in
   // the View dialog. For endpoints that are read-only or whose records carry no
@@ -2587,6 +2685,10 @@ const props = defineProps({
   // Set by parents that already expose their own status filter, so the toolbar
   // does not offer a second, redundant one.
   hideStatusFilter: {
+    type: Boolean,
+    default: false
+  },
+  hideDateFilter: {
     type: Boolean,
     default: false
   },
@@ -2650,11 +2752,20 @@ const DATE_FILTER_ROW_FIELDS = [
   'datetime',
   'applicationdate',
   'date',
+  'dateinstalled',
+  'duedate',
+  'balanceupdatedate',
   'timestamp',
   'createddate',
   'created_date',
   'createdat',
-  'modifieddate'
+  'created',
+  'starttimestamp',
+  'endtimestamp',
+  'techmodifieddate',
+  'assigneddate',
+  'modifieddate',
+  'lastmodified'
 ]
 
 // The subset of `filterParams` that actually reaches the API: blank values are
@@ -2812,8 +2923,25 @@ const normalizeColKey = (col) => String(col || '').toLowerCase().replace(/_/g, '
 // for with hide-create-button.
 const showCreateButton = computed(() => !props.hideCreateButton && !props.readOnly)
 
-// The toolbar copy specifically — suppressed when the parent renders Create itself.
+// The top level action bar button (Level 1)
+const showTopCreateButton = computed(() => (
+  props.showTopBar &&
+  showCreateButton.value &&
+  !props.createButtonInToolbar
+))
+
+// The toolbar copy specifically — suppressed when the parent renders Create itself or in top bar.
 const showToolbarCreateButton = computed(() => showCreateButton.value && props.createButtonInToolbar)
+
+// Determines whether the Level 1 top filter / action bar is rendered
+const hasTopBar = computed(() => (
+  props.showTopBar && (
+    isRadiusUserEndpoint.value ||
+    hasStatusFilter.value ||
+    hasDateFilter.value ||
+    showTopCreateButton.value
+  )
+))
 
 const modalStyle = computed(() => {
   if (isWideForm.value) {
@@ -3828,6 +3956,77 @@ const statusFilterOptions = computed(() => {
   return []
 })
 
+const selectedDatePreset = ref('')
+const internalFromDate = ref(null)
+const internalToDate = ref(null)
+const fromDatePicker = ref(null)
+
+const focusFromDate = () => {
+  nextTick(() => {
+    const input = fromDatePicker.value?.$el?.querySelector('input')
+    if (input) input.focus()
+  })
+}
+
+const onManualDateChange = () => {
+  if (internalFromDate.value || internalToDate.value) {
+    selectedDatePreset.value = CUSTOM_PRESET
+  } else {
+    selectedDatePreset.value = ''
+  }
+}
+
+const applyDatePreset = (preset) => {
+  if (preset === CUSTOM_PRESET) {
+    selectedDatePreset.value = CUSTOM_PRESET
+    focusFromDate()
+    return
+  }
+
+  if (selectedDatePreset.value === preset) {
+    selectedDatePreset.value = ''
+    internalFromDate.value = null
+    internalToDate.value = null
+    return
+  }
+
+  selectedDatePreset.value = preset
+  const range = resolveDatePreset(preset)
+  if (!range) return
+  internalFromDate.value = range.from
+  internalToDate.value = range.to
+}
+
+const hasDateColumn = computed(() => {
+  const cols = columns.value || []
+  return cols.some(c => {
+    const l = c.toLowerCase().replace(/_/g, '')
+    return DATE_FILTER_ROW_FIELDS.some(f => f.replace(/_/g, '') === l) ||
+      l.includes('date') ||
+      l.includes('timestamp') ||
+      l.includes('time')
+  })
+})
+
+const hasDateFilter = computed(() => {
+  if (props.hideDateFilter) return false
+  if (props.filterParams?.fromDate || props.filterParams?.toDate) return false
+  return hasDateColumn.value
+})
+
+const isDateFilterActive = computed(() => {
+  return hasDateFilter.value && Boolean(internalFromDate.value || internalToDate.value)
+})
+
+const resolvedInternalDateBounds = computed(() => {
+  if (!hasDateFilter.value || (!internalFromDate.value && !internalToDate.value)) {
+    return { from: null, to: null }
+  }
+  const f = internalFromDate.value ? startOfDay(new Date(internalFromDate.value)).getTime() : null
+  const t = internalToDate.value ? endOfDay(new Date(internalToDate.value)).getTime() : null
+  return { from: f, to: t }
+})
+
 const rowStatusOf = (row) => String(row?.status ?? row?.Status ?? '').trim()
 
 // Rows with no recognisable date field are kept: an unknown date is not evidence
@@ -3835,7 +4034,7 @@ const rowStatusOf = (row) => String(row?.status ?? row?.Status ?? '').trim()
 const isRowInDateRange = (row, from, to) => {
   if (!from && !to) return true
   const dateKey = DATE_FILTER_ROW_FIELDS
-    .map(pref => Object.keys(row).find(k => k.toLowerCase() === pref))
+    .map(pref => Object.keys(row).find(k => k.toLowerCase().replace(/_/g, '') === pref.replace(/_/g, '')))
     .find(k => k && row[k])
   if (!dateKey || !row[dateKey]) return true
   const rowTime = new Date(row[dateKey]).getTime()
@@ -3909,6 +4108,14 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
     }
   }
 
+  // Universal Internal Date Filter
+  if (isDateFilterActive.value && applyDateWindow) {
+    const { from: iFrom, to: iTo } = resolvedInternalDateBounds.value
+    if (iFrom || iTo) {
+      list = list.filter(row => isRowInDateRange(row, iFrom, iTo))
+    }
+  }
+
   // Global Search Filter
   //
   // Matched token-by-token rather than as one string: first and last name live in
@@ -3942,7 +4149,7 @@ const filteredRecordsCount = computed(() => (filteredData.value || []).length)
 // whose customer is simply outside the chosen dates reasonably concludes the record
 // does not exist. Zero when no date window is narrowing anything.
 const matchesOutsideDateWindow = computed(() => {
-  const hasWindow = Boolean(props.filterParams?.fromDate || props.filterParams?.toDate)
+  const hasWindow = Boolean(props.filterParams?.fromDate || props.filterParams?.toDate || isDateFilterActive.value)
   if (!hasWindow || props.serverDateFilter) return 0
   if (filteredRecordsCount.value > 0) return 0
   return applyFilters(data.value, { applyDateWindow: false }).length
@@ -3961,6 +4168,14 @@ const asLocalDateLabel = (value) => {
 }
 
 const activeDateRangeLabel = computed(() => {
+  if (isDateFilterActive.value) {
+    const { from: iFrom, to: iTo } = resolvedInternalDateBounds.value
+    const fromStr = asLocalDateLabel(iFrom)
+    const toStr = asLocalDateLabel(iTo)
+    if (fromStr && toStr) return `${fromStr} to ${toStr}`
+    if (fromStr) return `on or after ${fromStr}`
+    if (toStr) return `on or before ${toStr}`
+  }
   const from = asLocalDateLabel(props.filterParams?.fromDate)
   const to = asLocalDateLabel(props.filterParams?.toDate)
   if (from && to) return `${from} to ${to}`
@@ -4044,6 +4259,7 @@ const activeFilterCount = computed(() => {
   let count = 0
   if (filters.value.global?.value && String(filters.value.global.value).trim().length > 0) count++
   if (selectedStatusFilter.value && String(selectedStatusFilter.value).trim().length > 0) count++
+  if (isDateFilterActive.value) count++
   if (isRadiusUserEndpoint.value && connectionFilter.value) count++
   if (props.filterParams && typeof props.filterParams === 'object') {
     Object.values(props.filterParams).forEach(val => {
@@ -4088,6 +4304,9 @@ const clearAllFilters = () => {
   filters.value.global.value = null
   selectedStatusFilter.value = ''
   connectionFilter.value = ''
+  selectedDatePreset.value = 'all'
+  customDateFrom.value = ''
+  customDateTo.value = ''
   if (props.defaultSortField) {
     const match = displayedColumns.value.find(c => c.toLowerCase() === props.defaultSortField.toLowerCase())
     sortField.value = match || props.defaultSortField
@@ -9226,6 +9445,47 @@ defineExpose({
   line-height: 24px !important;
 }
 
+.status-filter-select {
+  min-width: 125px;
+  height: 33px !important;
+  font-size: 0.8125rem !important;
+  cursor: pointer;
+}
+
+.date-filter-picker {
+  width: 140px;
+}
+
+:deep(.date-filter-picker .p-inputtext),
+:deep(.date-filter-picker .p-datepicker-input) {
+  padding-left: 0.75rem !important;
+  padding-right: 2rem !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  font-size: 0.8125rem;
+  height: 33px !important;
+  border-radius: 8px !important;
+}
+
+.table-record-summary-chip {
+  height: 33px;
+  min-height: 33px;
+}
+
+.table-record-summary-chip .paginator-rows-select {
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  font-size: 0.75rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 0.4rem !important;
+  padding-right: 1.15rem !important;
+  width: 52px !important;
+  border-radius: 5px !important;
+  line-height: 22px !important;
+}
+
 .clear-search-btn {
   color: #6c757d;
   transition: color 0.15s ease-in-out;
@@ -9350,5 +9610,27 @@ defineExpose({
     min-width: 36px;
     height: 36px;
   }
+}
+
+.filter-tabs-scrollable {
+  scrollbar-width: thin;
+}
+
+.connection-filter-btn {
+  transition: all 0.2s ease-in-out;
+  font-size: 0.8125rem;
+}
+
+.connection-filter-count {
+  font-size: 0.6875rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  min-width: 1.4rem;
+}
+
+.hover-tab:hover {
+  background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
+  border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
+  color: var(--bs-primary, #e74c5a) !important;
 }
 </style>

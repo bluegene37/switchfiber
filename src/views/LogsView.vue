@@ -113,6 +113,8 @@
         :filter-params="activeFilterParams"
         :key="route.path"
         read-only
+        :show-top-bar="false"
+        hide-create-button
         default-sort-field="timestamp"
         :default-sort-order="-1"
         @reset-filters="clearAllFilters"

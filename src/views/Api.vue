@@ -222,7 +222,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Button from 'primevue/button'
 import apiClient from '../services/api'
 import JsonTreeNode from '../components/JsonTreeNode.vue'
@@ -261,13 +261,15 @@ const selectedEndpoint = ref(apiEndpoints.value[0].endpoint)
 const searchQuery = ref('')
 const viewMode = ref('tree') // 'tree' or 'raw'
 const isLoadingJson = ref(false)
-const rawJsonString = ref('[]')
 const parsedJsonData = ref([])
+const payloadSizeBytes = ref(0)
 const recordCount = ref(null)
 const copied = ref(false)
 const forceExpandCounter = ref(0)
 const forceCollapseCounter = ref(0)
-const treeExpandState = ref('expanded') // 'expanded' or 'collapsed'
+const treeExpandState = ref('collapsed') // 'collapsed' or 'expanded'
+
+let currentAbortController = null
 
 const expandAllTree = () => {
   forceExpandCounter.value++
@@ -279,8 +281,17 @@ const collapseAllTree = () => {
   treeExpandState.value = 'collapsed'
 }
 
+const rawJsonString = computed(() => {
+  if (!parsedJsonData.value) return '[]'
+  if (Array.isArray(parsedJsonData.value) && parsedJsonData.value.length > 500) {
+    const preview = parsedJsonData.value.slice(0, 500)
+    return `// Showing first 500 of ${parsedJsonData.value.length} items (Click 'Copy JSON' for the complete dataset)\n` + JSON.stringify(preview, null, 2)
+  }
+  return JSON.stringify(parsedJsonData.value, null, 2)
+})
+
 const formattedPayloadSize = computed(() => {
-  const bytes = rawJsonString.value ? rawJsonString.value.length : 0
+  const bytes = payloadSizeBytes.value
   const mb = (bytes / (1024 * 1024)).toFixed(3)
   return `${bytes.toLocaleString()} bytes (${mb} MB)`
 })
@@ -299,8 +310,11 @@ const filteredEndpoints = computed(() => {
 })
 
 const selectEndpoint = (ep) => {
-  selectedEndpoint.value = ep
-  fetchRawJson()
+  if (selectedEndpoint.value === ep) {
+    fetchRawJson()
+  } else {
+    selectedEndpoint.value = ep
+  }
 }
 
 const tryParseJson = (val) => {
@@ -317,10 +331,17 @@ const tryParseJson = (val) => {
 }
 
 const fetchRawJson = async () => {
+  if (currentAbortController) {
+    currentAbortController.abort()
+  }
+  currentAbortController = new AbortController()
+
   isLoadingJson.value = true
   recordCount.value = null
   try {
-    const res = await apiClient.get(`/${selectedEndpoint.value}`)
+    const res = await apiClient.get(`/${selectedEndpoint.value}`, {
+      signal: currentAbortController.signal
+    })
     let data = tryParseJson(res)
     if (data && typeof data === 'object' && !Array.isArray(data)) {
       const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]))
@@ -332,23 +353,27 @@ const fetchRawJson = async () => {
     } else {
       recordCount.value = 1
     }
-    rawJsonString.value = JSON.stringify(data, null, 2)
+    payloadSizeBytes.value = typeof res === 'string' ? res.length : JSON.stringify(data).length
   } catch (err) {
+    if (err?.isCanceled || err?.name === 'CanceledError' || err?.name === 'AbortError') {
+      return
+    }
     recordCount.value = 0
     parsedJsonData.value = {
       error: true,
       message: err.message || 'Failed to fetch data from endpoint',
       status: err.response?.status
     }
-    rawJsonString.value = JSON.stringify(parsedJsonData.value, null, 2)
+    payloadSizeBytes.value = JSON.stringify(parsedJsonData.value).length
   } finally {
     isLoadingJson.value = false
   }
 }
 
 const copyJsonToClipboard = () => {
-  if (!rawJsonString.value) return
-  navigator.clipboard.writeText(rawJsonString.value)
+  if (!parsedJsonData.value) return
+  const fullPayload = JSON.stringify(parsedJsonData.value, null, 2)
+  navigator.clipboard.writeText(fullPayload)
   copied.value = true
   setTimeout(() => {
     copied.value = false
@@ -357,6 +382,12 @@ const copyJsonToClipboard = () => {
 
 onMounted(() => {
   fetchRawJson()
+})
+
+onUnmounted(() => {
+  if (currentAbortController) {
+    currentAbortController.abort()
+  }
 })
 
 watch(selectedEndpoint, () => {

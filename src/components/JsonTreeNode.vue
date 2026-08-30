@@ -38,7 +38,7 @@
       <!-- Expanded Children Container -->
       <div v-if="isExpanded" class="ps-3 border-start border-secondary border-opacity-25 ms-2 my-0.5 d-flex flex-column gap-0.5">
         <JsonTreeNode
-          v-for="(entry, index) in childEntries"
+          v-for="(entry, index) in visibleChildEntries"
           :key="entry.key"
           :node-key="entry.key"
           :data="entry.value"
@@ -48,6 +48,27 @@
           :force-collapse="forceCollapse"
           :expand-state="expandState"
         />
+
+        <!-- Show More Chunking Button for Large Lists -->
+        <div v-if="childEntries.length > displayLimit" class="py-1.5 d-flex align-items-center gap-2">
+          <button 
+            type="button" 
+            class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-0.5 small shadow-xs"
+            style="font-size: 0.75rem;"
+            @click.stop="displayLimit += 100"
+          >
+            <i class="pi pi-plus me-1" style="font-size: 0.68rem;"></i>
+            Show next 100 items ({{ childEntries.length - displayLimit }} remaining)
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-sm btn-link text-secondary text-decoration-none p-0 small"
+            style="font-size: 0.75rem;"
+            @click.stop="displayLimit = childEntries.length"
+          >
+            Show all {{ childEntries.length }}
+          </button>
+        </div>
       </div>
 
       <!-- Closing Bracket/Brace if expanded -->
@@ -83,14 +104,14 @@ const props = defineProps({
   isLast: { type: Boolean, default: true },
   forceExpand: { type: Number, default: 0 },
   forceCollapse: { type: Number, default: 0 },
-  expandState: { type: String, default: 'expanded' }
+  expandState: { type: String, default: 'collapsed' }
 })
 
-// Set initial expanded state based on active expandState preference
+// Safe expansion: Root is always open (depth 0), child records default to collapsed
 const isExpanded = ref(
-  props.expandState === 'collapsed' 
-    ? props.depth === 0 
-    : true
+  props.expandState === 'expanded'
+    ? props.depth < 1
+    : props.depth === 0
 )
 
 const isObjectOrArray = computed(() => {
@@ -121,6 +142,13 @@ const childEntries = computed(() => {
     return props.data.map((val, idx) => ({ key: idx, value: parseValue(val) }))
   }
   return Object.entries(props.data).map(([k, v]) => ({ key: k, value: parseValue(v) }))
+})
+
+// Render at most 50 items initially to keep DOM lightweight and avoid UI thread freezing
+const displayLimit = ref(50)
+const visibleChildEntries = computed(() => {
+  if (childEntries.value.length <= displayLimit.value) return childEntries.value
+  return childEntries.value.slice(0, displayLimit.value)
 })
 
 const toggleExpand = () => {
@@ -156,7 +184,7 @@ watch(() => props.forceCollapse, () => {
 
 watch(() => props.expandState, (newState) => {
   if (isObjectOrArray.value) {
-    isExpanded.value = newState === 'collapsed' ? props.depth === 0 : true
+    isExpanded.value = newState === 'collapsed' ? props.depth === 0 : (props.depth < 1)
   }
 })
 </script>
