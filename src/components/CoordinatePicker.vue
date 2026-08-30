@@ -189,9 +189,22 @@ const parsed = computed(() => parseCoordinates(props.modelValue))
 const hasPin = computed(() => !!parsed.value)
 
 const TILES = {
-  light: { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', maxZoom: 20 },
-  dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', maxZoom: 20 },
-  satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19 }
+  light: {
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+  },
+  dark: {
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    maxZoom: 19,
+    className: 'osm-dark-tiles',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    maxZoom: 19,
+    attribution: 'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
+  }
 }
 
 const applyBaseLayer = () => {
@@ -200,9 +213,8 @@ const applyBaseLayer = () => {
   if (baseLayer) map.removeLayer(baseLayer)
   baseLayer = L.tileLayer(def.url, {
     maxZoom: def.maxZoom,
-    attribution: satellite.value
-      ? 'Imagery &copy; Esri'
-      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
+    className: def.className || '',
+    attribution: def.attribution
   }).addTo(map)
 }
 
@@ -537,5 +549,9 @@ onBeforeUnmount(() => {
 [data-bs-theme='dark'] .cpk-pin-head,
 [data-bs-theme='dark'] .cpk-pin-tip {
   border-color: #d8dbe0;
+}
+
+.osm-dark-tiles {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
 }
 </style>
