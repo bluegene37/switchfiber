@@ -455,12 +455,23 @@
         <template #body="slotProps">
           <div class="d-flex gap-1 justify-content-center align-items-center" @click.stop>
             <!-- Interactive Toggle Switch & Status Pill in Actions Column for Menus -->
-            <div v-if="isMenuEndpoint" class="d-flex align-items-center me-1">
-              <ToggleSwitch 
-                :modelValue="isMenuLinked(slotProps.data) === true" 
-                :disabled="isToggleSwitchDisabled(slotProps.data)" 
+            <!--
+              A disabled switch dispatches no click of its own, so the locked
+              Super Admin rows would sit there dead with no explanation. The
+              wrapper takes the click instead and says why.
+            -->
+            <div
+              v-if="isMenuEndpoint"
+              class="d-flex align-items-center me-1"
+              :class="{ 'menu-toggle-locked': isToggleSwitchDisabled(slotProps.data) }"
+              :title="getToggleSwitchTitle(slotProps.data)"
+              @click="explainLockedMenuToggle"
+            >
+              <ToggleSwitch
+                :modelValue="isMenuLinked(slotProps.data) === true"
+                :disabled="isToggleSwitchDisabled(slotProps.data)"
                 @update:modelValue="toggleMenuLink(slotProps.data)"
-                :title="getToggleSwitchTitle(slotProps.data)" 
+                :aria-label="getToggleSwitchTitle(slotProps.data)"
               />
             </div>
 
@@ -2504,6 +2515,13 @@ import ExifPanel from './ExifPanel.vue'
 import { parseCoordinates } from '../services/lcpNapLocations'
 import { reverseGeocode } from '../services/geocoding'
 import { downloadImage, openImageInNewTab } from '../utils/imageActions'
+import {
+  resolveMenuCodesFromName,
+  isSuperAdminName,
+  MENU_CATALOG,
+  CONTROL_MENU_CATALOG
+} from '../constants/menuCatalog'
+import { usePermissions } from '../composables/usePermissions'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -2533,6 +2551,7 @@ const toast = useToast()
 const authStore = useAuthStore()
 const userStore = useUserStore()
 const { activeColorTheme, THEME_PALETTES } = useTheme()
+const { canAccessModifyPassword, canAccessUnmaskPassword } = usePermissions()
 
 const props = defineProps({
   endpoint: {
@@ -8099,109 +8118,31 @@ const fetchData = async ({ silent = false } = {}) => {
     if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
       const menuList = unwrappedData || []
       
-      const appItem = menuList.find(m => Number(m.id) === 14)
-      if (appItem) {
-        appItem.name = 'All Application'
-        appItem.route = '/application'
-      } else {
-        menuList.push({ id: 14, name: 'All Application', route: '/application', icon: 'pi pi-list', description: 'View all customer fiber connection applications' })
-      }
+      // Index all codes already represented by rows in menuList
+      const existingCodes = new Set(
+        menuList.flatMap(m => resolveMenuCodesFromName(m?.name ?? m?.Name))
+      )
 
-      const hasInProgress = menuList.some(m => Number(m.id) === 26 || (m.name && m.name.toLowerCase().includes('in progress')))
-      const hasDone = menuList.some(m => Number(m.id) === 27 || (m.name && m.name.toLowerCase() === 'done'))
-      const hasApproved = menuList.some(m => Number(m.id) === 28 || (m.name && m.name.toLowerCase() === 'approved'))
-
-      if (!hasInProgress) {
-        menuList.push({ id: 26, name: 'In Progress', route: '/application/in-progress', icon: 'pi pi-clock', description: 'View and process in-progress customer applications' })
-      }
-      if (!hasDone) {
-        menuList.push({ id: 27, name: 'Done', route: '/application/done', icon: 'pi pi-check-circle', description: 'View completed customer applications' })
-      }
-      if (!hasApproved) {
-        menuList.push({ id: 28, name: 'Approved', route: '/application/approved', icon: 'pi pi-verified', description: 'View verified and approved customer applications' })
-      }
-
-      const hasAllJobOrders = menuList.some(m => Number(m.id) === 32 || (m.name && m.name.toLowerCase() === 'all job orders'))
-      const hasJobOrdersInProgress = menuList.some(m => Number(m.id) === 33)
-      const hasJobOrdersCompleted = menuList.some(m => Number(m.id) === 34)
-      const hasJobOrdersActivated = menuList.some(m => Number(m.id) === 35)
-
-      if (!hasAllJobOrders) {
-        menuList.push({ id: 32, name: 'All Job Orders', route: '/job-orders', icon: 'pi pi-list', description: 'View all technical dispatch job orders' })
-      }
-      if (!hasJobOrdersInProgress) {
-        menuList.push({ id: 33, name: 'Job Orders In Progress', route: '/job-orders/inprogress', icon: 'pi pi-clock', description: 'View and process in-progress job orders' })
-      }
-      if (!hasJobOrdersCompleted) {
-        menuList.push({ id: 34, name: 'Job Orders Completed', route: '/job-orders/completed', icon: 'pi pi-check-circle', description: 'View completed job orders' })
-      }
-      if (!hasJobOrdersActivated) {
-        menuList.push({ id: 35, name: 'Job Orders Activated', route: '/job-orders/activated', icon: 'pi pi-verified', description: 'View activated job orders' })
-      }
-
-      const hasDisconnection = menuList.some(m => Number(m.id) === 30 || (m.name && m.name.toLowerCase() === 'disconnection'))
-      if (!hasDisconnection) {
-        menuList.push({ id: 30, name: 'Disconnection', route: '/disconnection', icon: 'pi pi-ban', description: 'Review RADIUS subscriber accounts and their enabled / disabled state' })
-      }
-
-      const hasLcpNapLocations = menuList.some(m => Number(m.id) === 36 || (m.name && m.name.toLowerCase() === 'lcp nap locations'))
-      if (!hasLcpNapLocations) {
-        menuList.push({ id: 36, name: 'LCP NAP Locations', route: '/lcp-nap-locations', icon: 'pi pi-map', description: 'LCP cabinet and NAP box locations — map view and record maintenance' })
-      }
-      const hasLcpNapMap = menuList.some(m => Number(m.id) === 37 || (m.name && m.name.toLowerCase() === 'lcp nap map'))
-      if (!hasLcpNapMap) {
-        menuList.push({ id: 37, name: 'LCP NAP Map', route: '/lcp-nap-locations/map', icon: 'pi pi-map-marker', description: 'Map of LCP cabinets and NAP boxes plotted from their field coordinates' })
-      }
-      const hasLcpNapRecords = menuList.some(m => Number(m.id) === 38 || (m.name && m.name.toLowerCase() === 'lcp nap records'))
-      if (!hasLcpNapRecords) {
-        menuList.push({ id: 38, name: 'LCP NAP Records', route: '/lcp-nap-locations/records', icon: 'pi pi-table', description: 'Create, edit, and delete LCP NAP location records with a map pin picker' })
-      }
-
-      // Audit Trail (/api/LogTrail) and Error Logs (/api/LogError): one row per
-      // endpoint, so an access level can be granted the unfiltered list without
-      // the narrowing lookups, or the other way round.
-      const LOG_MENUS = [
-        { id: 39, name: 'Audit Trail', route: '/logs/audit-trail', icon: 'pi pi-verified', description: 'Recorded transaction history across the system' },
-        { id: 40, name: 'All Audit Trail', route: '/logs/audit-trail', icon: 'pi pi-list', description: 'Every recorded transaction, newest first' },
-        { id: 42, name: 'Audit Trail by Transaction Date', route: '/logs/audit-trail/by-date', icon: 'pi pi-calendar', description: 'Recorded transactions within a date range' },
-        { id: 43, name: 'Audit Trail by Entity & Date', route: '/logs/audit-trail/by-entity', icon: 'pi pi-sitemap', description: 'Recorded transactions for one entity within a date range' },
-        { id: 44, name: 'Audit Trail by User & Date', route: '/logs/audit-trail/by-user', icon: 'pi pi-user', description: 'Recorded transactions by one user within a date range' },
-        { id: 45, name: 'Error Logs', route: '/logs/error-logs', icon: 'pi pi-exclamation-triangle', description: 'Errors recorded by the API' },
-        { id: 41, name: 'All Error Logs', route: '/logs/error-logs', icon: 'pi pi-list', description: 'Every recorded error, newest first' },
-        { id: 46, name: 'Error Logs by Date Range', route: '/logs/error-logs/by-date', icon: 'pi pi-calendar', description: 'Recorded errors within a date range' },
-        { id: 47, name: 'Error Logs by Entity & Date', route: '/logs/error-logs/by-entity', icon: 'pi pi-sitemap', description: 'Recorded errors for one entity within a date range' },
-        { id: 48, name: 'Error Logs by User & Date', route: '/logs/error-logs/by-user', icon: 'pi pi-user', description: 'Recorded errors raised by one user within a date range' },
-        { id: 49, name: 'Service Orders', route: '/service-orders', icon: 'pi pi-wrench', description: 'Post-installation support, repair, and pullout visits' }
+      // Ensure every standard catalog screen & control is available in the table
+      // (as placeholder with id: null if not yet present in /api/Menus)
+      const ALL_ENTRIES = [
+        ...MENU_CATALOG.flatMap(item => (item.children ? [item, ...item.children] : [item])),
+        ...CONTROL_MENU_CATALOG
       ]
-      LOG_MENUS.forEach(entry => {
-        if (!menuList.some(m => Number(m.id) === entry.id)) menuList.push(entry)
+
+      ALL_ENTRIES.forEach(entry => {
+        if (!existingCodes.has(entry.code)) {
+          menuList.push({
+            id: null,
+            name: entry.name,
+            route: entry.path || '',
+            icon: entry.icon || 'pi pi-list',
+            description: `Manage access for ${entry.name}`
+          })
+          existingCodes.add(entry.code)
+        }
       })
 
-      const hasApiViewer = menuList.some(m => Number(m.id) === 24 || (m.name && m.name.toLowerCase().includes('api viewer')))
-      const hasModels = menuList.some(m => Number(m.id) === 29 || (m.name && m.name.toLowerCase() === 'models'))
-      const hasSettings = menuList.some(m => Number(m.id) === 20 || (m.name && m.name.toLowerCase().includes('settings')))
-      const hasTheme = menuList.some(m => Number(m.id) === 103 || (m.name && m.name.toLowerCase().includes('theme')))
-      const hasModifyPwd = menuList.some(m => Number(m.id) === 101 || (m.name && m.name.toLowerCase().includes('modify password')))
-      const hasUnmaskPwd = menuList.some(m => Number(m.id) === 102 || (m.name && m.name.toLowerCase().includes('unmask password')))
-      
-      if (!hasApiViewer) {
-        menuList.push({ id: 24, name: 'API Viewer', route: '/data-viewer', icon: 'pi pi-database', description: 'Inspect live GET endpoints across all backend services' })
-      }
-      if (!hasModels) {
-        menuList.push({ id: 29, name: 'Models', route: '/models', icon: 'pi pi-table', description: 'Browse every table\'s columns, data types, and required fields' })
-      }
-      if (!hasSettings) {
-        menuList.push({ id: 20, name: 'Settings', route: '/settings', icon: 'pi pi-cog', description: 'System appearance, profile preferences, and security configurations' })
-      }
-      if (!hasTheme) {
-        menuList.push({ id: 103, name: 'Theme & Appearance', route: '/settings#theme', icon: 'pi pi-palette', description: 'Permission to view design palette and toggle Light/Dark theme mode' })
-      }
-      if (!hasModifyPwd) {
-        menuList.push({ id: 101, name: 'Modify Password', route: '/modify_password', icon: 'pi pi-key', description: 'Permission to modify password fields across forms' })
-      }
-      if (!hasUnmaskPwd) {
-        menuList.push({ id: 102, name: 'Unmask Password', route: '/unmask_password', icon: 'pi pi-eye', description: 'Permission to unmask/view saved passwords' })
-      }
       unwrappedData = menuList
     }
 
@@ -8396,37 +8337,94 @@ const activeLinkedMenuIds = computed(() => {
   return set
 })
 
-const isSuperAdminAccessLevelProtected = (menuRow) => {
-  if (!props.selectedAccessLevel || !menuRow) return false
-  const targetAccId = Number(
-    props.selectedAccessLevel.id ??
-    props.selectedAccessLevel.ID ??
-    props.selectedAccessLevel.accessLevelId ??
-    props.selectedAccessLevel.accesslevel_id
+/**
+ * Super Admin is the only access level that holds every menu by definition, so
+ * it is the only one whose switches are locked. Resolved by name, never by id:
+ * Super Admin sits at id 3 in the live database and sat at id 1 before a
+ * re-seed, and the next migration can move it again.
+ *
+ * Every other level — Developer included — is granted menu by menu.
+ */
+const isSuperAdminAccessLevelProtected = () => {
+  if (!props.selectedAccessLevel) return false
+  return isSuperAdminName(
+    props.selectedAccessLevel.name ||
+    props.selectedAccessLevel.Name ||
+    props.selectedAccessLevel.role ||
+    ''
   )
-  // Super Admin has full access by definition: every menu always shows as
-  // granted and none can be toggled — regardless of what AccesslevelMenu rows
-  // exist (or fail to load) for it. Matching by name too covers duplicate
-  // "Super Admin" levels stored under other ids.
-  return targetAccId === 1 || String(props.selectedAccessLevel.name || '').toLowerCase().includes('super')
+}
+
+/**
+ * Identity for the in-flight guard. Catalog placeholder rows carry id null, so
+ * an id-only key is undefined for all of them at once and the guard matches
+ * nothing — the name is what keeps them distinct until /api/Menus assigns an
+ * id. Both the guard and the write path have to derive the key the same way,
+ * or the switch stays live during its own request.
+ */
+const menuToggleKey = (menuRow) => {
+  const id = menuRow?.id ?? menuRow?.ID ?? menuRow?.menuId
+  if (id !== null && id !== undefined && String(id).trim() !== '') return `id:${id}`
+  const name = menuRow?.name || menuRow?.Name
+  return name ? `name:${name}` : ''
 }
 
 const isToggleSwitchDisabled = (menuRow) => {
   if (!props.selectedAccessLevel) return true
-  if (togglingMenuId.value === (menuRow.id ?? menuRow.ID ?? menuRow.menuId)) return true
-  if (isSuperAdminAccessLevelProtected(menuRow)) return true
+  const key = menuToggleKey(menuRow)
+  if (key && togglingMenuId.value === key) return true
+  if (isSuperAdminAccessLevelProtected()) return true
   return false
+}
+
+/**
+ * Fires when a locked row is clicked. The switch itself is disabled and cannot
+ * report anything, so this is the only place the lock gets explained.
+ */
+const explainLockedMenuToggle = () => {
+  if (!props.selectedAccessLevel) {
+    toast.add({
+      severity: 'warn',
+      summary: 'No Access Level Selected',
+      detail: 'Select an access level on the left table first.',
+      life: 3000
+    })
+    return
+  }
+  if (!isSuperAdminAccessLevelProtected()) return
+  toast.add({
+    severity: 'info',
+    summary: 'Super Admin Has All Menus',
+    detail: 'Super Admin always has every menu. Its permissions are fixed and cannot be changed.',
+    life: 4000
+  })
 }
 
 const getToggleSwitchTitle = (menuRow) => {
   if (!props.selectedAccessLevel) return 'Select an Access Level on the left table first'
-  if (isSuperAdminAccessLevelProtected(menuRow)) return 'Super Admin always has full access — menu permissions are locked'
+  if (isSuperAdminAccessLevelProtected()) return 'Super Admin always has full access — menu permissions are locked'
   return isMenuLinked(menuRow) ? 'Click to Unlink Menu' : 'Click to Link Menu'
 }
 
+/**
+ * Whether THIS menu row has its own AccesslevelMenu relation for the selected
+ * access level.
+ *
+ * Strictly id-based, and deliberately so. Inferring the switch position from a
+ * *different* row's name — "Job Orders In Progress" reading as linked because
+ * the level was granted "All Job Orders", whose name resolves to the same
+ * catalog code — desynchronizes the display from the table the writes go to.
+ * The row renders ON, the unlink path then finds no relation row to delete, and
+ * the refetch re-derives ON: the switch snaps back while a success toast claims
+ * it worked. Link state and the write path have to key off the same thing.
+ *
+ * A catalog placeholder row (id null, not yet in /api/Menus) is therefore never
+ * linked — no server row exists to grant. Toggling it on creates the menu row
+ * first, and from then on it matches by id like any other.
+ */
 const isMenuLinked = (menuRow) => {
   if (!menuRow || !props.selectedAccessLevel) return false
-  if (isSuperAdminAccessLevelProtected(menuRow)) return true
+  if (isSuperAdminAccessLevelProtected()) return true
   const targetMenuId = String(menuRow.id ?? menuRow.ID ?? menuRow.menuId ?? '').trim()
   if (!targetMenuId) return false
   return activeLinkedMenuIds.value.has(targetMenuId) || activeLinkedMenuIds.value.has(Number(targetMenuId))
@@ -8458,7 +8456,7 @@ const writeWithRouteCasingFallback = async (verb, path, altPath, payload) => {
 const toggleMenuLink = async (menuRow) => {
   if (!props.selectedAccessLevel || !menuRow) return
 
-  if (isSuperAdminAccessLevelProtected(menuRow)) {
+  if (isSuperAdminAccessLevelProtected()) {
     toast.add({
       severity: 'warn',
       summary: 'Protected Permission',
@@ -8469,18 +8467,46 @@ const toggleMenuLink = async (menuRow) => {
   }
   
   const targetAccId = Number(props.selectedAccessLevel.id ?? props.selectedAccessLevel.ID ?? props.selectedAccessLevel.accessLevelId)
-  const targetMenuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
-  const menuName = menuRow.name || menuRow.Name || `Menu #${targetMenuId}`
+  let targetMenuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
+  const menuName = menuRow.name || menuRow.Name || (targetMenuId ? `Menu #${targetMenuId}` : 'Menu')
   const roleName = props.selectedAccessLevel.name || props.selectedAccessLevel.Name || `Access Level #${targetAccId}`
 
-  togglingMenuId.value = targetMenuId
-  
+  togglingMenuId.value = menuToggleKey(menuRow)
+
+  // Set only when THIS call created the menu row, so the rollback below can
+  // tell a row it just made from one that was already there.
+  let createdMenuId = null
+
   try {
     const currentlyLinked = isMenuLinked(menuRow)
     
     if (!currentlyLinked) {
+      // Auto-create in /api/Menus if this is an unsaved standard catalog row.
+      // Tracked, because the link POST that follows can fail: without a
+      // rollback every failed toggle strands a menu row nothing points at, and
+      // retrying strands another one.
+      if (!targetMenuId || isNaN(targetMenuId)) {
+        console.log(`[DynamicApiTable] Creating new Menu row in /api/Menus:`, menuRow)
+        const createMenuPayload = {
+          name: menuRow.name || 'New Menu',
+          route: menuRow.route || '',
+          icon: menuRow.icon || 'pi pi-list',
+          description: menuRow.description || ''
+        }
+        const createdMenu = await apiClient.post('/Menus', createMenuPayload)
+        const newId = Number(createdMenu?.id ?? createdMenu?.Id ?? createdMenu?.data?.id)
+        if (newId && !isNaN(newId)) {
+          targetMenuId = newId
+          menuRow.id = newId
+          createdMenuId = newId
+        }
+      }
+
+      if (!targetMenuId || isNaN(targetMenuId)) {
+        throw new Error(`Unable to determine valid menu ID for "${menuName}"`)
+      }
+
       // Create Link: POST to /api/AccesslevelMenu
-      const numericUserId = Number(authStore.user?.id) || 1
       const payload = {
         accessLevelId: targetAccId,
         menuId: targetMenuId,
@@ -8488,8 +8514,6 @@ const toggleMenuLink = async (menuRow) => {
         menu_id: targetMenuId,
         AccessLevelId: targetAccId,
         MenuId: targetMenuId
-        // createdBy: numericUserId, // Excluded for backend migration
-        // modifiedBy: numericUserId // Excluded for backend migration
       }
       
       console.log(`[DynamicApiTable] Creating link POST /api/AccesslevelMenu:`, payload)
@@ -8497,7 +8521,7 @@ const toggleMenuLink = async (menuRow) => {
       // Optimistically add relation to state so UI flips immediately
       accessLevelMenus.value = [...accessLevelMenus.value, payload]
 
-      const res = await writeWithRouteCasingFallback('post', '/AccesslevelMenu', '/AccessLevelMenu', payload)
+      await writeWithRouteCasingFallback('post', '/AccesslevelMenu', '/AccessLevelMenu', payload)
       
       // Refetch from server to sync true ID
       await fetchAccessLevelMenus()
@@ -8509,7 +8533,7 @@ const toggleMenuLink = async (menuRow) => {
         life: 3000
       })
       window.dispatchEvent(new CustomEvent('accesslevelmenu-updated', {
-        detail: { accessLevelId: targetAccId, menuId: targetMenuId, linked: true }
+        detail: { accessLevelId: targetAccId, menuId: targetMenuId, menuName: menuName, linked: true }
       }))
     } else {
       // Remove Link: DELETE from /api/AccesslevelMenu
@@ -8533,12 +8557,24 @@ const toggleMenuLink = async (menuRow) => {
         console.log(`[DynamicApiTable] Removing link DELETE /api/AccesslevelMenu/${relId}`)
         await writeWithRouteCasingFallback('delete', `/AccesslevelMenu/${relId}`, `/AccessLevelMenu/${relId}`)
       } else {
-        await apiClient.delete(`/AccesslevelMenu/${targetAccId}/${targetMenuId}`).catch(() => null)
+        // The API deletes a relation only by its own row id
+        // (/api/AccesslevelMenu/{id}); there is no accessLevel/menu composite
+        // route to fall back on. Reaching here means the switch was on without
+        // a relation behind it, so resync and say so rather than reporting a
+        // removal that never happened.
+        await fetchAccessLevelMenus()
+        toast.add({
+          severity: 'warn',
+          summary: 'Nothing To Unlink',
+          detail: `No stored permission links "${menuName}" to "${roleName}". The list has been refreshed.`,
+          life: 4000
+        })
+        return
       }
 
       // Refetch from server to sync state
       await fetchAccessLevelMenus()
-      
+
       toast.add({
         severity: 'info',
         summary: 'Permission Unlinked',
@@ -8546,16 +8582,33 @@ const toggleMenuLink = async (menuRow) => {
         life: 3000
       })
       window.dispatchEvent(new CustomEvent('accesslevelmenu-updated', {
-        detail: { accessLevelId: targetAccId, menuId: targetMenuId, linked: false }
+        detail: { accessLevelId: targetAccId, menuId: targetMenuId, menuName: menuName, linked: false }
       }))
     }
   } catch (err) {
     console.error('Error toggling menu link:', err)
+
+    // A menu row created moments ago for a link that then failed is stranded:
+    // nothing references it, and every retry would strand another. Take it back
+    // out so a failed toggle leaves the database exactly as it found it.
+    if (createdMenuId) {
+      try {
+        await apiClient.delete(`/Menus/${createdMenuId}`)
+        console.warn(`[DynamicApiTable] Rolled back orphan menu ${createdMenuId} after the link failed`)
+        menuRow.id = null
+      } catch (rollbackErr) {
+        console.error(`[DynamicApiTable] Could not roll back menu ${createdMenuId}:`, rollbackErr)
+      }
+    }
+
+    const status = err?.status ?? err?.response?.status
     toast.add({
       severity: 'error',
       summary: 'Permission Link Error',
-      detail: err.message || 'Failed to update AccesslevelMenu link',
-      life: 4000
+      detail: status >= 500
+        ? `The server rejected this change (HTTP ${status}). Menu permissions cannot be saved until the API is fixed — nothing was changed.`
+        : (err.message || 'Failed to update AccesslevelMenu link'),
+      life: 6000
     })
     await fetchAccessLevelMenus()
   } finally {
@@ -8610,47 +8663,13 @@ const handleSelectionChange = (val) => {
   }
 }
 
-const userPermissions = ref({
-  canModifyPassword: true,
-  canUnmaskPassword: true
-})
+const userPermissions = computed(() => ({
+  canModifyPassword: canAccessModifyPassword.value,
+  canUnmaskPassword: canAccessUnmaskPassword.value
+}))
 
 const fetchCurrentUserPermissions = async () => {
-  try {
-    const userAccessLevel = Number(authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 1)
-
-    const res = await apiClient.get('/AccesslevelMenu').catch(() => [])
-    let records = res
-    if (res && !Array.isArray(res) && typeof res === 'object') {
-      const key = Object.keys(res).find(k => Array.isArray(res[k]))
-      if (key) records = res[key]
-    }
-
-    if (Array.isArray(records)) {
-      const userRecords = records.filter(r => Number(r.accessLevelId || r.accesslevel_id) === userAccessLevel)
-      
-      // If no permission relations exist for this role yet, default to granted
-      if (userRecords.length === 0) {
-        userPermissions.value = {
-          canModifyPassword: true,
-          canUnmaskPassword: true
-        }
-      } else {
-        const userMenuIds = new Set(userRecords.map(r => Number(r.menuId || r.menu_id)))
-        
-        userPermissions.value = {
-          canModifyPassword: userMenuIds.has(101),
-          canUnmaskPassword: userMenuIds.has(102)
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Error fetching current user permissions:', err)
-    userPermissions.value = {
-      canModifyPassword: true,
-      canUnmaskPassword: true
-    }
-  }
+  // Permissions are reactively resolved via usePermissions
 }
 
 // Whether the CURRENT endpoint renders a column whose label has to be resolved
@@ -8858,6 +8877,15 @@ defineExpose({
 :deep(.p-datatable-tbody > tr[aria-selected="true"] .delete-btn:hover) {
   color: #ffffff !important;
   background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* A locked (Super Admin) row: the switch stops taking pointer events so the
+   click lands on the wrapper, which explains why it cannot be changed. */
+.menu-toggle-locked {
+  cursor: not-allowed;
+}
+.menu-toggle-locked :deep(.p-toggleswitch) {
+  pointer-events: none;
 }
 
 /* High-Contrast ToggleSwitch on HIGHLIGHTED / SELECTED rows (Inverted Styling) */
