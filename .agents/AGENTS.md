@@ -25,3 +25,14 @@ When developing and integrating API calls across the codebase, strictly adhere t
   - **Password**: `1234`
   - Use these credentials when authenticating for browser verification, testing protected routes, or debugging permissions.
 
+## gStack Virtual Engineering Team & Review Personas
+The following gStack skills are registered and available to guide project lifecycles:
+- **`gstack-office-hours`**: YC Partner discovery to pressure-test ideas and scope.
+- **`gstack-ceo-review`**: CEO/Founder strategic alignment, ROI, and simplicity review.
+- **`gstack-eng-review`**: Staff Engineer review for architecture, data models, and API rigor.
+- **`gstack-design-review`**: Product Designer review to eliminate AI slop and ensure visual polish.
+- **`gstack-qa`**: Quality Assurance testing matrix, browser journeys, and form validation.
+- **`gstack-review`**: Rigorous code review for performance, security, and REST compliance.
+- **`gstack-ship`**: Release engineering pre-flight checks and deployment readiness.
+- **`gstack-retro`**: Milestone engineering retrospective and operational takeaways.
+
