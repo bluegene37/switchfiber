@@ -5,6 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseCoordinates } from '../src/services/lcpNapLocations.js'
 import { EndpointColumns } from '../src/models/columns.js'
+import { normalizeServiceOrder } from '../src/services/serviceOrders.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tableFile = path.resolve(__dirname, '../src/components/DynamicApiTable.vue')
@@ -178,6 +179,80 @@ describe('Comprehensive Form Layouts & UX Audit Suite', () => {
     assert.ok(content.includes('buildBillingSections(viewFormColumns.value, { includeAudit: true })'), 'Billing view must include audit')
     assert.ok(content.includes('buildJobOrderSections(viewFormColumns.value, { includeAudit: true })'), 'Job Orders view must include audit')
     assert.ok(content.includes('buildServiceOrderSections(viewFormColumns.value, { includeAudit: true })'), 'Service Orders view must include audit')
+  })
+})
+
+describe('Service Order Legacy Column Normalization Suite', () => {
+  test('normalizes shifted CSV records where date is in accountNumber and email in contactNumber', () => {
+    const rawRecord = {
+      id: 5,
+      accountNumber: '12/9/2023',
+      fullName: '9197612919',
+      contactNumber: 'viteroanalyn5@gmail.com',
+      emailAddress: '0271 Antazo St.',
+      address: '',
+      plan: 'SwitchConnect - P799',
+      provider: 'SWITCH',
+      username: 'viteroa1209231242',
+      connectionType: 'Fiber',
+      routerModemSN: 'ZXICC5702324',
+      lcp: 'LCP 009',
+      nap: 'NAP 008',
+      port: 'PORT 001',
+      vlan: '1000',
+      supportStatus: 'For Visit',
+      concern: 'Pullout',
+      visitStatus: 'In Progress'
+    }
+
+    const norm = normalizeServiceOrder(rawRecord)
+    assert.equal(norm.dateInstalled, '12/9/2023', 'dateInstalled should receive the date')
+    assert.equal(norm.contactNumber, '9197612919', 'contactNumber should receive the phone number')
+    assert.equal(norm.emailAddress, 'viteroanalyn5@gmail.com', 'emailAddress should receive the email')
+    assert.equal(norm.address, '0271 Antazo St.', 'address should receive the street address')
+    assert.equal(norm.accountNumber, '', 'accountNumber should be cleared of the date string')
+    assert.equal(norm.fullName, '', 'fullName should be cleared of the phone number string')
+    assert.equal(norm.plan, 'SwitchConnect - P799')
+  })
+
+  test('normalizes records where plan is in provider and modem SN in lcp', () => {
+    const rawRecord = {
+      id: 2,
+      accountNumber: '202300042',
+      dateInstalled: '2023-05-12T00:00:00',
+      fullName: 'Mark John P Vizcarra',
+      contactNumber: '9653671826',
+      emailAddress: 'markjohnvizcarra27@gmail.com',
+      address: '014 Camias St. Dalig',
+      plan: '',
+      provider: 'SwitchLite - P699',
+      username: 'SWITCH',
+      connectionType: 'vizcarramj1205231708',
+      routerModemSN: 'Fiber',
+      lcp: 'Sisc799212f7',
+      nap: 'LCP 007',
+      port: 'NAP 001',
+      vlan: 'PORT 006',
+      supportStatus: '1000',
+      concern: 'For Visit',
+      connectionRemarks: 'Pullout',
+      priorityLevel: 'System Generated',
+      visitBy: 'In Progress'
+    }
+
+    const norm = normalizeServiceOrder(rawRecord)
+    assert.equal(norm.plan, 'SwitchLite - P699', 'plan should receive the plan from provider')
+    assert.equal(norm.provider, 'SWITCH', 'provider should receive SWITCH')
+    assert.equal(norm.username, 'vizcarramj1205231708', 'username should receive account username')
+    assert.equal(norm.connectionType, 'Fiber', 'connectionType should receive Fiber')
+    assert.equal(norm.routerModemSN, 'Sisc799212f7', 'routerModemSN should receive serial number')
+    assert.equal(norm.lcp, 'LCP 007', 'lcp should receive LCP 007')
+    assert.equal(norm.nap, 'NAP 001', 'nap should receive NAP 001')
+    assert.equal(norm.port, 'PORT 006', 'port should receive PORT 006')
+    assert.equal(norm.vlan, '1000', 'vlan should receive 1000')
+    assert.equal(norm.supportStatus, 'For Visit')
+    assert.equal(norm.concern, 'Pullout')
+    assert.equal(norm.visitStatus, 'In Progress')
   })
 })
 

@@ -2599,6 +2599,7 @@ import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick, u
 import { useRoute } from 'vue-router'
 import apiClient from '../services/api'
 import { RadiusUserService } from '../services/radiusUsers'
+import { normalizeServiceOrder } from '../services/serviceOrders'
 import phAddressService from '../services/phAddressService'
 import defaultRegions from '../../public/data/philippines/regions.json'
 import defaultProvinces from '../../public/data/philippines/provinces.json'
@@ -3065,6 +3066,7 @@ function formatLabel(col) {
     accountno: 'Account No.',
     accountnumber: 'Account Number',
     fullname: 'Full Name',
+    provider: 'Provider (ISP)',
     accountbalance: 'Account Balance',
     duedate: 'Due Date',
     dateinstalled: 'Date Installed',
@@ -3702,13 +3704,14 @@ const CONCISE_ENDPOINT_COLUMNS = {
     'accountNumber',
     'fullName',
     'contactNumber',
+    'emailAddress',
     'address',
     'plan',
+    'username',
     'concern',
     'priorityLevel',
     'supportStatus',
     'visitStatus',
-    'visitBy',
     'dateInstalled',
     'barangay',
     'city'
@@ -3718,13 +3721,14 @@ const CONCISE_ENDPOINT_COLUMNS = {
     'accountNumber',
     'fullName',
     'contactNumber',
+    'emailAddress',
     'address',
     'plan',
+    'username',
     'concern',
     'priorityLevel',
     'supportStatus',
     'visitStatus',
-    'visitBy',
     'dateInstalled',
     'barangay',
     'city'
@@ -3734,13 +3738,14 @@ const CONCISE_ENDPOINT_COLUMNS = {
     'accountNumber',
     'fullName',
     'contactNumber',
+    'emailAddress',
     'address',
     'plan',
+    'username',
     'concern',
     'priorityLevel',
     'supportStatus',
     'visitStatus',
-    'visitBy',
     'dateInstalled',
     'barangay',
     'city'
@@ -7863,8 +7868,9 @@ const getRecordId = (record) => {
 
 const openViewDialog = (record) => {
   fetchFormLookups()
-  viewingRecordId.value = getRecordId(record) || ''
-  viewFormData.value = { ...record }
+  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  viewingRecordId.value = getRecordId(normRecord) || ''
+  viewFormData.value = { ...normRecord }
   displayViewDialog.value = true
   if ((!usersList.value || usersList.value.length === 0) && (!userStore.users || userStore.users.length === 0)) {
     userStore.fetchUsers().catch(() => {})
@@ -7877,11 +7883,12 @@ const openEditDialog = async (record) => {
   photoExifByCol.value.edit = {}
   editError.value = null
   showPasswordState.value = {}
-  editingRecordId.value = getRecordId(record)
-  editFormData.value = { ...record }
+  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  editingRecordId.value = getRecordId(normRecord)
+  editFormData.value = { ...normRecord }
   // The state this edit is based on. Compared against the server just before the PUT
   // so a save cannot quietly discard someone else's edit made in the meantime.
-  editBaseSnapshot.value = { ...record }
+  editBaseSnapshot.value = { ...normRecord }
   editConflictAcknowledged.value = false
 
   // Shown before the awaits below, not after them. The record's own values are
@@ -8363,6 +8370,10 @@ const fetchData = async ({ silent = false } = {}) => {
       })
 
       unwrappedData = menuList
+    }
+
+    if (isServiceOrderEndpoint.value && Array.isArray(unwrappedData)) {
+      unwrappedData = unwrappedData.map(normalizeServiceOrder)
     }
 
     data.value = unwrappedData || []
