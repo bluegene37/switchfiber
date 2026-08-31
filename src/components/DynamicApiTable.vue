@@ -240,17 +240,18 @@
               <i class="pi pi-search search-icon text-secondary pointer-events-none"></i>
               <input 
                 id="global-search" 
-                v-model="filters['global'].value" 
+                v-model="searchInput" 
                 type="text"
                 class="form-control form-control-sm toolbar-search-input rounded-3 shadow-none border" 
                 :placeholder="`Search ${formatLabel(endpoint)}...`" 
                 aria-label="Search records" 
+                @keydown.enter="applySearchImmediate"
               />
               <button 
-                v-if="filters['global'].value" 
+                v-if="searchInput" 
                 type="button" 
                 class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 clear-search-btn"
-                @click="filters['global'].value = null"
+                @click="clearGlobalSearch"
                 v-tooltip.top="'Clear search'"
                 aria-label="Clear search"
               >
@@ -3795,9 +3796,42 @@ const filters = ref({
   global: { value: initialQuerySearch ? String(initialQuerySearch).trim() : null, matchMode: 'contains' }
 })
 
+const searchInput = ref(initialQuerySearch ? String(initialQuerySearch).trim() : '')
+let searchDebounceTimeout = null
+
+// Debounced search watcher: delays filter evaluation by 300ms while user is typing
+watch(searchInput, (newSearch) => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
+  searchDebounceTimeout = setTimeout(() => {
+    filters.value.global.value = String(newSearch || '').trim() || null
+  }, 300)
+})
+
+const applySearchImmediate = () => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
+  filters.value.global.value = String(searchInput.value || '').trim() || null
+}
+
+const clearGlobalSearch = () => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
+  searchInput.value = ''
+  filters.value.global.value = null
+}
+
 watch(() => route?.query?.search || route?.query?.q, (newSearch) => {
   if (newSearch !== undefined) {
-    filters.value.global.value = String(newSearch || '').trim() || null
+    if (searchDebounceTimeout) {
+      clearTimeout(searchDebounceTimeout)
+    }
+    const cleanSearch = String(newSearch || '').trim()
+    searchInput.value = cleanSearch
+    filters.value.global.value = cleanSearch || null
   }
 })
 
@@ -4097,15 +4131,39 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
   const q = (filters.value.global?.value || '').trim().toLowerCase()
   if (q) {
     const tokens = q.split(/\s+/).filter(Boolean)
-    const rowMatchesToken = (row, token) => columns.value.some(col => {
-      const val = row[col]
-      if (val === null || val === undefined) return false
-      if (typeof val === 'object') {
-        return Object.values(val).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(token))
+    const cols = columns.value || []
+    const rowMatchesTokens = (row) => {
+      let rowText = row._sf_searchCache
+      if (rowText === undefined) {
+        let parts = []
+        for (let i = 0; i < cols.length; i++) {
+          const val = row[cols[i]]
+          if (val !== null && val !== undefined) {
+            if (typeof val === 'object') {
+              for (const k in val) {
+                const inner = val[k]
+                if (inner !== null && inner !== undefined) parts.push(String(inner))
+              }
+            } else {
+              parts.push(String(val))
+            }
+          }
+        }
+        rowText = parts.join(' ').toLowerCase()
+        try {
+          Object.defineProperty(row, '_sf_searchCache', {
+            value: rowText,
+            writable: true,
+            configurable: true,
+            enumerable: false
+          })
+        } catch (_) {
+          row._sf_searchCache = rowText
+        }
       }
-      return String(val).toLowerCase().includes(token)
-    })
-    list = list.filter(row => tokens.every(token => rowMatchesToken(row, token)))
+      return tokens.every(token => rowText.includes(token))
+    }
+    list = list.filter(rowMatchesTokens)
   }
 
   return list
@@ -4272,6 +4330,10 @@ watch(displayedColumns, (newCols) => {
 }, { immediate: true })
 
 const clearAllFilters = () => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
+  searchInput.value = ''
   filters.value.global.value = null
   selectedStatusFilter.value = ''
   connectionFilter.value = ''
@@ -8904,6 +8966,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
   window.removeEventListener('accesslevelmenu-updated', fetchCurrentUserPermissions)
 })
 
