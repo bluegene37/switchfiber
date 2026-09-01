@@ -636,10 +636,17 @@
           <template v-if="absentStatusHint">
             <h6 class="fw-bold text-body mb-1">
               No record has the status &ldquo;{{ absentStatusHint.requested }}&rdquo;
+              <template v-if="absentStatusHint.windowScoped">in {{ activeDateRangeLabel }}</template>
             </h6>
             <p class="small text-secondary mb-3" style="max-width: 420px;">
-              That value is not used anywhere in this dataset, so this view will stay
-              empty. The statuses actually in use are below &mdash; pick one to see its records.
+              <template v-if="absentStatusHint.windowScoped">
+                No record in these dates carries that value. Widen the range, or pick
+                one of the statuses this window does use.
+              </template>
+              <template v-else>
+                That value is not used anywhere in this dataset, so this view will stay
+                empty. The statuses actually in use are below &mdash; pick one to see its records.
+              </template>
             </p>
             <div class="d-flex flex-wrap justify-content-center gap-2 mb-3" style="max-width: 460px;">
               <button
@@ -4396,12 +4403,14 @@ const statusCounts = computed(() => {
 })
 
 // Every status the loaded set actually carries, most common first, in the casing
-// the data uses. Deliberately NOT scoped to the date window: the parents build
-// their status tabs from this, and a vocabulary that shrank whenever the window
-// narrowed would make tabs appear and vanish under the user. Per-window counts
-// come from `statusCounts` instead. Blank statuses are excluded — there is
-// nothing to label a tab with. Only meaningful while the loaded set spans every
-// status — i.e. `clientStatusFilter`.
+// the data uses. The parents build their status tabs from this, so it is never
+// narrowed by anything the browser filters on top of the response — the strip
+// would then lose the tab the user is standing on the moment they click it. What
+// bounds it is the request itself: with `serverDateFilter` the response is the
+// date window, so the tabs are the statuses inside that window (Applications), and
+// without it the whole set is loaded and the strip is stable across windows (Job
+// Orders). Blank statuses are excluded — there is nothing to label a tab with.
+// Only meaningful while the loaded set spans every status — i.e. `clientStatusFilter`.
 const statusVocabulary = computed(() => {
   if (!props.clientStatusFilter) return []
   const rows = Array.isArray(data.value) ? data.value : []
@@ -4416,12 +4425,15 @@ const statusVocabulary = computed(() => {
   return Object.values(byStatus).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
 })
 
-// A status filter that matches nothing *because the value is not in this dataset*
-// is a different problem from a filter that is merely too narrow, and the generic
-// "No matching records found" hides it: the Application tabs asked for
+// A status filter that matches nothing *because the value is not in the loaded
+// set* is a different problem from a filter that is merely too narrow, and the
+// generic "No matching records found" hides it: the Application tabs asked for
 // 'In Progress' against a set whose statuses are Schedule / Duplicate / Cancelled,
 // so three menus looked permanently broken. Reached now only by a stale link or
 // bookmark, since the tabs build themselves from `statusVocabulary`.
+// `windowScoped` says how far the claim reaches: with `serverDateFilter` the
+// loaded set is one date window, so absence there means absent *from this window*,
+// not from the table.
 const absentStatusHint = computed(() => {
   const requested = String(props.filterParams?.status || '').trim()
   if (!requested) return null
@@ -4431,7 +4443,11 @@ const absentStatusHint = computed(() => {
   // Present somewhere in the set: the filter is fine, the window is just narrow.
   if (available.some(s => s.value.toLowerCase() === requested.toLowerCase())) return null
 
-  return { requested: String(props.statusLabel || '').trim() || requested, available }
+  return {
+    requested: String(props.statusLabel || '').trim() || requested,
+    available,
+    windowScoped: !!props.serverDateFilter
+  }
 })
 
 const activeFilterCount = computed(() => {
@@ -6134,13 +6150,15 @@ const provincesList = ref(defaultFormattedProvinces)
 const citiesList = ref([])
 const barangaysList = ref([])
 
-// Last-resort labels only. Nothing in the Applications or Job Orders data has ever
-// carried these values — the real vocabularies are Schedule / Duplicate / Cancelled /
-// No Facility / No Slot and Activated / Applied — so a form that offered this list
-// wrote a status no tab, filter or report could read back. Kept solely for an empty
-// dataset, where there is no data to learn a vocabulary from.
+// Last-resort labels only. The real Applications vocabulary is Schedule /
+// Cancelled / Duplicate / Submitted / No Facility / Inprogress and Job Orders is
+// Activated / Applied, so a form that offered a hand-written lifecycle wrote a
+// status no tab, filter or report could read back. Kept solely for an empty
+// dataset, where there is no data to learn a vocabulary from — and spelled the way
+// the data spells it ('Inprogress', one word) so the fallback cannot introduce a
+// value the filters miss.
 const FALLBACK_STATUS_LIST = [
-  'In Progress',
+  'Inprogress',
   'Done',
   'Approved'
 ]

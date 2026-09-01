@@ -124,16 +124,20 @@
       </div>
 
       <!-- Data Table with standard inside-the-card toolbar Create button -->
-      <!-- Status is resolved client-side on every route: /Applications/filter
-           answers 13,633 rows for status=Schedule against a 5,000-row list, and a
-           status-filtered response cannot tell an empty tab from a status the data
-           has never carried. Keeping the whole set loaded feeds the per-tab counts
-           and the absent-status hint. -->
+      <!-- The date window is the only thing that goes upstream:
+           /Applications/filter?fromDate=&toDate= answers just that window (185
+           rows for August 2026 against a 5,000-row table), and the status tabs
+           are then built from the statuses that response actually carries.
+           Status itself stays client-side — /Applications/filter?status=Schedule
+           answers 13,633 rows for a 5,000-row list, and a status-filtered
+           response cannot tell an empty tab from a status the window never
+           carried. -->
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="Applications"
         :filter-params="activeFilterParams"
         client-status-filter
+        server-date-filter
         :show-top-bar="false"
         :hide-create-button="false"
         :create-button-in-toolbar="false"
@@ -174,6 +178,13 @@ const focusFromDate = () => {
     if (input) input.focus()
   })
 }
+
+// The Applications data spells this status as one word — an `Inprogress` row is
+// what /api/Applications/filter returns, not 'In Progress' — and the status match
+// is exact under client-status-filter, so the route slug has to resolve to the
+// data's own spelling or the tab matches nothing. The heading keeps the two-word
+// wording; only the filter value is the data's.
+const APPLICATION_IN_PROGRESS = 'Inprogress'
 
 // Default to 'This Week' on initial load to avoid fetching/rendering massive datasets at once
 const selectedStatus = ref('')
@@ -253,14 +264,14 @@ const isDedicatedStatusRoute = computed(() => {
 })
 
 const pageTitle = computed(() => {
-  if (selectedStatus.value === 'In Progress') return 'In Progress Applications'
+  if (selectedStatus.value === APPLICATION_IN_PROGRESS) return 'In Progress Applications'
   if (selectedStatus.value === 'Done') return 'Done Applications'
   if (selectedStatus.value === 'Approved') return 'Approved Applications'
   return 'All Application'
 })
 
 const pageDescription = computed(() => {
-  if (selectedStatus.value === 'In Progress') return 'View and process customer subscription applications currently in progress.'
+  if (selectedStatus.value === APPLICATION_IN_PROGRESS) return 'View and process customer subscription applications currently in progress.'
   if (selectedStatus.value === 'Done') return 'View completed customer subscription applications.'
   if (selectedStatus.value === 'Approved') return 'View verified and approved customer subscription applications.'
   return 'Process customer subscription applications, track status updates, and filter records.'
@@ -269,8 +280,8 @@ const pageDescription = computed(() => {
 const syncStatusFromRoute = () => {
   const p = route.path.toLowerCase()
   const qStatus = String(route.query.status || '').toLowerCase()
-  if (p.includes('/in-progress') || qStatus === 'in-progress' || qStatus === 'in progress') {
-    selectedStatus.value = 'In Progress'
+  if (p.includes('/in-progress') || qStatus === 'in-progress' || qStatus === 'in progress' || qStatus === 'inprogress') {
+    selectedStatus.value = APPLICATION_IN_PROGRESS
   } else if (p.includes('/done') || qStatus === 'done') {
     selectedStatus.value = 'Done'
   } else if (p.includes('/approved') || qStatus === 'approved') {
@@ -345,8 +356,8 @@ const activeFilterParams = computed(() => {
   params.toDate = t
 
   // Resolved client-side by DynamicApiTable (client-status-filter), never sent
-  // upstream: the whole set stays loaded so the tab counts and the absent-status
-  // hint can see every status at once.
+  // upstream: the date-bounded response stays whole so the tab strip, the per-tab
+  // counts and the absent-status hint all see every status in the window at once.
   if (selectedStatus.value && selectedStatus.value.trim() !== '') {
     params.status = selectedStatus.value.trim()
   }
