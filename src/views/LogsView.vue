@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-logs">
     <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-logs-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">{{ config.title }}</h1>
         <p class="small text-secondary mt-1 mb-0">{{ config.description }}</p>
@@ -9,12 +9,12 @@
     </div>
 
     <!-- Main Card Container: Filter Controls & Data Table -->
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3 sfa-tracker-logs-card">
       <!-- Filter Controls — only rendered for the sub-endpoints that take
            parameters; the unfiltered "All" screens go straight to the table. -->
       <div
         v-if="config.filter !== 'none'"
-        class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom"
+        class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom sfa-tracker-logs-filters"
       >
         <!-- Entity selector (Entity & Date endpoints) -->
         <div v-if="config.filter === 'entity'" class="d-flex align-items-center gap-2">
@@ -101,7 +101,7 @@
       <!-- The entity / user endpoints return nothing at all without their
            selector, so prompt for it rather than showing a table that is empty
            for a reason the screen never states. -->
-      <div v-if="!isFilterSatisfied" class="p-5 text-center text-secondary">
+      <div v-if="!isFilterSatisfied" class="p-5 text-center text-secondary sfa-tracker-logs-filter-prompt">
         <i class="pi pi-filter text-secondary d-block mb-3" style="font-size: 2rem; opacity: 0.4;"></i>
         <p class="mb-0 small">{{ filterPrompt }}</p>
       </div>

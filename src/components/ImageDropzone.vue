@@ -1,7 +1,7 @@
 <template>
-  <div class="image-dropzone-wrapper">
+  <div class="image-dropzone-wrapper sfa-tracker-image-dropzone">
     <!-- Existing/Current Image Preview -->
-    <div v-if="modelValue" class="dropzone-preview-card border rounded p-2 d-flex align-items-center justify-content-between">
+    <div v-if="modelValue" class="dropzone-preview-card border rounded p-2 d-flex align-items-center justify-content-between sfa-tracker-image-dropzone-preview">
       <div class="d-flex align-items-center gap-3 overflow-hidden">
         <div class="preview-thumbnail-container" @click="showFullPreview = true">
           <img :src="modelValue" alt="Uploaded Image" class="preview-thumbnail rounded" />

@@ -1,6 +1,6 @@
 <template>
   <aside 
-    class="sidebar-wrapper d-flex flex-column flex-shrink-0 shadow-sm border-end bg-body"
+    class="sidebar-wrapper d-flex flex-column flex-shrink-0 shadow-sm border-end bg-body sfa-tracker-sidebar"
     :inert="isOffscreen"
     :aria-hidden="isOffscreen ? 'true' : null"
     :style="{ zIndex: 1050, transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }"
@@ -11,7 +11,7 @@
   >
     <!-- Branding Header -->
     <div 
-      class="d-flex align-items-center justify-content-between border-bottom overflow-hidden px-3" 
+      class="d-flex align-items-center justify-content-between border-bottom overflow-hidden px-3 sfa-tracker-sidebar-brand" 
       style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box;"
     >
       <div class="d-flex align-items-center gap-2.5 overflow-hidden" :class="{ 'justify-content-center w-100 px-0': isCollapsed }">
@@ -32,7 +32,7 @@
     </div>
 
     <!-- Menu Search (hidden while collapsed — there is no room for it) -->
-    <div v-if="!isCollapsed" class="px-2 pt-3 pb-0">
+    <div v-if="!isCollapsed" class="px-2 pt-3 pb-0 sfa-tracker-sidebar-search">
       <div class="position-relative">
         <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary pointer-events-none" style="left: 0.65rem; font-size: 0.8rem; z-index: 2;"></i>
         <input
@@ -58,7 +58,7 @@
     </div>
 
     <!-- Navigation List -->
-    <nav class="flex-grow-1 overflow-y-auto py-3 px-2">
+    <nav class="flex-grow-1 overflow-y-auto py-3 px-2 sfa-tracker-sidebar-nav">
       <!-- Fallback-menu warning (super admins only): the menu below is the
            built-in full set, not the stored access level configuration. -->
       <div
@@ -86,7 +86,7 @@
       </div>
 
       <!-- Navigation List -->
-      <ul v-else-if="visibleMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0">
+      <ul v-else-if="visibleMenuItems.length > 0" class="nav flex-column gap-1 p-0 m-0 sfa-tracker-sidebar-menu">
         <li class="nav-item" v-for="item in visibleMenuItems" :key="item.code || item.name">
           <!-- Item with NO children -->
           <router-link 
@@ -142,25 +142,25 @@
       </ul>
 
       <!-- No search hits: distinct from having no menu access at all -->
-      <div v-else-if="isSearchingMenu" class="text-center text-muted py-4 small">
+      <div v-else-if="isSearchingMenu" class="text-center text-muted py-4 small sfa-tracker-sidebar-menu-no-match">
         <i class="pi pi-search-minus fs-4 mb-2 d-block opacity-50"></i>
         <span v-if="!isCollapsed">No menu matching "{{ menuSearch }}"</span>
       </div>
 
       <!-- Fallback Empty State (only once permissions have actually resolved) -->
-      <div v-else class="text-center text-muted py-4 small">
+      <div v-else class="text-center text-muted py-4 small sfa-tracker-sidebar-menu-empty">
         <i class="pi pi-inbox fs-4 mb-2 d-block opacity-50"></i>
         <span v-if="!isCollapsed">No menu access</span>
       </div>
     </nav>
     
     <!-- Footer / Collapse Toggle, Settings & Logout -->
-    <div class="p-2 border-top bg-body d-flex flex-column gap-1">
+    <div class="p-2 border-top bg-body d-flex flex-column gap-1 sfa-tracker-sidebar-footer">
       <!-- Desktop Collapse Toggle Button -->
       <button 
         type="button"
         @click="$emit('toggle-collapse')" 
-        class="nav-link w-100 d-none d-md-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start bg-transparent shadow-none border border-transparent"
+        class="nav-link w-100 d-none d-md-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start bg-transparent shadow-none border border-transparent sfa-tracker-sidebar-collapse-btn"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
         v-tooltip.right="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
       >
@@ -173,7 +173,7 @@
       <router-link 
         v-if="canAccessSettings"
         to="/settings" 
-        class="nav-link d-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start border border-transparent"
+        class="nav-link d-flex align-items-center rounded-3 text-body opacity-75 sidebar-link text-decoration-none py-2 text-start border border-transparent sfa-tracker-sidebar-settings-link"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
         active-class="bg-primary text-white opacity-100 active-link"
         exact-active-class="bg-primary text-white opacity-100 active-link"
@@ -189,7 +189,7 @@
       <button 
         type="button"
         @click="handleLogout" 
-        class="nav-link w-100 d-flex align-items-center rounded-3 text-decoration-none text-danger border bg-danger bg-opacity-10 hover-logout py-2 text-start shadow-none"
+        class="nav-link w-100 d-flex align-items-center rounded-3 text-decoration-none text-danger border bg-danger bg-opacity-10 hover-logout py-2 text-start shadow-none sfa-tracker-sidebar-logout-btn"
         :class="isCollapsed ? 'justify-content-center px-0' : 'px-2.5'"
         v-tooltip.right="isCollapsed ? 'Logout Account' : null"
       >
@@ -204,7 +204,7 @@
   <!-- Overlay for mobile when sidebar is open -->
   <div 
     v-if="isOpen" 
-    class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-md-none" 
+    class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-md-none sfa-tracker-sidebar-overlay" 
     style="z-index: 1040;" 
     @click="$emit('close')"
   ></div>

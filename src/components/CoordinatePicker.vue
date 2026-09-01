@@ -1,9 +1,9 @@
 <template>
-  <div class="position-relative rounded-3 overflow-hidden border cpk-shell" :style="{ height }">
-    <div ref="mapContainer" class="cpk-map"></div>
+  <div class="position-relative rounded-3 overflow-hidden border cpk-shell sfa-tracker-coordinate-picker" :style="{ height }">
+    <div ref="mapContainer" class="cpk-map sfa-tracker-coordinate-picker-map"></div>
 
     <!-- Place & Coordinate Search Bar -->
-    <div v-if="!readonly" class="cpk-search">
+    <div v-if="!readonly" class="cpk-search sfa-tracker-coordinate-picker-search">
       <div class="position-relative">
         <i :class="searching ? 'pi pi-spinner pi-spin' : 'pi pi-search'" class="cpk-search-icon"></i>
         <input
@@ -65,7 +65,7 @@
     </div>
 
     <!-- Map Tool Controls (Layer, Locate, Recenter) -->
-    <div class="cpk-controls">
+    <div class="cpk-controls sfa-tracker-coordinate-picker-controls">
       <button
         type="button"
         class="btn btn-sm rounded-3 shadow-xs d-inline-flex align-items-center justify-content-center cpk-ctrl-btn"
@@ -99,7 +99,7 @@
     </div>
 
     <!-- Pinned Location Bottom Toolbar -->
-    <div v-if="hasPin" class="cpk-pin-bar shadow-sm d-flex align-items-center justify-content-between gap-2">
+    <div v-if="hasPin" class="cpk-pin-bar shadow-sm d-flex align-items-center justify-content-between gap-2 sfa-tracker-coordinate-picker-pin-bar">
       <div class="d-flex align-items-center gap-1.5 overflow-hidden">
         <span class="cpk-pin-indicator rounded-circle flex-shrink-0"></span>
         <span class="font-monospace small fw-semibold text-body text-truncate">

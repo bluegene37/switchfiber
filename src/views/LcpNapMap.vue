@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-lcpnap-map">
     <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-lcpnap-map-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">LCP NAP Locations</h1>
         <p class="small text-secondary mt-1 mb-0">
@@ -26,9 +26,9 @@
     </div>
 
     <!-- Map Card -->
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3 sfa-tracker-lcpnap-map-card">
       <!-- Toolbar -->
-      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap sfa-tracker-lcpnap-map-controls">
         <div class="d-flex align-items-center gap-2">
           <span class="small fw-semibold text-secondary text-uppercase tracking-wider">Map Controls</span>
         </div>

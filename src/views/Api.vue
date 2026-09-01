@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-api-explorer">
     <!-- Screen Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-api-explorer-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">API Viewer</h1>
         <p class="small text-secondary mt-1 mb-0">
@@ -15,7 +15,7 @@
     <div class="row g-4">
       <!-- Left Column: API List -->
       <div class="col-12 col-lg-4 col-xl-3">
-        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body sfa-tracker-api-explorer-endpoint-card">
           <!-- Card Header & Search -->
           <div class="card-header bg-body border-bottom p-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
@@ -40,7 +40,7 @@
           </div>
 
           <!-- List of Endpoints -->
-          <div class="card-body p-2 overflow-y-auto endpoint-list" style="max-height: calc(100dvh - 280px); min-height: 400px;">
+          <div class="card-body p-2 overflow-y-auto endpoint-list sfa-tracker-api-explorer-endpoint-list" style="max-height: calc(100dvh - 280px); min-height: 400px;">
             <div 
               v-if="filteredEndpoints.length === 0" 
               class="text-center text-muted py-5 small"
@@ -85,7 +85,7 @@
 
       <!-- Right Column: API Response JSON Viewer -->
       <div class="col-12 col-lg-8 col-xl-9">
-        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body sfa-tracker-api-explorer-response-card">
           <!-- Card Header & Controls -->
           <div class="card-header bg-body border-bottom p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-2">

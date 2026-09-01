@@ -527,11 +527,11 @@ export const EndpointColumns = {
     "id",
     "name",
     "description",
+    "amount",
+    "planId",
     "startDate",
     "endDate",
-    "planId",
     "isActive",
-    "amount",
     "createdDate",
     "createdBy"
   ],

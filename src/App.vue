@@ -1,7 +1,7 @@
 <template>
   <!-- Crash screen: without this, an uncaught render error leaves a blank page
        with no way back other than a manual reload. -->
-  <div v-if="fatalError" class="min-vh-100 bg-body-tertiary d-flex align-items-center justify-content-center p-4">
+  <div v-if="fatalError" class="min-vh-100 bg-body-tertiary d-flex align-items-center justify-content-center p-4 sfa-tracker-app-fatal-error">
     <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5 bg-body text-center" style="width: 100%; max-width: 480px;">
       <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10 mb-3 mx-auto" style="width: 64px; height: 64px;">
         <i class="pi pi-exclamation-triangle text-danger" style="font-size: 1.75rem;"></i>

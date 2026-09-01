@@ -1,5 +1,5 @@
 <template>
-  <div class="json-tree-node font-monospace small">
+  <div class="json-tree-node font-monospace small sfa-tracker-json-tree-node">
     <!-- 1. OBJECT OR ARRAY VALUE (Collapsible) -->
     <div v-if="isObjectOrArray" class="d-flex flex-column">
       <div 

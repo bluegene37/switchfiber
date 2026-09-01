@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-dashboard">
     <!-- Header with Quick Timeframe Filters -->
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 sfa-tracker-dashboard-header">
       <div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h1 class="fs-3 fw-bold text-body mb-0">Executive Dashboard</h1>
@@ -43,7 +43,7 @@
     </div>
 
     <!-- KPI Summary Cards Grid -->
-    <div class="row g-3">
+    <div class="row g-3 sfa-tracker-dashboard-kpis">
       <div class="col-12 col-sm-6 col-xl-2" v-for="stat in kpiStats" :key="stat.title">
         <StatCard
           :title="stat.title"
@@ -65,7 +65,7 @@
     </div>
 
     <!-- Illustrative charts notice: these series are not backed by the API yet. -->
-    <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 p-3 mb-0 small" role="note">
+    <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 p-3 mb-0 small sfa-tracker-dashboard-notice" role="note">
       <i class="pi pi-info-circle mt-1 flex-shrink-0"></i>
       <div>
         <span class="fw-semibold">Some charts below use sample data.</span>

@@ -1,11 +1,11 @@
 <template>
   <div class="w-100">
-    <div v-if="error" class="alert alert-danger d-flex align-items-center rounded-3 p-3 mb-0">
+    <div v-if="error" class="alert alert-danger d-flex align-items-center rounded-3 p-3 mb-0 sfa-tracker-table-error">
       <i class="pi pi-exclamation-circle me-2"></i> Error loading {{ endpoint }}: {{ error }}
     </div>
     
     <!-- Standalone Skeleton Loader View (Shown ONLY while data is loading; hides underlying table completely) -->
-    <div v-else-if="loading" class="card border-0 shadow-sm rounded-4 overflow-hidden p-3 bg-body">
+    <div v-else-if="loading" class="card border-0 shadow-sm rounded-4 overflow-hidden p-3 bg-body sfa-tracker-table-loading">
       <!-- Top Action / Filter Bar Placeholder (Level 1) -->
       <div v-if="hasTopBar" class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 border-bottom pb-3">
         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -85,7 +85,7 @@
       <!-- Top Action / Filter Bar (Level 1) -->
       <div 
         v-if="hasTopBar" 
-        class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-2 border-bottom mb-2 top-action-bar"
+        class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-2 border-bottom mb-2 top-action-bar sfa-tracker-table-topbar"
       >
         <!-- Left: Filters (Radius Connection Filters, Status Dropdown, Date Filter Dropdown, and Reset Filter Button) -->
         <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -198,7 +198,7 @@
         <!-- Right: Primary Action (Create Button) -->
         <Button 
           v-if="showTopCreateButton" 
-          class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0" 
+          class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-table-topbar-create-btn" 
           :aria-label="createButtonLabel || 'Create'" 
           @click="openCreateDialog"
         >
@@ -209,7 +209,7 @@
       </div>
 
       <!-- Actual DataTable -->
-      <DataTable 
+      <DataTable class="sfa-tracker-table-datatable" 
         ref="dt"
         :value="filteredData" 
         scrollable
@@ -232,11 +232,11 @@
         :class="['small highlight-selected-row', densityClass]"
       >
       <template #header>
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 gap-md-3 py-1.5 table-toolbar">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 gap-md-3 py-1.5 table-toolbar sfa-tracker-table-toolbar">
           <!-- Left Zone: Search Box -->
           <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 flex-md-grow-0">
             <!-- Enhanced Search Box with Inner Icon & Instant Clear -->
-            <div class="position-relative toolbar-search-wrapper">
+            <div class="position-relative toolbar-search-wrapper sfa-tracker-table-search">
               <i class="pi pi-search search-icon text-secondary pointer-events-none"></i>
               <input 
                 id="global-search" 
@@ -275,7 +275,7 @@
 
             <!-- Table Row Density Switcher -->
             <Button 
-              class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3"
+              class="p-button-secondary p-button-sm p-button-outlined shadow-xs toolbar-icon-btn rounded-3 sfa-tracker-table-density-btn"
               v-tooltip.bottom="`Density: ${densityLabel}`"
               aria-label="Toggle Row Density"
               @click="toggleDensity"
@@ -293,7 +293,7 @@
               <i class="pi pi-sliders-h"></i>
             </Button>
 
-            <Popover ref="columnPopover">
+            <Popover class="sfa-tracker-table-column-picker" ref="columnPopover">
               <div class="p-2 column-picker-panel" style="min-width: 220px; max-width: 280px;">
                 <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
                   <span class="fw-bold small text-body">Visible Columns</span>
@@ -374,7 +374,7 @@
 
       <!-- Paginator Start: Dynamic Record Range Summary -->
       <template #paginatorstart>
-        <div class="small text-secondary d-flex align-items-center my-1 flex-wrap">
+        <div class="small text-secondary d-flex align-items-center my-1 flex-wrap sfa-tracker-table-paginator-summary">
           <i class="pi pi-database text-primary opacity-75 me-2"></i>
           <span>Showing <strong class="text-body">{{ recordRangeStart }}</strong> to <strong class="text-body">{{ recordRangeEnd }}</strong> of <strong class="text-body">{{ filteredRecordsCount }}</strong> {{ filteredRecordsCount === 1 ? 'record' : 'records' }}</span>
           <span v-if="filteredRecordsCount !== totalRecordsCount" class="badge bg-secondary bg-opacity-10 text-secondary border ms-2" style="font-size: 0.72rem;">
@@ -384,7 +384,7 @@
       </template>
 
       <!-- Dynamic Visible Columns -->
-      <Column
+      <Column class="sfa-tracker-table-col-data"
         v-for="col in displayedColumns"
         :key="col"
         :field="col"
@@ -397,7 +397,7 @@
         :bodyClass="isStatusColumn(col) ? 'text-center' : ''"
       >
         <template #body="slotProps">
-          <div v-if="col.toLowerCase() === 'active'" class="d-flex justify-content-center">
+          <div v-if="col.toLowerCase() === 'active' || col.toLowerCase() === 'isactive' || col.toLowerCase() === 'is_active'" class="d-flex justify-content-center">
             <span v-if="slotProps.data[col] === true || slotProps.data[col] === 'true'" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">Active</span>
             <span v-else class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2.5 py-1">Inactive</span>
           </div>
@@ -459,6 +459,28 @@
           <span v-else-if="isUserRefField(col)">
             {{ getUserDisplayName(slotProps.data[col]) }}
           </span>
+          <!-- Currency Formatted Columns -->
+          <span v-else-if="isCurrencyField(col) && slotProps.data[col] !== null && slotProps.data[col] !== undefined && !isNaN(slotProps.data[col])" class="fw-semibold font-monospace">
+            {{ formatDisplayValue(slotProps.data[col], col) }}
+          </span>
+          <!-- Target Plan Dropdown Reference -->
+          <span v-else-if="getFieldType(col) === 'plan_dropdown'" class="fw-medium">
+            <span v-if="slotProps.data[col]" class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill">
+              {{ formatDisplayValue(slotProps.data[col], col) }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
+          <!-- Discount Type Dropdown Reference -->
+          <span v-else-if="getFieldType(col) === 'discounttype_dropdown'" class="fw-medium">
+            <span v-if="slotProps.data[col]" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill">
+              {{ formatDisplayValue(slotProps.data[col], col) }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
+          <!-- Date / Timestamp Formatted Columns -->
+          <span v-else-if="isDateField(col) && slotProps.data[col]" class="text-nowrap small">
+            {{ formatDisplayValue(slotProps.data[col], col) }}
+          </span>
           <span v-else-if="getFieldType(col) === 'textarea' || col.toLowerCase().includes('description')" class="d-inline-block text-wrap py-1" style="min-width: 250px; max-width: 480px; white-space: normal; word-break: break-word;">
             {{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}
           </span>
@@ -475,7 +497,7 @@
            column ahead of the switch that changes it. Tracks the in-flight value
            while a connect / disconnect is running, so it never disagrees with the
            switch beside it. -->
-      <Column
+      <Column class="sfa-tracker-table-col-connection-status"
         v-if="isRadiusUserEndpoint"
         header="Connection Status"
         :style="{ minWidth: '180px', width: '180px' }"
@@ -500,7 +522,7 @@
            sits alone and the header carries the meaning; when the caption is on it
            reads after the switch in a fixed-width slot, so the switches stay
            aligned down the column instead of shifting with the word beside them. -->
-      <Column
+      <Column class="sfa-tracker-table-col-connection"
         v-if="isRadiusUserEndpoint"
         header="Connection"
         :style="{
@@ -545,7 +567,7 @@
       </Column>
 
       <!-- Actions Column (Frozen on Right) -->
-      <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '105px', width: isMenuEndpoint ? '150px' : '105px' }" class="text-center frozen-actions-col">
+      <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '105px', width: isMenuEndpoint ? '150px' : '105px' }" class="text-center frozen-actions-col sfa-tracker-table-col-actions">
         <template #body="slotProps">
           <div class="d-flex gap-1 justify-content-center align-items-center" @click.stop>
             <!-- Interactive Toggle Switch & Status Pill in Actions Column for Menus -->
@@ -601,13 +623,13 @@
         <!-- Still verifying: never assert "no data" until a request has settled -->
         <div
           v-if="!hasFetched || refreshing"
-          class="p-5 d-flex flex-column align-items-center justify-content-center gap-2"
+          class="p-5 d-flex flex-column align-items-center justify-content-center gap-2 sfa-tracker-table-empty-filtered"
         >
           <div v-for="r in 3" :key="r" class="skeleton-box rounded-2" :style="{ width: r === 1 ? '220px' : r === 2 ? '300px' : '180px', height: '14px' }"></div>
           <span class="small text-secondary mt-2">Checking for records&hellip;</span>
         </div>
 
-        <div v-else class="p-5 text-center text-secondary d-flex flex-column align-items-center justify-content-center">
+        <div v-else class="p-5 text-center text-secondary d-flex flex-column align-items-center justify-content-center sfa-tracker-table-empty">
           <div class="rounded-circle bg-body-tertiary p-3 mb-3 d-inline-flex align-items-center justify-content-center border" style="width: 56px; height: 56px;">
             <i :class="activeFilterCount > 0 ? 'pi pi-search-minus' : 'pi pi-inbox'" class="text-secondary fs-4"></i>
           </div>
@@ -682,18 +704,18 @@
     </div>
 
     <!-- Enhanced Create Record Dialog -->
-    <Dialog 
+    <Dialog class="sfa-tracker-dialog-create" 
       v-model:visible="displayCreateDialog" 
       modal 
       :header="`Create New ${formatLabel(endpoint)} Record`" 
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
-      <div v-if="saveError" id="form-error-create" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
+      <div v-if="saveError" id="form-error-create" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small sfa-tracker-dialog-create-error">
         <i class="pi pi-exclamation-triangle me-2"></i> {{ saveError }}
       </div>
 
-      <div class="pe-2 mt-2" style="max-height: 72vh; overflow-y: auto;">
+      <div class="pe-2 mt-2 sfa-tracker-dialog-create-body" style="max-height: 72vh; overflow-y: auto;">
         <div 
           v-for="sec in formSections" 
           :key="sec.key" 
@@ -1446,7 +1468,7 @@
         </div>
       </div>
       <template #footer>
-        <div class="d-flex justify-content-end gap-2 mt-3">
+        <div class="d-flex justify-content-end gap-2 mt-3 sfa-tracker-dialog-create-footer">
           <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="requestDialogClose('create')" />
           <Button :label="`Save ${formatLabel(endpoint)}`" icon="pi pi-check" class="p-button-primary p-button-sm rounded-3 px-3.5 shadow-xs" @click="saveData" :loading="saving" />
         </div>
@@ -1454,14 +1476,14 @@
     </Dialog>
 
     <!-- View Record Dialog (Read-Only) -->
-    <Dialog 
+    <Dialog class="sfa-tracker-dialog-view" 
       v-model:visible="displayViewDialog" 
       modal 
       :header="viewingRecordId ? `View ${formatLabel(endpoint)} Record #${viewingRecordId}` : `View ${formatLabel(endpoint)} Record`" 
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
-      <div class="pe-2 mt-2" style="max-height: 72vh; overflow-y: auto;">
+      <div class="pe-2 mt-2 sfa-tracker-dialog-view-body" style="max-height: 72vh; overflow-y: auto;">
         <div 
           v-for="sec in viewFormSections" 
           :key="sec.key" 
@@ -1702,7 +1724,7 @@
         </div>
       </div>
       <template #footer>
-        <div class="d-flex justify-content-between align-items-center w-100 mt-2">
+        <div class="d-flex justify-content-between align-items-center w-100 mt-2 sfa-tracker-dialog-view-footer">
           <Button
             v-if="!readOnly"
             label="Edit Record"
@@ -1724,18 +1746,18 @@
     </Dialog>
 
     <!-- Edit Record Dialog -->
-    <Dialog 
+    <Dialog class="sfa-tracker-dialog-edit" 
       v-model:visible="displayEditDialog" 
       modal 
       :header="editingRecordId ? `Update ${formatLabel(endpoint)} Record #${editingRecordId}` : `Update ${formatLabel(endpoint)} Record`" 
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
-      <div v-if="editError" id="form-error-edit" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
+      <div v-if="editError" id="form-error-edit" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small sfa-tracker-dialog-edit-error">
         <i class="pi pi-exclamation-triangle me-2"></i> {{ editError }}
       </div>
 
-      <div class="pe-2 mt-2" style="max-height: 72vh; overflow-y: auto;">
+      <div class="pe-2 mt-2 sfa-tracker-dialog-edit-body" style="max-height: 72vh; overflow-y: auto;">
         <div 
           v-for="sec in formSections" 
           :key="sec.key" 
@@ -2488,7 +2510,7 @@
         </div>
       </div>
       <template #footer>
-        <div class="d-flex justify-content-end gap-2 mt-3">
+        <div class="d-flex justify-content-end gap-2 mt-3 sfa-tracker-dialog-edit-footer">
           <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="requestDialogClose('edit')" />
           <Button label="Save Changes" icon="pi pi-check" class="p-button-primary p-button-sm rounded-3 px-3.5 shadow-xs" @click="saveEdit" :loading="savingEdit" />
         </div>
@@ -2496,13 +2518,13 @@
     </Dialog>
 
     <!-- Delete Confirmation Dialog -->
-    <Dialog 
+    <Dialog class="sfa-tracker-dialog-delete" 
       v-model:visible="displayDeleteDialog" 
       modal 
       header="Confirm Delete" 
       :style="{ width: '90vw', maxWidth: '450px' }"
     >
-      <div v-if="deleteError" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small">
+      <div v-if="deleteError" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small sfa-tracker-dialog-delete-error">
         <i class="pi pi-exclamation-triangle me-2"></i> {{ deleteError }}
       </div>
 
@@ -2528,7 +2550,7 @@
       </div>
 
       <template #footer>
-        <div class="d-flex justify-content-end gap-2 mt-3">
+        <div class="d-flex justify-content-end gap-2 mt-3 sfa-tracker-dialog-delete-footer">
           <Button label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayDeleteDialog = false" />
           <Button label="Delete Record" icon="pi pi-trash" class="p-button-danger p-button-sm rounded-3 px-3 shadow-xs" @click="deleteRecord" :loading="deleting" />
         </div>
@@ -2537,7 +2559,7 @@
 
     <!-- Discard-changes guard. A long create form represents real typing, and Cancel
          sits next to Save; closing on the first click threw the lot away silently. -->
-    <Dialog
+    <Dialog class="sfa-tracker-dialog-discard"
       v-model:visible="displayDiscardDialog"
       modal
       header="Discard your changes?"
@@ -2554,7 +2576,7 @@
         </div>
       </div>
       <template #footer>
-        <div class="d-flex justify-content-end gap-2 mt-3">
+        <div class="d-flex justify-content-end gap-2 mt-3 sfa-tracker-dialog-discard-footer">
           <Button label="Keep editing" icon="pi pi-arrow-left" class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3" @click="displayDiscardDialog = false" />
           <Button label="Discard changes" icon="pi pi-trash" class="p-button-danger p-button-sm rounded-3 px-3 shadow-xs" @click="confirmDiscardDialog" />
         </div>
@@ -2562,7 +2584,7 @@
     </Dialog>
 
     <!-- Image Preview Lightbox Dialog for Table -->
-    <Dialog
+    <Dialog class="sfa-tracker-dialog-image-preview"
       v-model:visible="tableImagePreviewVisible"
       modal
       :header="tableImagePreviewTitle || 'Image Preview'"
@@ -2605,7 +2627,7 @@
     </Dialog>
 
     <!-- Map picker: search / GPS / pin on forms that have no coordinates column, then autofill the address -->
-    <Dialog
+    <Dialog class="sfa-tracker-dialog-map-picker"
       v-model:visible="mapPicker.visible"
       modal
       header="Pin Location on Map"
@@ -2614,7 +2636,7 @@
     >
       <div class="d-flex flex-column gap-2">
         <CoordinatePicker v-model="mapPicker.coords" height="360px" />
-        <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+        <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 sfa-tracker-dialog-map-picker-toolbar">
           <div class="d-flex align-items-center gap-2 flex-grow-1">
             <span class="small text-secondary fw-semibold flex-shrink-0">
               <i class="pi pi-compass text-primary me-1"></i>GPS:
@@ -3147,8 +3169,16 @@ function formatLabel(col) {
     napid: 'NAP',
     vlan_id: 'VLAN',
     vlanid: 'VLAN',
-    plan_id: 'Plan',
-    planid: 'Plan',
+    plan_id: 'Target Plan',
+    planid: 'Target Plan',
+    startdate: 'Start Date',
+    enddate: 'End Date',
+    isactive: 'Status',
+    discounttypeid: 'Discount Type',
+    discounttype_id: 'Discount Type',
+    discountamount: 'Discount Amount',
+    discountstatus: 'Discount Status',
+    invoiceused: 'Invoice Used',
     confirmpassword: 'Confirm Password',
     email: 'Email',
     useremail: 'Email Address',
@@ -3621,7 +3651,7 @@ function isCreatedOrModifiedField(col) {
 const isStatusColumn = (col) => {
   if (!col) return false
   const lower = col.toLowerCase()
-  return lower === 'status' || lower.includes('status') || lower === 'active' || lower === 'disabled'
+  return lower === 'status' || lower.includes('status') || lower === 'active' || lower === 'isactive' || lower === 'is_active' || lower === 'disabled'
 }
 
 // Concise column presets for complex endpoints with many fields (e.g. Job Orders).
@@ -3962,14 +3992,57 @@ const toggleColumnVisibility = (col) => {
   }
 }
 
+// Default concise visible columns for Discount Types and Discounts
+const DISCOUNT_TYPE_DEFAULT_COLUMNS = [
+  'id',
+  'name',
+  'description',
+  'amount',
+  'planId',
+  'startDate',
+  'endDate',
+  'isActive'
+]
+
+const DISCOUNT_DEFAULT_COLUMNS = [
+  'id',
+  'accountNo',
+  'fullName',
+  'plan',
+  'discounttype_id',
+  'discountId',
+  'discountAmount',
+  'remaining',
+  'discountStatus',
+  'usedDate'
+]
+
+// Falls back to every column when an endpoint has no preset, or when a preset
+// matches nothing (a schema change should not leave the table blank).
+const defaultVisibleColumns = (cols) => {
+  if (isDiscountTypeEndpoint.value) {
+    const picked = cols.filter(col =>
+      DISCOUNT_TYPE_DEFAULT_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
+    )
+    return picked.length > 0 ? picked : [...cols]
+  }
+  if (isDiscountEndpoint.value) {
+    const picked = cols.filter(col =>
+      DISCOUNT_DEFAULT_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
+    )
+    return picked.length > 0 ? picked : [...cols]
+  }
+  return [...cols]
+}
+
 // Watch columns and maintain visibleColumns
 watch(columns, (newCols) => {
   if (Array.isArray(newCols) && newCols.length > 0) {
     if (visibleColumns.value.length === 0) {
-      visibleColumns.value = [...newCols]
+      visibleColumns.value = defaultVisibleColumns(newCols)
     } else {
       const valid = visibleColumns.value.filter(c => newCols.includes(c))
-      visibleColumns.value = valid.length > 0 ? valid : [...newCols]
+      visibleColumns.value = valid.length > 0 ? valid : defaultVisibleColumns(newCols)
     }
   }
 }, { immediate: true })
@@ -7630,6 +7703,20 @@ const isCurrencyField = (col) => {
     lower === 'remaining' ||
     lower.includes('servicecharge') ||
     lower.includes('discountamount')
+  )
+}
+
+const isDateField = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  const type = getFieldType(col)
+  return (
+    type === 'date' ||
+    lower.includes('date') ||
+    lower.includes('timestamp') ||
+    lower === 'datetime' ||
+    lower === 'created' ||
+    lower === 'modified'
   )
 }
 

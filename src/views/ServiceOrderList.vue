@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-service-order-list">
     <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-service-order-list-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">{{ pageTitle }}</h1>
         <p class="small text-secondary mt-1 mb-0">{{ pageDescription }}</p>
@@ -9,11 +9,11 @@
     </div>
 
     <!-- Main Card Container: Filter Tabs & Data Table -->
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3 sfa-tracker-service-order-list-card">
       <!-- Unified Filter Controls (Status Tabs on Left | Date Range right after divider) -->
-      <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom">
+      <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom sfa-tracker-service-order-list-filters">
         <!-- Left Side: Status Filter Tabs (Shown only on All Service Orders page) -->
-        <div v-if="!isDedicatedStatusRoute" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
+        <div v-if="!isDedicatedStatusRoute" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0 sfa-tracker-service-order-list-status-tabs">
           <button
             v-for="tab in statusTabs"
             :key="tab.id"

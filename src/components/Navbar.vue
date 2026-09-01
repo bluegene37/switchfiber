@@ -1,10 +1,10 @@
 <template>
-  <header class="bg-body border-bottom d-flex align-items-center justify-content-between px-3 px-md-4 shadow-sm position-relative" style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box; z-index: 1030;">
+  <header class="bg-body border-bottom d-flex align-items-center justify-content-between px-3 px-md-4 shadow-sm position-relative sfa-tracker-navbar" style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box; z-index: 1030;">
     <!-- Left side: Mobile & Desktop Menu Toggle & Production Search Box -->
     <div class="d-flex align-items-center flex-grow-1">
       <button 
         @click="handleToggleSidebar" 
-        class="btn btn-link text-secondary me-2 me-md-3 p-1 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center flex-shrink-0" 
+        class="btn btn-link text-secondary me-2 me-md-3 p-1 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center flex-shrink-0 sfa-tracker-navbar-menu-toggle" 
         style="width: 42px; height: 42px;"
         aria-label="Toggle Sidebar"
         v-tooltip.bottom="isOpen ? 'Close Sidebar' : (isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar')"
@@ -26,7 +26,7 @@
       
       <!-- Navbar Search Container -->
       <div 
-        class="position-relative w-100" 
+        class="position-relative w-100 sfa-tracker-navbar-omnibox" 
         :class="isMobileSearchActive ? 'mobile-search-bar d-flex align-items-center px-2 bg-body position-absolute start-0 top-0 h-100 w-100 z-3' : 'd-none d-sm-block'"
         style="max-width: 480px;" 
         ref="searchContainer"
@@ -77,7 +77,7 @@
         <Transition name="dropdown-fade">
           <div 
             v-if="isSearchOpen" 
-            class="position-absolute start-0 end-0 mt-2 shadow-lg border rounded-3 bg-body overflow-hidden search-results-dropdown"
+            class="position-absolute start-0 end-0 mt-2 shadow-lg border rounded-3 bg-body overflow-hidden search-results-dropdown sfa-tracker-navbar-omnibox-results"
             style="z-index: 1150; top: 100%; max-height: 480px; display: flex; flex-direction: column;"
           >
             <!-- Results Body -->
@@ -187,10 +187,10 @@
     </div>
 
     <!-- Right side: Network Status, Dark Mode, Notifications & Profile -->
-    <div class="d-flex align-items-center ms-3 gap-3">
+    <div class="d-flex align-items-center ms-3 gap-3 sfa-tracker-navbar-right">
       <!-- Network Status — reflects the last health check, not a fixed label -->
       <div
-        class="d-none d-lg-flex align-items-center gap-2 px-3 py-1.5 rounded-pill border border-opacity-25"
+        class="d-none d-lg-flex align-items-center gap-2 px-3 py-1.5 rounded-pill border border-opacity-25 sfa-tracker-navbar-api-status"
         :class="apiDegraded ? 'bg-danger bg-opacity-10 text-danger border-danger' : 'bg-success bg-opacity-10 text-success border-success'"
         v-tooltip.bottom="apiDegraded ? 'One or more API endpoints are failing — open notifications for details' : 'All monitored API endpoints are responding'"
       >
@@ -204,7 +204,7 @@
       <button 
         v-if="canAccessTheme"
         @click="toggleTheme" 
-        class="btn btn-sm rounded-3 d-flex align-items-center justify-content-center p-0 shadow-sm border ms-1"
+        class="btn btn-sm rounded-3 d-flex align-items-center justify-content-center p-0 shadow-sm border ms-1 sfa-tracker-navbar-theme-btn"
         :class="isDark ? 'btn-dark' : 'btn-light'"
         style="width: 42px; height: 42px; transition: transform 0.2s;"
         aria-label="Toggle Dark Mode"
@@ -214,7 +214,7 @@
       </button>
 
       <!-- Interactive Notification Bell & Dropdown -->
-      <div class="position-relative" ref="notificationContainer">
+      <div class="position-relative sfa-tracker-navbar-notifications" ref="notificationContainer">
         <button 
           @click="toggleNotifications"
           class="btn btn-link text-secondary position-relative p-2 text-decoration-none rounded-circle hover-bg-icon d-flex align-items-center justify-content-center"
@@ -237,7 +237,7 @@
         <Transition name="dropdown-fade">
           <div
             v-if="isNotificationOpen"
-            class="position-absolute end-0 mt-2 shadow-lg border rounded-4 bg-body overflow-hidden notification-dropdown"
+            class="position-absolute end-0 mt-2 shadow-lg border rounded-4 bg-body overflow-hidden notification-dropdown sfa-tracker-navbar-notifications-panel"
             style="z-index: 1100; top: 100%;"
           >
             <!-- Header -->
@@ -310,7 +310,7 @@
       </div>
 
       <!-- Attached Profile Dropdown -->
-      <div class="position-relative" ref="dropdownContainer">
+      <div class="position-relative sfa-tracker-navbar-user-menu" ref="dropdownContainer">
         <div 
           class="d-flex align-items-center ms-2 px-3 py-2 rounded-3 user-chip" 
           :class="{ 'active-chip': isDropdownOpen }"
@@ -334,7 +334,7 @@
         <Transition name="dropdown-fade">
           <div 
             v-if="isDropdownOpen" 
-            class="position-absolute end-0 mt-2 p-2 shadow-lg border rounded-3 bg-body"
+            class="position-absolute end-0 mt-2 p-2 shadow-lg border rounded-3 bg-body sfa-tracker-navbar-user-menu-panel"
             style="min-width: 220px; z-index: 1100; top: 100%;"
           >
             <div class="px-3 py-2 border-bottom mb-1 bg-body-tertiary rounded-2">

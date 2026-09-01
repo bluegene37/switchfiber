@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-models">
     <!-- Screen Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-models-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">Models</h1>
         <p class="small text-secondary mt-1 mb-0">
@@ -22,7 +22,7 @@
 
     <div class="row g-4">
       <!-- Left Column: Model List -->
-      <div class="col-12 col-lg-4 col-xl-3">
+      <div class="col-12 col-lg-4 col-xl-3 sfa-tracker-models-list-col">
         <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
           <div class="card-header bg-body border-bottom p-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
@@ -91,7 +91,7 @@
       </div>
 
       <!-- Right Column: Column Detail -->
-      <div class="col-12 col-lg-8 col-xl-9">
+      <div class="col-12 col-lg-8 col-xl-9 sfa-tracker-models-detail-col">
         <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
           <div class="card-header bg-body border-bottom p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">

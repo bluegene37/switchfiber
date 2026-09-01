@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center">
+  <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center sfa-tracker-coming-soon">
     <div class="mb-4">
       <i class="pi pi-compass text-secondary" style="font-size: 4rem; opacity: 0.5;"></i>
     </div>

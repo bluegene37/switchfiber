@@ -1,5 +1,5 @@
 <template>
-  <div class="exif-panel border rounded-3 p-3 mt-3 text-start">
+  <div class="exif-panel border rounded-3 p-3 mt-3 text-start sfa-tracker-exif-panel">
     <div v-if="loading" class="d-flex align-items-center gap-2 text-muted small">
       <i class="pi pi-spin pi-spinner"></i>
       <span>Reading EXIF metadata…</span>

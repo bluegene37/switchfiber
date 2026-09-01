@@ -1,12 +1,12 @@
 <template>
-  <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-body">
+  <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-body sfa-tracker-chart-card">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h3 class="fs-5 fw-bold text-body mb-0">{{ title }}</h3>
       <button class="btn btn-link text-secondary p-0 text-decoration-none" aria-label="More Options">
         <i class="pi pi-ellipsis-h"></i>
       </button>
     </div>
-    <div class="w-100" style="height: 250px;">
+    <div class="w-100 sfa-tracker-chart-card-canvas" style="height: 250px;">
       <v-chart class="chart" :option="computedOption" :theme="theme" autoresize />
     </div>
   </div>

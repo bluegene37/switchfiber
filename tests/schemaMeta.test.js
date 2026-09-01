@@ -28,6 +28,9 @@ describe('Domain Models & Schema Meta Suite', () => {
     assert.ok(EndpointColumns['Lcps'], 'Should have column fallbacks for Lcps')
     assert.ok(EndpointColumns['Plans'], 'Should have column fallbacks for Plans')
     assert.ok(EndpointColumns['Users'], 'Should have column fallbacks for Users')
+    assert.ok(EndpointColumns['DiscountTypes'], 'Should have column fallbacks for DiscountTypes')
+    assert.ok(Array.isArray(EndpointColumns['DiscountTypes']), 'DiscountTypes columns should be an array')
+    assert.deepStrictEqual(EndpointColumns['DiscountTypes'].slice(0, 5), ['id', 'name', 'description', 'amount', 'planId'])
     assert.ok(Array.isArray(EndpointColumns['Applications']), 'Applications columns should be an array')
   })
 
@@ -41,5 +44,9 @@ describe('Domain Models & Schema Meta Suite', () => {
     const reqCols = resolveRequiredFields('Applications', ['firstName', 'lastName', 'mobileNumber', 'id'])
     assert.ok(reqCols.includes('firstName'), 'firstName should be required in Applications')
     assert.ok(!reqCols.includes('id'), 'System field id should not be required')
+
+    assert.ok(hasRequiredOverride('DiscountTypes'), 'DiscountTypes should have custom required overrides')
+    const reqDiscountTypeCols = resolveRequiredFields('DiscountTypes', ['id', 'name', 'amount', 'planId', 'createdDate'])
+    assert.deepStrictEqual(reqDiscountTypeCols, ['name', 'amount'])
   })
 })

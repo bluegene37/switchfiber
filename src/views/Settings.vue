@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-settings">
     <!-- Access Restricted State when Settings (id: 20) is disabled -->
-    <div v-if="!canAccessSettings" class="card shadow-sm border-0 rounded-4 p-5 text-center bg-body">
+    <div v-if="!canAccessSettings" class="card shadow-sm border-0 rounded-4 p-5 text-center bg-body sfa-tracker-settings-denied">
       <div class="p-4 bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex mx-auto mb-3">
         <i class="pi pi-lock fs-1"></i>
       </div>
@@ -12,7 +12,7 @@
     <!-- Main Settings Container -->
     <template v-else>
       <!-- Header -->
-      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-settings-header">
         <div>
           <h1 class="fs-3 fw-bold text-body mb-0">System & Account Settings</h1>
           <p class="small text-secondary mt-1 mb-0">Customize application theme colors, manage user profile, security, and system preferences.</p>
@@ -22,7 +22,7 @@
       <!-- Main Content Container -->
       <div class="row g-4">
         <!-- Left Column: Navigation Tabs & Profile Overview Card -->
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-lg-4 sfa-tracker-settings-nav-col">
           <!-- Profile Card -->
           <div class="card shadow-sm border-0 rounded-4 p-4 text-center mb-4 bg-body">
             <div class="position-relative d-inline-block mx-auto mb-3">
@@ -96,10 +96,10 @@
       </div>
 
       <!-- Right Column: Settings Content Panes -->
-      <div class="col-12 col-lg-8">
+      <div class="col-12 col-lg-8 sfa-tracker-settings-panel-col">
 
         <!-- 1. Theme & Appearance Section -->
-        <div v-if="activeSection === 'theme'" class="card shadow-sm border-0 rounded-4 p-4 bg-body">
+        <div v-if="activeSection === 'theme'" class="card shadow-sm border-0 rounded-4 p-4 bg-body sfa-tracker-settings-panel-theme">
           <!-- Section Header -->
           <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
             <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
@@ -477,7 +477,7 @@
         </div>
 
         <!-- 2. Profile Information Section -->
-        <div v-if="activeSection === 'profile'" class="card shadow-sm border-0 rounded-4 p-4 bg-body">
+        <div v-if="activeSection === 'profile'" class="card shadow-sm border-0 rounded-4 p-4 bg-body sfa-tracker-settings-panel-profile">
           <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
             <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
               <i class="pi pi-user fs-4"></i>
@@ -533,7 +533,7 @@
         </div>
 
         <!-- 3. Security Section -->
-        <div v-else-if="activeSection === 'security'" class="card shadow-sm border-0 rounded-4 p-4 bg-body">
+        <div v-else-if="activeSection === 'security'" class="card shadow-sm border-0 rounded-4 p-4 bg-body sfa-tracker-settings-panel-security">
           <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
             <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
               <i class="pi pi-lock fs-4"></i>
@@ -578,7 +578,7 @@
         </div>
 
         <!-- 4. System & API Info -->
-        <div v-else-if="activeSection === 'system'" class="card shadow-sm border-0 rounded-4 p-4 bg-body">
+        <div v-else-if="activeSection === 'system'" class="card shadow-sm border-0 rounded-4 p-4 bg-body sfa-tracker-settings-panel-system">
           <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
             <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
               <i class="pi pi-server fs-4"></i>

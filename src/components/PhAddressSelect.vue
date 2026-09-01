@@ -1,5 +1,5 @@
 <template>
-  <div :class="['ph-address-select', layout === 'grid' ? 'row g-3' : 'd-flex flex-column gap-3']">
+  <div class="sfa-tracker-ph-address-select" :class="['ph-address-select', layout === 'grid' ? 'row g-3' : 'd-flex flex-column gap-3']">
     <!-- Region -->
     <div :class="layout === 'grid' ? 'col-md-6 col-lg-3' : ''">
       <label v-if="showLabels" class="form-label font-medium text-sm">

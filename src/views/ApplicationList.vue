@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-application-list">
     <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-application-list-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">{{ pageTitle }}</h1>
         <p class="small text-secondary mt-1 mb-0">{{ pageDescription }}</p>
@@ -9,14 +9,14 @@
     </div>
 
     <!-- Main Card Container: Filter Tabs & Data Table -->
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 d-flex flex-column gap-3 sfa-tracker-application-list-card">
       <!-- Unified Filter Controls (Status Tabs on Left | Date Range right after divider) -->
-      <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom">
+      <div class="d-flex align-items-center justify-content-start flex-wrap gap-3 pb-2 border-bottom sfa-tracker-application-list-filters">
         <!-- Left Side: Status Filter Tabs, built from the statuses the data
              actually carries. Scoped to the All page: the dedicated
              /application/<status> routes keep the menu entries that point at them
              and explain an absent status in the empty state instead. -->
-        <div v-if="!isDedicatedStatusRoute && statusTabs.length > 1" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0">
+        <div v-if="!isDedicatedStatusRoute && statusTabs.length > 1" class="d-flex align-items-center gap-2 overflow-x-auto filter-tabs-scrollable flex-shrink-0 sfa-tracker-application-list-status-tabs">
           <button
             v-for="tab in statusTabs"
             :key="tab.value"
@@ -108,7 +108,7 @@
 
       <!-- Widened-window notice: the date range on screen is not the default one,
            so say which range the rows belong to and offer the week back -->
-      <div v-if="autoWidenLabel" class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0 small rounded-3">
+      <div v-if="autoWidenLabel" class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0 small rounded-3 sfa-tracker-application-list-widen-notice">
         <i class="pi pi-calendar-clock mt-1"></i>
         <div class="flex-grow-1">
           {{ autoWidenSubject }} dated this week, so the range was widened to

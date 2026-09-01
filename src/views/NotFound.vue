@@ -1,5 +1,5 @@
 <template>
-  <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5 bg-body text-center" style="width: 100%; max-width: 480px;">
+  <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5 bg-body text-center sfa-tracker-not-found" style="width: 100%; max-width: 480px;">
     <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 mx-auto" style="width: 64px; height: 64px;">
       <i class="pi pi-compass text-primary" style="font-size: 1.75rem;"></i>
     </div>

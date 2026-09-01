@@ -1,7 +1,7 @@
 <template>
-  <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-body">
+  <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-body sfa-tracker-dashboard-map-card">
     <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2 sfa-tracker-dashboard-map-card-header">
       <div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h3 class="fs-5 fw-bold text-body mb-0">Network Plant & LCP NAP Coverage</h3>
@@ -59,7 +59,7 @@
     </div>
 
     <!-- Map Container -->
-    <div class="position-relative w-100 rounded-3 overflow-hidden border" style="height: 250px;">
+    <div class="position-relative w-100 rounded-3 overflow-hidden border sfa-tracker-dashboard-map-card-map" style="height: 250px;">
       <div ref="mapContainer" class="w-100 h-100 dsh-map"></div>
 
       <!-- Loading overlay -->

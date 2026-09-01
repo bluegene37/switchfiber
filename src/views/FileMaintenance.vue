@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-file-maintenance">
     <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-file-maintenance-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">{{ title }}</h1>
         <p class="small text-secondary mt-1 mb-0">{{ description }}</p>
@@ -9,7 +9,7 @@
     </div>
 
     <!-- Data Viewer -->
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-file-maintenance-table-card">
       <DynamicApiTable
         ref="apiTableRef"
         v-if="endpoint"

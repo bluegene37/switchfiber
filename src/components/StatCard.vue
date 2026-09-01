@@ -1,5 +1,5 @@
 <template>
-  <div class="card stat-card shadow-sm border-0 rounded-4 p-3 p-md-4 h-100 bg-body">
+  <div class="card stat-card shadow-sm border-0 rounded-4 p-3 p-md-4 h-100 bg-body sfa-tracker-stat-card">
     <div class="d-flex align-items-center justify-content-between gap-2">
       <div class="min-w-0">
         <p class="small text-secondary mb-1 fw-medium text-truncate">{{ title }}</p>

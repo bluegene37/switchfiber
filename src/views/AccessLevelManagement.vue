@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-access-level">
     <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-access-level-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">Access Level & Menu Management</h1>
         <p class="small text-secondary mt-1 mb-0">Select an Access Level on the left to toggle live menu permissions on the right.</p>
@@ -11,7 +11,7 @@
     <!-- 2 Column Screen: Left = Access Level API, Right = Menu API -->
     <div class="row g-4">
       <!-- Left Column: Access Level Table -->
-      <div class="col-12 col-xl-6">
+      <div class="col-12 col-xl-6 sfa-tracker-access-level-roles-card">
         <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
           <div class="card-header bg-body border-bottom p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2">
@@ -42,7 +42,7 @@
       </div>
 
       <!-- Right Column: Menu List Table -->
-      <div class="col-12 col-xl-6">
+      <div class="col-12 col-xl-6 sfa-tracker-access-level-menus-card">
         <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100 bg-body">
           <div class="card-header bg-body border-bottom p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2">

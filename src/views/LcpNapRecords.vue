@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex flex-column gap-4">
+  <div class="d-flex flex-column gap-4 sfa-tracker-lcpnap-records">
     <!-- Header -->
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 sfa-tracker-lcpnap-records-header">
       <div>
         <h1 class="fs-3 fw-bold text-body mb-0">LCP NAP Records</h1>
         <p class="small text-secondary mt-1 mb-0">
@@ -18,7 +18,7 @@
     </div>
 
     <!-- Data Table Container -->
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-lcpnap-records-card">
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="LCPNapLocations"

@@ -1,5 +1,5 @@
 <template>
-  <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5 bg-body" style="width: 100%; max-width: 420px;">
+  <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5 bg-body sfa-tracker-login-card" style="width: 100%; max-width: 420px;">
     <div class="text-center mb-4">
       <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 shadow-sm p-2" style="width: 64px; height: 64px;">
         <img src="/logo.png" alt="Switch Fiber Logo" style="width: 40px; height: 40px; object-fit: contain;" />
@@ -9,13 +9,13 @@
     </div>
 
     <!-- Error Alert Banner -->
-    <div v-if="errorMessage" class="alert alert-danger d-flex align-items-center rounded-3 p-2.5 mb-3 small" role="alert">
+    <div v-if="errorMessage" class="alert alert-danger d-flex align-items-center rounded-3 p-2.5 mb-3 small sfa-tracker-login-error" role="alert">
       <i class="pi pi-exclamation-triangle me-2 fs-5 flex-shrink-0"></i>
       <div>{{ errorMessage }}</div>
     </div>
 
     <!-- Informational Banner (password reset feedback) -->
-    <div v-if="infoMessage" class="alert alert-info d-flex align-items-center rounded-3 p-2.5 mb-3 small" role="status">
+    <div v-if="infoMessage" class="alert alert-info d-flex align-items-center rounded-3 p-2.5 mb-3 small sfa-tracker-login-info" role="status">
       <i class="pi pi-info-circle me-2 fs-5 flex-shrink-0"></i>
       <div>{{ infoMessage }}</div>
     </div>
@@ -23,7 +23,7 @@
     <!-- novalidate: the browser's own bubble is transient, unstyled, and names only
          the first empty field. Handing the check to handleLogin puts the message in
          the same banner a rejected sign-in uses, so both failures read alike. -->
-    <form novalidate @submit.prevent="handleLogin">
+    <form class="sfa-tracker-login-form" novalidate @submit.prevent="handleLogin">
       <div class="mb-3">
         <label for="usernameOrEmail" class="form-label small fw-semibold text-secondary">Username or Email</label>
         <div class="login-field-group border rounded-3 bg-body d-flex align-items-center px-3">
@@ -73,7 +73,7 @@
       <button 
         type="submit" 
         :disabled="isLoading" 
-        class="btn btn-primary w-100 py-2.5 fw-bold shadow-sm"
+        class="btn btn-primary w-100 py-2.5 fw-bold shadow-sm sfa-tracker-login-submit-btn"
       >
         <span v-if="!isLoading">Sign in</span>
         <span v-else class="d-flex align-items-center justify-content-center gap-2">
