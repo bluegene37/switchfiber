@@ -8,18 +8,34 @@ export const useAppStore = defineStore('app', () => {
   const isLoadingConnections = ref(false)
   const connectionsError = ref(null)
 
+  // The dashboard table shows a handful of recent rows, so ask the server for a
+  // recent date window instead of the whole table (15,449+ rows; the unbounded
+  // GET both caps at 5,000 and is the load the backend struggles under). A
+  // quiet month falls back to a year so the table never looks wrongly empty.
+  const RECENT_WINDOWS_DAYS = [30, 365]
+
   const fetchApplications = async () => {
     isLoadingConnections.value = true
     connectionsError.value = null
     try {
-      const response = await ApplicationService.getApplications()
+      let data = []
+      for (const days of RECENT_WINDOWS_DAYS) {
+        const to = new Date()
+        const from = new Date(to.getTime() - days * 86400000)
+        const response = await ApplicationService.filterApplications({
+          fromDate: from.toISOString(),
+          toDate: to.toISOString()
+        })
 
-      // The endpoint may answer with a bare array or a wrapped object.
-      let data = response || []
-      if (data && !Array.isArray(data) && typeof data === 'object') {
-        const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]))
-        data = arrayKey ? data[arrayKey] : []
+        // The endpoint may answer with a bare array or a wrapped object.
+        data = response || []
+        if (data && !Array.isArray(data) && typeof data === 'object') {
+          const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]))
+          data = arrayKey ? data[arrayKey] : []
+        }
+        if (Array.isArray(data) && data.length > 0) break
       }
+      if (!Array.isArray(data)) data = []
 
       // Sort applications descending by ID (newest first)
       const sortedData = [...data].sort((a, b) => {

@@ -52,7 +52,12 @@ const templateCalls = (template) => {
   const calls = new Set()
   const expressions = /\{\{(.*?)\}\}|(?:v-[\w:.\-[\]]+|:[\w:.\-[\]]+|@[\w:.\-[\]]+)\s*=\s*"([^"]*)"/gs
   for (const match of template.matchAll(expressions)) {
-    const expr = match[1] || match[2] || ''
+    let expr = match[1] || match[2] || ''
+    // Template-literal text is prose, not code: `Applications Trend (${x})`
+    // must not read as a call to Trend(). Keep only the ${...} expressions.
+    expr = expr.replace(/`([^`]*)`/g, (_, inner) =>
+      [...inner.matchAll(/\$\{([^}]*)\}/g)].map(m => m[1]).join(' ; ')
+    )
     for (const call of expr.matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)) {
       if (/[.?]\s*$/.test(expr.slice(0, call.index))) continue
       calls.add(call[1])

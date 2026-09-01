@@ -44,7 +44,7 @@
 
     <!-- KPI Summary Cards Grid -->
     <div class="row g-3 sfa-tracker-dashboard-kpis">
-      <div class="col-12 col-sm-6 col-xl-2" v-for="stat in kpiStats" :key="stat.title">
+      <div class="col-12 col-sm-6 col-xl-2" v-for="stat in visibleKpiStats" :key="stat.title">
         <StatCard
           :title="stat.title"
           :value="stat.value"
@@ -60,61 +60,29 @@
     <!-- Network Plant & LCP NAP Infrastructure Map -->
     <div class="row g-4">
       <div class="col-12">
-        <DashboardMapCard />
+        <DashboardMapCard @stats="onMapStats" />
       </div>
     </div>
 
-    <!-- Illustrative charts notice: these series are not backed by the API yet. -->
-    <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 p-3 mb-0 small sfa-tracker-dashboard-notice" role="note">
-      <i class="pi pi-info-circle mt-1 flex-shrink-0"></i>
-      <div>
-        <span class="fw-semibold">Some charts below use sample data.</span>
-        Bandwidth, plan distribution, revenue, node telemetry, and SLA figures are illustrative placeholders — the API
-        does not expose these series yet. The KPI cards, the plant coverage map, the four status breakdown charts (Job Orders, Applications,
-        Invoices, Billing), and the applications table are live.
-      </div>
-    </div>
-
-    <!-- Main Charts Row 1: Bandwidth Traffic & Plan Distribution -->
+    <!-- Main Charts Row 1: Applications over time & requested plans, both real,
+         scoped to the timeframe the header buttons select. -->
     <div class="row g-4">
       <div class="col-12 col-xl-7">
-        <ChartCard title="Network Bandwidth Traffic (Gbps)" :option="bandwidthChartOption" />
+        <ChartCard :title="`Applications Trend (${activeTimeframeLabel})`" :option="applicationsTrendChartOption" />
       </div>
       <div class="col-12 col-xl-5">
-        <ChartCard title="Subscriber Plan Distribution" :option="planDistributionChartOption" />
+        <ChartCard :title="`Requested Plans (${activeTimeframeLabel})`" :option="planDistributionChartOption" />
       </div>
     </div>
 
-    <!-- Main Charts Row 2: Monthly Revenue & Job Orders Breakdown -->
+    <!-- Main Charts Row 2: Live Status Breakdowns. Applications follows the
+         selected timeframe; Job Orders spans the whole table. -->
     <div class="row g-4">
-      <div class="col-12 col-xl-6">
-        <ChartCard title="Monthly Revenue & ARPU (₱)" :option="revenueChartOption" />
+      <div class="col-12 col-lg-6">
+        <ChartCard :title="`Application Status (${activeTimeframeLabel})`" :option="applicationsChartOption" />
       </div>
-      <div class="col-12 col-xl-6">
+      <div class="col-12 col-lg-6">
         <ChartCard title="Job Order Status Breakdown" :option="jobOrdersChartOption" />
-      </div>
-    </div>
-
-    <!-- Main Charts Row 3: Live Status Breakdowns (Applications, Invoices, Billing) -->
-    <div class="row g-4">
-      <div class="col-12 col-lg-6 col-xl-4">
-        <ChartCard title="Application Status Breakdown" :option="applicationsChartOption" />
-      </div>
-      <div class="col-12 col-lg-6 col-xl-4">
-        <ChartCard title="Invoice Status Breakdown" :option="invoicesChartOption" />
-      </div>
-      <div class="col-12 col-lg-6 col-xl-4">
-        <ChartCard title="Billing Status Breakdown" :option="billingChartOption" />
-      </div>
-    </div>
-
-    <!-- Main Charts Row 4: Regional Radar & System Health Gauge -->
-    <div class="row g-4">
-      <div class="col-12 col-lg-6 col-xl-7">
-        <ChartCard title="Regional Node Performance & Latency Radar" :option="nodeRadarChartOption" />
-      </div>
-      <div class="col-12 col-lg-6 col-xl-5">
-        <ChartCard title="Overall Network Uptime & SLA Health" :option="uptimeGaugeChartOption" />
       </div>
     </div>
 
@@ -222,8 +190,9 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useAppStore } from '../stores/app'
 import apiClient from '../services/api'
+import { ApplicationService } from '../services/applications'
+import { usePermissions } from '../composables/usePermissions'
 import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR } from '../composables/useTheme'
-import { MONITORED_ENDPOINTS, labelForPath } from '../models/monitoredEndpoints'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
 import DashboardMapCard from '../components/DashboardMapCard.vue'
@@ -237,26 +206,28 @@ import autoTable from 'jspdf-autotable'
 const appStore = useAppStore()
 const router = useRouter()
 const toast = useToast()
+const { canAccess } = usePermissions()
 
 // Live counts pulled from the API. `null` means "not loaded / unavailable" and
-// renders as an em dash rather than an invented number.
+// renders as an em dash rather than an invented number. Only sources a card on
+// THIS screen consumes are fetched — the endpoints that are permanently empty
+// (Invoices, RadiusSession) or failing (BillingDetails) stay on the navbar
+// bell's watch list but no longer put a permanent "Degraded" badge on a
+// dashboard that doesn't render them.
 const liveCounts = ref({
   applications: null,
   jobOrders: null,
-  invoices: null,
-  billing: null,
   plans: null,
-  activeSessions: null,
   radiusUsers: null,
   routers: null,
-  vlans: null,
-  lcps: null,
-  lcpnaps: null,
-  lcpnapports: null,
   naps: null,
   ports: null,
-  users: null
+  users: null,
+  lcpnapNodes: null,
+  lcpnapPorts: null
 })
+// Labels (not paths) of sources that failed on this load — shown on the badge
+// hover and the PDF's outage note.
 const failedSources = ref([])
 const totalCountSources = ref(0)
 
@@ -264,16 +235,23 @@ const totalCountSources = ref(0)
 // request settles, instead of an em dash that reads as "no data".
 const pendingCounts = ref({})
 
-// Sources whose per-status tallies feed a breakdown doughnut, keyed by the row
-// field that carries the status. `null` tallies mean the fetch has not resolved
-// (or failed) — distinct from "zero records".
-const STATUS_SOURCES = {
-  applications: { path: '/Applications', field: 'status' },
-  jobOrders: { path: '/JobOrders', field: 'status' },
-  invoices: { path: '/Invoices', field: 'invoiceStatus' },
-  billing: { path: '/BillingDetails', field: 'status' }
-}
-const statusTallies = ref({ applications: null, jobOrders: null, invoices: null, billing: null })
+// The whole-table sources behind the KPI cards. Applications is NOT here: its
+// real size is 15,449+ and the unbounded GET silently caps at 5,000 rows (and
+// nearly took the backend down doing it) — its count comes from the paged
+// endpoint's totalCount for a one-row payload instead.
+const COUNT_SOURCES = [
+  { key: 'jobOrders', label: 'Job Orders', path: '/JobOrders', tallyField: 'status' },
+  { key: 'plans', label: 'Active Plans', path: '/Plans' },
+  { key: 'radiusUsers', label: 'RADIUS Users', path: '/RadiusUser' },
+  { key: 'routers', label: 'Routers', path: '/Routers' },
+  { key: 'naps', label: 'NAPs', path: '/Naps' },
+  { key: 'ports', label: 'Ports', path: '/Ports' },
+  { key: 'users', label: 'Users', path: '/Users' }
+]
+
+// `applications` is tallied from the timeframe window (see loadWindowData);
+// `jobOrders` from the full table. `null` = not resolved, distinct from zero.
+const statusTallies = ref({ applications: null, jobOrders: null })
 
 const rowsOf = (payload) => {
   let data = payload
@@ -290,20 +268,19 @@ const countOf = (payload) => {
 }
 
 const loadCounts = async () => {
-  const sources = MONITORED_ENDPOINTS.map(e => [e.key, e.path])
-
   const failures = []
-  totalCountSources.value = sources.length
-  sources.forEach(([key]) => { pendingCounts.value[key] = true })
-  await Promise.all(sources.map(async ([key, path]) => {
+  totalCountSources.value = COUNT_SOURCES.length + 1 // + the paged Applications count
+  pendingCounts.value.applications = true
+  COUNT_SOURCES.forEach(({ key }) => { pendingCounts.value[key] = true })
+
+  const tasks = COUNT_SOURCES.map(async ({ key, label, path, tallyField }) => {
     try {
       const payload = await apiClient.get(path)
       liveCounts.value[key] = countOf(payload)
-      const statusSource = STATUS_SOURCES[key]
-      if (statusSource) {
+      if (tallyField) {
         const tallies = {}
         ;(rowsOf(payload) || []).forEach(row => {
-          const status = String(row?.[statusSource.field] || '').trim().toLowerCase()
+          const status = String(row?.[tallyField] || '').trim().toLowerCase()
           if (!status) return
           tallies[status] = (tallies[status] || 0) + 1
         })
@@ -311,12 +288,30 @@ const loadCounts = async () => {
       }
     } catch {
       liveCounts.value[key] = null
-      if (STATUS_SOURCES[key]) statusTallies.value[key] = null
-      failures.push(path)
+      if (tallyField) statusTallies.value[key] = null
+      failures.push(label)
     } finally {
       pendingCounts.value[key] = false
     }
-  }))
+  })
+
+  // The exact table size for one row of payload — the headline number must not
+  // inherit the unbounded GET's silent 5,000-row cap.
+  tasks.push((async () => {
+    try {
+      const paged = await apiClient.get('/Applications/paged', { params: { pageNumber: 1, pageSize: 1 } })
+      const total = Number(paged?.totalCount)
+      liveCounts.value.applications = Number.isFinite(total) ? total : null
+      if (!Number.isFinite(total)) failures.push('Applications')
+    } catch {
+      liveCounts.value.applications = null
+      failures.push('Applications')
+    } finally {
+      pendingCounts.value.applications = false
+    }
+  })())
+
+  await Promise.all(tasks)
   failedSources.value = failures
 }
 
@@ -337,15 +332,24 @@ const apiHealth = computed(() => {
 // Hover detail for the health badge: every failing endpoint by name.
 const failedSourcesSummary = computed(() => {
   if (failedSources.value.length === 0) return null
-  return `Failing: ${failedSources.value.map(labelForPath).join(', ')}`
+  return `Failing: ${failedSources.value.join(', ')}`
 })
+
+// LCP NAP plant truth comes from the map card's own load — one fetch feeds
+// both the plotted markers and the two infrastructure KPI cards.
+const onMapStats = ({ nodes, ports }) => {
+  liveCounts.value.lcpnapNodes = Number.isFinite(nodes) ? nodes : null
+  liveCounts.value.lcpnapPorts = Number.isFinite(ports) ? ports : null
+}
 
 onMounted(() => {
   appStore.fetchApplications()
   loadCounts()
+  loadWindowData()
 })
 
-// Timeframe selector state
+// Timeframe selector state. The buttons drive the window every
+// applications-derived chart is computed from — they are not decorative.
 const selectedTimeframe = ref('30d')
 const timeframes = [
   { label: 'Today', value: '1d' },
@@ -353,14 +357,75 @@ const timeframes = [
   { label: '30 Days', value: '30d' },
   { label: 'Year to Date', value: 'ytd' }
 ]
+const activeTimeframeLabel = computed(() =>
+  timeframes.find(tf => tf.value === selectedTimeframe.value)?.label || ''
+)
+
+// Bounds for the selected window, half-open on today so "Today" means today.
+const timeframeBounds = (value) => {
+  const now = new Date()
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  let from
+  if (value === '1d') from = startOfDay(now)
+  else if (value === '7d') from = startOfDay(new Date(now.getTime() - 6 * 86400000))
+  else if (value === 'ytd') from = new Date(now.getFullYear(), 0, 1)
+  else from = startOfDay(new Date(now.getTime() - 29 * 86400000))
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+  return { from, to }
+}
+
+// The applications inside the selected window, fetched once per timeframe via
+// the server's date filter (~200 KB for a month) and shared by the trend line,
+// the requested-plans doughnut, and the status doughnut. This replaces the two
+// unbounded full-table downloads the old dashboard issued on every visit.
+const windowRows = ref(null)   // null = not resolved; [] = genuinely empty
+const windowLoading = ref(false)
+const windowFailed = ref(false)
+let windowToken = 0
+
+const loadWindowData = async () => {
+  const token = ++windowToken
+  windowLoading.value = true
+  windowFailed.value = false
+  try {
+    const { from, to } = timeframeBounds(selectedTimeframe.value)
+    const payload = await ApplicationService.filterApplications({
+      fromDate: from.toISOString(),
+      toDate: to.toISOString()
+    })
+    if (token !== windowToken) return
+    windowRows.value = rowsOf(payload) || []
+    const tallies = {}
+    windowRows.value.forEach(row => {
+      const status = String(row?.status || '').trim().toLowerCase()
+      if (!status) return
+      tallies[status] = (tallies[status] || 0) + 1
+    })
+    statusTallies.value = { ...statusTallies.value, applications: tallies }
+  } catch {
+    if (token !== windowToken) return
+    windowRows.value = null
+    windowFailed.value = true
+    statusTallies.value = { ...statusTallies.value, applications: null }
+  } finally {
+    if (token === windowToken) windowLoading.value = false
+  }
+}
+
+watch(selectedTimeframe, () => { loadWindowData() })
 
 // KPI cards — every value is a real count from the API. Unavailable sources
 // render as "—" instead of a placeholder figure.
 const fmt = (n) => (n === null || n === undefined ? '—' : n.toLocaleString())
 
+// Each card names the menu code that governs the screen its number comes from,
+// so a user whose menu hides a screen is not shown its count here either —
+// same gate as the sidebar, the routes, and the omnibox. Cards with no
+// governing menu (RADIUS) stay visible to everyone.
 const kpiStats = computed(() => [
   {
     title: 'Applications',
+    code: 'application.all',
     value: fmt(liveCounts.value.applications),
     loading: !!pendingCounts.value.applications,
     icon: 'pi-users',
@@ -369,6 +434,7 @@ const kpiStats = computed(() => [
   },
   {
     title: 'Job Orders',
+    code: 'job-orders.all',
     value: fmt(liveCounts.value.jobOrders),
     loading: !!pendingCounts.value.jobOrders,
     icon: 'pi-ticket',
@@ -376,15 +442,8 @@ const kpiStats = computed(() => [
     iconColorClass: 'text-primary'
   },
   {
-    title: 'Active Sessions',
-    value: fmt(liveCounts.value.activeSessions),
-    loading: !!pendingCounts.value.activeSessions,
-    icon: 'pi-wifi',
-    iconBgClass: 'bg-success bg-opacity-10',
-    iconColorClass: 'text-success'
-  },
-  {
     title: 'RADIUS Users',
+    code: null,
     value: fmt(liveCounts.value.radiusUsers),
     loading: !!pendingCounts.value.radiusUsers,
     icon: 'pi-id-card',
@@ -393,6 +452,7 @@ const kpiStats = computed(() => [
   },
   {
     title: 'Active Plans',
+    code: 'file-maintenance.plan',
     value: fmt(liveCounts.value.plans),
     loading: !!pendingCounts.value.plans,
     icon: 'pi-tag',
@@ -401,6 +461,7 @@ const kpiStats = computed(() => [
   },
   {
     title: 'Routers',
+    code: 'file-maintenance.router',
     value: fmt(liveCounts.value.routers),
     loading: !!pendingCounts.value.routers,
     icon: 'pi-wifi',
@@ -408,39 +469,8 @@ const kpiStats = computed(() => [
     iconColorClass: 'text-danger'
   },
   {
-    title: 'VLANs',
-    value: fmt(liveCounts.value.vlans),
-    loading: !!pendingCounts.value.vlans,
-    icon: 'pi-globe',
-    iconBgClass: 'bg-secondary bg-opacity-10',
-    iconColorClass: 'text-secondary'
-  },
-  {
-    title: 'LCPs',
-    value: fmt(liveCounts.value.lcps),
-    loading: !!pendingCounts.value.lcps,
-    icon: 'pi-server',
-    iconBgClass: 'bg-primary bg-opacity-10',
-    iconColorClass: 'text-primary'
-  },
-  {
-    title: 'LCNAPs',
-    value: fmt(liveCounts.value.lcpnaps),
-    loading: !!pendingCounts.value.lcpnaps,
-    icon: 'pi-sitemap',
-    iconBgClass: 'bg-success bg-opacity-10',
-    iconColorClass: 'text-success'
-  },
-  {
-    title: 'LCNAP Ports',
-    value: fmt(liveCounts.value.lcpnapports),
-    loading: !!pendingCounts.value.lcpnapports,
-    icon: 'pi-share-alt',
-    iconBgClass: 'bg-info bg-opacity-10',
-    iconColorClass: 'text-info'
-  },
-  {
     title: 'NAPs',
+    code: 'file-maintenance.nap',
     value: fmt(liveCounts.value.naps),
     loading: !!pendingCounts.value.naps,
     icon: 'pi-box',
@@ -449,6 +479,7 @@ const kpiStats = computed(() => [
   },
   {
     title: 'Ports',
+    code: 'file-maintenance.port',
     value: fmt(liveCounts.value.ports),
     loading: !!pendingCounts.value.ports,
     icon: 'pi-link',
@@ -457,13 +488,36 @@ const kpiStats = computed(() => [
   },
   {
     title: 'Users',
+    code: 'users-management.user',
     value: fmt(liveCounts.value.users),
     loading: !!pendingCounts.value.users,
     icon: 'pi-user',
     iconBgClass: 'bg-secondary bg-opacity-10',
     iconColorClass: 'text-secondary'
+  },
+  {
+    title: 'LCP NAP Nodes',
+    code: 'lcp-nap-locations.map',
+    value: fmt(liveCounts.value.lcpnapNodes),
+    loading: liveCounts.value.lcpnapNodes === null,
+    icon: 'pi-sitemap',
+    iconBgClass: 'bg-success bg-opacity-10',
+    iconColorClass: 'text-success'
+  },
+  {
+    title: 'Plant Ports',
+    code: 'lcp-nap-locations.map',
+    value: fmt(liveCounts.value.lcpnapPorts),
+    loading: liveCounts.value.lcpnapPorts === null,
+    icon: 'pi-share-alt',
+    iconBgClass: 'bg-success bg-opacity-10',
+    iconColorClass: 'text-success'
   }
 ])
+
+const visibleKpiStats = computed(() =>
+  kpiStats.value.filter(stat => !stat.code || canAccess(stat.code))
+)
 
 const recentConnections = computed(() => appStore.recentConnections)
 const recentSearchQuery = ref('')
@@ -524,18 +578,19 @@ const handleExport = () => {
     autoTable(doc, {
       startY: 84,
       head: [['Metric', 'Value']],
-      body: kpiStats.value.map(s => [s.title, s.value === '—' ? 'N/A' : String(s.value)]),
+      // The user's own view of the cards — a metric their menu hides does not
+      // reappear in a PDF with their name on it.
+      body: visibleKpiStats.value.map(s => [s.title, s.value === '—' ? 'N/A' : String(s.value)]),
       styles: { fontSize: 9, cellPadding: 5 },
       headStyles: { fillColor: [231, 76, 90] }
     })
 
-    // Live status breakdowns, matching the dashboard doughnuts.
+    // Live status breakdowns, matching the dashboard doughnuts. Applications is
+    // scoped to the selected timeframe, exactly like its chart.
     const breakdownRows = []
     ;[
       ['Job Orders', statusTallies.value.jobOrders],
-      ['Applications', statusTallies.value.applications],
-      ['Invoices', statusTallies.value.invoices],
-      ['Billing', statusTallies.value.billing]
+      [`Applications (${activeTimeframeLabel.value})`, statusTallies.value.applications]
     ].forEach(([category, tallies]) => {
       Object.entries(tallies || {}).forEach(([status, count]) => {
         breakdownRows.push([category, titleCaseStatus(status), String(count)])
@@ -564,7 +619,7 @@ const handleExport = () => {
     // Full disclosure of what was down at export time, so N/A rows are
     // attributable to an outage rather than read as real zeros.
     if (failedSources.value.length > 0) {
-      const note = `Unavailable at export time (endpoint failing): ${failedSources.value.map(labelForPath).join(', ')}`
+      const note = `Unavailable at export time (endpoint failing): ${failedSources.value.join(', ')}`
       doc.setFontSize(8)
       doc.setTextColor(150)
       doc.text(doc.splitTextToSize(note, 515), 40, doc.lastAutoTable.finalY + 20)
@@ -603,98 +658,128 @@ const STATUS = {
   danger: '#ef4444'
 }
 
-// 1. Network Bandwidth Line Chart
-const bandwidthChartOption = ref({
-  tooltip: { trigger: 'axis' },
-  legend: { data: ['Download Peak', 'Upload Peak'], top: '0%' },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-  xAxis: { 
-    type: 'category', 
-    boundaryGap: false, 
-    data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'] 
-  },
-  yAxis: { type: 'value', name: 'Gbps' },
-  series: [
-    { 
-      name: 'Download Peak', 
-      type: 'line', 
-      smooth: true, 
-      data: [42, 38, 85, 94, 88, 110, 65], 
-      itemStyle: { color: BRAND.base },
-      areaStyle: {
-        color: {
-          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: rgbaOf(BRAND.base, 0.35) }, { offset: 1, color: rgbaOf(BRAND.base, 0.02) }]
-        }
-      }
-    },
-    { 
-      name: 'Upload Peak', 
-      type: 'line', 
-      smooth: true, 
-      data: [18, 14, 38, 45, 40, 52, 28], 
-      itemStyle: { color: BRAND.deep },
-      areaStyle: {
-        color: {
-          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: rgbaOf(BRAND.deep, 0.3) }, { offset: 1, color: rgbaOf(BRAND.deep, 0.02) }]
-        }
-      }
+// 1. Applications Trend — real submissions per bucket inside the selected
+// window. Bucket size follows the window: hours for Today, days for 7/30
+// days, months for Year to Date.
+const trendBuckets = computed(() => {
+  if (!Array.isArray(windowRows.value)) return null
+  const tf = selectedTimeframe.value
+  const { from, to } = timeframeBounds(tf)
+  const buckets = []
+  const index = new Map()
+
+  if (tf === '1d') {
+    for (let h = 0; h < 24; h++) {
+      const label = `${String(h).padStart(2, '0')}:00`
+      index.set(label, buckets.length)
+      buckets.push({ label, count: 0 })
     }
-  ]
+  } else if (tf === 'ytd') {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    for (let m = 0; m <= to.getMonth(); m++) {
+      index.set(String(m), buckets.length)
+      buckets.push({ label: months[m], count: 0 })
+    }
+  } else {
+    for (let d = new Date(from); d <= to; d = new Date(d.getTime() + 86400000)) {
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+      index.set(key, buckets.length)
+      buckets.push({ label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), count: 0 })
+    }
+  }
+
+  windowRows.value.forEach(row => {
+    const d = new Date(row?.dateTime || row?.modifiedDate || '')
+    if (isNaN(d.getTime())) return
+    let key
+    if (tf === '1d') key = `${String(d.getHours()).padStart(2, '0')}:00`
+    else if (tf === 'ytd') key = String(d.getMonth())
+    else key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    const at = index.get(key)
+    if (at !== undefined) buckets[at].count += 1
+  })
+  return buckets
 })
 
-// 2. Subscriber Plan Doughnut Chart
-const planDistributionChartOption = ref({
-  tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-  legend: { orient: 'vertical', right: '5%', top: 'center' },
-  series: [
-    {
-      name: 'Plans',
-      type: 'pie',
-      radius: ['45%', '75%'],
-      center: ['38%', '50%'],
-      avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-      label: { show: false },
-      emphasis: { label: { show: true, fontSize: '14', fontWeight: 'bold' } },
-      data: [
-        { value: 4500, name: 'Fiber 50Mbps', itemStyle: { color: BRAND.deep } },
-        { value: 3800, name: 'Fiber 100Mbps', itemStyle: { color: BRAND.mid } },
-        { value: 2100, name: 'Fiber 200Mbps', itemStyle: { color: BRAND.base } },
-        { value: 950, name: 'Enterprise 500Mbps', itemStyle: { color: BRAND.light } },
-        { value: 542, name: 'Fiber 1Gbps', itemStyle: { color: BRAND.pale } }
-      ]
-    }
-  ]
+// Centered placeholder in the same shape ChartCard expects, for the states a
+// series cannot express: still loading, fetch failed, or a genuinely empty window.
+const chartPlaceholder = (text) => ({
+  title: {
+    text,
+    left: 'center',
+    top: 'middle',
+    textStyle: { fontSize: 13, fontWeight: 'normal', color: '#9ca3af' }
+  }
 })
 
-// 3. Monthly Revenue & ARPU Combo Chart
-const revenueChartOption = ref({
-  tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-  legend: { data: ['Revenue (₱k)', 'ARPU (₱)'], top: '0%' },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-  xAxis: { type: 'category', data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'] },
-  yAxis: [
-    { type: 'value', name: 'Revenue (₱k)', min: 0, max: 1600 },
-    { type: 'value', name: 'ARPU (₱)', min: 1000, max: 2000 }
-  ],
-  series: [
-    {
-      name: 'Revenue (₱k)',
-      type: 'bar',
-      barWidth: '45%',
-      data: [980, 1040, 1120, 1190, 1240, 1285, 1340],
-      itemStyle: { color: BRAND.base, borderRadius: [4, 4, 0, 0] }
-    },
-    {
-      name: 'ARPU (₱)',
-      type: 'line',
-      yAxisIndex: 1,
-      data: [1380, 1400, 1420, 1435, 1440, 1450, 1465],
-      itemStyle: { color: BRAND.deep }
-    }
-  ]
+const applicationsTrendChartOption = computed(() => {
+  if (windowFailed.value) return chartPlaceholder('Applications data unavailable')
+  if (windowLoading.value && !Array.isArray(windowRows.value)) return chartPlaceholder('Loading applications…')
+  const buckets = trendBuckets.value
+  if (!buckets) return chartPlaceholder('Loading applications…')
+  if (windowRows.value.length === 0) return chartPlaceholder('No applications in this window')
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'category', boundaryGap: false, data: buckets.map(b => b.label) },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [
+      {
+        name: 'Applications',
+        type: 'line',
+        smooth: true,
+        data: buckets.map(b => b.count),
+        itemStyle: { color: BRAND.base },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: rgbaOf(BRAND.base, 0.35) }, { offset: 1, color: rgbaOf(BRAND.base, 0.02) }]
+          }
+        }
+      }
+    ]
+  }
+})
+
+// 2. Requested Plans — tallied from the window's own desiredPlan values, so it
+// costs no request of its own. Top plans get their own slice; the tail folds
+// into Others so a long list of one-off plan spellings cannot shred the chart.
+const planDistributionChartOption = computed(() => {
+  if (windowFailed.value) return chartPlaceholder('Applications data unavailable')
+  if (!Array.isArray(windowRows.value)) return chartPlaceholder('Loading plans…')
+  const tally = {}
+  windowRows.value.forEach(row => {
+    const plan = String(row?.desiredPlan || '').trim()
+    if (!plan) return
+    tally[plan] = (tally[plan] || 0) + 1
+  })
+  const entries = Object.entries(tally).sort((a, b) => b[1] - a[1])
+  if (entries.length === 0) return chartPlaceholder('No plans requested in this window')
+
+  const TOP = 6
+  const top = entries.slice(0, TOP)
+  const othersCount = entries.slice(TOP).reduce((sum, [, n]) => sum + n, 0)
+  const ramp = buildCategoricalRamp(MASTER_THEME_COLOR, Math.min(entries.length, TOP + 1))
+  const data = top.map(([name, value], i) => ({ value, name, itemStyle: { color: ramp[i % ramp.length] } }))
+  if (othersCount > 0) data.push({ value: othersCount, name: 'Others', itemStyle: { color: '#9ca3af' } })
+
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { orient: 'vertical', right: '5%', top: 'center' },
+    series: [
+      {
+        name: 'Requested Plans',
+        type: 'pie',
+        radius: ['45%', '75%'],
+        center: ['38%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        emphasis: { label: { show: true, fontSize: '14', fontWeight: 'bold' } },
+        data
+      }
+    ]
+  }
 })
 
 // 4. Live Status Breakdown doughnuts — one per transactional endpoint.
@@ -702,7 +787,7 @@ const revenueChartOption = ref({
 // introduces still shows up, coloured from the brand ramp.
 const titleCaseStatus = (key) => key.replace(/\b\w/g, c => c.toUpperCase())
 
-const buildStatusDoughnut = ({ counts, meta, sourcePath, seriesName, noun }) => {
+const buildStatusDoughnut = ({ counts, meta, sourceLabel, seriesName, noun }) => {
   const slices = []
 
   Object.entries(meta).forEach(([key, m]) => {
@@ -717,7 +802,8 @@ const buildStatusDoughnut = ({ counts, meta, sourcePath, seriesName, noun }) => 
   })
 
   if (slices.length === 0) {
-    const fetchFailed = failedSources.value.includes(sourcePath)
+    const fetchFailed = failedSources.value.includes(sourceLabel) ||
+      (sourceLabel === 'Applications' && windowFailed.value)
     return {
       title: {
         text: fetchFailed
@@ -756,123 +842,27 @@ const jobOrdersChartOption = computed(() => buildStatusDoughnut({
     completed: { label: 'Completed', color: STATUS.success },
     activated: { label: 'Activated', color: BRAND.base }
   },
-  sourcePath: '/JobOrders',
+  sourceLabel: 'Job Orders',
   seriesName: 'Job Orders',
   noun: 'job orders'
 }))
 
+// Scoped to the selected timeframe window, like the trend and plan charts —
+// the statuses are spelled the way the data spells them ('Inprogress').
 const applicationsChartOption = computed(() => buildStatusDoughnut({
   counts: statusTallies.value.applications,
   meta: {
-    'in progress': { label: 'In Progress', color: STATUS.warning },
-    done: { label: 'Done', color: STATUS.success },
-    approved: { label: 'Approved', color: BRAND.base }
+    inprogress: { label: 'In Progress', color: STATUS.warning },
+    submitted: { label: 'Submitted', color: BRAND.light },
+    schedule: { label: 'Schedule', color: BRAND.base },
+    cancelled: { label: 'Cancelled', color: STATUS.danger },
+    duplicate: { label: 'Duplicate', color: STATUS.warning }
   },
-  sourcePath: '/Applications',
+  sourceLabel: 'Applications',
   seriesName: 'Applications',
   noun: 'applications'
 }))
 
-const invoicesChartOption = computed(() => buildStatusDoughnut({
-  counts: statusTallies.value.invoices,
-  meta: {
-    paid: { label: 'Paid', color: STATUS.success },
-    unpaid: { label: 'Unpaid', color: STATUS.danger },
-    overdue: { label: 'Overdue', color: STATUS.danger },
-    pending: { label: 'Pending', color: STATUS.warning },
-    partial: { label: 'Partial', color: STATUS.warning }
-  },
-  sourcePath: '/Invoices',
-  seriesName: 'Invoices',
-  noun: 'invoices'
-}))
-
-const billingChartOption = computed(() => buildStatusDoughnut({
-  counts: statusTallies.value.billing,
-  meta: {
-    active: { label: 'Active', color: STATUS.success },
-    suspended: { label: 'Suspended', color: STATUS.warning },
-    pending: { label: 'Pending', color: STATUS.warning },
-    disconnected: { label: 'Disconnected', color: STATUS.danger }
-  },
-  sourcePath: '/BillingDetails',
-  seriesName: 'Billing',
-  noun: 'billing accounts'
-}))
-
-// 5. Regional Node Radar Chart
-const nodeRadarChartOption = ref({
-  tooltip: { trigger: 'item' },
-  legend: { data: ['Manila Core', 'Laguna Node', 'Batangas Node'], bottom: '0%' },
-  radar: {
-    indicator: [
-      { name: 'Uptime %', max: 100 },
-      { name: 'Bandwidth Load', max: 100 },
-      { name: 'Low Latency', max: 100 },
-      { name: 'CPU Usage', max: 100 },
-      { name: 'Memory Usage', max: 100 }
-    ],
-    radius: '65%'
-  },
-  series: [
-    {
-      name: 'Node Health Comparison',
-      type: 'radar',
-      data: [
-        { value: [99.9, 82, 94, 65, 70], name: 'Manila Core', itemStyle: { color: BRAND.base } },
-        { value: [99.5, 74, 88, 58, 62], name: 'Laguna Node', itemStyle: { color: BRAND.deep } },
-        { value: [98.8, 68, 80, 52, 55], name: 'Batangas Node', itemStyle: { color: BRAND.light } }
-      ]
-    }
-  ]
-})
-
-// 6. Overall System Health Gauge Chart
-const uptimeGaugeChartOption = ref({
-  tooltip: { formatter: '{a} <br/>{b} : {c}%' },
-  series: [
-    {
-      name: 'System Uptime',
-      type: 'gauge',
-      startAngle: 180,
-      endAngle: 0,
-      min: 90,
-      max: 100,
-      splitNumber: 5,
-      axisLine: {
-        lineStyle: {
-          width: 18,
-          color: [
-            [0.6, STATUS.danger],
-            [0.85, STATUS.warning],
-            [1, STATUS.success]
-          ]
-        }
-      },
-      pointer: { icon: 'path://M12.8,0.7l12,40.1H0.7L12.8,0.7z', length: '60%', width: 6 },
-      title: { offsetCenter: [0, '-20%'], fontSize: 13, color: '#6b7280' },
-      detail: { fontSize: 24, fontWeight: 'bold', offsetCenter: [0, '25%'], formatter: '{value}%' },
-      data: [{ value: 99.98, name: 'SLA Operational Uptime' }]
-    }
-  ]
-})
-
-// Dynamic Timeframe Data Switching
-watch(selectedTimeframe, (newVal) => {
-  if (newVal === '1d') {
-    bandwidthChartOption.value.series[0].data = [20, 25, 45, 60, 55, 75, 40]
-    bandwidthChartOption.value.series[1].data = [8, 10, 20, 28, 24, 35, 18]
-  } else if (newVal === '7d') {
-    bandwidthChartOption.value.series[0].data = [50, 65, 80, 105, 95, 120, 85]
-    bandwidthChartOption.value.series[1].data = [22, 30, 42, 55, 48, 62, 40]
-  } else if (newVal === '30d') {
-    bandwidthChartOption.value.series[0].data = [42, 38, 85, 94, 88, 110, 65]
-    bandwidthChartOption.value.series[1].data = [18, 14, 38, 45, 40, 52, 28]
-  } else if (newVal === 'ytd') {
-    bandwidthChartOption.value.series[0].data = [30, 45, 70, 85, 115, 140, 160]
-    bandwidthChartOption.value.series[1].data = [12, 20, 32, 42, 58, 70, 80]
-  }
-})
 </script>
 
 <style scoped>

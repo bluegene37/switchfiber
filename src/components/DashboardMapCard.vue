@@ -97,6 +97,10 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { LcpNapLocationService, parseCoordinates } from '../services/lcpNapLocations'
+
+// The dashboard's two infrastructure KPI cards ride on this card's fetch —
+// one download of the locations feeds both the markers and the counts.
+const emit = defineEmits(['stats'])
 import { useTheme } from '../composables/useTheme'
 
 const { isDark } = useTheme()
@@ -261,6 +265,7 @@ const loadData = async () => {
     })
 
     sites.value = mapped
+    emit('stats', { nodes: mapped.length, ports: totalPorts.value })
     renderMarkers()
   } catch (err) {
     error.value = err?.message || 'Could not load LCP NAP locations.'

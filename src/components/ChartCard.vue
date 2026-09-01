@@ -7,7 +7,10 @@
       </button>
     </div>
     <div class="w-100 sfa-tracker-chart-card-canvas" style="height: 250px;">
-      <v-chart class="chart" :option="computedOption" :theme="theme" autoresize />
+      <!-- notMerge: every option passed in is a complete spec. The default merge
+           mode let a placeholder state's centered title survive into the real
+           chart rendered after it, overlaying "Loading…" on live data. -->
+      <v-chart class="chart" :option="computedOption" :theme="theme" :update-options="{ notMerge: true }" autoresize />
     </div>
   </div>
 </template>
