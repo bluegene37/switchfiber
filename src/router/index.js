@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { abortPendingNavigationRequests } from '../services/api'
+import { menuCodeForPath, ALL_MENU_ENTRIES } from '../constants/menuCatalog'
+import { ensurePermissionsLoaded, canAccess } from '../composables/usePermissions'
 
 const APP_TITLE = 'SwitchFiber Admin'
 
@@ -394,7 +396,7 @@ const router = createRouter({
 
 // Navigation Guard — returns values instead of calling next(), which is
 // deprecated in Vue Router 5.
-router.beforeEach((to, from) => {
+router.beforeEach(async (to, from) => {
   // Leaving a page kills its in-flight GETs. Without this, a slow API can hold
   // every connection to our origin and the lazy import of the next view queues
   // behind them — the click seems ignored until the API answers or times out.
@@ -409,6 +411,33 @@ router.beforeEach((to, from) => {
   }
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     return { name: 'dashboard' }
+  }
+
+  // Hiding a menu entry is not enough on its own: the screen is still one typed
+  // URL away, and /access_level is the screen that edits the permissions
+  // themselves. So the same menu codes that filter the sidebar also gate the
+  // routes — resolved from the path by name, never by database id, because ids
+  // shift when the client deletes and recreates rows.
+  if (to.meta.requiresAuth) {
+    const code = menuCodeForPath(to.path)
+    // No governing menu (e.g. the 404 page): nothing to enforce.
+    if (code && code !== 'dashboard') {
+      // The sidebar tolerates a not-yet-loaded set by showing a skeleton; a
+      // guard cannot, or the first typed URL of the session always gets in.
+      await ensurePermissionsLoaded()
+      if (!canAccess(code)) {
+        const entry = ALL_MENU_ENTRIES.find(e => e.code === code)
+        const detail = { code, menuName: entry?.name || '' }
+        // On a typed URL the whole app is booting: this guard settles before the
+        // layout has mounted its listener, so the event alone would be lost.
+        // The buffer lets the layout pick the denial up on mount.
+        window.__pendingMenuDenial = detail
+        window.dispatchEvent(new CustomEvent('menu-access-denied', { detail }))
+        // Dashboard is the landing screen for every outcome (it is in the
+        // fallback set), so this cannot loop.
+        return { name: 'dashboard' }
+      }
+    }
   }
   return true
 })

@@ -1,6 +1,8 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from './useTheme'
+import { menuCodeForPath } from '../constants/menuCatalog'
+import { canAccess } from './usePermissions'
 import { ApplicationService } from '../services/applications'
 import { JobOrderService } from '../services/jobOrders'
 import { UserService } from '../services/users'
@@ -120,11 +122,22 @@ export function useSearch() {
     } catch (e) {}
   }
 
+  // Only the pages this user's menu actually holds. Without this the omnibox
+  // walks straight past the sidebar: a Guest typing "access" was offered the
+  // Access Level screen the sidebar had hidden. Same code, same gate as the
+  // sidebar and the route guard.
+  const permittedNavigationItems = computed(() =>
+    navigationItems.filter(item => {
+      const code = menuCodeForPath(item.route)
+      return !code || canAccess(code)
+    })
+  )
+
   // Unified Filtered Results
   const filteredNavigation = computed(() => {
     const query = searchQuery.value.trim().toLowerCase()
     if (!query) return []
-    return navigationItems.filter(item => 
+    return permittedNavigationItems.value.filter(item =>
       item.title.toLowerCase().includes(query) || 
       item.subtitle.toLowerCase().includes(query)
     ).slice(0, 5)

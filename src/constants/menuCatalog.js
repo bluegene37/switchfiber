@@ -515,6 +515,52 @@ export const PARENT_TO_CHILD_CODES = new Map(
   MENU_CATALOG.filter(isMenuGroup).map(item => [item.code, item.children.map(c => c.code)])
 )
 
+/** Route path -> the code that governs it, for every entry that owns a screen. */
+export const MENU_CODE_BY_PATH = new Map(
+  ALL_MENU_ENTRIES.filter(e => e.path).map(e => [e.path, e.code])
+)
+
+/**
+ * Routes the router serves that no catalog entry owns directly: legacy aliases
+ * kept alive for old links, and the group landing pages. Without these the route
+ * guard would wave them through, and `/application_list` would be an open back
+ * door to the screen `/application` protects.
+ */
+const PATH_CODE_ALIASES = new Map([
+  ['/application_list', 'application.all'],
+  ['/job_order', 'job-orders.all'],
+  // The Menus registry and the level-to-menu links are the same screen as, and
+  // the same authority over, Access Level management.
+  ['/menu', 'users-management.access-level'],
+  ['/access_level_menu', 'users-management.access-level'],
+  ['/lcp-nap-locations', 'lcp-nap-locations.map'],
+  ['/logs', 'audit-trail.all']
+])
+
+/**
+ * The menu code that governs a route path, or null when no menu owns it (a
+ * public route, or a screen that ships outside the permission model).
+ *
+ * Resolution order: the catalog's own path, then a legacy/landing alias, then the
+ * nearest parent path — so a status route added later (`/service-orders/pending`)
+ * inherits its parent's permission the day it appears, with no edit here.
+ */
+export const menuCodeForPath = (path) => {
+  const clean = String(path || '').split('?')[0].split('#')[0].replace(/\/+$/, '') || '/'
+  if (MENU_CODE_BY_PATH.has(clean)) return MENU_CODE_BY_PATH.get(clean)
+  if (PATH_CODE_ALIASES.has(clean)) return PATH_CODE_ALIASES.get(clean)
+
+  let bestPath = ''
+  let bestCode = null
+  MENU_CODE_BY_PATH.forEach((code, entryPath) => {
+    if (clean.startsWith(`${entryPath}/`) && entryPath.length > bestPath.length) {
+      bestPath = entryPath
+      bestCode = code
+    }
+  })
+  return bestCode
+}
+
 /**
  * Pre-compiled index for fast name -> code lookups:
  * Maps normalized keys and stemmed phrases to candidate catalog codes.
