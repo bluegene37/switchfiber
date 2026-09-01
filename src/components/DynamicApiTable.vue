@@ -1717,7 +1717,7 @@
               <InputText 
                 v-else 
                 :id="`view-${col}`" 
-                :modelValue="formatViewFieldValue(col, viewFormData[col])" 
+                :modelValue="formatDisplayValue(viewFormData[col], col)"
                 readonly
                 disabled
                 class="w-100 p-inputtext-sm bg-light" 
