@@ -8538,6 +8538,13 @@ const saveEdit = async () => {
       detail: `${formatLabel(props.endpoint)} record #${updatedId} saved successfully.`,
       life: 3000
     })
+
+    // Saving the logged-in user's own row may have changed their access level.
+    // usePermissions listens for this and re-resolves the session against the
+    // server, so the sidebar follows the change without a logout.
+    if (isUserEndpoint.value && Number(updatedId) === Number(authStore.user?.id || 0)) {
+      window.dispatchEvent(new CustomEvent('current-user-updated', { detail: { userId: Number(updatedId) } }))
+    }
   } catch (err) {
     console.error(`Error updating record for ${props.endpoint}:`, err)
     editError.value = err.message || 'Failed to update record. Please check input values.'

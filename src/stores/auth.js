@@ -99,6 +99,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Patch the live session and re-persist it to whichever storage holds it.
+  // The stored user is a login-time snapshot; this is how the app adopts what
+  // the server says about the user NOW (e.g. an access level changed on the
+  // User screen) without forcing a logout.
+  const updateUser = (fields) => {
+    if (!user.value || !fields || typeof fields !== 'object') return
+    user.value = { ...user.value, ...fields }
+    const storage = localStorage.getItem('user') ? localStorage : sessionStorage
+    storage.setItem('user', JSON.stringify(user.value))
+  }
+
   const logout = () => {
     token.value = null
     // While the bypass is on there is no real session to end — keep the dev
@@ -110,5 +121,5 @@ export const useAuthStore = defineStore('auth', () => {
     sessionStorage.removeItem('user')
   }
 
-  return { token, user, isAuthenticated, login, logout }
+  return { token, user, isAuthenticated, login, logout, updateUser }
 })

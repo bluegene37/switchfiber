@@ -85,6 +85,35 @@ const isSuperAdmin = computed(() => {
 // Fallback menu when no stored permissions are usable: Dashboard + Settings only.
 const buildFallbackMenuSet = () => new Set(['dashboard', 'settings'])
 
+/**
+ * Adopt the server's CURRENT idea of this user before resolving permissions.
+ *
+ * The stored session is a login-time snapshot: change a user's access level on
+ * the User screen and, without this, their menu stays whatever it was when they
+ * logged in — through any number of reloads — until they log out. Re-reading
+ * `/Users/{id}` here makes the level change land on the next permission load
+ * instead. A failed read keeps the snapshot: offline must not demote anyone
+ * to the fallback menu by accident.
+ */
+const refreshUserFromServer = async () => {
+  const authStore = useAuthStore()
+  const userId = Number(authStore.user?.id || 0)
+  if (!userId) return
+
+  try {
+    const row = await apiClient.get(`/Users/${userId}`, { cancelOnNavigate: false })
+    const fresh = Number(row?.accesslevel_id ?? row?.accessLevelId ?? 0)
+    if (fresh > 0 && fresh !== Number(authStore.user?.accesslevel_id || 0)) {
+      // The stored level name/role belongs to the old level — drop them so the
+      // super-admin test cannot answer from stale data while the new name loads.
+      resolvedLevelName.value = ''
+      authStore.updateUser({ accesslevel_id: fresh, role: undefined, accessLevelName: undefined })
+    }
+  } catch {
+    // Keep the snapshot — the API being unreachable is already handled downstream.
+  }
+}
+
 const resolveLevelName = async () => {
   const levelId = userAccessLevel.value
   const user = currentUser()
@@ -209,6 +238,7 @@ const runFetch = async () => {
 
   isLoadingPermissions.value = true
   try {
+    await refreshUserFromServer()
     await resolveLevelName()
 
     // Super Admin has every menu by definition
@@ -372,15 +402,21 @@ export function usePermissions() {
   const canAccessModifyPassword = computed(() => canAccess('settings.modify-password'))
   const canAccessUnmaskPassword = computed(() => canAccess('settings.unmask-password'))
 
+  // The User screen announces a save of the logged-in user's own row; the whole
+  // permission pipeline reruns so a changed access level takes effect right away.
+  const handleOwnUserSaved = () => fetchPermissions()
+
   onMounted(() => {
     if (!hasLoadedOnce.value) {
       fetchPermissions()
     }
     window.addEventListener('accesslevelmenu-updated', handleUpdateEvent)
+    window.addEventListener('current-user-updated', handleOwnUserSaved)
   })
 
   onUnmounted(() => {
     window.removeEventListener('accesslevelmenu-updated', handleUpdateEvent)
+    window.removeEventListener('current-user-updated', handleOwnUserSaved)
   })
 
   watch(() => authStore.user, () => {
