@@ -238,6 +238,8 @@ const apiEndpoints = ref([
   { name: 'LCNAP Port', endpoint: 'Lcpnapports', description: 'LCP NAP port allocations' },
   { name: 'NAP', endpoint: 'Naps', description: 'Network Access Point hardware units' },
   { name: 'Plans', endpoint: 'Plans', description: 'Subscription plans and pricing tiers' },
+  { name: 'Discount Types', endpoint: 'DiscountTypes', description: 'Broadband discount tiers, promo campaigns, and validity schedule' },
+  { name: 'Discounts', endpoint: 'Discounts', description: 'Customer discount assignments, subsidies, and deductions' },
   { name: 'Ports', endpoint: 'Ports', description: 'Fiber port connections' },
   { name: 'Routers', endpoint: 'Routers', description: 'Router and ONT modem inventory' },
   { name: 'VLANs', endpoint: 'Vlans', description: 'Virtual Local Area Network configurations' },

@@ -945,6 +945,31 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Discount Type Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'discounttype_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="getDiscountTypeOptions(col, formData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Discount Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Discount Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'discountstatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="discountStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Discount Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Referred By Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'referredby_dropdown'" 
@@ -1962,6 +1987,31 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Discount Type Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'discounttype_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="getDiscountTypeOptions(col, editFormData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Discount Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Discount Status Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'discountstatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="discountStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Discount Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
               <!-- Referred By Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'referredby_dropdown'" 
@@ -2872,6 +2922,16 @@ const isUserEndpoint = computed(() => {
   return ep === 'users' || ep === 'user'
 })
 
+const isDiscountTypeEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'discounttypes' || ep === 'discounttype' || ep === 'discount_types' || ep === 'discount_type'
+})
+
+const isDiscountEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'discounts' || ep === 'discount'
+})
+
 // Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders,
 // Billing Details, LCP NAP Locations & Service Orders — the field-heavy forms) or the standard 2-column modal
 const isWideForm = computed(() => {
@@ -2894,7 +2954,9 @@ const isWideForm = computed(() => {
     ep === 'serviceorders' ||
     ep === 'serviceorder' ||
     ep === 'service_orders' ||
-    ep === 'service_order'
+    ep === 'service_order' ||
+    ep === 'discounts' ||
+    ep === 'discount'
   )
 })
 
@@ -3366,6 +3428,12 @@ function getFieldType(col) {
   if (lower === 'plan_id' || lower === 'planid' || lower === 'choose_plan' || lower === 'chooseplan' || lower === 'plan' || lower === 'desiredplan' || lower === 'desired_plan' || lower === 'newplan') {
     return 'plan_dropdown'
   }
+  if (lower === 'discounttype_id' || lower === 'discounttypeid' || lower === 'discount_type_id' || lower === 'discounttype' || lower === 'discount_type' || lower === 'discountid' || lower === 'discount_id') {
+    return 'discounttype_dropdown'
+  }
+  if (lower === 'discountstatus' || lower === 'discount_status') {
+    return 'discountstatus_dropdown'
+  }
   if (lower === 'referredby' || lower === 'referred_by') {
     return 'referredby_dropdown'
   }
@@ -3429,7 +3497,7 @@ function getFieldType(col) {
     lower.includes('quantity') ||
     lower.includes('balance') ||
     lower.includes('day') ||
-    (lower.includes('id') && (lower.endsWith('id') || lower.startsWith('id')) && !lower.includes('accesslevel') && !lower.includes('lcp') && !lower.includes('nap') && !lower.includes('port') && !lower.includes('vlan') && !lower.includes('plan') && !isNonNumericIdField(lower)) ||
+    (lower.includes('id') && (lower.endsWith('id') || lower.startsWith('id')) && !lower.includes('accesslevel') && !lower.includes('lcp') && !lower.includes('nap') && !lower.includes('port') && !lower.includes('vlan') && !lower.includes('plan') && !lower.includes('discount') && !isNonNumericIdField(lower)) ||
     lower === 'splynxid' ||
     lower === 'mikrotikid' ||
     lower === 'duration'
@@ -5540,6 +5608,54 @@ const MENU_FORM_LAYOUT = [
   }
 ]
 
+const DISCOUNT_TYPE_FORM_LAYOUT = [
+  {
+    key: 'promotion',
+    title: 'Promotion & Validity Schedule',
+    icon: 'pi pi-percentage',
+    badgeClass: 'text-primary',
+    columns: ['name', 'description', 'startDate', 'endDate', 'isActive']
+  },
+  {
+    key: 'financials',
+    title: 'Discount Amount & Target Plan',
+    icon: 'pi pi-dollar',
+    badgeClass: 'text-success',
+    columns: ['amount', 'planId']
+  }
+]
+
+const DISCOUNT_FORM_LAYOUT = [
+  {
+    key: 'customer',
+    title: 'Customer & Contact Details',
+    icon: 'pi pi-user',
+    badgeClass: 'text-primary',
+    columns: ['fullName', 'accountNo', 'contactNumber', 'emailAddress', 'userEmail']
+  },
+  {
+    key: 'location',
+    title: 'Location & Address Details',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-info',
+    columns: ['address', 'location', 'region', 'city', 'barangay']
+  },
+  {
+    key: 'discount',
+    title: 'Discount & Plan Assignment',
+    icon: 'pi pi-tag',
+    badgeClass: 'text-success',
+    columns: ['discounttype_id', 'discountId', 'plan', 'provider', 'discountAmount', 'remaining', 'discountStatus', 'invoiceUsed']
+  },
+  {
+    key: 'workflow',
+    title: 'Processing & Approval Details',
+    icon: 'pi pi-check-square',
+    badgeClass: 'text-warning',
+    columns: ['usedDate', 'processedBy', 'processDate', 'approvedBy', 'remarks']
+  }
+]
+
 // Generic layout builder helper for standardized section construction
 const buildLayoutSections = (cols, layout, { includeAudit = false } = {}) => {
   const pool = new Map()
@@ -5595,6 +5711,8 @@ const buildRouterSections = (cols, opts) => buildLayoutSections(cols, ROUTER_FOR
 const buildInvoiceSections = (cols, opts) => buildLayoutSections(cols, INVOICE_FORM_LAYOUT, opts)
 const buildUserSections = (cols, opts) => buildLayoutSections(cols, USER_FORM_LAYOUT, opts)
 const buildMenuSections = (cols, opts) => buildLayoutSections(cols, MENU_FORM_LAYOUT, opts)
+const buildDiscountTypeSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_TYPE_FORM_LAYOUT, opts)
+const buildDiscountSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_FORM_LAYOUT, opts)
 
 // Columns for Create & Edit forms (excludes system audit fields completely)
 const formSections = computed(() => {
@@ -5627,6 +5745,12 @@ const formSections = computed(() => {
   }
   if (isMenuEndpoint.value) {
     return buildMenuSections(formColumns.value)
+  }
+  if (isDiscountTypeEndpoint.value) {
+    return buildDiscountTypeSections(formColumns.value)
+  }
+  if (isDiscountEndpoint.value) {
+    return buildDiscountSections(formColumns.value)
   }
 
   const groups = {
@@ -5717,6 +5841,12 @@ const viewFormSections = computed(() => {
   }
   if (isMenuEndpoint.value) {
     return buildMenuSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isDiscountTypeEndpoint.value) {
+    return buildDiscountTypeSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isDiscountEndpoint.value) {
+    return buildDiscountSections(viewFormColumns.value, { includeAudit: true })
   }
 
   const groups = {
@@ -5899,6 +6029,8 @@ const napsList = ref([])
 const portsList = ref([])
 const vlansList = ref([])
 const plansList = ref([])
+const discountTypesList = ref([])
+const discountsList = ref([])
 const usersList = ref([])
 const defaultFormattedRegions = (defaultRegions || []).map(r => ({
   label: `${r.name} (${r.regionName})`,
@@ -6038,6 +6170,23 @@ const getPlanOptions = (col, currentVal) => {
   return getStableOptionsWithCurrent(baseOptions, currentVal)
 }
 
+const getDiscountTypeOptions = (col, currentVal) => {
+  const isNameField = col && (col.toLowerCase() === 'discount' || col.toLowerCase() === 'discounttype')
+  const baseOptions = discountTypesList.value.map(d => ({
+    label: d.label || d.name || `Discount Type #${d.id}`,
+    value: isNameField ? (d.name || d.id) : d.id
+  }))
+  return getStableOptionsWithCurrent(baseOptions, currentVal)
+}
+
+const getDiscountOptions = (col, currentVal) => {
+  const baseOptions = discountsList.value.map(d => ({
+    label: d.label || d.name || `Discount #${d.id}`,
+    value: d.id
+  }))
+  return getStableOptionsWithCurrent(baseOptions, currentVal)
+}
+
 const statusOptions = computed(() => {
   const vocabulary = dataStatusVocabulary.value
   const list = vocabulary.length ? vocabulary : FALLBACK_STATUS_LIST
@@ -6152,6 +6301,15 @@ const connectionTypeOptions = ref([
   { label: 'Broadband', value: 'Broadband' }
 ])
 
+const discountStatusOptions = ref([
+  { label: 'Active', value: 'Active' },
+  { label: 'Used', value: 'Used' },
+  { label: 'Pending', value: 'Pending' },
+  { label: 'Approved', value: 'Approved' },
+  { label: 'Expired', value: 'Expired' },
+  { label: 'Cancelled', value: 'Cancelled' }
+])
+
 const unwrapList = (val) => {
   if (!val) return []
   if (Array.isArray(val)) return val
@@ -6177,7 +6335,7 @@ const fetchFormLookups = () => {
   if (formLookupsPromise) return formLookupsPromise
 
   formLookupsPromise = (async () => {
-    const [menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, lcnapPortRes] = await Promise.allSettled([
+    const [menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, lcnapPortRes, discountTypesRes, discountsRes] = await Promise.allSettled([
       apiClient.get('/Menus'),
       apiClient.get('/Lcpnaps'),
       apiClient.get('/Lcps'),
@@ -6185,7 +6343,9 @@ const fetchFormLookups = () => {
       apiClient.get('/Ports'),
       apiClient.get('/Vlans'),
       apiClient.get('/Plans'),
-      apiClient.get('/Lcpnapports')
+      apiClient.get('/Lcpnapports'),
+      apiClient.get('/DiscountTypes'),
+      apiClient.get('/Discounts')
     ])
 
     if (menuRes.status === 'fulfilled') {
@@ -6216,6 +6376,25 @@ const fetchFormLookups = () => {
         id: item.id,
         amount: item.amount,
         value: item.name || item.id
+      }))
+    }
+    if (discountTypesRes && discountTypesRes.status === 'fulfilled') {
+      discountTypesList.value = unwrapList(discountTypesRes.value).map(item => ({
+        label: item.name ? `${item.name}${item.amount ? ' (₱' + Number(item.amount).toLocaleString() + ' OFF)' : ''}` : `Discount Type #${item.id}`,
+        name: item.name || `Discount Type #${item.id}`,
+        id: item.id,
+        amount: item.amount,
+        planId: item.planId,
+        value: item.id
+      }))
+    }
+    if (discountsRes && discountsRes.status === 'fulfilled') {
+      discountsList.value = unwrapList(discountsRes.value).map(item => ({
+        label: item.fullName ? `${item.fullName} - ${item.plan || 'Discount #' + item.id}` : `Discount #${item.id}`,
+        name: item.fullName || `Discount #${item.id}`,
+        id: item.id,
+        amount: item.discountAmount,
+        value: item.id
       }))
     }
   })().catch(err => {
@@ -7431,7 +7610,18 @@ const getUserDisplayName = (val) => {
 const isCurrencyField = (col) => {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
-  return lower === 'servicecharge' || lower === 'installationfee' || lower === 'accountbalance' || lower === 'amount' || lower === 'price' || lower === 'balance' || lower.includes('servicecharge')
+  return (
+    lower === 'servicecharge' ||
+    lower === 'installationfee' ||
+    lower === 'accountbalance' ||
+    lower === 'amount' ||
+    lower === 'price' ||
+    lower === 'balance' ||
+    lower === 'discountamount' ||
+    lower === 'remaining' ||
+    lower.includes('servicecharge') ||
+    lower.includes('discountamount')
+  )
 }
 
 const viewMaterialsList = computed(() => {
@@ -7452,27 +7642,23 @@ const viewMaterialsList = computed(() => {
     { name: 'itemName10', qty: 'itemQuantity10', index: 11 }
   ]
   pairs.forEach(p => {
-    const itemVal = d[p.name]
+    const nameVal = d[p.name]
     const qtyVal = d[p.qty]
-    const hasName = itemVal !== null && itemVal !== undefined && String(itemVal).trim() !== ''
-    const hasQty = qtyVal !== null && qtyVal !== undefined && String(qtyVal).trim() !== ''
-    if (hasName || hasQty) {
+    if (nameVal && String(nameVal).trim() !== '') {
       list.push({
         index: p.index,
-        name: hasName ? String(itemVal).trim() : '(Unnamed Material)',
-        quantity: hasQty ? qtyVal : 1
+        name: String(nameVal).trim(),
+        qty: qtyVal !== null && qtyVal !== undefined && String(qtyVal).trim() !== '' ? String(qtyVal).trim() : '1'
       })
     }
   })
   return list
 })
 
-const formatViewFieldValue = (col, val) => {
+const formatDisplayValue = (val, col) => {
   if (val === null || val === undefined || val === '') return '-'
   const lower = col.toLowerCase().replace(/_/g, '')
-  if (lower === 'password' || lower === 'pass' || lower === 'pwd') {
-    return '••••••••'
-  }
+
   if (isUserRefField(col)) {
     return getUserDisplayName(val)
   }
@@ -7519,6 +7705,8 @@ const formatViewFieldValue = (col, val) => {
   else if (type === 'lcpnap_dropdown') targetList = lcpnapsList.value
   else if (type === 'lcpnapport_dropdown') targetList = lcpnapportsList.value
   else if (type === 'plan_dropdown') targetList = plansList.value
+  else if (type === 'discounttype_dropdown') targetList = discountTypesList.value
+  else if (type === 'discount_dropdown') targetList = discountsList.value
 
   if (targetList && targetList.length > 0) {
     const found = targetList.find(opt => 
@@ -7586,7 +7774,9 @@ const openCreateDialog = () => {
       formData.value[col] = guestOption ? guestOption.value : accessLevels.value[0].value
     } else if (type === 'referredby_dropdown') {
       formData.value[col] = 'None'
-    } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown') {
+    } else if (type === 'discountstatus_dropdown' && discountStatusOptions.value.length > 0) {
+      formData.value[col] = discountStatusOptions.value[0].value
+    } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown' || type === 'discounttype_dropdown') {
       formData.value[col] = null
     } else {
       formData.value[col] = ''
@@ -8057,6 +8247,8 @@ const openEditDialog = async (record) => {
       else if (type === 'port_dropdown') targetList = portsList.value
       else if (type === 'vlan_dropdown') targetList = vlansList.value
       else if (type === 'plan_dropdown') targetList = getPlanOptions(col, val)
+      else if (type === 'discounttype_dropdown') targetList = getDiscountTypeOptions(col, val)
+      else if (type === 'discount_dropdown') targetList = getDiscountOptions(col, val)
       else if (type === 'referredby_dropdown') targetList = getReferrerOptions(val)
 
       if (targetList && targetList.length > 0) {

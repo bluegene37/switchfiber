@@ -39,6 +39,8 @@ export const stemMenuToken = (token) => {
   if (t === 'usermanagement' || t === 'usersmanagement') return 'user management'
   if (t === 'dataviewer' || t === 'apiviewer') return 'api viewer'
   if (t === 'lcnapport' || t === 'lcnapports') return 'lcnap port'
+  if (t === 'discounttypes' || t === 'discounttype') return 'discount type'
+  if (t === 'discounts' || t === 'discount') return 'discount'
   
   // Standard plural stripping
   if (t.endsWith('ies') && t.length > 4) return t.slice(0, -3) + 'y'
@@ -334,6 +336,22 @@ export const MENU_CATALOG = [
         aliases: ['Plan', 'Plans', 'Fiber Plans', 'Subscription Plans', 'Packages', 'File Maintenance - Plan'],
         path: '/plan',
         icon: 'pi-tag'
+      },
+      {
+        code: 'file-maintenance.discount-types',
+        name: 'Discount Types',
+        serverMenu: 'Discount Types',
+        aliases: ['Discount Types', 'Discount Type', 'DiscountTypes', 'DiscountType', 'Promo Types', 'Promotions', 'File Maintenance - Discount Types'],
+        path: '/discount-types',
+        icon: 'pi-percentage'
+      },
+      {
+        code: 'file-maintenance.discounts',
+        name: 'Discounts',
+        serverMenu: 'Discounts',
+        aliases: ['Discounts', 'Discount', 'Customer Discounts', 'Subsidies', 'Vouchers', 'Promos', 'File Maintenance - Discounts'],
+        path: '/discounts',
+        icon: 'pi-ticket'
       }
     ]
   },

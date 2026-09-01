@@ -837,3 +837,48 @@
  * @property {integer|null} createdBy
  * @property {string|null} createdDate
  */
+
+/**
+ * @typedef {Object} DiscountTypeDto
+ * @property {integer|string} id
+ * @property {string} name
+ * @property {string} description
+ * @property {string|null} startDate
+ * @property {string|null} endDate
+ * @property {integer|string} planId
+ * @property {boolean} isActive
+ * @property {number|string|null} amount
+ * @property {string|null} createdDate
+ * @property {string} createdBy
+ */
+
+/**
+ * @typedef {Object} DiscountDto
+ * @property {integer|string} id
+ * @property {string|null} fullName
+ * @property {string|null} contactNumber
+ * @property {string|null} emailAddress
+ * @property {string|null} address
+ * @property {string|null} location
+ * @property {string|null} plan
+ * @property {string|null} provider
+ * @property {string|null} discountId
+ * @property {string|null} discountAmount
+ * @property {string|null} discountStatus
+ * @property {string|null} usedDate
+ * @property {string|null} processedBy
+ * @property {string|null} processDate
+ * @property {string|null} approvedBy
+ * @property {string|null} modifiedBy
+ * @property {string|null} modifiedDate
+ * @property {string|null} userEmail
+ * @property {string|null} invoiceUsed
+ * @property {string|null} remarks
+ * @property {string|null} remaining
+ * @property {string|null} barangay
+ * @property {string|null} city
+ * @property {string|null} createdDate
+ * @property {string|null} createdBy
+ * @property {integer|string|null} discounttype_id
+ * @property {string|null} accountNo
+ */

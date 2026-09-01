@@ -237,6 +237,26 @@ export const EndpointSchemaMeta = {
       "required": []
     }
   },
+  "DiscountTypes": {
+    "create": {
+      "schema": "DiscountTypeDto",
+      "required": []
+    },
+    "update": {
+      "schema": "DiscountTypeDto",
+      "required": []
+    }
+  },
+  "Discounts": {
+    "create": {
+      "schema": "DiscountDto",
+      "required": []
+    },
+    "update": {
+      "schema": "DiscountDto",
+      "required": []
+    }
+  },
   "Invoice": {
     "create": {
       "schema": "InvoiceDto",

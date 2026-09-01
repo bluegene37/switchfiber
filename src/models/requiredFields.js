@@ -79,6 +79,12 @@ const ENDPOINT_OVERRIDES = {
   serviceorders: [ // schema says 60
     'accountNumber', 'fullName', 'contactNumber', 'address',
     'plan', 'concern', 'priorityLevel', 'supportStatus', 'visitStatus'
+  ],
+  discounttypes: [
+    'name', 'amount'
+  ],
+  discounts: [
+    'fullName', 'contactNumber', 'discounttype_id'
   ]
 }
 

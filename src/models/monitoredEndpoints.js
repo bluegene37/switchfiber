@@ -25,7 +25,9 @@ export const MONITORED_ENDPOINTS = [
   { key: 'lcpnapports', path: '/Lcpnapports', label: 'LCNAP Ports' },
   { key: 'naps', path: '/Naps', label: 'NAPs' },
   { key: 'ports', path: '/Ports', label: 'Ports' },
-  { key: 'users', path: '/Users', label: 'Users' }
+  { key: 'users', path: '/Users', label: 'Users' },
+  { key: 'discountTypes', path: '/DiscountTypes', label: 'Discount Types' },
+  { key: 'discounts', path: '/Discounts', label: 'Discounts' }
 ]
 
 export const labelForPath = (path) =>

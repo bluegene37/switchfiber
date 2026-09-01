@@ -187,6 +187,36 @@ const routeMap = {
     endpoint: 'ServiceOrders',
     icon: 'pi-wrench',
     description: 'Manage subscriber repair requests, technical support tickets, field dispatch visits, and equipment pullouts.'
+  },
+  '/discount-types': {
+    title: 'Discount Types',
+    endpoint: 'DiscountTypes',
+    icon: 'pi-percentage',
+    description: 'Configure broadband subscription discount packages, promotion promo codes, validity dates, and discount amounts.'
+  },
+  '/discount_types': {
+    title: 'Discount Types',
+    endpoint: 'DiscountTypes',
+    icon: 'pi-percentage',
+    description: 'Configure broadband subscription discount packages, promotion promo codes, validity dates, and discount amounts.'
+  },
+  '/discount_type': {
+    title: 'Discount Types',
+    endpoint: 'DiscountTypes',
+    icon: 'pi-percentage',
+    description: 'Configure broadband subscription discount packages, promotion promo codes, validity dates, and discount amounts.'
+  },
+  '/discounts': {
+    title: 'Discounts',
+    endpoint: 'Discounts',
+    icon: 'pi-ticket',
+    description: 'Track customer discount redemptions, promo applications, approved subsidies, and account deductions.'
+  },
+  '/discount': {
+    title: 'Discounts',
+    endpoint: 'Discounts',
+    icon: 'pi-ticket',
+    description: 'Track customer discount redemptions, promo applications, approved subsidies, and account deductions.'
   }
 }
 

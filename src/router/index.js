@@ -29,6 +29,10 @@ const ROUTE_TITLES = {
   vlan: 'VLAN',
   router: 'Router',
   plan: 'Plan',
+  'discount-types': 'Discount Types',
+  discount_types: 'Discount Types',
+  discounts: 'Discounts',
+  discount: 'Discounts',
   user: 'User',
   menu: 'Menu',
   access_level: 'Access Level',
@@ -120,6 +124,18 @@ const router = createRouter({
     {
       path: '/plan',
       name: 'plan',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/discount-types',
+      name: 'discount-types',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/discounts',
+      name: 'discounts',
       component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
