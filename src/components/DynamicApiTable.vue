@@ -3428,7 +3428,16 @@ function getFieldType(col) {
   if (lower === 'plan_id' || lower === 'planid' || lower === 'choose_plan' || lower === 'chooseplan' || lower === 'plan' || lower === 'desiredplan' || lower === 'desired_plan' || lower === 'newplan') {
     return 'plan_dropdown'
   }
-  if (lower === 'discounttype_id' || lower === 'discounttypeid' || lower === 'discount_type_id' || lower === 'discounttype' || lower === 'discount_type' || lower === 'discountid' || lower === 'discount_id') {
+  // discounttype_id is the real FK into /DiscountTypes. Plans.discountId is an
+  // integer FK to the same table, and Applications.applicablePromo names the promo
+  // the applicant picked -- all three are dropdowns. Discounts.discountId is a
+  // nullable voucher/reference string, so it stays a plain input on that endpoint.
+  if (
+    lower === 'discounttypeid' ||
+    lower === 'discounttype' ||
+    lower === 'applicablepromo' ||
+    (lower === 'discountid' && !isDiscountEndpoint.value)
+  ) {
     return 'discounttype_dropdown'
   }
   if (lower === 'discountstatus' || lower === 'discount_status') {
@@ -5638,7 +5647,7 @@ const DISCOUNT_FORM_LAYOUT = [
     title: 'Location & Address Details',
     icon: 'pi pi-map-marker',
     badgeClass: 'text-info',
-    columns: ['address', 'location', 'region', 'city', 'barangay']
+    columns: ['address', 'location', 'city', 'barangay']
   },
   {
     key: 'discount',
@@ -6171,7 +6180,7 @@ const getPlanOptions = (col, currentVal) => {
 }
 
 const getDiscountTypeOptions = (col, currentVal) => {
-  const isNameField = col && (col.toLowerCase() === 'discount' || col.toLowerCase() === 'discounttype')
+  const isNameField = col && ['discount', 'discounttype', 'applicablepromo'].includes(col.toLowerCase())
   const baseOptions = discountTypesList.value.map(d => ({
     label: d.label || d.name || `Discount Type #${d.id}`,
     value: isNameField ? (d.name || d.id) : d.id
