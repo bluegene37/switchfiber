@@ -2134,7 +2134,7 @@
                 v-else-if="getFieldType(col) === 'status_dropdown'"
                 :id="`edit-${col}`"
                 v-model="editFormData[col]"
-                :options="statusOptions"
+                :options="editStatusOptions"
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
@@ -3734,6 +3734,23 @@ const SERVICE_ORDER_COLUMNS = [
   'dateInstalled'
 ]
 
+const JOB_ORDER_COLUMNS = [
+  'id',
+  // Status sits directly after the id so it lands in the first screenful and is
+  // covered by the left-pinning below, keeping it frozen and readable on narrow viewports.
+  'status',
+  'accountNo',
+  'firstName',
+  'lastName',
+  'contactNumber',
+  'address',
+  'city',
+  'planId',
+  'onsiteStatus',
+  'billingStatus',
+  'dateInstalled'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
@@ -3744,48 +3761,9 @@ const CONCISE_ENDPOINT_COLUMNS = {
   billingdetails: BILLING_DETAILS_COLUMNS,
   Billing: BILLING_DETAILS_COLUMNS,
   billing: BILLING_DETAILS_COLUMNS,
-  JobOrders: [
-    'id',
-    'accountNo',
-    'firstName',
-    'lastName',
-    'contactNumber',
-    'address',
-    'city',
-    'planId',
-    'status',
-    'onsiteStatus',
-    'billingStatus',
-    'dateInstalled'
-  ],
-  job_order: [
-    'id',
-    'accountNo',
-    'firstName',
-    'lastName',
-    'contactNumber',
-    'address',
-    'city',
-    'planId',
-    'status',
-    'onsiteStatus',
-    'billingStatus',
-    'dateInstalled'
-  ],
-  joborders: [
-    'id',
-    'accountNo',
-    'firstName',
-    'lastName',
-    'contactNumber',
-    'address',
-    'city',
-    'planId',
-    'status',
-    'onsiteStatus',
-    'billingStatus',
-    'dateInstalled'
-  ],
+  JobOrders: JOB_ORDER_COLUMNS,
+  job_order: JOB_ORDER_COLUMNS,
+  joborders: JOB_ORDER_COLUMNS,
   LCPNapLocations: [
     'id',
     'lcpnap',
@@ -6288,6 +6266,12 @@ const getDiscountOptions = (col, currentVal) => {
 }
 
 const statusOptions = computed(() => {
+  if (isJobOrderEndpoint.value) {
+    return [
+      { label: 'Inprogress', value: 'Inprogress' },
+      { label: 'Scheduled', value: 'Scheduled' }
+    ]
+  }
   const vocabulary = dataStatusVocabulary.value
   const list = vocabulary.length ? vocabulary : FALLBACK_STATUS_LIST
   return list.map(v => ({ label: v, value: v }))

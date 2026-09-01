@@ -92,6 +92,7 @@ export const EndpointColumns = {
   ],
   "JobOrders": [
     "id",
+    "status",
     "emailAddress",
     "referredBy",
     "firstName",
@@ -111,7 +112,6 @@ export const EndpointColumns = {
     "billingDay",
     "preferredDay",
     "joRemarks",
-    "status",
     "verifiedBy",
     "modemRouterSN",
     "provider",
