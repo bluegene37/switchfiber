@@ -480,6 +480,7 @@ const clearAllFilters = () => {
 .status-tab-btn {
   transition: all 0.2s ease-in-out;
   font-size: 0.8125rem;
+  font-weight: 500;
 }
 
 .status-tab-count {
@@ -487,6 +488,7 @@ const clearAllFilters = () => {
   line-height: 1;
   padding: 0.2rem 0.35rem;
   min-width: 1.4rem;
+  font-weight: 600;
 }
 
 .hover-tab:hover {

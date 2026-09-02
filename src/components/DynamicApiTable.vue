@@ -416,7 +416,7 @@
           <div v-else-if="col.toLowerCase().includes('status')" class="d-flex justify-content-center">
             <span 
               v-if="slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== ''"
-              class="badge rounded-pill px-2.5 py-1 fw-semibold border"
+              class="badge rounded-pill sfa-status-badge border"
               :class="getStatusBadgeConfig(slotProps.data[col]).class"
             >
               {{ getStatusBadgeConfig(slotProps.data[col]).label }}
@@ -479,6 +479,9 @@
           </span>
           <!-- Date / Timestamp Formatted Columns -->
           <span v-else-if="isDateField(col) && slotProps.data[col]" class="text-nowrap small">
+            {{ formatDisplayValue(slotProps.data[col], col) }}
+          </span>
+          <span v-else-if="(getFieldType(col) === 'phone' || isPhoneField(col)) && slotProps.data[col]" class="font-monospace small">
             {{ formatDisplayValue(slotProps.data[col], col) }}
           </span>
           <span v-else-if="getFieldType(col) === 'textarea' || col.toLowerCase().includes('description')" class="d-inline-block text-wrap py-1" style="min-width: 250px; max-width: 480px; white-space: normal; word-break: break-word;">
@@ -1404,6 +1407,7 @@
                 :id="col" 
                 type="tel"
                 v-model="formData[col]" 
+                @blur="formData[col] = normalizePhoneNumber(formData[col])"
                 class="w-100 p-inputtext-sm font-monospace" 
                 :class="{ 'p-invalid': hasFieldError('create', col) }"
                 placeholder="e.g. 09123456789 or +639123456789" 
@@ -1707,11 +1711,23 @@
               <InputText 
                 v-else-if="getFieldType(col) === 'phone'" 
                 :id="`view-${col}`" 
-                :modelValue="viewFormData[col]" 
+                :modelValue="normalizePhoneNumber(viewFormData[col])" 
                 readonly
                 disabled
                 class="w-100 p-inputtext-sm bg-light font-monospace" 
               />
+
+              <!-- Status in View Details Modal (Prominent Standout Badge) -->
+              <div v-else-if="col.toLowerCase().includes('status')" class="d-flex align-items-center pt-1">
+                <span 
+                  v-if="viewFormData[col] !== null && viewFormData[col] !== undefined && viewFormData[col] !== ''"
+                  class="badge rounded-pill sfa-status-badge border"
+                  :class="getStatusBadgeConfig(viewFormData[col]).class"
+                >
+                  {{ getStatusBadgeConfig(viewFormData[col]).label }}
+                </span>
+                <span v-else class="text-muted">-</span>
+              </div>
 
               <!-- InputText for Standard / Monospace Fields -->
               <InputText 
@@ -2446,6 +2462,7 @@
                 :id="`edit-${col}`" 
                 type="tel"
                 v-model="editFormData[col]" 
+                @blur="editFormData[col] = normalizePhoneNumber(editFormData[col])"
                 class="w-100 p-inputtext-sm font-monospace" 
                 :class="{ 'p-invalid': hasFieldError('edit', col) }"
                 placeholder="e.g. 09123456789 or +639123456789" 
@@ -6873,11 +6890,59 @@ const isBlank = (val) => {
   return false
 }
 
+const isPhoneField = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  return (
+    lower === 'mobilenumber' ||
+    lower === 'secondarymobilenumber' ||
+    lower === 'contactnumber' ||
+    lower === 'secondcontactnumber' ||
+    lower === 'cellphonenumber' ||
+    lower === 'phonenumber' ||
+    lower === 'phone' ||
+    lower === 'mobile' ||
+    lower === 'cellphone' ||
+    lower.includes('contactnumber') ||
+    lower.includes('mobilenumber') ||
+    lower.includes('phonenumber')
+  )
+}
+
+const normalizePhoneNumber = (val) => {
+  if (val === null || val === undefined) return ''
+  const str = String(val).trim()
+  if (!str) return ''
+  const raw = str.replace(/[\s\-()]/g, '')
+  
+  // Format 0: 10 digits starting with 9 (e.g. 9171234567) -> prepend 0 -> 09171234567
+  if (/^9\d{9}$/.test(raw)) {
+    return `0${raw}`
+  }
+  // Format 2: 12 digits starting with 639 (e.g. 639171234567) -> convert to 09171234567
+  if (/^639\d{9}$/.test(raw)) {
+    return `0${raw.slice(2)}`
+  }
+  // Format 3: 13 chars starting with +639 (e.g. +639171234567) -> convert to 09171234567
+  if (/^\+639\d{9}$/.test(raw)) {
+    return `0${raw.slice(3)}`
+  }
+  // Format 1: 11 digits starting with 0 (e.g. 09171234567)
+  if (/^0\d{10}$/.test(raw)) {
+    return raw
+  }
+  return raw
+}
+
 const isValidPhoneNumber = (val) => {
   if (val === null || val === undefined || String(val).trim() === '') return true
   const str = String(val).trim()
   const raw = str.replace(/[\s\-()]/g, '')
   
+  // Format 0: 10 digits starting with 9 (e.g. 9171234567) -> valid, normalized with 0
+  if (/^9\d{9}$/.test(raw)) {
+    return true
+  }
   // Format 1: 09XXXXXXXXX or 0XXXXXXXXXX (exactly 11 digits, starts with 0)
   if (/^0\d{10}$/.test(raw)) {
     return true
@@ -6937,6 +7002,9 @@ const validateRequired = (scope) => {
         errors[col] = `${formatLabel(col)} must be exactly 11 digits (e.g. 09123456789) or 13 characters (e.g. +639123456789 / +629123456789)`
         missing.push(col)
         return
+      } else {
+        // Automatically ensure normalized value with leading 0 is stored in the form
+        form[col] = normalizePhoneNumber(val)
       }
     }
 
@@ -7590,16 +7658,50 @@ const getStatusBadgeConfig = (val) => {
   const str = String(val).trim()
   const lower = str.toLowerCase()
   
-  if (lower === 'done' || lower === 'completed' || lower === 'paid' || lower === 'approved' || lower === 'active') {
+  if (
+    lower === 'done' || 
+    lower === 'completed' || 
+    lower === 'paid' || 
+    lower === 'approved' || 
+    lower === 'active' || 
+    lower === 'activated' ||
+    lower === 'installed' ||
+    lower === 'delivered'
+  ) {
     return { class: 'bg-success bg-opacity-10 text-success border-success border-opacity-25', label: str }
   }
-  if (lower === 'pending' || lower === 'in progress' || lower === 'waiting' || lower === 'onsite pending') {
+  if (
+    lower === 'pending' || 
+    lower === 'in progress' || 
+    lower === 'inprogress' || 
+    lower === 'waiting' || 
+    lower === 'onsite pending' || 
+    lower === 'schedule' || 
+    lower === 'applied' ||
+    lower === 'processing'
+  ) {
     return { class: 'bg-warning bg-opacity-15 text-warning-emphasis border-warning border-opacity-25', label: str }
   }
-  if (lower === 'unbilled' || lower === 'draft' || lower === 'inactive' || lower === 'unassigned') {
+  if (
+    lower === 'unbilled' || 
+    lower === 'draft' || 
+    lower === 'inactive' || 
+    lower === 'unassigned'
+  ) {
     return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: str }
   }
-  if (lower === 'failed' || lower === 'rejected' || lower === 'cancelled' || lower === 'denied') {
+  if (
+    lower === 'failed' || 
+    lower === 'rejected' || 
+    lower === 'cancelled' || 
+    lower === 'canceled' || 
+    lower === 'denied' || 
+    lower === 'duplicate' || 
+    lower === 'no slot' || 
+    lower === 'noslot' ||
+    lower === 'no facility' ||
+    lower === 'nofacility'
+  ) {
     return { class: 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25', label: str }
   }
   return { class: 'bg-info bg-opacity-10 text-info border-info border-opacity-25', label: str }
@@ -7770,8 +7872,13 @@ const formatDisplayValue = (val, col) => {
     return `${val} mins`
   }
 
-  // Format server-side timestamps and dates
+  // Format phone / mobile numbers with leading 0
   const type = getFieldType(col)
+  if (type === 'phone' || isPhoneField(col)) {
+    return normalizePhoneNumber(val)
+  }
+
+  // Format server-side timestamps and dates
   if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified') && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
     const d = new Date(val)
     if (!isNaN(d.getTime())) {
@@ -8012,10 +8119,122 @@ const syncPairedFields = (payload) => {
  */
 const applyJobOrderCreationAudit = (finalPayload, numericUserId, mode = 'create') => {
   if (mode === 'create') {
-    finalPayload.createdBy = numericUserId
+    finalPayload.createdBy = Number(numericUserId) || null
     finalPayload.createdDate = null
   }
-  finalPayload.modifiedBy = numericUserId
+  finalPayload.modifiedBy = String(numericUserId || '1')
+}
+
+const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
+  const normStr = (val) => (val !== null && val !== undefined ? String(val) : '')
+  const normPhone = (val) => normalizePhoneNumber(val)
+  const normDate = (val) => {
+    if (!val) return null
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val.toISOString()
+    const str = String(val).trim()
+    if (!str) return null
+    const d = new Date(str)
+    return isNaN(d.getTime()) ? null : d.toISOString()
+  }
+
+  const jobOrder = {
+    emailAddress: normStr(payload.emailAddress || payload.email),
+    referredBy: normStr(payload.referredBy),
+    firstName: normStr(payload.firstName),
+    middleInitial: normStr(payload.middleInitial),
+    lastName: normStr(payload.lastName),
+    contactNumber: normPhone(payload.contactNumber),
+    applicantEmailAddress: normStr(payload.applicantEmailAddress || payload.emailAddress || payload.email),
+    address: normStr(payload.address),
+    location: normStr(payload.location),
+    barangay: normStr(payload.barangay),
+    city: normStr(payload.city),
+    region: normStr(payload.region),
+    planId: normStr(payload.planId),
+    remarks: normStr(payload.remarks),
+    installationFee: normStr(payload.installationFee),
+    contractTemplate: normStr(payload.contractTemplate),
+    billingDay: normStr(payload.billingDay),
+    preferredDay: normStr(payload.preferredDay),
+    joRemarks: normStr(payload.joRemarks),
+    status: normStr(payload.status || defaultNewStatus.value || 'Applied'),
+    verifiedBy: normStr(payload.verifiedBy),
+    modemRouterSN: normStr(payload.modemRouterSN || payload.routerModemSn || payload.routermodemsn),
+    provider: normStr(payload.provider),
+    lcpId: normStr(payload.lcpId || payload.lcp_id || payload.lcp),
+    napId: normStr(payload.napId || payload.nap_id || payload.nap),
+    portId: normStr(payload.portId || payload.port_id || payload.port),
+    vlanId: normStr(payload.vlanId || payload.vlan_id || payload.vlan),
+    username: normStr(payload.username),
+    visitBy: normStr(payload.visitBy),
+    visitWith: normStr(payload.visitWith),
+    visitWithOther: normStr(payload.visitWithOther),
+    onsiteStatus: normStr(payload.onsiteStatus),
+    onsiteRemarks: normStr(payload.onsiteRemarks),
+    contractLink: normStr(payload.contractLink),
+    connectionType: normStr(payload.connectionType),
+    assignedEmail: normStr(payload.assignedEmail),
+    setupImage: normStr(payload.setupImage),
+    speedtestImage: normStr(payload.speedtestImage),
+    startTimeStamp: normDate(payload.startTimeStamp),
+    endTimeStamp: normDate(payload.endTimeStamp),
+    duration: normStr(payload.duration),
+    externalId: normStr(payload.externalId),
+    lcpnapId: normStr(payload.lcpnapId || payload.lcpnap_id || payload.lcpNap || payload.lcnap),
+    billingStatus: normStr(payload.billingStatus),
+    routerModel: normStr(payload.routerModel),
+    dateInstalled: normDate(payload.dateInstalled),
+    clientSignature: normStr(payload.clientSignature),
+    ip: normStr(payload.ip),
+    signedContractImage: normStr(payload.signedContractImage),
+    boxReadingImage: normStr(payload.boxReadingImage),
+    routerReadingImage: normStr(payload.routerReadingImage),
+    usernameStatus: normStr(payload.usernameStatus),
+    lcpnapportId: normStr(payload.lcpnapportId || payload.lcpnapport_id || payload.lcpNapPort || payload.lcnapport),
+    itemName1: normStr(payload.itemName1 || payload.itemName),
+    itemQuantity1: normStr(payload.itemQuantity1 !== undefined && payload.itemQuantity1 !== null && payload.itemQuantity1 !== '' ? payload.itemQuantity1 : (payload.itemQuantity !== undefined && payload.itemQuantity !== null ? payload.itemQuantity : '')),
+    itemName2: normStr(payload.itemName2),
+    itemQuantity2: normStr(payload.itemQuantity2),
+    itemName3: normStr(payload.itemName3),
+    itemQuantity3: normStr(payload.itemQuantity3),
+    itemName4: normStr(payload.itemName4),
+    itemQuantity4: normStr(payload.itemQuantity4),
+    itemName5: normStr(payload.itemName5),
+    itemQuantity5: normStr(payload.itemQuantity5),
+    itemName6: normStr(payload.itemName6),
+    itemQuantity6: normStr(payload.itemQuantity6),
+    itemName7: normStr(payload.itemName7),
+    itemQuantity7: normStr(payload.itemQuantity7),
+    itemName8: normStr(payload.itemName8),
+    itemQuantity8: normStr(payload.itemQuantity8),
+    itemName9: normStr(payload.itemName9),
+    itemQuantity9: normStr(payload.itemQuantity9),
+    itemName10: normStr(payload.itemName10),
+    itemQuantity10: normStr(payload.itemQuantity10),
+    usageType: normStr(payload.usageType),
+    renter: normStr(payload.renter),
+    installationLandmark: normStr(payload.installationLandmark),
+    statusRemarks: normStr(payload.statusRemarks),
+    portLabelImage: normStr(payload.portLabelImage),
+    secondContactNumber: normPhone(payload.secondContactNumber),
+    accountNo: normStr(payload.accountNo),
+    addressCoordinates: normStr(payload.addressCoordinates || payload.coordinates || payload.coordinate),
+    referrersAccountNumber: normStr(payload.referrersAccountNumber),
+    applicationId: normStr(payload.applicationId),
+    houseFront: normStr(payload.houseFront || payload.houseFrontPicture),
+    modifiedBy: String(loggedInUserId || 1),
+    modifiedDate: localAuditTimestamp()
+  }
+
+  if (mode === 'create') {
+    applyJobOrderCreationAudit(jobOrder, numericUserId, 'create')
+  } else {
+    jobOrder.createdBy = payload.createdBy !== undefined && payload.createdBy !== null ? (Number(payload.createdBy) || null) : (Number(numericUserId) || null)
+    jobOrder.createdDate = normDate(payload.createdDate)
+    applyJobOrderCreationAudit(jobOrder, numericUserId, 'update')
+  }
+
+  return jobOrder
 }
 
 // The server does not own its audit columns. A create or update that omits them
@@ -8066,6 +8285,13 @@ const saveData = async () => {
     if (!allRawColumns.value.includes('email')) {
       delete payload.email
     }
+
+    // Normalize phone numbers in the payload to ensure 0 is always preserved
+    formColumns.value.forEach(col => {
+      if ((getFieldType(col) === 'phone' || isPhoneField(col)) && payload[col] !== undefined && payload[col] !== null) {
+        payload[col] = normalizePhoneNumber(payload[col])
+      }
+    })
 
     const numericUserId = Number(authStore.user?.id) || 1
     const loggedInUserId = String(authStore.user?.id || 1)
@@ -8119,6 +8345,9 @@ const saveData = async () => {
       // Required by the Applications contract, not optional metadata: omitting
       // these two is what made every create 400.
       stampAuditFields(finalPayload, 'create', loggedInUserId)
+    } else if (isJobOrderEndpoint.value) {
+      finalPayload = buildJobOrderPayload(payload, 'create', numericUserId, loggedInUserId)
+      applyJobOrderCreationAudit(finalPayload, numericUserId, 'create')
     } else {
       // Drop whatever audit values came back with the record — they describe the
       // old state. Fresh ones are stamped below, after the empty-value cleanup.
@@ -8142,7 +8371,7 @@ const saveData = async () => {
         } else if (finalPayload[key] instanceof Date) {
           const d = finalPayload[key]
           finalPayload[key] = d.toISOString()
-        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id') {
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && !key.toLowerCase().startsWith('itemquantity') && key.toLowerCase() !== 'itemquantity') {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
@@ -8150,11 +8379,6 @@ const saveData = async () => {
       // After the cleanup loop: it strips empty values, and an audit stamp must
       // survive that.
       stampAuditFields(finalPayload, 'create', loggedInUserId)
-
-      if (isJobOrderEndpoint.value) {
-        // Job Orders keep their own numeric createdBy shape.
-        applyJobOrderCreationAudit(finalPayload, numericUserId)
-      }
     }
 
     console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, finalPayload)
@@ -8209,9 +8433,17 @@ const openEditDialog = async (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   editingRecordId.value = getRecordId(normRecord)
   editFormData.value = { ...normRecord }
+
+  // Normalize phone numbers on load so any phone number in the database missing leading 0 displays with 0
+  formColumns.value.forEach(col => {
+    if ((getFieldType(col) === 'phone' || isPhoneField(col)) && editFormData.value[col] !== undefined && editFormData.value[col] !== null) {
+      editFormData.value[col] = normalizePhoneNumber(editFormData.value[col])
+    }
+  })
+
   // The state this edit is based on. Compared against the server just before the PUT
   // so a save cannot quietly discard someone else's edit made in the meantime.
-  editBaseSnapshot.value = { ...normRecord }
+  editBaseSnapshot.value = { ...editFormData.value }
   editConflictAcknowledged.value = false
 
   // Shown before the awaits below, not after them. The record's own values are
@@ -8372,6 +8604,30 @@ const openEditDialog = async (record) => {
  * part we can do from here; it narrows the race to the gap between this read and the
  * write rather than closing it, and a real fix belongs in the API.
  */
+const normalizeCompareValue = (col, val) => {
+  if (val === null || val === undefined) return ''
+  const type = getFieldType(col)
+  const lower = col.toLowerCase().replace(/_/g, '')
+
+  if (type === 'phone' || isPhoneField(col)) {
+    return normalizePhoneNumber(val)
+  }
+  if (type === 'agreement_checkbox') {
+    return isAgreementChecked(val) ? 'yes' : 'no'
+  }
+  if (type === 'toggle' || lower === 'active' || lower === 'isactive' || lower === 'disabled') {
+    return val === true || val === 'true' ? 'true' : 'false'
+  }
+  if (typeof val === 'number') {
+    return String(val)
+  }
+  const str = String(val).trim()
+  if (!isNaN(str) && str !== '' && (type === 'number' || type === 'currency')) {
+    return String(Number(str))
+  }
+  return str
+}
+
 const detectEditConflict = async () => {
   const base = editBaseSnapshot.value
   if (!base) return null
@@ -8384,16 +8640,18 @@ const detectEditConflict = async () => {
   }
   if (!current || typeof current !== 'object') return null
 
+  // Unwrap response if server returned { data: ... }
+  const unwrappedCurrent = (current && current.data && typeof current.data === 'object' && !Array.isArray(current.data)) ? current.data : current
+
   // Compare only what this form can write, so unrelated server-side bookkeeping
-  // (audit stamps, computed columns) does not raise a false conflict.
+  // (audit stamps, computed columns, normalized phone leading zeros) does not raise a false conflict.
   const changed = formColumns.value.filter(col => {
-    if (getFieldType(col) === 'password') return false
-    const before = base[col]
-    const now = current[col]
-    if (before === undefined && now === undefined) return false
-    return String(before ?? '') !== String(now ?? '')
+    if (getFieldType(col) === 'password' || isAuditField(col)) return false
+    const before = normalizeCompareValue(col, base[col])
+    const now = normalizeCompareValue(col, unwrappedCurrent[col])
+    return before !== now
   })
-  return changed.length ? { changed, current } : null
+  return changed.length ? { changed, current: unwrappedCurrent } : null
 }
 
 const saveEdit = async () => {
@@ -8434,6 +8692,13 @@ const saveEdit = async () => {
     if (!allRawColumns.value.includes('email')) {
       delete payload.email
     }
+
+    // Normalize phone numbers in the payload to ensure 0 is always preserved
+    formColumns.value.forEach(col => {
+      if ((getFieldType(col) === 'phone' || isPhoneField(col)) && payload[col] !== undefined && payload[col] !== null) {
+        payload[col] = normalizePhoneNumber(payload[col])
+      }
+    })
 
     const numericUserId = Number(authStore.user?.id) || 1
     const loggedInUserId = String(authStore.user?.id || 1)
@@ -8484,6 +8749,9 @@ const saveEdit = async () => {
         userEmail: payload.userEmail || currentUserEmail
       }
       stampAuditFields(finalPayload, 'update', loggedInUserId)
+    } else if (isJobOrderEndpoint.value) {
+      finalPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
+      applyJobOrderCreationAudit(finalPayload, numericUserId, 'update')
     } else {
       // Drop the record's existing audit values before restamping — they
       // describe the state this edit is replacing.
@@ -8499,16 +8767,12 @@ const saveEdit = async () => {
           delete finalPayload[key]
         } else if (finalPayload[key] instanceof Date) {
           finalPayload[key] = finalPayload[key].toISOString()
-        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id') {
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && !key.toLowerCase().startsWith('itemquantity') && key.toLowerCase() !== 'itemquantity') {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
 
       stampAuditFields(finalPayload, 'update', loggedInUserId)
-
-      if (isJobOrderEndpoint.value) {
-        applyJobOrderCreationAudit(finalPayload, numericUserId, 'update')
-      }
     }
 
     console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, finalPayload)
@@ -9310,6 +9574,21 @@ defineExpose({
 
 :deep(.p-datatable .p-datatable-tbody > tr > td.text-center) {
   text-align: center !important;
+}
+
+/* Standout status badge styling */
+:deep(.sfa-status-badge),
+.sfa-status-badge {
+  font-size: 0.785rem;
+  font-weight: 600;
+  padding: 0.22rem 0.62rem;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  border-radius: 50rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 :deep(.p-datatable-tbody > tr) {
