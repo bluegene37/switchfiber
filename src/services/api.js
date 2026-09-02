@@ -118,11 +118,18 @@ apiClient.interceptors.response.use((response) => {
 
   // Standardize error message payload
   let errorMessage = error.response?.data?.message
+  // Kept alongside the flattened sentence so a form can mark and scroll to the
+  // fields the server named, instead of only showing a banner the user has to
+  // match against an 80-field dialog by hand.
+  const fieldErrors = {}
   if (error.response?.data?.errors && typeof error.response.data.errors === 'object') {
     const fieldErrList = []
     Object.entries(error.response.data.errors).forEach(([field, msgs]) => {
       const msgStr = Array.isArray(msgs) ? msgs.join(', ') : String(msgs)
-      fieldErrList.push(`${cleanFieldName(field)}: ${simplifyServerFieldError(msgStr)}`)
+      const name = cleanFieldName(field)
+      const simplified = simplifyServerFieldError(msgStr)
+      fieldErrors[name] = simplified
+      fieldErrList.push(`${name}: ${simplified}`)
     })
     if (fieldErrList.length > 0) {
       const detailed = fieldErrList.join(' | ')
@@ -145,6 +152,7 @@ apiClient.interceptors.response.use((response) => {
 
   const customError = new Error(errorMessage)
   customError.status = error.response?.status
+  if (Object.keys(fieldErrors).length > 0) customError.fieldErrors = fieldErrors
 
   return Promise.reject(customError)
 })

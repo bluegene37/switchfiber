@@ -1417,7 +1417,8 @@
               <InputNumber 
                 v-else-if="getFieldType(col) === 'currency' || isCurrencyField(col)" 
                 :id="col" 
-                v-model="formData[col]" 
+                :model-value="formData[col] === '' ? null : formData[col]" 
+                @update:model-value="formData[col] = $event" 
                 fluid
                 size="small"
                 class="w-100" 
@@ -1433,7 +1434,8 @@
               <InputNumber 
                 v-else-if="getFieldType(col) === 'number'" 
                 :id="col" 
-                v-model="formData[col]" 
+                :model-value="formData[col] === '' ? null : formData[col]" 
+                @update:model-value="formData[col] = $event" 
                 fluid
                 size="small"
                 class="w-100" 
@@ -2472,7 +2474,8 @@
               <InputNumber 
                 v-else-if="getFieldType(col) === 'currency' || isCurrencyField(col)" 
                 :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
+                :model-value="editFormData[col] === '' ? null : editFormData[col]" 
+                @update:model-value="editFormData[col] = $event" 
                 fluid
                 size="small"
                 class="w-100" 
@@ -2488,7 +2491,8 @@
               <InputNumber 
                 v-else-if="getFieldType(col) === 'number'" 
                 :id="`edit-${col}`" 
-                v-model="editFormData[col]" 
+                :model-value="editFormData[col] === '' ? null : editFormData[col]" 
+                @update:model-value="editFormData[col] = $event" 
                 fluid
                 size="small"
                 class="w-100" 
@@ -4246,14 +4250,16 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
     const pTo = props.filterParams.toDate ? new Date(props.filterParams.toDate).getTime() : null
 
     if (pStatus) {
+      const normS = (s) => String(s || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+      const targetStatus = normS(pStatus)
       list = list.filter(row => {
-        const rowStatus = rowStatusOf(row).toLowerCase()
+        const rowStatus = rowStatusOf(row)
         // When the status never went to the server this filter is the only thing
         // narrowing the set, so it has to be exact — letting blank-status rows
         // through would show them under every status and make the tab counts
         // sum past the total. Server-filtered responses keep the older leniency.
-        if (props.clientStatusFilter) return rowStatus === pStatus
-        return !rowStatus || rowStatus === pStatus
+        if (props.clientStatusFilter) return normS(rowStatus) === targetStatus
+        return !rowStatus || normS(rowStatus) === targetStatus
       })
     }
 
@@ -4388,11 +4394,17 @@ const statusCounts = computed(() => {
   return {
     total: inScope.length,
     byStatus,
-    // Case-insensitive lookup for a label like 'In Progress'
+    // Case-insensitive & normalized lookup for a label like 'In Progress' / 'Inprogress'
     countFor: (status) => {
-      const key = String(status || '').trim().toLowerCase()
-      if (!key) return inScope.length
-      return byStatus[key] || 0
+      const target = String(status || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+      if (!target) return inScope.length
+      let sum = 0
+      Object.entries(byStatus).forEach(([k, count]) => {
+        if (k.replace(/[\s_-]+/g, '') === target) {
+          sum += count
+        }
+      })
+      return sum
     }
   }
 })
@@ -6285,8 +6297,8 @@ const getDiscountOptions = (col, currentVal) => {
 const statusOptions = computed(() => {
   if (isJobOrderEndpoint.value) {
     return [
-      { label: 'Inprogress', value: 'Inprogress' },
-      { label: 'Scheduled', value: 'Scheduled' }
+      { label: 'Scheduled', value: 'Scheduled' },
+      { label: 'Inprogress', value: 'Inprogress' }
     ]
   }
   const vocabulary = dataStatusVocabulary.value
@@ -6298,6 +6310,12 @@ const statusOptions = computed(() => {
 // loaded page — otherwise opening a record for an unrelated edit silently swaps its
 // status for whatever the list happens to start with, and saving writes that back.
 const editStatusOptions = computed(() => {
+  if (isJobOrderEndpoint.value) {
+    return [
+      { label: 'Scheduled', value: 'Scheduled' },
+      { label: 'Inprogress', value: 'Inprogress' }
+    ]
+  }
   const record = editFormData.value || {}
   const statusKey = Object.keys(record).find(k => k.toLowerCase() === 'status') || (statusColName.value || 'status')
   const current = record[statusKey]
@@ -7044,10 +7062,41 @@ const validateRequired = (scope) => {
   return missing
 }
 
-/** Brings an element inside the dialog's own scroll container into view. */
+/**
+ * The scrollable pane an element actually lives in, or null when nothing above
+ * it scrolls. The edit dialog nests two of them, so the answer is not always
+ * the dialog body.
+ */
+const scrollableAncestor = (el) => {
+  let node = el?.parentElement
+  while (node && node !== document.body) {
+    const overflowY = window.getComputedStyle(node).overflowY
+    if (/(auto|scroll|overlay)/.test(overflowY) && node.scrollHeight > node.clientHeight + 1) return node
+    node = node.parentElement
+  }
+  return null
+}
+
+/**
+ * Brings an element inside the dialog's own scroll container into view.
+ *
+ * Scrolling the container directly rather than calling
+ * `scrollIntoView({ behavior: 'smooth' })`: smooth scrolling is silently
+ * dropped inside these nested panes. Measured in the running dialog, a smooth
+ * call left scrollTop at 0 while the same instant call moved it to 869 — so a
+ * failed save marked Installation Fee 1,200px down the form and left the user
+ * staring at the top of the dialog with no idea where to go.
+ */
 const scrollIntoDialog = (el) => {
   if (!el) return
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  const container = scrollableAncestor(el)
+  if (!container) {
+    el.scrollIntoView({ block: 'center' })
+    return
+  }
+  const offsetInContainer = el.getBoundingClientRect().top - container.getBoundingClientRect().top
+  const centered = container.scrollTop + offsetInContainer - (container.clientHeight - el.offsetHeight) / 2
+  container.scrollTop = Math.max(0, centered)
 }
 
 const focusFirstInvalid = async (scope, col) => {
@@ -7057,6 +7106,41 @@ const focusFirstInvalid = async (scope, col) => {
   scrollIntoDialog(wrapper)
   const focusable = wrapper.querySelector('input, textarea, [tabindex]:not([tabindex="-1"])')
   if (focusable) focusable.focus({ preventScroll: true })
+}
+
+/**
+ * Marks the fields a rejected request named and scrolls to the first one.
+ *
+ * A server-side rejection used to surface as a banner alone, which on an
+ * 80-field dialog left the user hunting for "BillingDay" by eye. The server
+ * spells fields its own way ('BillingDay', '$.installationFee'), so names are
+ * matched against the form's columns ignoring case and separators.
+ *
+ * Returns the matched columns in form order, or [] when the error named none
+ * this form shows — in which case the caller falls back to the banner.
+ */
+const applyServerFieldErrors = async (scope, err) => {
+  const serverErrors = err?.fieldErrors
+  if (!serverErrors || typeof serverErrors !== 'object') return []
+
+  const normalize = (name) => String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const byNormalized = new Map()
+  formColumns.value.forEach(col => byNormalized.set(normalize(col), col))
+
+  const errors = { ...(fieldErrors.value[scope] || {}) }
+  const matched = new Set()
+  Object.entries(serverErrors).forEach(([field, message]) => {
+    const col = byNormalized.get(normalize(field))
+    if (!col) return
+    errors[col] = String(message)
+    matched.add(col)
+  })
+  if (!matched.size) return []
+
+  fieldErrors.value[scope] = errors
+  const inFormOrder = formColumns.value.filter(col => matched.has(col))
+  await focusFirstInvalid(scope, inFormOrder[0])
+  return inFormOrder
 }
 
 /** How many failing field names the banner spells out before summarizing the rest. */
@@ -8127,7 +8211,38 @@ const applyJobOrderCreationAudit = (finalPayload, numericUserId, mode = 'create'
 
 const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
   const normStr = (val) => (val !== null && val !== undefined ? String(val) : '')
-  const normPhone = (val) => normalizePhoneNumber(val)
+  const normNullOrStr = (val) => {
+    if (val === null || val === undefined) return null
+    const str = String(val).trim()
+    return str === '' ? null : str
+  }
+  const normPhone = (val) => {
+    const p = normalizePhoneNumber(val)
+    return p || ''
+  }
+  // How a blank value must be sent, learned from the API rather than from the
+  // spec — the spec marks every property `required`, but the server does not.
+  // Verified against the live API on 2026-09-02:
+  //
+  //   preferredDay, applicationId  → '' . A PUT carrying null answers
+  //     "The PreferredDay field is required. | The ApplicationId field is
+  //     required." These two are the only properties whose implicit
+  //     non-nullable check actually fires; a payload full of nulls was
+  //     rejected for these two alone.
+  //   installationFee, billingDay  → null . They back numeric columns (a job
+  //     order reads back installationFee: 0, billingDay: 22 as JSON numbers),
+  //     so '' cannot be converted and the API answers 500 "An error occurred
+  //     while updating job order with ID: N". Records created without them —
+  //     both In Progress rows, for one — store null and could not be saved at
+  //     all while '' was sent.
+  //   everything else               → '' . String-backed columns that accept
+  //     either; '' matches what the table already holds.
+  //
+  // lcpId/napId/vlanId are the one pair of shapes that differ by verb: nullable
+  // int32 on CreateJobOrderRequest (a blank must be null — '' does not parse as
+  // an integer) and plain strings on UpdateJobOrderRequest, where real rows
+  // hold labels like 'LCP 060'.
+  const normIntId = (val) => (mode === 'create' ? normNullOrStr(val) : normStr(val))
   const normDate = (val) => {
     if (!val) return null
     if (val instanceof Date) return isNaN(val.getTime()) ? null : val.toISOString()
@@ -8137,7 +8252,12 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     return isNaN(d.getTime()) ? null : d.toISOString()
   }
 
+  const jobOrderId = payload.id !== undefined && payload.id !== null
+    ? payload.id
+    : (editingRecordId.value ? (Number(editingRecordId.value) || editingRecordId.value) : undefined)
+
   const jobOrder = {
+    ...(jobOrderId !== undefined ? { id: jobOrderId } : {}),
     emailAddress: normStr(payload.emailAddress || payload.email),
     referredBy: normStr(payload.referredBy),
     firstName: normStr(payload.firstName),
@@ -8152,19 +8272,19 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     region: normStr(payload.region),
     planId: normStr(payload.planId),
     remarks: normStr(payload.remarks),
-    installationFee: normStr(payload.installationFee),
+    installationFee: normNullOrStr(payload.installationFee),
     contractTemplate: normStr(payload.contractTemplate),
-    billingDay: normStr(payload.billingDay),
+    billingDay: normNullOrStr(payload.billingDay),
     preferredDay: normStr(payload.preferredDay),
     joRemarks: normStr(payload.joRemarks),
-    status: normStr(payload.status || defaultNewStatus.value || 'Applied'),
+    status: normStr(payload.status || defaultNewStatus.value || 'Scheduled'),
     verifiedBy: normStr(payload.verifiedBy),
     modemRouterSN: normStr(payload.modemRouterSN || payload.routerModemSn || payload.routermodemsn),
     provider: normStr(payload.provider),
-    lcpId: normStr(payload.lcpId || payload.lcp_id || payload.lcp),
-    napId: normStr(payload.napId || payload.nap_id || payload.nap),
+    lcpId: normIntId(payload.lcpId || payload.lcp_id || payload.lcp),
+    napId: normIntId(payload.napId || payload.nap_id || payload.nap),
     portId: normStr(payload.portId || payload.port_id || payload.port),
-    vlanId: normStr(payload.vlanId || payload.vlan_id || payload.vlan),
+    vlanId: normIntId(payload.vlanId || payload.vlan_id || payload.vlan),
     username: normStr(payload.username),
     visitBy: normStr(payload.visitBy),
     visitWith: normStr(payload.visitWith),
@@ -8192,7 +8312,7 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     usernameStatus: normStr(payload.usernameStatus),
     lcpnapportId: normStr(payload.lcpnapportId || payload.lcpnapport_id || payload.lcpNapPort || payload.lcnapport),
     itemName1: normStr(payload.itemName1 || payload.itemName),
-    itemQuantity1: normStr(payload.itemQuantity1 !== undefined && payload.itemQuantity1 !== null && payload.itemQuantity1 !== '' ? payload.itemQuantity1 : (payload.itemQuantity !== undefined && payload.itemQuantity !== null ? payload.itemQuantity : '')),
+    itemQuantity1: normStr(payload.itemQuantity1 !== undefined && payload.itemQuantity1 !== null && payload.itemQuantity1 !== '' ? payload.itemQuantity1 : payload.itemQuantity),
     itemName2: normStr(payload.itemName2),
     itemQuantity2: normStr(payload.itemQuantity2),
     itemName3: normStr(payload.itemName3),
@@ -8222,18 +8342,13 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     referrersAccountNumber: normStr(payload.referrersAccountNumber),
     applicationId: normStr(payload.applicationId),
     houseFront: normStr(payload.houseFront || payload.houseFrontPicture),
-    modifiedBy: String(loggedInUserId || 1),
+    createdBy: payload.createdBy !== undefined && payload.createdBy !== null ? (Number(payload.createdBy) || null) : (Number(numericUserId) || null),
+    createdDate: null,
+    modifiedBy: String(loggedInUserId || numericUserId || 1),
     modifiedDate: localAuditTimestamp()
   }
 
-  if (mode === 'create') {
-    applyJobOrderCreationAudit(jobOrder, numericUserId, 'create')
-  } else {
-    jobOrder.createdBy = payload.createdBy !== undefined && payload.createdBy !== null ? (Number(payload.createdBy) || null) : (Number(numericUserId) || null)
-    jobOrder.createdDate = normDate(payload.createdDate)
-    applyJobOrderCreationAudit(jobOrder, numericUserId, 'update')
-  }
-
+  applyJobOrderCreationAudit(jobOrder, numericUserId, mode)
   return jobOrder
 }
 
@@ -8396,7 +8511,8 @@ const saveData = async () => {
   } catch (err) {
     console.error(`Error creating record for ${props.endpoint}:`, err)
     saveError.value = err.message || 'Failed to create record. Please check input values.'
-    await scrollErrorBannerIntoView('create')
+    const marked = await applyServerFieldErrors('create', err)
+    if (!marked.length) await scrollErrorBannerIntoView('create')
   } finally {
     saving.value = false
   }
@@ -8796,7 +8912,8 @@ const saveEdit = async () => {
   } catch (err) {
     console.error(`Error updating record for ${props.endpoint}:`, err)
     editError.value = err.message || 'Failed to update record. Please check input values.'
-    await scrollErrorBannerIntoView('edit')
+    const marked = await applyServerFieldErrors('edit', err)
+    if (!marked.length) await scrollErrorBannerIntoView('edit')
   } finally {
     savingEdit.value = false
   }
