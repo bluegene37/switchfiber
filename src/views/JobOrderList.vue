@@ -192,6 +192,18 @@ const LEGACY_STATUS_LABELS = {
   activated: 'Activated'
 }
 
+// What each legacy slug is called in the data, which is what goes upstream to
+// /JobOrders/status-date. The Job Orders data spells this status as one word —
+// 'Inprogress' — and the backend matches it case-insensitively but not
+// space-insensitively, so sending the two-word display label returned 0 rows
+// while 8 sat under 'Inprogress'. The label above stays the heading; only the
+// request value is the data's.
+const LEGACY_STATUS_VALUES = {
+  inprogress: 'Inprogress',
+  completed: 'Completed',
+  activated: 'Activated'
+}
+
 // Built from the statuses the data actually carries rather than a hand-written
 // lifecycle. The old list promised In Progress / Completed against a set whose
 // only statuses are Activated and Applied, so two of the four tabs could never
@@ -340,7 +352,7 @@ const activeFilterParams = computed(() => {
   const params = {}
   if (selectedStatus.value && selectedStatus.value.trim() !== '') {
     const s = selectedStatus.value.trim()
-    params.status = LEGACY_STATUS_LABELS[s.toLowerCase()] || s
+    params.status = LEGACY_STATUS_VALUES[s.toLowerCase()] || s
   }
   const f = formatDateParam(fromDate.value, false)
   if (f) {
