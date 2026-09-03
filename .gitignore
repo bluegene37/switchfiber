@@ -41,3 +41,18 @@ coverage
 *.chat
 *.session
 
+# Documentation, Reports, & PDF Artifacts
+docs/
+*.pdf
+GENE_GUIDE.md
+
+# Tests & Test Fixtures
+tests/
+*.test.js
+*.spec.js
+
+# Test, QA, & PDF Generation Scripts
+scripts/capture_*.js
+scripts/generate_*_pdf.js
+scripts/run_*.js
+scripts/full_beta_test_matrix.js
