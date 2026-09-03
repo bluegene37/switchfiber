@@ -124,15 +124,19 @@
       </div>
 
       <!-- Data Table with standard inside-the-card toolbar Create button -->
-      <!-- Status is resolved client-side on every route: the backend's status
-           filter lives at /JobOrders/status/{status} (a path segment, not a query
-           param), and keeping the whole set loaded is also what feeds the per-tab
-           counts and makes matching case-insensitive. -->
+      <!-- Calls /JobOrders/status-date with serverDateFilter:
+           - On "All Job Orders" (!isDedicatedStatusRoute): status is kept client-side so
+             the request filters by date alone. The response carries all statuses for that
+             window, dynamically populating statusTabs and counts.
+           - On dedicated status routes (In Progress, Completed, Activated): status is passed
+             upstream to /JobOrders/status-date?status=...&dateFrom=...&dateTo=... -->
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="JobOrders"
+        filter-endpoint="JobOrders/status-date"
+        server-date-filter
         :filter-params="activeFilterParams"
-        client-status-filter
+        :client-status-filter="!isDedicatedStatusRoute"
         :status-label="activeStatusLabel"
         :show-top-bar="false"
         :hide-create-button="false"
@@ -335,12 +339,19 @@ const formatDateParam = (dateVal, isEnd = false) => {
 const activeFilterParams = computed(() => {
   const params = {}
   if (selectedStatus.value && selectedStatus.value.trim() !== '') {
-    params.status = selectedStatus.value.trim()
+    const s = selectedStatus.value.trim()
+    params.status = LEGACY_STATUS_LABELS[s.toLowerCase()] || s
   }
   const f = formatDateParam(fromDate.value, false)
-  if (f) params.fromDate = f
+  if (f) {
+    params.dateFrom = f
+    params.fromDate = f
+  }
   const t = formatDateParam(toDate.value, true)
-  if (t) params.toDate = t
+  if (t) {
+    params.dateTo = t
+    params.toDate = t
+  }
   return params
 })
 

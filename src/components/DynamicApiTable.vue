@@ -2846,7 +2846,7 @@ const props = defineProps({
 const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded', 'select-status', 'widen-date-range'])
 
 // Filter-param keys that are resolved client-side rather than sent to the API.
-const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate']
+const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate', 'dateFrom', 'dateTo', 'DateFrom', 'DateTo']
 
 // Lowercased row fields a date range is matched against, most specific first, so
 // a record's own event date wins over the audit columns that trail behind it.
@@ -4171,7 +4171,7 @@ const hasDateColumn = computed(() => {
 
 const hasDateFilter = computed(() => {
   if (props.hideDateFilter) return false
-  if (props.filterParams?.fromDate || props.filterParams?.toDate) return false
+  if (props.filterParams?.fromDate || props.filterParams?.toDate || props.filterParams?.dateFrom || props.filterParams?.dateTo) return false
   return hasDateColumn.value
 })
 
@@ -4246,8 +4246,10 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
   // Client-side FilterParams Status & Date/Timestamp Filtering
   if (props.filterParams && typeof props.filterParams === 'object') {
     const pStatus = props.filterParams.status ? String(props.filterParams.status).trim().toLowerCase() : ''
-    const pFrom = props.filterParams.fromDate ? new Date(props.filterParams.fromDate).getTime() : null
-    const pTo = props.filterParams.toDate ? new Date(props.filterParams.toDate).getTime() : null
+    const rawFrom = props.filterParams.fromDate || props.filterParams.dateFrom || props.filterParams.DateFrom
+    const rawTo = props.filterParams.toDate || props.filterParams.dateTo || props.filterParams.DateTo
+    const pFrom = rawFrom ? new Date(rawFrom).getTime() : null
+    const pTo = rawTo ? new Date(rawTo).getTime() : null
 
     if (pStatus) {
       const normS = (s) => String(s || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
@@ -4336,7 +4338,13 @@ const filteredRecordsCount = computed(() => (filteredData.value || []).length)
 // whose customer is simply outside the chosen dates reasonably concludes the record
 // does not exist. Zero when no date window is narrowing anything.
 const matchesOutsideDateWindow = computed(() => {
-  const hasWindow = Boolean(props.filterParams?.fromDate || props.filterParams?.toDate || isDateFilterActive.value)
+  const hasWindow = Boolean(
+    props.filterParams?.fromDate ||
+    props.filterParams?.toDate ||
+    props.filterParams?.dateFrom ||
+    props.filterParams?.dateTo ||
+    isDateFilterActive.value
+  )
   if (!hasWindow || props.serverDateFilter) return 0
   if (filteredRecordsCount.value > 0) return 0
   return applyFilters(data.value, { applyDateWindow: false }).length
@@ -4363,8 +4371,8 @@ const activeDateRangeLabel = computed(() => {
     if (fromStr) return `on or after ${fromStr}`
     if (toStr) return `on or before ${toStr}`
   }
-  const from = asLocalDateLabel(props.filterParams?.fromDate)
-  const to = asLocalDateLabel(props.filterParams?.toDate)
+  const from = asLocalDateLabel(props.filterParams?.fromDate || props.filterParams?.dateFrom || props.filterParams?.DateFrom)
+  const to = asLocalDateLabel(props.filterParams?.toDate || props.filterParams?.dateTo || props.filterParams?.DateTo)
   if (from && to) return `${from} to ${to}`
   if (from) return `on or after ${from}`
   if (to) return `on or before ${to}`
@@ -4379,8 +4387,10 @@ const activeDateRangeLabel = computed(() => {
 // ever contains one status, so parents cache the counts from their "all" fetch.
 const statusCounts = computed(() => {
   const rows = Array.isArray(data.value) ? data.value : []
-  const from = props.filterParams?.fromDate ? new Date(props.filterParams.fromDate).getTime() : null
-  const to = props.filterParams?.toDate ? new Date(props.filterParams.toDate).getTime() : null
+  const rawFrom = props.filterParams?.fromDate || props.filterParams?.dateFrom || props.filterParams?.DateFrom
+  const rawTo = props.filterParams?.toDate || props.filterParams?.dateTo || props.filterParams?.DateTo
+  const from = rawFrom ? new Date(rawFrom).getTime() : null
+  const to = rawTo ? new Date(rawTo).getTime() : null
 
   // Server-bounded responses are already inside the date range
   const inScope = props.serverDateFilter ? rows : rows.filter(row => isRowInDateRange(row, from, to))
@@ -9034,6 +9044,9 @@ const fetchData = async ({ silent = false } = {}) => {
         url = `/${props.endpoint}/filter`
       }
       params = serverParams
+    } else if (props.filterEndpoint) {
+      url = props.filterEndpoint.startsWith('/') ? props.filterEndpoint : `/${props.filterEndpoint}`
+      params = undefined
     } else {
       url = `/${props.endpoint}`
       params = undefined
