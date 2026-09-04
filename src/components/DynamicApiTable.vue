@@ -1118,6 +1118,21 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Billing Day Dropdown (day of the month, 1-31) -->
+              <Select
+                v-else-if="getFieldType(col) === 'billingday_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="billingDayOptions"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                showClear
+                placeholder="Select billing day (1-31)"
+                class="w-100 p-inputtext-sm"
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
+              />
+
               <!-- Billing Status Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
@@ -2177,6 +2192,21 @@
                 :filter="true"
                 placeholder="Select Onsite Status" 
                 class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Billing Day Dropdown (day of the month, 1-31) -->
+              <Select
+                v-else-if="getFieldType(col) === 'billingday_dropdown'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="billingDayOptions"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                showClear
+                placeholder="Select billing day (1-31)"
+                class="w-100 p-inputtext-sm"
+                :class="{ 'p-invalid': hasFieldError('edit', col) }"
               />
 
               <!-- Billing Status Dropdown -->
@@ -3515,6 +3545,11 @@ function getFieldType(col) {
     (lower === 'discountid' && !isDiscountEndpoint.value)
   ) {
     return 'discounttype_dropdown'
+  }
+  // Billing day is a day of the month, not a free number: the value is only ever
+  // 1-31, so a picker cannot produce a 0 or a 45 the way the old InputNumber could.
+  if (lower === 'billingday' || lower === 'billing_day') {
+    return 'billingday_dropdown'
   }
   if (lower === 'discountstatus' || lower === 'discount_status') {
     return 'discountstatus_dropdown'
@@ -6428,6 +6463,15 @@ const billingStatusOptions = ref([
   { label: 'Approved', value: 'Approved' }
 ])
 
+// Day of the month a subscriber is billed on. Values are strings because that is
+// what the JobOrders DTO takes -- `billingDay` is declared a string on both
+// request shapes, and a PUT carrying a JSON number is rejected outright with
+// "The JSON value could not be converted". Records read back as numbers (22), so
+// openEditDialog stringifies the stored value before the Select tries to match it.
+const billingDayOptions = ref(
+  Array.from({ length: 31 }, (_, i) => ({ label: String(i + 1), value: String(i + 1) }))
+)
+
 const deliveryStatusOptions = ref([
   { label: 'Delivered', value: 'Delivered' },
   { label: 'Pending', value: 'Pending' },
@@ -8704,6 +8748,13 @@ const openEditDialog = async (record) => {
   formColumns.value.forEach(col => {
     if ((getFieldType(col) === 'phone' || isPhoneField(col)) && editFormData.value[col] !== undefined && editFormData.value[col] !== null) {
       editFormData.value[col] = normalizePhoneNumber(editFormData.value[col])
+    }
+    // The API reads billingDay back as a JSON number (22) while the picker's
+    // options are strings, and Select matches by identity -- without this the
+    // dropdown opens blank on a record that already has a billing day.
+    if (getFieldType(col) === 'billingday_dropdown') {
+      const day = editFormData.value[col]
+      editFormData.value[col] = (day === null || day === undefined || day === '') ? null : String(day)
     }
   })
 
