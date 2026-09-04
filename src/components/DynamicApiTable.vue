@@ -3783,7 +3783,6 @@ const JOB_ORDER_COLUMNS = [
   'lastName',
   'contactNumber',
   'address',
-  'city',
   'planId',
   'onsiteStatus',
   'billingStatus',
