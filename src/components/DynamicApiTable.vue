@@ -393,8 +393,8 @@
         :frozen="isLeftFrozenColumn(col)"
         alignFrozen="left"
         :class="isLeftFrozenColumn(col) ? 'frozen-left-col' : ''"
-        :headerClass="isStatusColumn(col) ? 'text-center' : ''"
-        :bodyClass="isStatusColumn(col) ? 'text-center' : ''"
+        :headerClass="[isStatusColumn(col) ? 'text-center' : '', `sfa-header-${String(col).toLowerCase()}`]"
+        :bodyClass="[isStatusColumn(col) ? 'text-center' : '', `sfa-cell-${String(col).toLowerCase()}`]"
       >
         <template #body="slotProps">
           <div v-if="col.toLowerCase() === 'active' || col.toLowerCase() === 'isactive' || col.toLowerCase() === 'is_active'" class="d-flex justify-content-center">
@@ -758,6 +758,8 @@
               :key="col"
               :id="fieldWrapId('create', col)"
               :class="[
+                'sfa-form-field',
+                `sfa-form-field-${String(col).toLowerCase()}`,
                 getColumnClass(col),
                 {
                   'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress'),
@@ -1545,6 +1547,8 @@
               v-for="col in sec.columns" 
               :key="col" 
               :class="[
+                'sfa-view-field',
+                `sfa-view-field-${String(col).toLowerCase()}`,
                 getColumnClass(col),
                 {
                   'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress')
@@ -1815,6 +1819,8 @@
               :key="col"
               :id="fieldWrapId('edit', col)"
               :class="[
+                'sfa-form-field',
+                `sfa-form-field-${String(col).toLowerCase()}`,
                 getColumnClass(col),
                 {
                   'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress'),
