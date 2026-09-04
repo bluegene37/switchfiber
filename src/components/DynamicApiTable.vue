@@ -3177,6 +3177,13 @@ function formatLabel(col) {
     return 'Province'
   }
 
+  // Plans.discountId is an FK into /DiscountTypes, so it is labelled by what it
+  // points at. On the Discounts endpoint the same name is a voucher reference
+  // string, which keeps the plain label.
+  if (normalizeColKey(col) === 'discountid' && !isDiscountEndpoint.value) {
+    return 'Discount Type'
+  }
+
   const customOverrides = {
     coordinates: 'GPS Coordinates',
     coordinate: 'GPS Coordinates',
@@ -6540,7 +6547,7 @@ const fetchFormLookups = () => {
   if (formLookupsPromise) return formLookupsPromise
 
   formLookupsPromise = (async () => {
-    const [menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, lcnapPortRes, discountTypesRes, discountsRes] = await Promise.allSettled([
+    const [menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, lcnapPortRes, , discountsRes] = await Promise.allSettled([
       apiClient.get('/Menus'),
       apiClient.get('/Lcpnaps'),
       apiClient.get('/Lcps'),
@@ -6549,7 +6556,7 @@ const fetchFormLookups = () => {
       apiClient.get('/Vlans'),
       apiClient.get('/Plans'),
       apiClient.get('/Lcpnapports'),
-      apiClient.get('/DiscountTypes'),
+      fetchDiscountTypesLookup(),
       apiClient.get('/Discounts')
     ])
 
@@ -6583,16 +6590,6 @@ const fetchFormLookups = () => {
         value: item.name || item.id
       }))
     }
-    if (discountTypesRes && discountTypesRes.status === 'fulfilled') {
-      discountTypesList.value = unwrapList(discountTypesRes.value).map(item => ({
-        label: item.name ? `${item.name}${item.amount ? ' (₱' + Number(item.amount).toLocaleString() + ' OFF)' : ''}` : `Discount Type #${item.id}`,
-        name: item.name || `Discount Type #${item.id}`,
-        id: item.id,
-        amount: item.amount,
-        planId: item.planId,
-        value: item.id
-      }))
-    }
     if (discountsRes && discountsRes.status === 'fulfilled') {
       discountsList.value = unwrapList(discountsRes.value).map(item => ({
         label: item.fullName ? `${item.fullName} - ${item.plan || 'Discount #' + item.id}` : `Discount #${item.id}`,
@@ -6608,6 +6605,35 @@ const fetchFormLookups = () => {
   })
 
   return formLookupsPromise
+}
+
+// DiscountTypes resolves the label for every discounttype_dropdown column, and
+// the Plan grid renders one (`discountId`), so this lookup cannot wait for a
+// dialog to open the way the batch above does. Single-flight, and shared with
+// fetchFormLookups so opening a dialog does not request the list a second time.
+let discountTypesPromise = null
+
+const fetchDiscountTypesLookup = () => {
+  if (discountTypesPromise) return discountTypesPromise
+  discountTypesPromise = apiClient.get('/DiscountTypes')
+    .then(res => {
+      discountTypesList.value = unwrapList(res).map(item => ({
+        label: item.name ? `${item.name}${item.amount ? ' (₱' + Number(item.amount).toLocaleString() + ' OFF)' : ''}` : `Discount Type #${item.id}`,
+        name: item.name || `Discount Type #${item.id}`,
+        id: item.id,
+        amount: item.amount,
+        planId: item.planId,
+        value: item.id
+      }))
+    })
+    .catch(err => {
+      // /DiscountTypes is currently unreliable. An empty list is not fatal:
+      // getStableOptionsWithCurrent keeps the stored id selectable, and the
+      // table falls back to printing the raw id.
+      console.error('Error fetching discount types:', err)
+      discountTypesPromise = null
+    })
+  return discountTypesPromise
 }
 
 // AccessLevel and Users resolve labels rendered in the TABLE body — the
@@ -6657,6 +6683,7 @@ const fetchUsersLookup = () => {
 // manual Refresh button, which previously re-pulled all ten lists inline.
 const invalidateLookups = () => {
   formLookupsPromise = null
+  discountTypesPromise = null
   accessLevelsPromise = null
   usersLookupPromise = null
 }
@@ -8088,9 +8115,12 @@ const formatDisplayValue = (val, col) => {
       opt.value === val || 
       opt.id === val || 
       opt.id === Number(val) ||
-      String(opt.value).toLowerCase() === String(val).toLowerCase()
+      String(opt.value).toLowerCase() === String(val).toLowerCase() ||
+      (opt.name && String(opt.name).toLowerCase() === String(val).toLowerCase())
     )
-    if (found) return found.label
+    // Discount types are stored by id but read as a name, and the grid/view field
+    // only has room for the name — the amount stays in the dropdown's own label.
+    if (found) return type === 'discounttype_dropdown' ? (found.name || found.label) : found.label
   }
 
   return String(val)
@@ -9764,16 +9794,23 @@ const needsAccessLevelLookup = computed(() =>
   columns.value.some(c => normalizeColKey(c) === 'accesslevelid')
 )
 const needsUserLookup = computed(() => columns.value.some(isUserRefField))
+// Plans.discountId, Applications.applicablePromo and Discounts.discounttype_id
+// all print a discount type NAME in the grid, which needs /DiscountTypes loaded
+// before the first render rather than on the first dialog open.
+const needsDiscountTypeLookup = computed(() =>
+  columns.value.some(c => getFieldType(c) === 'discounttype_dropdown')
+)
 
 const refreshTableLookups = () => {
   if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
   if (needsUserLookup.value) fetchUsersLookup()
+  if (needsDiscountTypeLookup.value) fetchDiscountTypesLookup()
 }
 
 // Runs immediately off the static fallback columns, then again if the fetched
 // rows turn out to carry a column the fallback list did not declare — so an
 // endpoint missing from EndpointColumns still resolves its labels.
-watch([needsAccessLevelLookup, needsUserLookup], refreshTableLookups, { immediate: true })
+watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup], refreshTableLookups, { immediate: true })
 
 onMounted(() => {
   fetchAddressData()
