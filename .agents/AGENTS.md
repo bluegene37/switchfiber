@@ -18,6 +18,9 @@ When developing and integrating API calls across the codebase, strictly adhere t
 
 ## Document & PDF Storage Standards
 - **Always Save Generated Documents to Central Folder**: Whenever generating or saving project documentation, executive reports, architecture guides, or exported PDFs, always save a copy to `Documents/personal_projects/documents/` (full path: `/Users/bluegene37/Documents/personal_projects/documents/`) in addition to any local workspace `docs/` folder.
+- **Unique File Naming & Versioning / Timestamp Standard**: Whenever generating, exporting, or saving files (such as documentation, user manuals, reports, audit logs, test runs, or PDF exports), **ALWAYS** include a version number and/or date-time stamp in the filename to guarantee uniqueness and prevent accidental overwrites.
+  - **Standard Format**: `[BaseName]_v[Major.Minor]_[YYYYMMDD_HHmm].[ext]` or `[BaseName]_[YYYYMMDD_HHmmss].[ext]` (e.g., `SwitchFiber_User_Manual_v2.0_20260904_1309.pdf`).
+  - **Canonical Tooling Alias**: If an unversioned filename (e.g. `SwitchFiber_User_Manual.pdf`) is required for build tooling or direct links, save the canonical file **AND** simultaneously save the unique versioned/timestamped copy in both the local `docs/` and central `Documents/personal_projects/documents/` folders.
 
 ## Development & Testing Credentials
 - **SuperAdmin Test Account**:

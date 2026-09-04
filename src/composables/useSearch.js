@@ -27,7 +27,8 @@ export function useSearch() {
 
   // 1. Static App Navigation Scopes
   const navigationItems = [
-    { id: 'nav-dashboard', category: 'Navigation', title: 'Dashboard', subtitle: 'System metrics, KPI stats, & real-time overview', icon: 'pi pi-home', route: '/dashboard' },
+    { id: 'nav-dashboard-main', category: 'Navigation', title: 'Main Dashboard', subtitle: 'System metrics, KPI stats, & real-time subscriber overview', icon: 'pi pi-objects-column', route: '/dashboard/main' },
+    { id: 'nav-dashboard-accounting', category: 'Navigation', title: 'Accounting Dashboard', subtitle: 'Billed revenue, collections, invoice receivables, & MRR', icon: 'pi pi-wallet', route: '/dashboard/accounting' },
     { id: 'nav-application', category: 'Navigation', title: 'All Application', subtitle: 'Customer fiber connection applications', icon: 'pi pi-file-edit', route: '/application' },
     { id: 'nav-application-inprogress', category: 'Navigation', title: 'In Progress Applications', subtitle: 'Processing customer applications', icon: 'pi pi-clock', route: '/application/in-progress' },
     { id: 'nav-application-done', category: 'Navigation', title: 'Done Applications', subtitle: 'Completed customer applications', icon: 'pi pi-check-circle', route: '/application/done' },
@@ -50,6 +51,7 @@ export function useSearch() {
     { id: 'nav-access-level', category: 'Navigation', title: 'Access Levels & Permissions', subtitle: 'Role-based access control matrix', icon: 'pi pi-lock', route: '/access_level' },
     { id: 'nav-api-viewer', category: 'Navigation', title: 'API Data Viewer', subtitle: 'Inspect raw JSON endpoints & API tables', icon: 'pi pi-database', route: '/data-viewer' },
     { id: 'nav-models', category: 'Navigation', title: 'Models', subtitle: 'Table columns, data types, & required fields', icon: 'pi pi-table', route: '/models' },
+    { id: 'nav-api-services', category: 'Navigation', title: 'API Services', subtitle: 'Configure, toggle, & monitor API microservices', icon: 'pi pi-server', route: '/api-management/services' },
     { id: 'nav-settings', category: 'Navigation', title: 'Settings', subtitle: 'Account settings & preference management', icon: 'pi pi-cog', route: '/settings' }
   ]
 

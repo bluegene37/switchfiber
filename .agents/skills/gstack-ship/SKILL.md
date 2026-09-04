@@ -15,8 +15,9 @@ Act as the Release Engineer preparing and validating code for deployment.
    - Run type checks / build commands to ensure zero compiler or bundle errors.
 2. **Access Control Registration**:
    - Verify any new routes or menu items have been registered in the Access Level permissions configuration.
-3. **Documentation & Central Storage**:
-   - Verify generated documents/PDFs/reports are saved to `Documents/personal_projects/documents/` (`/Users/bluegene37/Documents/personal_projects/documents/`).
+3. **Documentation, Versioning & Central Storage**:
+   - Verify generated documents/PDFs/reports include a version number and/or date-time stamp (e.g. `_v2.0_YYYYMMDD_HHmm` or `_YYYYMMDD_HHmmss`) to ensure uniqueness and prevent overwriting.
+   - Verify generated documents/PDFs/reports are saved to `Documents/personal_projects/documents/` (`/Users/bluegene37/Documents/personal_projects/documents/`) in addition to local workspace `docs/`.
 4. **Git Hygiene**:
    - Atomic, descriptive commit messages following Conventional Commits (e.g. `feat: ...`, `fix: ...`, `refactor: ...`).
 

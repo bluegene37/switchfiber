@@ -2900,6 +2900,11 @@ const isMenuEndpoint = computed(() => {
   return ep === 'menus' || ep === 'menu'
 })
 
+const isAccessLevelEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'accesslevel' || ep === 'accesslevels' || ep === 'access_level'
+})
+
 const isApplicationEndpoint = computed(() => {
   const ep = (props.endpoint || '').trim().toLowerCase()
   return ep === 'applications' || ep === 'application'
@@ -5723,6 +5728,16 @@ const MENU_FORM_LAYOUT = [
   }
 ]
 
+const ACCESS_LEVEL_FORM_LAYOUT = [
+  {
+    key: 'access_level',
+    title: 'Access Level Information',
+    icon: 'pi pi-shield',
+    badgeClass: 'text-primary',
+    columns: ['name', 'description']
+  }
+]
+
 const DISCOUNT_TYPE_FORM_LAYOUT = [
   {
     key: 'promotion',
@@ -5826,6 +5841,7 @@ const buildRouterSections = (cols, opts) => buildLayoutSections(cols, ROUTER_FOR
 const buildInvoiceSections = (cols, opts) => buildLayoutSections(cols, INVOICE_FORM_LAYOUT, opts)
 const buildUserSections = (cols, opts) => buildLayoutSections(cols, USER_FORM_LAYOUT, opts)
 const buildMenuSections = (cols, opts) => buildLayoutSections(cols, MENU_FORM_LAYOUT, opts)
+const buildAccessLevelSections = (cols, opts) => buildLayoutSections(cols, ACCESS_LEVEL_FORM_LAYOUT, opts)
 const buildDiscountTypeSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_TYPE_FORM_LAYOUT, opts)
 const buildDiscountSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_FORM_LAYOUT, opts)
 
@@ -5860,6 +5876,9 @@ const formSections = computed(() => {
   }
   if (isMenuEndpoint.value) {
     return buildMenuSections(formColumns.value)
+  }
+  if (isAccessLevelEndpoint.value) {
+    return buildAccessLevelSections(formColumns.value)
   }
   if (isDiscountTypeEndpoint.value) {
     return buildDiscountTypeSections(formColumns.value)
@@ -5956,6 +5975,9 @@ const viewFormSections = computed(() => {
   }
   if (isMenuEndpoint.value) {
     return buildMenuSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isAccessLevelEndpoint.value) {
+    return buildAccessLevelSections(viewFormColumns.value, { includeAudit: true })
   }
   if (isDiscountTypeEndpoint.value) {
     return buildDiscountTypeSections(viewFormColumns.value, { includeAudit: true })
@@ -6208,12 +6230,19 @@ const getStableOptionsWithCurrent = (optionsList, currentVal) => {
   const list = Array.isArray(optionsList) ? [...optionsList] : []
   if (currentVal !== null && currentVal !== undefined && String(currentVal).trim() !== '') {
     const str = String(currentVal).trim()
-    const exists = list.some(opt => 
-      String(opt.value) === str || 
-      String(opt.value).toLowerCase() === str.toLowerCase() ||
-      String(opt.label) === str ||
-      String(opt.label).toLowerCase() === str.toLowerCase()
-    )
+    const norm = str.toLowerCase().replace(/[\s_-]+/g, '')
+    const exists = list.some(opt => {
+      const v = String(opt.value || '').trim()
+      const l = String(opt.label || '').trim()
+      return (
+        v === str ||
+        v.toLowerCase() === str.toLowerCase() ||
+        v.toLowerCase().replace(/[\s_-]+/g, '') === norm ||
+        l === str ||
+        l.toLowerCase() === str.toLowerCase() ||
+        l.toLowerCase().replace(/[\s_-]+/g, '') === norm
+      )
+    })
     if (!exists) {
       list.unshift({ label: str, value: currentVal })
     }
@@ -6304,11 +6333,58 @@ const getDiscountOptions = (col, currentVal) => {
   return getStableOptionsWithCurrent(baseOptions, currentVal)
 }
 
+const isJobOrderInProgress = computed(() => {
+  if (!isJobOrderEndpoint.value) return false
+  const path = (route?.path || '').toLowerCase()
+  const qStatus = String(route?.query?.status || '').toLowerCase().replace(/[\s_-]+/g, '')
+  const filterStatus = String(props.filterParams?.status || '').toLowerCase().replace(/[\s_-]+/g, '')
+  const statusLabel = String(props.statusLabel || '').toLowerCase().replace(/[\s_-]+/g, '')
+  return path.includes('inprogress') || qStatus === 'inprogress' || filterStatus === 'inprogress' || statusLabel === 'inprogress'
+})
+
+const isJobOrderCompleted = computed(() => {
+  if (!isJobOrderEndpoint.value) return false
+  const path = (route?.path || '').toLowerCase()
+  const qStatus = String(route?.query?.status || '').toLowerCase().replace(/[\s_-]+/g, '')
+  const filterStatus = String(props.filterParams?.status || '').toLowerCase().replace(/[\s_-]+/g, '')
+  const statusLabel = String(props.statusLabel || '').toLowerCase().replace(/[\s_-]+/g, '')
+  return path.includes('completed') || qStatus === 'completed' || filterStatus === 'completed' || statusLabel === 'completed'
+})
+
+const isJobOrderActivated = computed(() => {
+  if (!isJobOrderEndpoint.value) return false
+  const path = (route?.path || '').toLowerCase()
+  const qStatus = String(route?.query?.status || '').toLowerCase().replace(/[\s_-]+/g, '')
+  const filterStatus = String(props.filterParams?.status || '').toLowerCase().replace(/[\s_-]+/g, '')
+  const statusLabel = String(props.statusLabel || '').toLowerCase().replace(/[\s_-]+/g, '')
+  return path.includes('activated') || qStatus === 'activated' || filterStatus === 'activated' || statusLabel === 'activated'
+})
+
 const statusOptions = computed(() => {
   if (isJobOrderEndpoint.value) {
+    if (isJobOrderInProgress.value) {
+      return [
+        { label: 'Inprogress', value: 'Inprogress' },
+        { label: 'Scheduled', value: 'Scheduled' }
+      ]
+    }
+    if (isJobOrderCompleted.value) {
+      return [
+        { label: 'Completed', value: 'Completed' },
+        { label: 'Activated', value: 'Activated' }
+      ]
+    }
+    if (isJobOrderActivated.value) {
+      return [
+        { label: 'Activated', value: 'Activated' },
+        { label: 'Completed', value: 'Completed' }
+      ]
+    }
     return [
+      { label: 'Inprogress', value: 'Inprogress' },
       { label: 'Scheduled', value: 'Scheduled' },
-      { label: 'Inprogress', value: 'Inprogress' }
+      { label: 'Completed', value: 'Completed' },
+      { label: 'Activated', value: 'Activated' }
     ]
   }
   const vocabulary = dataStatusVocabulary.value
@@ -6320,12 +6396,6 @@ const statusOptions = computed(() => {
 // loaded page — otherwise opening a record for an unrelated edit silently swaps its
 // status for whatever the list happens to start with, and saving writes that back.
 const editStatusOptions = computed(() => {
-  if (isJobOrderEndpoint.value) {
-    return [
-      { label: 'Scheduled', value: 'Scheduled' },
-      { label: 'Inprogress', value: 'Inprogress' }
-    ]
-  }
   const record = editFormData.value || {}
   const statusKey = Object.keys(record).find(k => k.toLowerCase() === 'status') || (statusColName.value || 'status')
   const current = record[statusKey]
@@ -8089,6 +8159,21 @@ const openCreateDialog = () => {
     }
   }
 
+  if (isJobOrderEndpoint.value) {
+    const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
+    if (statusCol && statusOptions.value.length > 0) {
+      if (isJobOrderCompleted.value) {
+        formData.value[statusCol] = 'Completed'
+      } else if (isJobOrderActivated.value) {
+        formData.value[statusCol] = 'Activated'
+      } else if (isJobOrderInProgress.value) {
+        formData.value[statusCol] = 'Inprogress'
+      } else {
+        formData.value[statusCol] = statusOptions.value[0].value
+      }
+    }
+  }
+
   if (isBillingEndpoint.value) {
     const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
     if (statusCol && !formData.value[statusCol]) {
@@ -8287,7 +8372,15 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     billingDay: normNullOrStr(payload.billingDay),
     preferredDay: normStr(payload.preferredDay),
     joRemarks: normStr(payload.joRemarks),
-    status: normStr(payload.status || defaultNewStatus.value || 'Scheduled'),
+    status: (() => {
+      const rawStatus = normStr(payload.status || defaultNewStatus.value || (isJobOrderCompleted.value ? 'Completed' : 'Scheduled'))
+      const cleanKey = rawStatus.toLowerCase().replace(/[\s_-]+/g, '')
+      if (cleanKey === 'inprogress') return 'Inprogress'
+      if (cleanKey === 'scheduled') return 'Scheduled'
+      if (cleanKey === 'completed') return 'Completed'
+      if (cleanKey === 'activated') return 'Activated'
+      return rawStatus
+    })(),
     verifiedBy: normStr(payload.verifiedBy),
     modemRouterSN: normStr(payload.modemRouterSN || payload.routerModemSn || payload.routermodemsn),
     provider: normStr(payload.provider),
@@ -8473,6 +8566,15 @@ const saveData = async () => {
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'create', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(finalPayload, numericUserId, 'create')
+    } else if (isAccessLevelEndpoint.value) {
+      finalPayload = {
+        name: payload.name !== undefined && payload.name !== null ? String(payload.name).trim() : '',
+        description: payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : '',
+        createdBy: loggedInUserId,
+        createdDate: null,
+        modifiedBy: loggedInUserId,
+        modifiedDate: null
+      }
     } else {
       // Drop whatever audit values came back with the record — they describe the
       // old state. Fresh ones are stamped below, after the empty-value cleanup.
@@ -8662,6 +8764,17 @@ const openEditDialog = async (record) => {
       s => s.toLowerCase() === String(curStatus).trim().toLowerCase()
     )
     editFormData.value[statusCol] = match || curStatus
+  } else if (isJobOrderEndpoint.value && curStatus) {
+    const raw = String(curStatus).trim().toLowerCase().replace(/[\s_-]+/g, '')
+    if (raw === 'inprogress') {
+      editFormData.value[statusCol] = 'Inprogress'
+    } else if (raw === 'scheduled') {
+      editFormData.value[statusCol] = 'Scheduled'
+    } else if (raw === 'completed') {
+      editFormData.value[statusCol] = 'Completed'
+    } else if (raw === 'activated') {
+      editFormData.value[statusCol] = 'Activated'
+    }
   }
 
   // 7. Normalize and match Coordinates
@@ -8878,6 +8991,13 @@ const saveEdit = async () => {
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(finalPayload, numericUserId, 'update')
+    } else if (isAccessLevelEndpoint.value) {
+      finalPayload = {
+        name: payload.name !== undefined && payload.name !== null ? String(payload.name).trim() : '',
+        description: payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : '',
+        modifiedBy: loggedInUserId,
+        modifiedDate: null
+      }
     } else {
       // Drop the record's existing audit values before restamping — they
       // describe the state this edit is replacing.
@@ -9070,9 +9190,10 @@ const fetchData = async ({ silent = false } = {}) => {
     if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
       const menuList = unwrappedData || []
       
-      // Index all codes already represented by rows in menuList
+      // Index all codes already represented by rows in menuList without parent expansion
+      // so specific submenus (e.g. Main Dashboard, Accounting Dashboard) remain representable
       const existingCodes = new Set(
-        menuList.flatMap(m => resolveMenuCodesFromName(m?.name ?? m?.Name))
+        menuList.flatMap(m => resolveMenuCodesFromName(m?.name ?? m?.Name, { expandChildren: false }))
       )
 
       // Ensure every standard catalog screen & control is available in the table

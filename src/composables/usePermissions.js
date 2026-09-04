@@ -83,7 +83,7 @@ const isSuperAdmin = computed(() => {
 })
 
 // Fallback menu when no stored permissions are usable: Dashboard + Settings only.
-const buildFallbackMenuSet = () => new Set(['dashboard', 'settings'])
+const buildFallbackMenuSet = () => new Set(['dashboard', 'dashboard.main', 'dashboard.accounting', 'settings'])
 
 /**
  * Adopt the server's CURRENT idea of this user before resolving permissions.

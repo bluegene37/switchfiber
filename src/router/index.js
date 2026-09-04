@@ -11,6 +11,8 @@ const APP_TITLE = 'SwitchFiber Admin'
 const ROUTE_TITLES = {
   login: 'Sign In',
   dashboard: 'Dashboard',
+  'dashboard-main': 'Main Dashboard',
+  'dashboard-accounting': 'Accounting Dashboard',
   application: 'All Application',
   'application-in-progress': 'In Progress',
   'application-done': 'Done',
@@ -56,8 +58,10 @@ const ROUTE_TITLES = {
   'service-orders-resolved': 'Resolved Service Orders',
   'service-orders-completed': 'Completed Service Orders',
   'service-orders-cancelled': 'Cancelled Service Orders',
+  'api-management': 'API Management',
   'api-viewer': 'API Viewer',
   models: 'Models',
+  'api-services': 'API Services',
   settings: 'Settings',
   'not-found': 'Page Not Found'
 }
@@ -78,7 +82,18 @@ const router = createRouter({
     {
       path: '/dashboard',
       name: 'dashboard',
+      redirect: '/dashboard/main'
+    },
+    {
+      path: '/dashboard/main',
+      name: 'dashboard-main',
       component: () => import('../views/Dashboard.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/dashboard/accounting',
+      name: 'dashboard-accounting',
+      component: () => import('../views/AccountingDashboard.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -351,6 +366,10 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Cancelled Service Orders' }
     },
     {
+      path: '/api-management',
+      redirect: '/data-viewer'
+    },
+    {
       path: '/data-viewer',
       name: 'api-viewer',
       component: () => import('../views/Api.vue'),
@@ -361,6 +380,16 @@ const router = createRouter({
       name: 'models',
       component: () => import('../views/Models.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/api-management/services',
+      name: 'api-services',
+      component: () => import('../views/ApiServices.vue'),
+      meta: { requiresAuth: true, title: 'API Services' }
+    },
+    {
+      path: '/api-services',
+      redirect: '/api-management/services'
     },
     {
       path: '/settings',
@@ -421,7 +450,7 @@ router.beforeEach(async (to, from) => {
   if (to.meta.requiresAuth) {
     const code = menuCodeForPath(to.path)
     // No governing menu (e.g. the 404 page): nothing to enforce.
-    if (code && code !== 'dashboard') {
+    if (code && code !== 'dashboard' && code !== 'dashboard.main') {
       // The sidebar tolerates a not-yet-loaded set by showing a skeleton; a
       // guard cannot, or the first typed URL of the session always gets in.
       await ensurePermissionsLoaded()

@@ -32,12 +32,16 @@ export const stemMenuToken = (token) => {
   
   // Custom irregular or domain-specific word stemming
   if (t === 'joborders' || t === 'joborder') return 'job order'
+  if (t === 'maindashboard' || t === 'maindashboards') return 'main dashboard'
+  if (t === 'accountingdashboard' || t === 'accountingdashboards') return 'accounting dashboard'
   if (t === 'logerror' || t === 'logerrors') return 'error log'
   if (t === 'logtrail' || t === 'logtrails') return 'audit trail'
   if (t === 'accesslevels' || t === 'accesslevel') return 'access level'
   if (t === 'filemaintenance') return 'file maintenance'
   if (t === 'usermanagement' || t === 'usersmanagement') return 'user management'
   if (t === 'dataviewer' || t === 'apiviewer') return 'api viewer'
+  if (t === 'apimanagement' || t === 'apismanagement') return 'api management'
+  if (t === 'apiservices' || t === 'apiservice') return 'api service'
   if (t === 'lcnapport' || t === 'lcnapports') return 'lcnap port'
   if (t === 'discounttypes' || t === 'discounttype') return 'discount type'
   if (t === 'discounts' || t === 'discount') return 'discount'
@@ -89,9 +93,26 @@ export const MENU_CATALOG = [
     code: 'dashboard',
     name: 'Dashboard',
     serverMenu: 'Dashboard',
-    aliases: ['Dashboard', 'Dash', 'Overview', 'Home', 'Main Dashboard', 'Metrics'],
-    path: '/dashboard',
-    icon: 'pi-objects-column'
+    aliases: ['Dashboard', 'Dash', 'Overview', 'Home', 'Metrics'],
+    icon: 'pi-objects-column',
+    children: [
+      {
+        code: 'dashboard.main',
+        name: 'Main Dashboard',
+        serverMenu: 'Main Dashboard',
+        aliases: ['Main Dashboard', 'Executive Dashboard', 'Main', 'Dashboard Main', 'Overview'],
+        path: '/dashboard/main',
+        icon: 'pi-objects-column'
+      },
+      {
+        code: 'dashboard.accounting',
+        name: 'Accounting Dashboard',
+        serverMenu: 'Accounting Dashboard',
+        aliases: ['Accounting Dashboard', 'Accounting', 'Finance Dashboard', 'Billing Dashboard', 'Revenue Dashboard'],
+        path: '/dashboard/accounting',
+        icon: 'pi-wallet'
+      }
+    ]
   },
   {
     code: 'application',
@@ -438,20 +459,37 @@ export const MENU_CATALOG = [
     ]
   },
   {
-    code: 'api-viewer',
-    name: 'API Viewer',
-    serverMenu: 'API Viewer',
-    aliases: ['API Viewer', 'API Data Viewer', 'Data Viewer', 'Api Viewer', 'API', 'Endpoints Viewer', 'DataViewer'],
-    path: '/data-viewer',
-    icon: 'pi-database'
-  },
-  {
-    code: 'models',
-    name: 'Models',
-    serverMenu: 'Models',
-    aliases: ['Models', 'Data Models', 'Model', 'Schema Models', 'Schema Meta', 'Entity Models'],
-    path: '/models',
-    icon: 'pi-table'
+    code: 'api-management',
+    name: 'API Management',
+    serverMenu: 'API Management',
+    aliases: ['API Management', 'Api Management', 'APIs', 'API', 'API Manager', 'APIManagement'],
+    icon: 'pi-sliders-h',
+    children: [
+      {
+        code: 'api-management.viewer',
+        name: 'API Viewer',
+        serverMenu: 'API Viewer',
+        aliases: ['API Viewer', 'API Data Viewer', 'Data Viewer', 'Api Viewer', 'API', 'Endpoints Viewer', 'DataViewer', 'api-viewer'],
+        path: '/data-viewer',
+        icon: 'pi-database'
+      },
+      {
+        code: 'api-management.models',
+        name: 'Models',
+        serverMenu: 'Models',
+        aliases: ['Models', 'Data Models', 'Model', 'Schema Models', 'Schema Meta', 'Entity Models', 'models'],
+        path: '/models',
+        icon: 'pi-table'
+      },
+      {
+        code: 'api-management.services',
+        name: 'API Services',
+        serverMenu: 'API Services',
+        aliases: ['API Services', 'Api Services', 'Microservices', 'Micro Services', 'Services', 'API Microservices', 'api-services'],
+        path: '/api-management/services',
+        icon: 'pi-server'
+      }
+    ]
   }
 ]
 
@@ -527,8 +565,11 @@ export const MENU_CODE_BY_PATH = new Map(
  * door to the screen `/application` protects.
  */
 const PATH_CODE_ALIASES = new Map([
+  ['/dashboard', 'dashboard'],
   ['/application_list', 'application.all'],
   ['/job_order', 'job-orders.all'],
+  ['/api-management', 'api-management'],
+  ['/api-services', 'api-management.services'],
   // The Menus registry and the level-to-menu links are the same screen as, and
   // the same authority over, Access Level management.
   ['/menu', 'users-management.access-level'],
@@ -611,7 +652,7 @@ const { directIndex: MENU_DIRECT_INDEX, stemmedIndex: MENU_STEMMED_INDEX } = BUI
  * @param {string} rawName - The name from the server / database row.
  * @returns {string[]} Array of matching catalog code strings.
  */
-export const resolveMenuCodesFromName = (rawName) => {
+export const resolveMenuCodesFromName = (rawName, options = { expandChildren: true }) => {
   if (!rawName) return []
   const nameStr = String(rawName).trim()
   if (!nameStr) return []
@@ -666,14 +707,17 @@ export const resolveMenuCodesFromName = (rawName) => {
   }
 
   // 5. If a parent code matched, include all of its direct children
-  const result = new Set(matchedCodes)
-  matchedCodes.forEach(code => {
-    if (PARENT_TO_CHILD_CODES.has(code)) {
-      PARENT_TO_CHILD_CODES.get(code).forEach(childCode => result.add(childCode))
-    }
-  })
+  if (options?.expandChildren !== false) {
+    const result = new Set(matchedCodes)
+    matchedCodes.forEach(code => {
+      if (PARENT_TO_CHILD_CODES.has(code)) {
+        PARENT_TO_CHILD_CODES.get(code).forEach(childCode => result.add(childCode))
+      }
+    })
+    return Array.from(result)
+  }
 
-  return Array.from(result)
+  return Array.from(matchedCodes)
 }
 
 /**
@@ -682,6 +726,9 @@ export const resolveMenuCodesFromName = (rawName) => {
 export const findPrimaryMenuCodeForName = (rawName) => {
   const codes = resolveMenuCodesFromName(rawName)
   if (!codes.length) return null
+  // Direct exact normalized code match takes priority (e.g. 'Dashboard' -> 'dashboard', 'API Management' -> 'api-management')
+  const direct = codes.find(c => normalizeMenuName(c) === normalizeMenuName(rawName) || c === normalizeMenuName(rawName))
+  if (direct) return direct
   // Prefer leaf child codes over parent groups if both are returned
   const leaf = codes.find(c => !PARENT_TO_CHILD_CODES.has(c))
   return leaf || codes[0]
