@@ -3787,7 +3787,10 @@ const JOB_ORDER_COLUMNS = [
   'planId',
   'onsiteStatus',
   'billingStatus',
-  'dateInstalled'
+  // Who the job order is assigned to is the field dispatchers scan for, so it
+  // takes the slot the install date used to hold; `dateInstalled` is still in
+  // the View Details modal, which lists the whole record.
+  'assignedEmail'
 ]
 
 const CONCISE_ENDPOINT_COLUMNS = {
