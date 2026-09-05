@@ -26,6 +26,8 @@ import { EndpointSchemaMeta } from './schemaMeta.js'
  */
 const SYSTEM_FIELDS = new Set([
   'id',
+  'applicationid',
+  'applicationidvalue',
   'rowversion',
   'timestamp',
   'created',

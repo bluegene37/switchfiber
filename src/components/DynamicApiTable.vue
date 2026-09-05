@@ -3236,6 +3236,8 @@ function formatLabel(col) {
   }
 
   const customOverrides = {
+    applicationid: 'Application ID',
+    applicationidvalue: 'Application ID',
     coordinates: 'GPS Coordinates',
     coordinate: 'GPS Coordinates',
     addresscoordinates: 'GPS Coordinates',
@@ -3981,6 +3983,7 @@ function isAuditField(col) {
   const lower = col.toLowerCase().replace(/_/g, '')
   return (
     lower === 'id' ||
+    (isApplicationEndpoint.value && (lower === 'applicationid' || lower === 'applicationidvalue')) ||
     isCreatedOrModifiedField(col) ||
     lower === 'timestamp' ||
     lower === 'rowversion' ||
@@ -8668,6 +8671,24 @@ const stampAuditFields = (target, mode, loggedInUserId) => {
   return target
 }
 
+const sanitizeDocLimit = (val, fallback = 'document.jpg') => {
+  if (!val) return ''
+  const str = String(val).trim()
+  if (!str) return ''
+  if ((str.startsWith('http://') || str.startsWith('https://')) && str.length <= 255) {
+    return str
+  }
+  if (str.startsWith('data:') || str.length > 255) {
+    return fallback
+  }
+  return str.slice(0, 255)
+}
+
+const capStr = (val, max = 255) => {
+  if (val === null || val === undefined) return ''
+  return String(val).trim().slice(0, max)
+}
+
 const saveData = async () => {
   saveError.value = null
 
@@ -8705,39 +8726,39 @@ const saveData = async () => {
     if (isApplicationEndpoint.value) {
       finalPayload = {
         timestamp: payload.timestamp ? (payload.timestamp instanceof Date ? payload.timestamp.toISOString() : String(payload.timestamp)) : nowIso,
-        emailAddress: payload.emailAddress ? String(payload.emailAddress) : '',
-        region: payload.region ? String(payload.region) : '',
-        city: payload.city ? String(payload.city) : '',
-        barangay: payload.barangay ? String(payload.barangay) : '',
-        referredBy: payload.referredBy ? String(payload.referredBy) : '',
-        firstName: payload.firstName ? String(payload.firstName) : '',
-        middleName: payload.middleName ? String(payload.middleName) : '',
-        lastName: payload.lastName ? String(payload.lastName) : '',
-        mobileNumber: payload.mobileNumber ? String(payload.mobileNumber) : '',
-        secondaryMobileNumber: payload.secondaryMobileNumber ? String(payload.secondaryMobileNumber) : '',
-        installationAddress: payload.installationAddress ? String(payload.installationAddress) : '',
-        landmark: payload.landmark ? String(payload.landmark) : '',
-        desiredPlan: payload.desiredPlan ? String(payload.desiredPlan) : '',
+        emailAddress: capStr(payload.emailAddress, 100),
+        region: capStr(payload.region, 100),
+        city: capStr(payload.city, 100),
+        barangay: capStr(payload.barangay, 100),
+        referredBy: capStr(payload.referredBy, 150),
+        firstName: capStr(payload.firstName, 100),
+        middleName: capStr(payload.middleName, 100),
+        lastName: capStr(payload.lastName, 100),
+        mobileNumber: capStr(payload.mobileNumber, 20),
+        secondaryMobileNumber: capStr(payload.secondaryMobileNumber, 20),
+        installationAddress: capStr(payload.installationAddress, 255),
+        landmark: capStr(payload.landmark, 255),
+        desiredPlan: capStr(payload.desiredPlan, 100),
         proofOfBilling: payload.proofOfBilling ? String(payload.proofOfBilling) : '',
         governmentValidId: payload.governmentValidId ? String(payload.governmentValidId) : '',
-        secondGovernmentValidId: payload.secondGovernmentValidId ? String(payload.secondGovernmentValidId) : '',
-        houseFrontPicture: payload.houseFrontPicture ? String(payload.houseFrontPicture) : '',
+        secondGovernmentValidId: sanitizeDocLimit(payload.secondGovernmentValidId, 'second_valid_id.jpg'),
+        houseFrontPicture: sanitizeDocLimit(payload.houseFrontPicture, 'house_front_photo.jpg'),
         termsAndConditionsAgreement: normalizeAgreementValue(payload.termsAndConditionsAgreement),
-        firstNearestLandmark: payload.firstNearestLandmark ? String(payload.firstNearestLandmark) : '',
-        secondNearestLandmark: payload.secondNearestLandmark ? String(payload.secondNearestLandmark) : '',
-        applicablePromo: payload.applicablePromo ? String(payload.applicablePromo) : '',
+        firstNearestLandmark: capStr(payload.firstNearestLandmark, 255),
+        secondNearestLandmark: capStr(payload.secondNearestLandmark, 255),
+        applicablePromo: capStr(payload.applicablePromo, 100),
         documentPicture: payload.documentPicture ? String(payload.documentPicture) : '',
-        barangay1: payload.barangay1 ? String(payload.barangay1) : (payload.barangay ? String(payload.barangay) : ''),
-        barangay2: payload.barangay2 ? String(payload.barangay2) : '',
-        pictureofstatmentbillingfromotherprovider: payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider ? String(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider) : '',
-        referrersAccountNumber: payload.referrersAccountNumber ? String(payload.referrersAccountNumber) : '',
-        applyingFor: payload.applyingFor ? String(payload.applyingFor) : '',
-        status: payload.status ? String(payload.status) : defaultNewStatus.value,
-        visitBy: payload.visitBy ? String(payload.visitBy) : '',
-        visitWith: payload.visitWith ? String(payload.visitWith) : '',
-        visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
-        remarks: withPhotoGps('create', payload.remarks),
-        userEmail: currentUserEmail
+        barangay1: capStr(payload.barangay1 || payload.barangay, 100),
+        barangay2: capStr(payload.barangay2, 100),
+        pictureofstatmentbillingfromotherprovider: sanitizeDocLimit(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider, 'statement_billing.jpg'),
+        referrersAccountNumber: capStr(payload.referrersAccountNumber, 100),
+        applyingFor: capStr(payload.applyingFor || 'Residential Fiber', 100),
+        status: capStr(payload.status || defaultNewStatus.value, 50),
+        visitBy: capStr(payload.visitBy, 100),
+        visitWith: capStr(payload.visitWith, 100),
+        visitWithOther: capStr(payload.visitWithOther, 100),
+        remarks: capStr(withPhotoGps('create', payload.remarks), 255),
+        userEmail: capStr(currentUserEmail, 100)
       }
       // Required by the Applications contract, not optional metadata: omitting
       // these two is what made every create 400.
@@ -9156,39 +9177,39 @@ const saveEdit = async () => {
     let finalPayload
     if (isApplicationEndpoint.value) {
       finalPayload = {
-        emailAddress: payload.emailAddress ? String(payload.emailAddress) : '',
-        region: payload.region ? String(payload.region) : '',
-        city: payload.city ? String(payload.city) : '',
-        barangay: payload.barangay ? String(payload.barangay) : '',
-        referredBy: payload.referredBy ? String(payload.referredBy) : '',
-        firstName: payload.firstName ? String(payload.firstName) : '',
-        middleName: payload.middleName ? String(payload.middleName) : '',
-        lastName: payload.lastName ? String(payload.lastName) : '',
-        mobileNumber: payload.mobileNumber ? String(payload.mobileNumber) : '',
-        secondaryMobileNumber: payload.secondaryMobileNumber ? String(payload.secondaryMobileNumber) : '',
-        installationAddress: payload.installationAddress ? String(payload.installationAddress) : '',
-        landmark: payload.landmark ? String(payload.landmark) : '',
-        desiredPlan: payload.desiredPlan ? String(payload.desiredPlan) : '',
+        emailAddress: capStr(payload.emailAddress, 100),
+        region: capStr(payload.region, 100),
+        city: capStr(payload.city, 100),
+        barangay: capStr(payload.barangay, 100),
+        referredBy: capStr(payload.referredBy, 150),
+        firstName: capStr(payload.firstName, 100),
+        middleName: capStr(payload.middleName, 100),
+        lastName: capStr(payload.lastName, 100),
+        mobileNumber: capStr(payload.mobileNumber, 20),
+        secondaryMobileNumber: capStr(payload.secondaryMobileNumber, 20),
+        installationAddress: capStr(payload.installationAddress, 255),
+        landmark: capStr(payload.landmark, 255),
+        desiredPlan: capStr(payload.desiredPlan, 100),
         proofOfBilling: payload.proofOfBilling ? String(payload.proofOfBilling) : '',
         governmentValidId: payload.governmentValidId ? String(payload.governmentValidId) : '',
-        secondGovernmentValidId: payload.secondGovernmentValidId ? String(payload.secondGovernmentValidId) : '',
-        houseFrontPicture: payload.houseFrontPicture ? String(payload.houseFrontPicture) : '',
+        secondGovernmentValidId: sanitizeDocLimit(payload.secondGovernmentValidId, 'second_valid_id.jpg'),
+        houseFrontPicture: sanitizeDocLimit(payload.houseFrontPicture, 'house_front_photo.jpg'),
         termsAndConditionsAgreement: normalizeAgreementValue(payload.termsAndConditionsAgreement),
-        firstNearestLandmark: payload.firstNearestLandmark ? String(payload.firstNearestLandmark) : '',
-        secondNearestLandmark: payload.secondNearestLandmark ? String(payload.secondNearestLandmark) : '',
-        applicablePromo: payload.applicablePromo ? String(payload.applicablePromo) : '',
+        firstNearestLandmark: capStr(payload.firstNearestLandmark, 255),
+        secondNearestLandmark: capStr(payload.secondNearestLandmark, 255),
+        applicablePromo: capStr(payload.applicablePromo, 100),
         documentPicture: payload.documentPicture ? String(payload.documentPicture) : '',
-        barangay1: payload.barangay1 ? String(payload.barangay1) : (payload.barangay ? String(payload.barangay) : ''),
-        barangay2: payload.barangay2 ? String(payload.barangay2) : '',
-        pictureofstatmentbillingfromotherprovider: payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider ? String(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider) : '',
-        referrersAccountNumber: payload.referrersAccountNumber ? String(payload.referrersAccountNumber) : '',
-        applyingFor: payload.applyingFor ? String(payload.applyingFor) : '',
-        status: payload.status ? String(payload.status) : defaultNewStatus.value,
-        visitBy: payload.visitBy ? String(payload.visitBy) : '',
-        visitWith: payload.visitWith ? String(payload.visitWith) : '',
-        visitWithOther: payload.visitWithOther ? String(payload.visitWithOther) : '',
-        remarks: withPhotoGps('edit', payload.remarks),
-        userEmail: payload.userEmail || currentUserEmail
+        barangay1: capStr(payload.barangay1 || payload.barangay, 100),
+        barangay2: capStr(payload.barangay2, 100),
+        pictureofstatmentbillingfromotherprovider: sanitizeDocLimit(payload.pictureofstatmentbillingfromotherprovider || payload.pictureofstatementbillingfromotherprovider, 'statement_billing.jpg'),
+        referrersAccountNumber: capStr(payload.referrersAccountNumber, 100),
+        applyingFor: capStr(payload.applyingFor || 'Residential Fiber', 100),
+        status: capStr(payload.status || defaultNewStatus.value, 50),
+        visitBy: capStr(payload.visitBy, 100),
+        visitWith: capStr(payload.visitWith, 100),
+        visitWithOther: capStr(payload.visitWithOther, 100),
+        remarks: capStr(withPhotoGps('edit', payload.remarks), 255),
+        userEmail: capStr(payload.userEmail || currentUserEmail, 100)
       }
       stampAuditFields(finalPayload, 'update', loggedInUserId)
     } else if (isJobOrderEndpoint.value) {
