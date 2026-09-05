@@ -1877,9 +1877,10 @@
             >
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
-                <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
+                <span v-if="isFieldRequired(col, 'edit')" class="text-danger ms-1" title="Required">*</span>
                 <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
                 <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                <span v-else-if="isFieldDisabledInEdit(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
 
               <!-- Combined Barangay 1 & Barangay 2 Column in Edit Modal (Stacked) -->
@@ -1887,24 +1888,32 @@
                 <div>
                   <label :for="`edit-barangay1`" class="form-label fw-medium text-body small mb-1">
                     Barangay 1
-                    <span v-if="isFieldRequired('barangay1')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-if="isFieldRequired('barangay1', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isFieldDisabledInEdit('barangay1')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
                   </label>
                   <InputText 
                     id="edit-barangay1" 
                     v-model="editFormData.barangay1" 
                     class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('barangay1')"
+                    :readonly="isFieldDisabledInEdit('barangay1')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('barangay1') }"
                     placeholder="Enter barangay 1" 
                   />
                 </div>
                 <div>
                   <label :for="`edit-barangay2`" class="form-label fw-medium text-body small mb-1">
                     Barangay 2
-                    <span v-if="isFieldRequired('barangay2')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-if="isFieldRequired('barangay2', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isFieldDisabledInEdit('barangay2')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
                   </label>
                   <InputText 
                     id="edit-barangay2" 
                     v-model="editFormData.barangay2" 
                     class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('barangay2')"
+                    :readonly="isFieldDisabledInEdit('barangay2')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('barangay2') }"
                     placeholder="Enter barangay 2" 
                   />
                 </div>
@@ -1915,24 +1924,32 @@
                 <div>
                   <label :for="`edit-visitwithother`" class="form-label fw-medium text-body small mb-1">
                     Visit With (Other)
-                    <span v-if="isFieldRequired('visitWithOther')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-if="isFieldRequired('visitWithOther', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isFieldDisabledInEdit('visitWithOther')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
                   </label>
                   <InputText 
                     id="edit-visitwithother" 
                     v-model="editFormData.visitWithOther" 
                     class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('visitWithOther')"
+                    :readonly="isFieldDisabledInEdit('visitWithOther')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('visitWithOther') }"
                     placeholder="Enter visit with (other)" 
                   />
                 </div>
                 <div>
                   <label :for="`edit-useremail`" class="form-label fw-medium text-body small mb-1">
                     User Email
-                    <span v-if="isFieldRequired('userEmail')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-if="isFieldRequired('userEmail', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isFieldDisabledInEdit('userEmail')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
                   </label>
                   <InputText 
                     id="edit-useremail" 
                     v-model="editFormData.userEmail" 
                     class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('userEmail')"
+                    :readonly="isFieldDisabledInEdit('userEmail')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('userEmail') }"
                     placeholder="Enter user email" 
                   />
                 </div>
@@ -1940,7 +1957,7 @@
 
               <!-- Toggle Switch for Active / Boolean fields -->
               <div v-else-if="getFieldType(col) === 'toggle'" class="d-flex align-items-center gap-3 pt-2">
-                <ToggleSwitch :id="`edit-${col}`" v-model="editFormData[col]" />
+                <ToggleSwitch :id="`edit-${col}`" v-model="editFormData[col]" :disabled="isFieldDisabledInEdit(col)" />
                 <span class="small fw-semibold" :class="editFormData[col] ? 'text-success' : 'text-secondary'">
                   {{ editFormData[col] ? 'Active' : 'Inactive' }}
                 </span>
@@ -1954,6 +1971,7 @@
                   :binary="true" 
                   trueValue="Yes, I Agree" 
                   falseValue="" 
+                  :disabled="isFieldDisabledInEdit(col)"
                 />
                 <label :for="`edit-${col}`" class="form-check-label small fw-medium mb-0 cursor-pointer user-select-none">
                   Yes, I Agree
@@ -1969,6 +1987,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Access Level" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -1982,6 +2001,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Menu" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2006,6 +2026,7 @@
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select LCNAP"
                 class="w-100 p-inputtext-sm"
               />
@@ -2019,6 +2040,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select LCNAP Port" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2032,6 +2054,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select LCP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2045,6 +2068,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select NAP" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2058,6 +2082,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Port" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2071,6 +2096,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select VLAN" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2084,6 +2110,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Desired Plan" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2097,6 +2124,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 showClear
                 placeholder="Select Discount Type" 
                 class="w-100 p-inputtext-sm" 
@@ -2110,6 +2138,7 @@
                 :options="discountStatusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Discount Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2123,6 +2152,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Referrer" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2136,6 +2166,7 @@
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 @change="onRegionChanged(editFormData)"
                 placeholder="Select Province"
                 class="w-100 p-inputtext-sm"
@@ -2150,21 +2181,21 @@
                   optionLabel="label"
                   optionValue="value"
                   :filter="true"
-                  :disabled="isCityDisabled(editFormData)"
+                  :disabled="isCityDisabled(editFormData) || isFieldDisabledInEdit(col)"
                   @change="onCityChanged(editFormData)"
                   :virtualScrollerOptions="{ itemSize: 38 }"
                   :placeholder="getCityPlaceholder(editFormData)"
                   class="w-100 p-inputtext-sm"
                 />
                 <div 
-                  v-if="isCityDisabled(editFormData)" 
+                  v-if="isCityDisabled(editFormData) || isFieldDisabledInEdit(col)" 
                   class="position-absolute top-0 start-0 w-100 h-100" 
                   style="cursor: pointer; z-index: 2;" 
-                  title="Please select Province first"
-                  @click.stop="notifyAddressStep(editFormData, 'city', 'edit')"
+                  :title="isFieldDisabledInEdit(col) ? 'Field is read-only' : 'Please select Province first'"
+                  @click.stop="!isFieldDisabledInEdit(col) && notifyAddressStep(editFormData, 'city', 'edit')"
                 ></div>
                 <div 
-                  v-if="shouldShowAddressHint(editFormData, 'city', 'edit')" 
+                  v-if="!isFieldDisabledInEdit(col) && shouldShowAddressHint(editFormData, 'city', 'edit')" 
                   class="address-step-hint mt-1 d-flex align-items-center gap-1"
                 >
                   <i class="pi pi-exclamation-circle"></i>
@@ -2181,20 +2212,20 @@
                   optionLabel="label"
                   optionValue="value"
                   :filter="true"
-                  :disabled="isBarangayDisabled(editFormData)"
+                  :disabled="isBarangayDisabled(editFormData) || isFieldDisabledInEdit(col)"
                   :virtualScrollerOptions="{ itemSize: 38 }"
                   :placeholder="getBarangayPlaceholder(editFormData)"
                   class="w-100 p-inputtext-sm"
                 />
                 <div 
-                  v-if="isBarangayDisabled(editFormData)" 
+                  v-if="isBarangayDisabled(editFormData) || isFieldDisabledInEdit(col)" 
                   class="position-absolute top-0 start-0 w-100 h-100" 
                   style="cursor: pointer; z-index: 2;" 
-                  title="Please select City first"
-                  @click.stop="notifyAddressStep(editFormData, 'barangay', 'edit')"
+                  :title="isFieldDisabledInEdit(col) ? 'Field is read-only' : 'Please select City first'"
+                  @click.stop="!isFieldDisabledInEdit(col) && notifyAddressStep(editFormData, 'barangay', 'edit')"
                 ></div>
                 <div 
-                  v-if="shouldShowAddressHint(editFormData, 'barangay', 'edit')" 
+                  v-if="!isFieldDisabledInEdit(col) && shouldShowAddressHint(editFormData, 'barangay', 'edit')" 
                   class="address-step-hint mt-1 d-flex align-items-center gap-1"
                 >
                   <i class="pi pi-exclamation-circle"></i>
@@ -2211,6 +2242,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2224,6 +2256,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Onsite Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2237,6 +2270,7 @@
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 showClear
                 placeholder="Select billing day (1-31)"
                 class="w-100 p-inputtext-sm"
@@ -2252,6 +2286,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Billing Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2265,6 +2300,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Payment Method" 
                 class="w-100 p-inputtext-sm" 
                 :class="{ 'p-invalid': hasFieldError('edit', col) }"
@@ -2279,6 +2315,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Delivery Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2292,6 +2329,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Renter Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2305,6 +2343,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Usage Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2318,6 +2357,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Priority Level" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2331,6 +2371,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Support Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2344,6 +2385,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Visit Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2357,6 +2399,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Repair Category" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2370,6 +2413,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Connection Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2383,6 +2427,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Application Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2396,6 +2441,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Contract Template" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2409,6 +2455,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Invoice Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2484,7 +2531,9 @@
                       v-model="editFormData[col]"
                       type="text"
                       class="form-control form-control-sm rounded-3 font-monospace coord-input flex-grow-1"
-                      :class="{ 'is-invalid': hasFieldError('edit', col) }"
+                      :class="{ 'is-invalid': hasFieldError('edit', col), 'bg-light text-muted': isFieldDisabledInEdit(col) }"
+                      :disabled="isFieldDisabledInEdit(col)"
+                      :readonly="isFieldDisabledInEdit(col)"
                       placeholder="latitude, longitude"
                     />
                   </div>
@@ -2492,7 +2541,7 @@
                     <button
                       type="button"
                       class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
-                      :disabled="pinFillBusy.edit || !editFormData[col]"
+                      :disabled="pinFillBusy.edit || !editFormData[col] || isFieldDisabledInEdit(col)"
                       title="Autofill Province, City, Barangay and Street from the pinned location"
                       @click="applyAddressFromPin('edit')"
                     >
@@ -2513,7 +2562,8 @@
                   v-model="editFormData[col]"
                   :fieldId="`edit-${col}`"
                   :label="formatLabel(col)"
-                  :required="isFieldRequired(col)"
+                  :required="isFieldRequired(col, 'edit')"
+                  :disabled="isFieldDisabledInEdit(col)"
                   @exif="onPhotoExif('edit', col, $event)"
                 />
               </div>
@@ -2529,6 +2579,8 @@
                 size="small"
                 dateFormat="yy-mm-dd" 
                 placeholder="Select date" 
+                :disabled="isFieldDisabledInEdit(col)"
+                :class="{ 'p-disabled bg-light': isFieldDisabledInEdit(col) }"
                 class="w-100"
               />
 
@@ -2539,7 +2591,10 @@
                 type="email"
                 v-model="editFormData[col]" 
                 class="w-100 p-inputtext-sm" 
-                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
+                :class="{ 'bg-light text-muted': isFieldDisabledInEdit(col) }"
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
               />
 
               <!-- Phone / Mobile Input -->
@@ -2550,7 +2605,9 @@
                 v-model="editFormData[col]" 
                 @blur="editFormData[col] = normalizePhoneNumber(editFormData[col])"
                 class="w-100 p-inputtext-sm font-monospace" 
-                :class="{ 'p-invalid': hasFieldError('edit', col) }"
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
+                :class="{ 'bg-light text-muted': isFieldDisabledInEdit(col), 'p-invalid': hasFieldError('edit', col) }"
                 placeholder="e.g. 09123456789 or +639123456789" 
               />
 
@@ -2563,9 +2620,9 @@
                 fluid
                 size="small"
                 class="w-100" 
-                :class="{ 'p-disabled bg-light': isReadOnlyField(col) }"
-                :disabled="isReadOnlyField(col)"
-                :readonly="isReadOnlyField(col)"
+                :class="{ 'p-disabled bg-light': isFieldDisabledInEdit(col) }"
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
                 mode="currency"
                 currency="PHP"
                 locale="en-PH"
@@ -2583,9 +2640,9 @@
                 fluid
                 size="small"
                 class="w-100" 
-                :class="{ 'p-disabled bg-light': isReadOnlyField(col) }"
-                :disabled="isReadOnlyField(col)"
-                :readonly="isReadOnlyField(col)"
+                :class="{ 'p-disabled bg-light': isFieldDisabledInEdit(col) }"
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
                 :useGrouping="false"
                 :min="0"
                 :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
@@ -2598,7 +2655,12 @@
                 v-model="editFormData[col]" 
                 :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
                 class="w-100 p-inputtext-sm" 
-                :class="{ 'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') }" 
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
+                :class="{ 
+                  'bg-light text-muted': isFieldDisabledInEdit(col),
+                  'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') 
+                }" 
                 :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
               />
@@ -2610,12 +2672,12 @@
                 v-model="editFormData[col]" 
                 class="w-100 p-inputtext-sm" 
                 :class="{ 
-                  'bg-light text-muted': isReadOnlyField(col),
+                  'bg-light text-muted': isFieldDisabledInEdit(col),
                   'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
                   'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
                 }" 
-                :disabled="isReadOnlyField(col)"
-                :readonly="isReadOnlyField(col)"
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
                 :placeholder="col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)" 
               />
 
@@ -4068,6 +4130,27 @@ function isReadOnlyField(col) {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
   return lower === 'accountbalance' || lower === 'accountbal'
+}
+
+// Whitelist of fields permitted for editing when updating a payment record
+const PAYMENT_EDITABLE_COLUMNS = new Set([
+  'transactiontype',
+  'receivedpayment',
+  'referenceno',
+  'orno',
+  'remarks',
+  'image'
+])
+
+// Determine whether a field should be disabled / read-only in the Edit dialog
+function isFieldDisabledInEdit(col) {
+  if (!col) return false
+  if (isReadOnlyField(col)) return true
+  if (isPaymentEndpoint.value) {
+    const key = normalizeColKey(col)
+    return !PAYMENT_EDITABLE_COLUMNS.has(key)
+  }
+  return false
 }
 
 function isAuditField(col) {
@@ -7208,7 +7291,8 @@ const requiredColumns = computed(() =>
   new Set(resolveRequiredFields(props.endpoint, formColumns.value, 'create'))
 )
 
-const isFieldRequired = (col) => {
+const isFieldRequired = (col, scope = 'create') => {
+  if (scope === 'edit' && isFieldDisabledInEdit(col)) return false
   if (isReadOnlyField(col)) return false
   if (!requiredColumns.value.has(col)) return false
   // A toggle always holds a boolean, so it can never be "missing".
@@ -7393,7 +7477,7 @@ const validateRequired = (scope) => {
     const val = form[col]
 
     // 1. Required check
-    if (isFieldRequired(col)) {
+    if (isFieldRequired(col, scope)) {
       // An existing record's password is not echoed back by the API, so demanding
       // it on edit would lock the user out of saving any other change.
       if (scope === 'edit' && ['password', 'confirm_password'].includes(type)) return
@@ -9338,6 +9422,9 @@ const saveEdit = async () => {
       if (isReadOnlyField(col) && editBaseSnapshot.value && editBaseSnapshot.value[col] !== undefined) {
         payload[col] = editBaseSnapshot.value[col]
       }
+      if (isFieldDisabledInEdit(col) && editBaseSnapshot.value && editBaseSnapshot.value[col] !== undefined) {
+        payload[col] = editBaseSnapshot.value[col]
+      }
     })
 
     const numericUserId = Number(authStore.user?.id) || 1
@@ -9430,6 +9517,10 @@ const saveEdit = async () => {
         } else {
           finalPayload.discountId = null
         }
+      }
+
+      if (isPaymentEndpoint.value) {
+        finalPayload.id = Number(editingRecordId.value) || editingRecordId.value
       }
     }
 
