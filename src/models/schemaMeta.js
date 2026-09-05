@@ -147,9 +147,6 @@ export const EndpointSchemaMeta = {
     "create": {
       "schema": "CreateBillingDetailsRequest",
       "required": [
-        "fullName",
-        "contactNumber",
-        "emailAddress",
         "address",
         "location",
         "plan",
@@ -182,7 +179,8 @@ export const EndpointSchemaMeta = {
         "referredBy",
         "secondContactNumber",
         "addressCoordinates",
-        "referrersAccountNumber"
+        "referrersAccountNumber",
+        "houseFront"
       ]
     },
     "update": {
@@ -540,6 +538,16 @@ export const EndpointSchemaMeta = {
         "name",
         "description"
       ]
+    }
+  },
+  "Payments": {
+    "create": {
+      "schema": "Payment",
+      "required": []
+    },
+    "update": {
+      "schema": "Payment",
+      "required": []
     }
   },
   "Plans": {

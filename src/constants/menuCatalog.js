@@ -223,9 +223,17 @@ export const MENU_CATALOG = [
         code: 'transaction.billing',
         name: 'Billing',
         serverMenu: 'Billing',
-        aliases: ['Billing', 'Billings', 'Billing List', 'Customer Billing', 'Billing Details', 'Transaction Billing', 'Transaction - Billing', 'Payments'],
+        aliases: ['Billing', 'Billings', 'Billing List', 'Customer Billing', 'Billing Details', 'Transaction Billing', 'Transaction - Billing'],
         path: '/billing',
         icon: 'pi-credit-card'
+      },
+      {
+        code: 'transaction.payments',
+        name: 'Payments',
+        serverMenu: 'Payments',
+        aliases: ['Payments', 'Payment', 'Payment List', 'Customer Payments', 'Transaction Payments', 'Collections', 'Payment Transactions', 'Receipts'],
+        path: '/payments',
+        icon: 'pi-wallet'
       }
     ]
   },

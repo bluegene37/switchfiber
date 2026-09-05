@@ -91,6 +91,9 @@ const ENDPOINT_OVERRIDES = {
   ],
   discounts: [
     'fullName', 'contactNumber', 'discounttype_id'
+  ],
+  plans: [
+    'name', 'amount'
   ]
 }
 

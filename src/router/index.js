@@ -25,6 +25,7 @@ const ROUTE_TITLES = {
   job_order: 'Job Order',
   invoice: 'Invoice',
   billing: 'Billing',
+  payments: 'Payments',
   lcp: 'LCP',
   lcnap: 'LCNAP',
   lcnap_port: 'LCNAP Port',
@@ -249,6 +250,12 @@ const router = createRouter({
     {
       path: '/billing',
       name: 'billing',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/payments',
+      name: 'payments',
       component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },

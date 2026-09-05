@@ -472,7 +472,7 @@
           </span>
           <!-- Discount Type Dropdown Reference -->
           <span v-else-if="getFieldType(col) === 'discounttype_dropdown'" class="fw-medium">
-            <span v-if="slotProps.data[col]" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill">
+            <span v-if="slotProps.data[col] && slotProps.data[col] !== 0 && slotProps.data[col] !== '0'" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill" :title="getDiscountTypeTooltip(slotProps.data[col])">
               {{ formatDisplayValue(slotProps.data[col], col) }}
             </span>
             <span v-else class="text-muted">-</span>
@@ -988,6 +988,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                showClear
                 placeholder="Select Discount Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2064,6 +2065,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                showClear
                 placeholder="Select Discount Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -3023,6 +3025,11 @@ const isDiscountEndpoint = computed(() => {
   return ep === 'discounts' || ep === 'discount'
 })
 
+const isPaymentEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'payments' || ep === 'payment'
+})
+
 // Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders,
 // Billing Details, LCP NAP Locations & Service Orders — the field-heavy forms) or the standard 2-column modal
 const isWideForm = computed(() => {
@@ -3212,6 +3219,20 @@ function formatLabel(col) {
   // string, which keeps the plain label.
   if (normalizeColKey(col) === 'discountid' && !isDiscountEndpoint.value) {
     return 'Discount Type'
+  }
+
+  if (isPaymentEndpoint.value) {
+    const k = normalizeColKey(col)
+    if (k === 'transactionid') return 'Account #'
+    if (k === 'accountno') return 'Customer Name'
+    if (k === 'fullname') return 'Contact Number'
+    if (k === 'contactno') return 'Paid Amount'
+    if (k === 'receivedpayment') return 'Payment Date'
+    if (k === 'paymentmethod') return 'Reference #'
+    if (k === 'image') return 'Fiber Plan'
+    if (k === 'useremail') return 'Status'
+    if (k === 'provider') return 'Fee Type'
+    if (k === 'remarks') return 'Processed By'
   }
 
   const customOverrides = {
@@ -3827,9 +3848,36 @@ const JOB_ORDER_COLUMNS = [
   'assignedEmail'
 ]
 
+const PLAN_COLUMNS = [
+  'id',
+  'name',
+  'description',
+  'amount',
+  'discountId'
+]
+
+const PAYMENT_COLUMNS = [
+  'id',
+  'transactionID',
+  'accountNo',
+  'contactNo',
+  'receivedPayment',
+  'paymentMethod',
+  'image',
+  'userEmail'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
+  Plans: PLAN_COLUMNS,
+  plans: PLAN_COLUMNS,
+  Plan: PLAN_COLUMNS,
+  plan: PLAN_COLUMNS,
+  Payments: PAYMENT_COLUMNS,
+  payments: PAYMENT_COLUMNS,
+  Payment: PAYMENT_COLUMNS,
+  payment: PAYMENT_COLUMNS,
   RadiusUser: RADIUS_USER_COLUMNS,
   radiususer: RADIUS_USER_COLUMNS,
   RadiusUsers: RADIUS_USER_COLUMNS,
@@ -4081,6 +4129,18 @@ const DISCOUNT_DEFAULT_COLUMNS = [
 // Falls back to every column when an endpoint has no preset, or when a preset
 // matches nothing (a schema change should not leave the table blank).
 const defaultVisibleColumns = (cols) => {
+  if (isPaymentEndpoint.value) {
+    const picked = cols.filter(col =>
+      PAYMENT_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
+    )
+    return picked.length > 0 ? picked : [...cols]
+  }
+  if (isPlanEndpoint.value) {
+    const picked = cols.filter(col =>
+      PLAN_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
+    )
+    return picked.length > 0 ? picked : [...cols]
+  }
   if (isDiscountTypeEndpoint.value) {
     const picked = cols.filter(col =>
       DISCOUNT_TYPE_DEFAULT_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
@@ -4361,6 +4421,13 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
               }
             } else {
               parts.push(String(val))
+              const fType = getFieldType(cols[i])
+              if (fType === 'discounttype_dropdown' || fType === 'plan_dropdown') {
+                const labelVal = formatDisplayValue(val, cols[i])
+                if (labelVal && labelVal !== '-' && labelVal !== String(val)) {
+                  parts.push(labelVal)
+                }
+              }
             }
           }
         }
@@ -6278,7 +6345,7 @@ const defaultNewStatus = computed(() => dataStatusVocabulary.value[0] || '')
 
 const getStableOptionsWithCurrent = (optionsList, currentVal) => {
   const list = Array.isArray(optionsList) ? [...optionsList] : []
-  if (currentVal !== null && currentVal !== undefined && String(currentVal).trim() !== '') {
+  if (currentVal !== null && currentVal !== undefined && String(currentVal).trim() !== '' && currentVal !== 0 && currentVal !== '0') {
     const str = String(currentVal).trim()
     const norm = str.toLowerCase().replace(/[\s_-]+/g, '')
     const exists = list.some(opt => {
@@ -6659,23 +6726,33 @@ const fetchFormLookups = () => {
 // fetchFormLookups so opening a dialog does not request the list a second time.
 let discountTypesPromise = null
 
-const fetchDiscountTypesLookup = () => {
-  if (discountTypesPromise) return discountTypesPromise
+const fetchDiscountTypesLookup = (force = false) => {
+  if (!force && discountTypesPromise) return discountTypesPromise
   discountTypesPromise = apiClient.get('/DiscountTypes')
     .then(res => {
-      discountTypesList.value = unwrapList(res).map(item => ({
-        label: item.name ? `${item.name}${item.amount ? ' (₱' + Number(item.amount).toLocaleString() + ' OFF)' : ''}` : `Discount Type #${item.id}`,
-        name: item.name || `Discount Type #${item.id}`,
-        id: item.id,
-        amount: item.amount,
-        planId: item.planId,
-        value: item.id
-      }))
+      discountTypesList.value = unwrapList(res).map((item, index) => {
+        const rawId = item.id ?? item.discountTypeId ?? item.discounttype_id
+        const resolvedId = (rawId !== null && rawId !== undefined && Number(rawId) > 0)
+          ? Number(rawId)
+          : (index + 1)
+        const name = item.name || `Discount Type #${resolvedId}`
+        const amt = item.amount !== null && item.amount !== undefined && !isNaN(item.amount) && item.amount !== ''
+          ? Number(item.amount)
+          : null
+        const amtStr = amt !== null
+          ? ` (₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} OFF)`
+          : ''
+        return {
+          label: `${name}${amtStr}`,
+          name: name,
+          id: resolvedId,
+          amount: amt,
+          planId: item.planId,
+          value: resolvedId
+        }
+      })
     })
     .catch(err => {
-      // /DiscountTypes is currently unreliable. An empty list is not fatal:
-      // getStableOptionsWithCurrent keeps the stored id selectable, and the
-      // table falls back to printing the raw id.
       console.error('Error fetching discount types:', err)
       discountTypesPromise = null
     })
@@ -8108,7 +8185,7 @@ const formatDisplayValue = (val, col) => {
   if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
     return getAccessLevelLabel(val)
   }
-  if (isCurrencyField(col) && !isNaN(val)) {
+  if ((isCurrencyField(col) || (isPaymentEndpoint.value && lower === 'contactno')) && !isNaN(val)) {
     return '₱' + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
   if (lower === 'duration' && !isNaN(val)) {
@@ -8122,7 +8199,7 @@ const formatDisplayValue = (val, col) => {
   }
 
   // Format server-side timestamps and dates
-  if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified') && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
+  if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified' || (isPaymentEndpoint.value && lower === 'receivedpayment')) && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
     const d = new Date(val)
     if (!isNaN(d.getTime())) {
       if (val.includes('T') || val.includes(':')) {
@@ -8144,7 +8221,8 @@ const formatDisplayValue = (val, col) => {
     }
   }
 
-  // Lookup human-readable labels for infrastructure & dropdown fields
+  if (type === 'discounttype_dropdown' && (val === 0 || val === '0')) return '-'
+
   let targetList = null
   if (type === 'vlan_dropdown') targetList = vlansList.value
   else if (type === 'lcp_dropdown') targetList = lcpsList.value
@@ -8153,7 +8231,12 @@ const formatDisplayValue = (val, col) => {
   else if (type === 'lcpnap_dropdown') targetList = lcpnapsList.value
   else if (type === 'lcpnapport_dropdown') targetList = lcpnapportsList.value
   else if (type === 'plan_dropdown') targetList = plansList.value
-  else if (type === 'discounttype_dropdown') targetList = discountTypesList.value
+  else if (type === 'discounttype_dropdown') {
+    targetList = discountTypesList.value
+    if ((!targetList || targetList.length === 0) && discountsList.value.length > 0) {
+      targetList = discountsList.value
+    }
+  }
   else if (type === 'discount_dropdown') targetList = discountsList.value
 
   if (targetList && targetList.length > 0) {
@@ -8161,6 +8244,7 @@ const formatDisplayValue = (val, col) => {
       opt.value === val || 
       opt.id === val || 
       opt.id === Number(val) ||
+      opt.value === Number(val) ||
       String(opt.value).toLowerCase() === String(val).toLowerCase() ||
       (opt.name && String(opt.name).toLowerCase() === String(val).toLowerCase())
     )
@@ -8170,6 +8254,19 @@ const formatDisplayValue = (val, col) => {
   }
 
   return String(val)
+}
+
+const getDiscountTypeTooltip = (val) => {
+  if (!val || val === 0 || val === '0') return ''
+  const list = discountTypesList.value || []
+  const found = list.find(opt =>
+    opt.value === val ||
+    opt.id === val ||
+    opt.id === Number(val) ||
+    opt.value === Number(val) ||
+    String(opt.value).toLowerCase() === String(val).toLowerCase()
+  )
+  return found ? (found.label || found.name) : ''
 }
 
 const openCreateDialog = () => {
@@ -8688,6 +8785,17 @@ const saveData = async () => {
       // After the cleanup loop: it strips empty values, and an audit stamp must
       // survive that.
       stampAuditFields(finalPayload, 'create', loggedInUserId)
+
+      if (isPlanEndpoint.value) {
+        if (finalPayload.amount !== undefined && finalPayload.amount !== null && finalPayload.amount !== '') {
+          finalPayload.amount = Number(finalPayload.amount)
+        }
+        if (finalPayload.discountId !== undefined && finalPayload.discountId !== null && finalPayload.discountId !== '' && finalPayload.discountId !== 0 && finalPayload.discountId !== '0') {
+          finalPayload.discountId = Number(finalPayload.discountId)
+        } else {
+          delete finalPayload.discountId
+        }
+      }
     }
 
     console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, finalPayload)
@@ -8905,7 +9013,13 @@ const openEditDialog = async (record) => {
       else if (type === 'port_dropdown') targetList = portsList.value
       else if (type === 'vlan_dropdown') targetList = vlansList.value
       else if (type === 'plan_dropdown') targetList = getPlanOptions(col, val)
-      else if (type === 'discounttype_dropdown') targetList = getDiscountTypeOptions(col, val)
+      else if (type === 'discounttype_dropdown') {
+        if (val === 0 || val === '0') {
+          editFormData.value[col] = null
+        } else {
+          targetList = getDiscountTypeOptions(col, val)
+        }
+      }
       else if (type === 'discount_dropdown') targetList = getDiscountOptions(col, val)
       else if (type === 'referredby_dropdown') targetList = getReferrerOptions(val)
 
@@ -9108,6 +9222,17 @@ const saveEdit = async () => {
       })
 
       stampAuditFields(finalPayload, 'update', loggedInUserId)
+
+      if (isPlanEndpoint.value) {
+        if (finalPayload.amount !== undefined && finalPayload.amount !== null && finalPayload.amount !== '') {
+          finalPayload.amount = Number(finalPayload.amount)
+        }
+        if (finalPayload.discountId !== undefined && finalPayload.discountId !== null && finalPayload.discountId !== '' && finalPayload.discountId !== 0 && finalPayload.discountId !== '0') {
+          finalPayload.discountId = Number(finalPayload.discountId)
+        } else {
+          finalPayload.discountId = null
+        }
+      }
     }
 
     console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, finalPayload)
@@ -9310,6 +9435,19 @@ const fetchData = async ({ silent = false } = {}) => {
 
     if (isServiceOrderEndpoint.value && Array.isArray(unwrappedData)) {
       unwrappedData = unwrappedData.map(normalizeServiceOrder)
+    }
+
+    if (isDiscountTypeEndpoint.value && Array.isArray(unwrappedData)) {
+      unwrappedData = unwrappedData.map((item, index) => {
+        const rawId = item.id ?? item.discountTypeId ?? item.discounttype_id
+        const resolvedId = (rawId !== null && rawId !== undefined && Number(rawId) > 0)
+          ? Number(rawId)
+          : (index + 1)
+        return {
+          ...item,
+          id: resolvedId
+        }
+      })
     }
 
     data.value = unwrappedData || []
@@ -9851,7 +9989,9 @@ const needsUserLookup = computed(() => columns.value.some(isUserRefField))
 // all print a discount type NAME in the grid, which needs /DiscountTypes loaded
 // before the first render rather than on the first dialog open.
 const needsDiscountTypeLookup = computed(() =>
-  columns.value.some(c => getFieldType(c) === 'discounttype_dropdown')
+  columns.value.some(c => getFieldType(c) === 'discounttype_dropdown') ||
+  isPlanEndpoint.value ||
+  isDiscountEndpoint.value
 )
 
 const refreshTableLookups = () => {

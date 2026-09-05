@@ -155,6 +155,18 @@ const routeMap = {
     icon: 'pi-credit-card',
     description: 'Manage subscriber billing accounts, modem serial numbers, payment schedules, and account statuses.'
   },
+  '/payments': {
+    title: 'Payments',
+    endpoint: 'Payments',
+    icon: 'pi-wallet',
+    description: 'Track customer collections, payment transactions, official receipts, and billing settlements.'
+  },
+  '/payment': {
+    title: 'Payments',
+    endpoint: 'Payments',
+    icon: 'pi-wallet',
+    description: 'Track customer collections, payment transactions, official receipts, and billing settlements.'
+  },
   // RadiusUser records come back without a usable key (every `id` is an empty
   // string), so there is nothing to address a write to — this screen browses only.
   '/disconnection': {
