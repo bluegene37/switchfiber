@@ -477,6 +477,13 @@
             </span>
             <span v-else class="text-muted">-</span>
           </span>
+          <!-- Payment Method / Transaction Type Dropdown Reference -->
+          <span v-else-if="getFieldType(col) === 'paymentmethod_dropdown'" class="fw-medium">
+            <span v-if="slotProps.data[col]" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill">
+              {{ formatDisplayValue(slotProps.data[col], col) }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
           <!-- Date / Timestamp Formatted Columns -->
           <span v-else-if="isDateField(col) && slotProps.data[col]" class="text-nowrap small">
             {{ formatDisplayValue(slotProps.data[col], col) }}
@@ -771,6 +778,7 @@
                 {{ formatLabel(col) }}
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
                 <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
+                <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
 
               <!-- Combined Barangay 1 & Barangay 2 Column (Stacked) -->
@@ -1147,6 +1155,20 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Payment Method / Transaction Type Dropdown -->
+              <Select 
+                v-else-if="getFieldType(col) === 'paymentmethod_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="paymentMethodOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Payment Method" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
+              />
+
               <!-- Delivery Status Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'deliverystatus_dropdown'" 
@@ -1440,6 +1462,9 @@
                 fluid
                 size="small"
                 class="w-100" 
+                :class="{ 'p-disabled bg-light': isReadOnlyField(col) }"
+                :disabled="isReadOnlyField(col)"
+                :readonly="isReadOnlyField(col)"
                 mode="currency"
                 currency="PHP"
                 locale="en-PH"
@@ -1457,6 +1482,9 @@
                 fluid
                 size="small"
                 class="w-100" 
+                :class="{ 'p-disabled bg-light': isReadOnlyField(col) }"
+                :disabled="isReadOnlyField(col)"
+                :readonly="isReadOnlyField(col)"
                 :useGrouping="false"
                 :min="0"
                 :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
@@ -1481,9 +1509,12 @@
                 v-model="formData[col]" 
                 class="w-100 p-inputtext-sm" 
                 :class="{ 
+                  'bg-light text-muted': isReadOnlyField(col),
                   'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
                   'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
                 }" 
+                :disabled="isReadOnlyField(col)"
+                :readonly="isReadOnlyField(col)"
                 :placeholder="col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)" 
               />
 
@@ -1848,6 +1879,7 @@
                 {{ formatLabel(col) }}
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
                 <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
+                <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
 
               <!-- Combined Barangay 1 & Barangay 2 Column in Edit Modal (Stacked) -->
@@ -2224,6 +2256,20 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Payment Method / Transaction Type Dropdown in Edit Modal -->
+              <Select 
+                v-else-if="getFieldType(col) === 'paymentmethod_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="getPaymentMethodOptions(editFormData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Payment Method" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 'p-invalid': hasFieldError('edit', col) }"
+              />
+
               <!-- Delivery Status Dropdown -->
               <Select 
                 v-else-if="getFieldType(col) === 'deliverystatus_dropdown'" 
@@ -2517,6 +2563,9 @@
                 fluid
                 size="small"
                 class="w-100" 
+                :class="{ 'p-disabled bg-light': isReadOnlyField(col) }"
+                :disabled="isReadOnlyField(col)"
+                :readonly="isReadOnlyField(col)"
                 mode="currency"
                 currency="PHP"
                 locale="en-PH"
@@ -2534,6 +2583,9 @@
                 fluid
                 size="small"
                 class="w-100" 
+                :class="{ 'p-disabled bg-light': isReadOnlyField(col) }"
+                :disabled="isReadOnlyField(col)"
+                :readonly="isReadOnlyField(col)"
                 :useGrouping="false"
                 :min="0"
                 :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
@@ -2558,9 +2610,12 @@
                 v-model="editFormData[col]" 
                 class="w-100 p-inputtext-sm" 
                 :class="{ 
+                  'bg-light text-muted': isReadOnlyField(col),
                   'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
                   'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
                 }" 
+                :disabled="isReadOnlyField(col)"
+                :readonly="isReadOnlyField(col)"
                 :placeholder="col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)" 
               />
 
@@ -3054,7 +3109,8 @@ const isWideForm = computed(() => {
     ep === 'service_orders' ||
     ep === 'service_order' ||
     ep === 'discounts' ||
-    ep === 'discount'
+    ep === 'discount' ||
+    isPaymentEndpoint.value
   )
 })
 
@@ -3228,11 +3284,12 @@ function formatLabel(col) {
     if (k === 'fullname') return 'Contact Number'
     if (k === 'contactno') return 'Paid Amount'
     if (k === 'receivedpayment') return 'Payment Date'
-    if (k === 'paymentmethod') return 'Reference #'
-    if (k === 'image') return 'Fiber Plan'
+    if (k === 'paymentmethod') return 'Payment Method'
+    if (k === 'referenceno') return 'Reference #'
+    if (k === 'image' || k === 'plan' || k === 'fiberplan') return 'Fiber Plan'
     if (k === 'useremail') return 'Status'
     if (k === 'provider') return 'Fee Type'
-    if (k === 'remarks') return 'Processed By'
+    if (k === 'remarks' || k === 'processedby') return 'Processed By'
   }
 
   const customOverrides = {
@@ -3447,6 +3504,26 @@ function getFieldType(col) {
   if (!col) return 'text'
   const lower = col.toLowerCase().replace(/_/g, '')
 
+  // Payments endpoint specific overrides:
+  // - Fiber Plan (stored in image, plan, or fiberplan) must link to Plan API as a dropdown
+  // - Processed By (stored in remarks or processedby) is an input field, never a textarea
+  if (isPaymentEndpoint.value) {
+    if (lower === 'image' || lower === 'fiberplan' || lower === 'plan') {
+      return 'plan_dropdown'
+    }
+    if (lower === 'remarks' || lower === 'processedby') {
+      return 'text'
+    }
+  }
+
+  // Generic overrides for Fiber Plan and Processed By across any table
+  if (lower === 'fiberplan' || lower === 'fiber_plan') {
+    return 'plan_dropdown'
+  }
+  if (lower === 'processedby' || lower === 'processed_by') {
+    return 'text'
+  }
+
   // Image / Picture upload fields (Government Valid ID, Second Government Valid ID, House Front Picture, Document Picture, Picture of Statement Billing From Other Provider, etc.)
   if (
     lower.includes('picture') ||
@@ -3529,6 +3606,14 @@ function getFieldType(col) {
   }
   if (lower === 'invoicestatus' || lower === 'invoice_status' || (isInvoiceEndpoint.value && lower === 'status')) {
     return 'invoicestatus_dropdown'
+  }
+  if (
+    lower === 'paymentmethod' ||
+    lower === 'payment_method' ||
+    lower === 'transactiontype' ||
+    lower === 'transaction_type'
+  ) {
+    return 'paymentmethod_dropdown'
   }
   if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
     return 'accesslevel_dropdown'
@@ -3977,6 +4062,13 @@ const columns = computed(() => {
     return true
   })
 })
+
+// Check if a field is configured to be strictly read-only in Create and Edit forms
+function isReadOnlyField(col) {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  return lower === 'accountbalance' || lower === 'accountbal'
+}
 
 function isAuditField(col) {
   if (!col) return false
@@ -5906,6 +5998,47 @@ const DISCOUNT_FORM_LAYOUT = [
   }
 ]
 
+const PAYMENT_FORM_LAYOUT = [
+  {
+    key: 'transaction',
+    title: 'Payment & Transaction Details',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-primary',
+    columns: [
+      'transactionID',
+      'accountNo',
+      'fullName',
+      'contactNo',
+      'receivedPayment',
+      'paymentMethod',
+      'transactionType',
+      'referenceNo',
+      'orNo',
+      'image',
+      'plan',
+      'accountBalance',
+      'status',
+      'provider'
+    ]
+  },
+  {
+    key: 'processing',
+    title: 'Processing & Location Information',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-info',
+    columns: [
+      'remarks',
+      'processedBy',
+      'dateProcessed',
+      'paymentDate',
+      'location',
+      'barangay',
+      'city',
+      'userEmail'
+    ]
+  }
+]
+
 // Generic layout builder helper for standardized section construction
 const buildLayoutSections = (cols, layout, { includeAudit = false } = {}) => {
   const pool = new Map()
@@ -5964,6 +6097,7 @@ const buildMenuSections = (cols, opts) => buildLayoutSections(cols, MENU_FORM_LA
 const buildAccessLevelSections = (cols, opts) => buildLayoutSections(cols, ACCESS_LEVEL_FORM_LAYOUT, opts)
 const buildDiscountTypeSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_TYPE_FORM_LAYOUT, opts)
 const buildDiscountSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_FORM_LAYOUT, opts)
+const buildPaymentSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_FORM_LAYOUT, opts)
 
 // Columns for Create & Edit forms (excludes system audit fields completely)
 const formSections = computed(() => {
@@ -6005,6 +6139,9 @@ const formSections = computed(() => {
   }
   if (isDiscountEndpoint.value) {
     return buildDiscountSections(formColumns.value)
+  }
+  if (isPaymentEndpoint.value) {
+    return buildPaymentSections(formColumns.value)
   }
 
   const groups = {
@@ -6104,6 +6241,9 @@ const viewFormSections = computed(() => {
   }
   if (isDiscountEndpoint.value) {
     return buildDiscountSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isPaymentEndpoint.value) {
+    return buildPaymentSections(viewFormColumns.value, { includeAudit: true })
   }
 
   const groups = {
@@ -6638,6 +6778,16 @@ const discountStatusOptions = ref([
   { label: 'Cancelled', value: 'Cancelled' }
 ])
 
+const paymentMethodOptions = ref([
+  { label: 'Cash', value: 'Cash' },
+  { label: 'GCash', value: 'GCash' },
+  { label: 'May Bank', value: 'May Bank' }
+])
+
+const getPaymentMethodOptions = (currentVal) => {
+  return getStableOptionsWithCurrent(paymentMethodOptions.value, currentVal)
+}
+
 const unwrapList = (val) => {
   if (!val) return []
   if (Array.isArray(val)) return val
@@ -7059,6 +7209,7 @@ const requiredColumns = computed(() =>
 )
 
 const isFieldRequired = (col) => {
+  if (isReadOnlyField(col)) return false
   if (!requiredColumns.value.has(col)) return false
   // A toggle always holds a boolean, so it can never be "missing".
   if (getFieldType(col) === 'toggle') return false
@@ -8241,6 +8392,7 @@ const formatDisplayValue = (val, col) => {
     }
   }
   else if (type === 'discount_dropdown') targetList = discountsList.value
+  else if (type === 'paymentmethod_dropdown') targetList = paymentMethodOptions.value
 
   if (targetList && targetList.length > 0) {
     const found = targetList.find(opt => 
@@ -8327,8 +8479,12 @@ const openCreateDialog = () => {
       formData.value[col] = 'None'
     } else if (type === 'discountstatus_dropdown' && discountStatusOptions.value.length > 0) {
       formData.value[col] = discountStatusOptions.value[0].value
+    } else if (type === 'paymentmethod_dropdown' && paymentMethodOptions.value.length > 0) {
+      formData.value[col] = paymentMethodOptions.value[0].value
     } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown' || type === 'discounttype_dropdown') {
       formData.value[col] = null
+    } else if (isReadOnlyField(col)) {
+      formData.value[col] = 0
     } else {
       formData.value[col] = ''
     }
@@ -8709,6 +8865,9 @@ const saveData = async () => {
       if ((getFieldType(col) === 'phone' || isPhoneField(col)) && payload[col] !== undefined && payload[col] !== null) {
         payload[col] = normalizePhoneNumber(payload[col])
       }
+      if (isReadOnlyField(col)) {
+        payload[col] = 0
+      }
     })
 
     const numericUserId = Number(authStore.user?.id) || 1
@@ -8884,6 +9043,21 @@ const openEditDialog = async (record) => {
     if (getFieldType(col) === 'billingday_dropdown') {
       const day = editFormData.value[col]
       editFormData.value[col] = (day === null || day === undefined || day === '') ? null : String(day)
+    }
+    if (getFieldType(col) === 'paymentmethod_dropdown') {
+      const current = editFormData.value[col]
+      if (current !== null && current !== undefined && String(current).trim() !== '') {
+        const match = paymentMethodOptions.value.find(o =>
+          String(o.value).toLowerCase().replace(/[\s_-]+/g, '') === String(current).toLowerCase().replace(/[\s_-]+/g, '')
+        )
+        if (match) {
+          editFormData.value[col] = match.value
+        }
+      }
+    }
+    if (isReadOnlyField(col)) {
+      const bal = editFormData.value[col]
+      editFormData.value[col] = (bal === null || bal === undefined || bal === '') ? 0 : Number(bal)
     }
   })
 
@@ -9160,6 +9334,9 @@ const saveEdit = async () => {
     formColumns.value.forEach(col => {
       if ((getFieldType(col) === 'phone' || isPhoneField(col)) && payload[col] !== undefined && payload[col] !== null) {
         payload[col] = normalizePhoneNumber(payload[col])
+      }
+      if (isReadOnlyField(col) && editBaseSnapshot.value && editBaseSnapshot.value[col] !== undefined) {
+        payload[col] = editBaseSnapshot.value[col]
       }
     })
 
@@ -10015,16 +10192,22 @@ const needsDiscountTypeLookup = computed(() =>
   isDiscountEndpoint.value
 )
 
+const needsPlanLookup = computed(() =>
+  columns.value.some(c => getFieldType(c) === 'plan_dropdown') ||
+  isPaymentEndpoint.value
+)
+
 const refreshTableLookups = () => {
   if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
   if (needsUserLookup.value) fetchUsersLookup()
   if (needsDiscountTypeLookup.value) fetchDiscountTypesLookup()
+  if (needsPlanLookup.value) fetchFormLookups()
 }
 
 // Runs immediately off the static fallback columns, then again if the fetched
 // rows turn out to carry a column the fallback list did not declare — so an
 // endpoint missing from EndpointColumns still resolves its labels.
-watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup], refreshTableLookups, { immediate: true })
+watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup], refreshTableLookups, { immediate: true })
 
 onMounted(() => {
   fetchAddressData()

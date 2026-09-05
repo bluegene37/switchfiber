@@ -264,6 +264,7 @@ export const EndpointColumns = {
     "userEmail",
     "status",
     "provider",
+    "transactionType",
     "image",
     "plan",
     "accountBalance",
