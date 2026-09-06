@@ -31,20 +31,28 @@ coverage
 .env.local
 .env.*.local
 
-# AI Assistants & Tools (Local caches, session logs, worktrees)
+# AI Assistants & Tools (configs, skills, caches, session logs, worktrees)
+.agents/
+.claude/
 .gstack/
-.claude/worktrees/
-.claude/*.local.*
+.cursor/
+.windsurf/
 .gemini/
 .antigravity/
 .agy/
 *.chat
 *.session
 
-# Documentation, Reports, & PDF Artifacts
+# AI instruction files
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+
+# Documentation, Reports, & PDF Artifacts (no markdown is tracked in this repo)
 docs/
+*.md
 *.pdf
-GENE_GUIDE.md
+.github/ISSUE_TEMPLATE/
 
 # Tests & Test Fixtures
 tests/
@@ -56,3 +64,4 @@ scripts/capture_*.js
 scripts/generate_*_pdf.js
 scripts/run_*.js
 scripts/full_beta_test_matrix.js
+scripts/execute_all_menu_crud.js
