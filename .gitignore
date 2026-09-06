@@ -48,9 +48,10 @@ CLAUDE.md
 AGENTS.md
 GEMINI.md
 
-# Documentation, Reports, & PDF Artifacts (no markdown is tracked in this repo)
+# Documentation, Reports, & PDF Artifacts (only README.md is tracked)
 docs/
 *.md
+!README.md
 *.pdf
 .github/ISSUE_TEMPLATE/
 
