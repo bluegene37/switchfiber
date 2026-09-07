@@ -1026,6 +1026,23 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Assigned Email: pick a user by name, store their email -->
+              <Select
+                v-else-if="getFieldType(col) === 'assignedemail_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="getAssignedUserOptions(formData[col])"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                filterPlaceholder="Search by name or email"
+                :showClear="true"
+                :loading="assignedUsersLoading"
+                placeholder="Select User"
+                class="w-100 p-inputtext-sm"
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
+              />
+
               <!-- Province Dropdown (the API column is named `region` but stores the province) -->
               <Select
                 v-else-if="getFieldType(col) === 'region_dropdown'"
@@ -2155,6 +2172,24 @@
                 :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Referrer" 
                 class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Assigned Email: pick a user by name, store their email -->
+              <Select
+                v-else-if="getFieldType(col) === 'assignedemail_dropdown'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="getAssignedUserOptions(editFormData[col])"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                filterPlaceholder="Search by name or email"
+                :showClear="true"
+                :loading="assignedUsersLoading"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select User"
+                class="w-100 p-inputtext-sm"
+                :class="{ 'p-invalid': hasFieldError('edit', col) }"
               />
 
               <!-- Province Dropdown (the API column is named `region` but stores the province) -->
@@ -3624,6 +3659,11 @@ function getFieldType(col) {
     return 'coordinates'
   }
 
+  // Assigned Email names a user from /Users. The picker shows names and stores
+  // the email, so it has to be claimed before the generic email input below.
+  if (lower === 'assignedemail' || lower === 'assigned_email') {
+    return 'assignedemail_dropdown'
+  }
   if (lower.includes('email')) {
     return 'email'
   }
@@ -6650,6 +6690,33 @@ const getReferrerOptions = (currentVal) => {
   return getStableOptionsWithCurrent(referrerOptions.value, currentVal)
 }
 
+// Assigned Email options: every /Users row with an email, labelled by name so
+// the picker reads "Gene Ray Medel" while the record stores bluegene37@gmail.com.
+// The label also carries the email so type-to-filter finds a user either way.
+// Every user is offered for now; narrowing to technicians is a later step.
+const assignedUsersLoading = ref(false)
+const assignedUserOptions = computed(() => {
+  const seen = new Set()
+  const list = []
+  const combined = [...(usersList.value || []), ...(userStore.users || [])]
+  combined.forEach(u => {
+    const email = u && u.email ? String(u.email).trim() : ''
+    if (!email) return
+    const key = email.toLowerCase()
+    if (seen.has(key)) return
+    seen.add(key)
+    const fullName = [u.fname || u.firstName || u.first_name, u.lname || u.lastName || u.last_name]
+      .filter(Boolean).join(' ').trim()
+    const name = fullName || u.username || u.name || email
+    list.push({ label: name === email ? email : `${name} (${email})`, value: email })
+  })
+  return list.sort((a, b) => a.label.localeCompare(b.label))
+})
+
+const getAssignedUserOptions = (currentVal) => {
+  return getStableOptionsWithCurrent(assignedUserOptions.value, currentVal)
+}
+
 const getPlanOptions = (col, currentVal) => {
   const isIdField = col && (col.toLowerCase() === 'planid' || col.toLowerCase() === 'plan_id')
   const baseOptions = plansList.value.map(p => ({
@@ -7023,6 +7090,7 @@ let usersLookupPromise = null
 
 const fetchUsersLookup = () => {
   if (usersLookupPromise) return usersLookupPromise
+  assignedUsersLoading.value = true
   usersLookupPromise = apiClient.get('/Users')
     .then(res => {
       const unwrappedUsers = unwrapList(res)
@@ -7035,6 +7103,7 @@ const fetchUsersLookup = () => {
       console.error('Error fetching users:', err)
       usersLookupPromise = null
     })
+    .finally(() => { assignedUsersLoading.value = false })
   return usersLookupPromise
 }
 
@@ -9301,6 +9370,13 @@ const openEditDialog = async (record) => {
       }
       else if (type === 'discount_dropdown') targetList = getDiscountOptions(col, val)
       else if (type === 'referredby_dropdown') targetList = getReferrerOptions(val)
+      else if (type === 'assignedemail_dropdown') {
+        // Match case-insensitively so a stored Email@X.com selects the user row
+        // for email@x.com instead of adding a duplicate entry.
+        const wanted = String(val).trim().toLowerCase()
+        const match = assignedUserOptions.value.find(opt => opt.value.toLowerCase() === wanted)
+        if (match) editFormData.value[col] = match.value
+      }
 
       if (targetList && targetList.length > 0) {
         const match = targetList.find(opt => opt.value === val || opt.value === String(val) || opt.id === val || opt.id === Number(val))
@@ -10273,7 +10349,9 @@ const fetchCurrentUserPermissions = async () => {
 const needsAccessLevelLookup = computed(() =>
   columns.value.some(c => normalizeColKey(c) === 'accesslevelid')
 )
-const needsUserLookup = computed(() => columns.value.some(isUserRefField))
+const needsUserLookup = computed(() =>
+  columns.value.some(c => isUserRefField(c) || getFieldType(c) === 'assignedemail_dropdown')
+)
 // Plans.discountId, Applications.applicablePromo and Discounts.discounttype_id
 // all print a discount type NAME in the grid, which needs /DiscountTypes loaded
 // before the first render rather than on the first dialog open.
