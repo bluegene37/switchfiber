@@ -744,6 +744,16 @@
             </h6>
             <div class="d-flex align-items-center gap-2">
               <button
+                v-if="sec.key === QUICK_SECTION_KEY"
+                type="button"
+                class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1 px-2"
+                title="Restore the default Quick Fields for this table"
+                @click="resetPinnedFields"
+              >
+                <i class="pi pi-refresh" style="font-size: 0.75rem;"></i>
+                <span>Reset</span>
+              </button>
+              <button
                 v-if="showMapPickerButton(sec)"
                 type="button"
                 class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
@@ -763,26 +773,51 @@
             <div
               v-for="col in sec.columns"
               :key="col"
-              :id="fieldWrapId('create', col)"
+              :id="isPinnedPlaceholder(sec, col) ? `${fieldWrapId('create', col)}-pinned` : fieldWrapId('create', col)"
               :class="[
                 'sfa-form-field',
                 `sfa-form-field-${String(col).toLowerCase()}`,
                 getColumnClass(col),
                 {
                   'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress'),
-                  'field-invalid': hasFieldError('create', col) || (normalizeColKey(col) === 'barangay1' && (hasFieldError('create', 'barangay1') || hasFieldError('create', 'barangay2'))) || (normalizeColKey(col) === 'visitwithother' && (hasFieldError('create', 'visitWithOther') || hasFieldError('create', 'userEmail')))
+                  'sfa-form-field-pinned-placeholder': isPinnedPlaceholder(sec, col),
+                  'field-invalid': !isPinnedPlaceholder(sec, col) && (hasFieldError('create', col) || (normalizeColKey(col) === 'barangay1' && (hasFieldError('create', 'barangay1') || hasFieldError('create', 'barangay2'))) || (normalizeColKey(col) === 'visitwithother' && (hasFieldError('create', 'visitWithOther') || hasFieldError('create', 'userEmail'))))
                 }
               ]"
             >
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="col" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
+                <button
+                  v-if="canPinField(col)"
+                  type="button"
+                  class="sfa-pin-btn"
+                  :class="{ 'is-pinned': isPinned(col) }"
+                  :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                  :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                  :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                  @click.prevent.stop="togglePin(col)"
+                ><i class="pi pi-thumbtack"></i></button>
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
                 <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
                 <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
 
+              <!-- Pinned stand-in: the editable input lives in Quick Fields at the top.
+                   Keeping the slot means the section layout never shifts when a field is pinned. -->
+              <div
+                v-if="isPinnedPlaceholder(sec, col)"
+                class="sfa-pinned-tile"
+                role="group"
+                :aria-label="`${formatLabel(col)} is pinned to Quick Fields`"
+              >
+                <span class="sfa-pinned-tile-value text-truncate" :title="pinnedTileValue('create', col)">{{ pinnedTileValue('create', col) }}</span>
+                <button type="button" class="sfa-pinned-tile-link" @click="jumpToPinnedField('create', col)">
+                  <i class="pi pi-arrow-up"></i><span>Edit at top</span>
+                </button>
+              </div>
+
               <!-- Combined Barangay 1 & Barangay 2 Column (Stacked) -->
-              <div v-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
+              <div v-else-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
                 <div>
                   <label :for="`create-barangay1`" class="form-label fw-medium text-body small mb-1">
                     Barangay 1
@@ -1536,7 +1571,7 @@
               />
 
               <div
-                v-if="hasFieldError('create', col)"
+                v-if="!isPinnedPlaceholder(sec, col) && hasFieldError('create', col)"
                 class="field-error-hint mt-1 d-flex align-items-center gap-1"
               >
                 <i class="pi pi-exclamation-circle"></i>
@@ -1862,6 +1897,16 @@
             </h6>
             <div class="d-flex align-items-center gap-2">
               <button
+                v-if="sec.key === QUICK_SECTION_KEY"
+                type="button"
+                class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1 px-2"
+                title="Restore the default Quick Fields for this table"
+                @click="resetPinnedFields"
+              >
+                <i class="pi pi-refresh" style="font-size: 0.75rem;"></i>
+                <span>Reset</span>
+              </button>
+              <button
                 v-if="showMapPickerButton(sec)"
                 type="button"
                 class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
@@ -1881,27 +1926,52 @@
             <div
               v-for="col in sec.columns"
               :key="col"
-              :id="fieldWrapId('edit', col)"
+              :id="isPinnedPlaceholder(sec, col) ? `${fieldWrapId('edit', col)}-pinned` : fieldWrapId('edit', col)"
               :class="[
                 'sfa-form-field',
                 `sfa-form-field-${String(col).toLowerCase()}`,
                 getColumnClass(col),
                 {
                   'd-flex flex-column': isApplicationEndpoint && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress'),
-                  'field-invalid': hasFieldError('edit', col) || (normalizeColKey(col) === 'barangay1' && (hasFieldError('edit', 'barangay1') || hasFieldError('edit', 'barangay2'))) || (normalizeColKey(col) === 'visitwithother' && (hasFieldError('edit', 'visitWithOther') || hasFieldError('edit', 'userEmail')))
+                  'sfa-form-field-pinned-placeholder': isPinnedPlaceholder(sec, col),
+                  'field-invalid': !isPinnedPlaceholder(sec, col) && (hasFieldError('edit', col) || (normalizeColKey(col) === 'barangay1' && (hasFieldError('edit', 'barangay1') || hasFieldError('edit', 'barangay2'))) || (normalizeColKey(col) === 'visitwithother' && (hasFieldError('edit', 'visitWithOther') || hasFieldError('edit', 'userEmail'))))
                 }
               ]"
             >
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
+                <button
+                  v-if="canPinField(col)"
+                  type="button"
+                  class="sfa-pin-btn"
+                  :class="{ 'is-pinned': isPinned(col) }"
+                  :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                  :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                  :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                  @click.prevent.stop="togglePin(col)"
+                ><i class="pi pi-thumbtack"></i></button>
                 <span v-if="isFieldRequired(col, 'edit')" class="text-danger ms-1" title="Required">*</span>
                 <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
                 <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
                 <span v-else-if="isFieldDisabledInEdit(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
 
+              <!-- Pinned stand-in: the editable input lives in Quick Fields at the top.
+                   Keeping the slot means the section layout never shifts when a field is pinned. -->
+              <div
+                v-if="isPinnedPlaceholder(sec, col)"
+                class="sfa-pinned-tile"
+                role="group"
+                :aria-label="`${formatLabel(col)} is pinned to Quick Fields`"
+              >
+                <span class="sfa-pinned-tile-value text-truncate" :title="pinnedTileValue('edit', col)">{{ pinnedTileValue('edit', col) }}</span>
+                <button type="button" class="sfa-pinned-tile-link" @click="jumpToPinnedField('edit', col)">
+                  <i class="pi pi-arrow-up"></i><span>Edit at top</span>
+                </button>
+              </div>
+
               <!-- Combined Barangay 1 & Barangay 2 Column in Edit Modal (Stacked) -->
-              <div v-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
+              <div v-else-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
                 <div>
                   <label :for="`edit-barangay1`" class="form-label fw-medium text-body small mb-1">
                     Barangay 1
@@ -2717,7 +2787,7 @@
               />
 
               <div
-                v-if="hasFieldError('edit', col)"
+                v-if="!isPinnedPlaceholder(sec, col) && hasFieldError('edit', col)"
                 class="field-error-hint mt-1 d-flex align-items-center gap-1"
               >
                 <i class="pi pi-exclamation-circle"></i>
@@ -6223,7 +6293,116 @@ const buildDiscountSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT
 const buildPaymentSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_FORM_LAYOUT, opts)
 
 // Columns for Create & Edit forms (excludes system audit fields completely)
+// ---- Quick Fields ---------------------------------------------------------
+// Fields a user reaches for on every record can be pinned to a "Quick Fields"
+// card at the top of Create and Update. The pinned field keeps its slot in its
+// home section as a read-only stand-in, so pinning never reflows the form.
+// Pins are personal (per user, per table) and shared by both dialogs. They live
+// in localStorage for now; the API has no preferences endpoint yet, so the
+// stored shape is {"<userId>:<table>": [columns]} to make a server move easy.
+const QUICK_SECTION_KEY = 'quick'
+const PINNED_FIELDS_STORAGE_KEY = 'switchfiber_pinned_fields_v1'
+const DEFAULT_PINNED_FIELDS = {
+  joborders: ['status', 'assignedEmail', 'planId', 'installationFee', 'billingDay', 'contactNumber']
+}
+const pinnedFields = ref([])
+const pinnedEndpointKey = computed(() => String(props.endpoint || '').toLowerCase().replace(/[^a-z0-9]/g, ''))
+const pinnedStoreKey = computed(() => `${authStore.user?.id ?? 'anon'}:${pinnedEndpointKey.value}`)
+const defaultPinnedFields = () => [...(DEFAULT_PINNED_FIELDS[pinnedEndpointKey.value] || [])]
+
+const readPinnedStore = () => {
+  try {
+    const raw = localStorage.getItem(PINNED_FIELDS_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+const loadPinnedFields = () => {
+  const saved = readPinnedStore()[pinnedStoreKey.value]
+  pinnedFields.value = Array.isArray(saved)
+    ? saved.filter(c => typeof c === 'string' && c.trim() !== '')
+    : defaultPinnedFields()
+}
+const savePinnedFields = () => {
+  try {
+    const store = readPinnedStore()
+    store[pinnedStoreKey.value] = [...pinnedFields.value]
+    localStorage.setItem(PINNED_FIELDS_STORAGE_KEY, JSON.stringify(store))
+  } catch (err) {
+    console.warn('[DynamicApiTable] Could not save pinned fields:', err)
+  }
+}
+watch(pinnedStoreKey, loadPinnedFields, { immediate: true })
+
+// Pinned names resolved against the columns this form actually shows, in pin
+// order. A stored pin for a column the table no longer has is simply skipped.
+const pinnedFormColumns = computed(() => {
+  const cols = formColumns.value || []
+  const out = []
+  pinnedFields.value.forEach(p => {
+    const match = cols.find(c => String(c).toLowerCase() === String(p).toLowerCase())
+    if (match && !out.includes(match)) out.push(match)
+  })
+  return out
+})
+const isPinned = (col) => pinnedFormColumns.value.includes(col)
+// The two stacked composites render their own labels and two inputs each, so
+// they cannot be pinned as a unit.
+const canPinField = (col) => {
+  const key = normalizeColKey(col)
+  return key !== 'barangay1' && key !== 'visitwithother'
+}
+const togglePin = (col) => {
+  const lower = String(col).toLowerCase()
+  pinnedFields.value = isPinned(col)
+    ? pinnedFields.value.filter(p => String(p).toLowerCase() !== lower)
+    : [...pinnedFields.value, col]
+  savePinnedFields()
+}
+const resetPinnedFields = () => {
+  pinnedFields.value = defaultPinnedFields()
+  savePinnedFields()
+  toast.add({ severity: 'info', summary: 'Quick Fields reset', detail: 'Default Quick Fields restored for this table.', life: 2500 })
+}
+// True in a home section for a column that also renders at the top.
+const isPinnedPlaceholder = (sec, col) => !!sec && sec.key !== QUICK_SECTION_KEY && isPinned(col)
+
+const pinnedTileValue = (scope, col) => {
+  const data = scope === 'edit' ? editFormData.value : formData.value
+  const val = data ? data[col] : undefined
+  if (val === null || val === undefined || String(val).trim() === '') return 'Not set'
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? 'Not set' : val.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+  }
+  if (getFieldType(col) === 'assignedemail_dropdown') {
+    const wanted = String(val).trim().toLowerCase()
+    const match = assignedUserOptions.value.find(o => o.value.toLowerCase() === wanted)
+    if (match) return match.label
+  }
+  return formatDisplayValue(val, col)
+}
+
+const jumpToPinnedField = (scope, col) => {
+  const el = document.getElementById(fieldWrapId(scope, col))
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  const focusable = el.querySelector('input, textarea, select, [tabindex]:not([tabindex="-1"])')
+  if (focusable && typeof focusable.focus === 'function') focusable.focus({ preventScroll: true })
+}
+
 const formSections = computed(() => {
+  const base = baseFormSections.value
+  const quick = pinnedFormColumns.value
+  if (!quick.length) return base
+  return [
+    { key: QUICK_SECTION_KEY, title: 'Quick Fields', icon: 'pi pi-thumbtack', badgeClass: 'text-primary', columns: quick },
+    ...base
+  ]
+})
+
+const baseFormSections = computed(() => {
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(formColumns.value)
   }
@@ -10408,6 +10587,72 @@ defineExpose({
 </script>
 
 <style scoped>
+/* Quick Fields: pin toggle on labels and the stand-in tile left in a pinned field's home slot */
+.sfa-pin-btn {
+  background: none;
+  border: 0;
+  padding: 0 0.15rem;
+  margin-left: 0.25rem;
+  line-height: 1;
+  color: var(--bs-secondary-color, #6c757d);
+  opacity: 0.45;
+  cursor: pointer;
+  vertical-align: baseline;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+.sfa-pin-btn .pi {
+  font-size: 0.7rem;
+}
+.sfa-form-field:hover .sfa-pin-btn,
+.sfa-pin-btn:focus-visible {
+  opacity: 1;
+}
+.sfa-pin-btn.is-pinned {
+  opacity: 1;
+  color: var(--bs-primary, #0d6efd);
+}
+.sfa-pin-btn:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.sfa-pinned-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px dashed var(--bs-border-color, #dee2e6);
+  border-radius: 0.375rem;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.85rem;
+}
+.sfa-pinned-tile-value {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.sfa-pinned-tile-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--bs-primary, #0d6efd);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sfa-pinned-tile-link .pi {
+  font-size: 0.65rem;
+}
+.sfa-pinned-tile-link:hover {
+  text-decoration: underline;
+}
 /* Long identity values (descriptions, addresses) have to wrap inside the
    delete dialog instead of pushing the flex row wider than the modal. */
 .delete-dialog-body {
