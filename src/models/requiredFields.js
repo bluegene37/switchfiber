@@ -70,12 +70,12 @@ const ENDPOINT_OVERRIDES = {
   joborders: [ // schema says 78
     'firstName', 'lastName', 'contactNumber', 'address',
     'region', 'city', 'barangay', 'planId', 'status',
-    // Numeric columns the API refuses to take blank in either spelling: null
-    // answers 400 "The BillingDay field is required", '' answers 500 because
-    // the empty string cannot be converted to a number. Left off this list,
-    // a job order with an empty fee or billing day could not be saved at all
-    // and the dialog gave no clue which field to fill in.
-    'installationFee', 'billingDay'
+    // billingDay backs a numeric column. Blank goes up as null (see
+    // buildJobOrderPayload); the API accepts that since 2026-09-08 but the
+    // business rule still wants a billing day on every job order.
+    // installationFee is optional as of 2026-09-08 (backend team's call): a
+    // blank fee is sent as null and accepted.
+    'billingDay'
   ],
   billingdetails: [ // schema says 34
     'fullName', 'contactNumber', 'address',
