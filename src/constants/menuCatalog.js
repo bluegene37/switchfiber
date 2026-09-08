@@ -29,7 +29,7 @@ export const normalizeMenuName = (name) =>
 export const stemMenuToken = (token) => {
   const t = String(token ?? '').toLowerCase().trim()
   if (!t) return ''
-  
+
   // Custom irregular or domain-specific word stemming
   if (t === 'joborders' || t === 'joborder') return 'job order'
   if (t === 'maindashboard' || t === 'maindashboards') return 'main dashboard'
@@ -45,7 +45,7 @@ export const stemMenuToken = (token) => {
   if (t === 'lcnapport' || t === 'lcnapports') return 'lcnap port'
   if (t === 'discounttypes' || t === 'discounttype') return 'discount type'
   if (t === 'discounts' || t === 'discount') return 'discount'
-  
+
   // Standard plural stripping
   if (t.endsWith('ies') && t.length > 4) return t.slice(0, -3) + 'y'
   if (t.endsWith('es') && (t.endsWith('shes') || t.endsWith('ches') || t.endsWith('xes') || t.endsWith('sses'))) {

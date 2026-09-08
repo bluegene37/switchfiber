@@ -732,9 +732,46 @@
         <i class="pi pi-exclamation-triangle me-2"></i> {{ saveError }}
       </div>
 
+      <!-- Field search: narrows every section card below to the matching fields -->
+      <div class="sfa-field-search d-flex align-items-center gap-2 mt-2 mb-2 pe-2">
+        <div class="position-relative toolbar-search-wrapper sfa-field-search-wrapper flex-grow-1">
+          <i class="pi pi-search search-icon text-secondary pointer-events-none"></i>
+          <input
+            id="field-search-create"
+            v-model="fieldSearch.create"
+            type="text"
+            class="form-control form-control-sm toolbar-search-input rounded-3 shadow-none border"
+            placeholder="Find a field..."
+            aria-label="Find a field in this form"
+            autocomplete="off"
+            @keydown.esc="onFieldSearchEscape('create', $event)"
+          />
+          <button
+            v-if="fieldSearch.create"
+            type="button"
+            class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 clear-search-btn"
+            @click="clearFieldSearch('create')"
+            v-tooltip.top="'Clear field search'"
+            aria-label="Clear field search"
+          >
+            <i class="pi pi-times" style="font-size: 0.75rem;"></i>
+          </button>
+        </div>
+        <span
+          v-if="fieldSearchActive('create')"
+          class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal text-nowrap"
+          aria-live="polite"
+        >{{ fieldSearchSummary('create') }}</span>
+      </div>
+
       <div class="pe-2 mt-2 sfa-tracker-dialog-create-body" style="max-height: 72vh; overflow-y: auto;">
+        <div v-if="fieldSearchEmpty('create')" class="sfa-field-search-empty text-center text-muted small py-4 bg-body-tertiary rounded-3 border border-dashed mb-3">
+          <i class="pi pi-search-minus me-1"></i> No fields match "{{ fieldSearch.create.trim() }}".
+          <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" @click="clearFieldSearch('create')">Show all fields</button>
+        </div>
         <div 
           v-for="sec in formSections" 
+          v-show="isSectionShown('create', sec)"
           :key="sec.key" 
           class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
         >
@@ -764,7 +801,7 @@
                 <span>Pin on Map</span>
               </button>
               <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
-                {{ (sec.columns || []).length }} {{ (sec.columns || []).length === 1 ? 'field' : 'fields' }}
+                {{ sectionFieldCountLabel('create', sec) }}
               </span>
             </div>
           </div>
@@ -774,6 +811,7 @@
               v-for="col in sec.columns"
               :key="col"
               :id="isPinnedPlaceholder(sec, col) ? `${fieldWrapId('create', col)}-pinned` : fieldWrapId('create', col)"
+              v-show="isFieldShown('create', sec, col)"
               :class="[
                 'sfa-form-field',
                 `sfa-form-field-${String(col).toLowerCase()}`,
@@ -1597,9 +1635,46 @@
       :style="modalStyle"
       :breakpoints="modalBreakpoints"
     >
+      <!-- Field search: narrows every section card below to the matching fields -->
+      <div class="sfa-field-search d-flex align-items-center gap-2 mt-2 mb-2 pe-2">
+        <div class="position-relative toolbar-search-wrapper sfa-field-search-wrapper flex-grow-1">
+          <i class="pi pi-search search-icon text-secondary pointer-events-none"></i>
+          <input
+            id="field-search-view"
+            v-model="fieldSearch.view"
+            type="text"
+            class="form-control form-control-sm toolbar-search-input rounded-3 shadow-none border"
+            placeholder="Find a field..."
+            aria-label="Find a field in this form"
+            autocomplete="off"
+            @keydown.esc="onFieldSearchEscape('view', $event)"
+          />
+          <button
+            v-if="fieldSearch.view"
+            type="button"
+            class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 clear-search-btn"
+            @click="clearFieldSearch('view')"
+            v-tooltip.top="'Clear field search'"
+            aria-label="Clear field search"
+          >
+            <i class="pi pi-times" style="font-size: 0.75rem;"></i>
+          </button>
+        </div>
+        <span
+          v-if="fieldSearchActive('view')"
+          class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal text-nowrap"
+          aria-live="polite"
+        >{{ fieldSearchSummary('view') }}</span>
+      </div>
+
       <div class="pe-2 mt-2 sfa-tracker-dialog-view-body" style="max-height: 72vh; overflow-y: auto;">
+        <div v-if="fieldSearchEmpty('view')" class="sfa-field-search-empty text-center text-muted small py-4 bg-body-tertiary rounded-3 border border-dashed mb-3">
+          <i class="pi pi-search-minus me-1"></i> No fields match "{{ fieldSearch.view.trim() }}".
+          <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" @click="clearFieldSearch('view')">Show all fields</button>
+        </div>
         <div 
           v-for="sec in viewFormSections" 
+          v-show="isSectionShown('view', sec)"
           :key="sec.key" 
           class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
         >
@@ -1608,7 +1683,7 @@
               <i :class="sec.icon"></i> {{ sec.title }}
             </h6>
             <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
-              {{ (sec.columns || []).length }} {{ (sec.columns || []).length === 1 ? 'field' : 'fields' }}
+              {{ sectionFieldCountLabel('view', sec) }}
             </span>
           </div>
 
@@ -1644,6 +1719,7 @@
           <div v-else class="row g-3">
             <div 
               v-for="col in sec.columns" 
+              v-show="isFieldShown('view', sec, col)"
               :key="col" 
               :class="[
                 'sfa-view-field',
@@ -1885,9 +1961,46 @@
         <i class="pi pi-exclamation-triangle me-2"></i> {{ editError }}
       </div>
 
+      <!-- Field search: narrows every section card below to the matching fields -->
+      <div class="sfa-field-search d-flex align-items-center gap-2 mt-2 mb-2 pe-2">
+        <div class="position-relative toolbar-search-wrapper sfa-field-search-wrapper flex-grow-1">
+          <i class="pi pi-search search-icon text-secondary pointer-events-none"></i>
+          <input
+            id="field-search-edit"
+            v-model="fieldSearch.edit"
+            type="text"
+            class="form-control form-control-sm toolbar-search-input rounded-3 shadow-none border"
+            placeholder="Find a field..."
+            aria-label="Find a field in this form"
+            autocomplete="off"
+            @keydown.esc="onFieldSearchEscape('edit', $event)"
+          />
+          <button
+            v-if="fieldSearch.edit"
+            type="button"
+            class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-1 p-1 text-secondary text-decoration-none shadow-none border-0 clear-search-btn"
+            @click="clearFieldSearch('edit')"
+            v-tooltip.top="'Clear field search'"
+            aria-label="Clear field search"
+          >
+            <i class="pi pi-times" style="font-size: 0.75rem;"></i>
+          </button>
+        </div>
+        <span
+          v-if="fieldSearchActive('edit')"
+          class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal text-nowrap"
+          aria-live="polite"
+        >{{ fieldSearchSummary('edit') }}</span>
+      </div>
+
       <div class="pe-2 mt-2 sfa-tracker-dialog-edit-body" style="max-height: 72vh; overflow-y: auto;">
+        <div v-if="fieldSearchEmpty('edit')" class="sfa-field-search-empty text-center text-muted small py-4 bg-body-tertiary rounded-3 border border-dashed mb-3">
+          <i class="pi pi-search-minus me-1"></i> No fields match "{{ fieldSearch.edit.trim() }}".
+          <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" @click="clearFieldSearch('edit')">Show all fields</button>
+        </div>
         <div 
           v-for="sec in formSections" 
+          v-show="isSectionShown('edit', sec)"
           :key="sec.key" 
           class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
         >
@@ -1917,7 +2030,7 @@
                 <span>Pin on Map</span>
               </button>
               <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
-                {{ (sec.columns || []).length }} {{ (sec.columns || []).length === 1 ? 'field' : 'fields' }}
+                {{ sectionFieldCountLabel('edit', sec) }}
               </span>
             </div>
           </div>
@@ -1927,6 +2040,7 @@
               v-for="col in sec.columns"
               :key="col"
               :id="isPinnedPlaceholder(sec, col) ? `${fieldWrapId('edit', col)}-pinned` : fieldWrapId('edit', col)"
+              v-show="isFieldShown('edit', sec, col)"
               :class="[
                 'sfa-form-field',
                 `sfa-form-field-${String(col).toLowerCase()}`,
@@ -2999,6 +3113,7 @@ import { useAuthStore } from '../stores/auth'
 import { useUserStore } from '../stores/users'
 import { useTheme } from '../composables/useTheme'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, startOfDay, endOfDay } from '../utils/dateRangePresets'
+import { filterFormSections } from '../utils/formFieldSearch'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -6402,6 +6517,61 @@ const formSections = computed(() => {
   ]
 })
 
+// ---- Field search ----------------------------------------------------------
+// One query per dialog. It narrows every section card to its matching fields
+// (hidden with v-show so typed values and picker state survive) and hides a
+// card with nothing left to show. Cleared whenever a dialog opens or closes,
+// and before a failed save scrolls to an invalid field so it is never hidden.
+const fieldSearch = ref({ create: '', edit: '', view: '' })
+
+// Combined slots: the Barangay 1 wrapper also hosts Barangay 2, and the
+// Visit With (Other) wrapper hosts User Email, so both names must find the slot.
+const fieldSearchAliases = (col) => {
+  const key = normalizeColKey(col)
+  if (key === 'barangay1') return ['Barangay 1', 'Barangay 2']
+  if (key === 'visitwithother') return ['Visit With (Other)', 'User Email', 'userEmail']
+  return []
+}
+
+const fieldSearchOptions = { labelFor: formatLabel, aliasesFor: fieldSearchAliases }
+const fieldSearchResults = {
+  create: computed(() => filterFormSections(formSections.value, fieldSearch.value.create, fieldSearchOptions)),
+  edit: computed(() => filterFormSections(formSections.value, fieldSearch.value.edit, fieldSearchOptions)),
+  view: computed(() => filterFormSections(viewFormSections.value, fieldSearch.value.view, fieldSearchOptions))
+}
+
+const fieldSearchResult = (scope) => fieldSearchResults[scope]?.value
+const isSectionShown = (scope, sec) => fieldSearchResult(scope)?.isSectionShown(sec?.key) !== false
+const isFieldShown = (scope, sec, col) => fieldSearchResult(scope)?.isFieldShown(sec?.key, col) !== false
+const fieldSearchActive = (scope) => !!fieldSearchResult(scope)?.active
+const fieldSearchEmpty = (scope) => {
+  const r = fieldSearchResult(scope)
+  return !!r && r.active && r.shown === 0
+}
+// Section header badge: "3 of 9 fields" while a search narrows it, "9 fields" otherwise.
+const sectionFieldCountLabel = (scope, sec) => {
+  const total = (sec?.columns || []).length
+  const noun = total === 1 ? 'field' : 'fields'
+  const r = fieldSearchResult(scope)
+  if (r?.active) return `${r.shownInSection(sec?.key)} of ${total} ${noun}`
+  return `${total} ${noun}`
+}
+const fieldSearchSummary = (scope) => {
+  const r = fieldSearchResult(scope)
+  if (!r || !r.active) return ''
+  return `${r.shown} of ${r.total} ${r.total === 1 ? 'field' : 'fields'}`
+}
+const clearFieldSearch = (scope) => {
+  fieldSearch.value[scope] = ''
+}
+// Esc in the box clears the query; the dialog only closes on Esc once the box is empty.
+const onFieldSearchEscape = (scope, event) => {
+  if (!fieldSearch.value[scope]) return
+  event?.stopPropagation?.()
+  event?.preventDefault?.()
+  clearFieldSearch(scope)
+}
+
 const baseFormSections = computed(() => {
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(formColumns.value)
@@ -7822,6 +7992,9 @@ const scrollIntoDialog = (el) => {
 }
 
 const focusFirstInvalid = async (scope, col) => {
+  // An active field search may be hiding the invalid field; show everything
+  // again so the scroll below lands on something the user can see.
+  clearFieldSearch(scope)
   await nextTick()
   const wrapper = document.getElementById(fieldWrapId(scope, col))
   if (!wrapper) return
@@ -8443,6 +8616,7 @@ watch(displayCreateDialog, (isOpen) => {
   if (!isOpen) {
     resetTouchedAddressBlockers('create')
     fieldErrors.value.create = {}
+    clearFieldSearch('create')
   }
 })
 
@@ -8450,7 +8624,12 @@ watch(displayEditDialog, (isOpen) => {
   if (!isOpen) {
     resetTouchedAddressBlockers('edit')
     fieldErrors.value.edit = {}
+    clearFieldSearch('edit')
   }
+})
+
+watch(displayViewDialog, (isOpen) => {
+  if (!isOpen) clearFieldSearch('view')
 })
 
 const getAccessLevelLabel = (id) => {
@@ -8757,6 +8936,7 @@ const getDiscountTypeTooltip = (val) => {
 }
 
 const openCreateDialog = () => {
+  clearFieldSearch('create')
   fetchAddressData()
   fetchFormLookups()
   resetTouchedAddressBlockers('create')
@@ -9344,6 +9524,7 @@ const getRecordId = (record) => {
 }
 
 const openViewDialog = (record) => {
+  clearFieldSearch('view')
   fetchFormLookups()
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   viewingRecordId.value = getRecordId(normRecord) || ''
@@ -9355,6 +9536,7 @@ const openViewDialog = (record) => {
 }
 
 const openEditDialog = async (record) => {
+  clearFieldSearch('edit')
   resetTouchedAddressBlockers('edit')
   fieldErrors.value.edit = {}
   photoExifByCol.value.edit = {}
@@ -10652,6 +10834,14 @@ defineExpose({
 }
 .sfa-pinned-tile-link:hover {
   text-decoration: underline;
+}
+/* Field search box at the top of the Create / Update / View dialogs */
+.sfa-field-search-wrapper {
+  width: auto;
+  max-width: 420px;
+}
+.sfa-field-search-empty {
+  border-style: dashed !important;
 }
 /* Long identity values (descriptions, addresses) have to wrap inside the
    delete dialog instead of pushing the flex row wider than the modal. */
