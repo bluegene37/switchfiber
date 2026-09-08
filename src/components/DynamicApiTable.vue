@@ -807,6 +807,61 @@
           </div>
 
           <div class="row g-3">
+            <!-- Applications store no coordinates: the map pins the address on open and feeds Use Pin Address -->
+            <div v-if="showInlineAddressMap(sec)" class="col-12 sfa-form-field sfa-address-map">
+              <label :for="`address-pin-create`" class="form-label fw-medium text-body small mb-1">
+                Location on Map
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;" title="Applications have no coordinates field; the pin only fills the address">Not saved</span>
+              </label>
+              <div class="d-flex flex-column gap-2 w-100">
+                <CoordinatePicker :model-value="addressPin.create" height="280px" @update:model-value="onAddressPinInput('create', $event)" />
+                <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+                  <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <span class="small text-secondary fw-semibold flex-shrink-0">
+                      <i class="pi pi-compass text-primary me-1"></i>GPS:
+                    </span>
+                    <input
+                      :id="`address-pin-create`"
+                      :value="addressPin.create"
+                      type="text"
+                      class="form-control form-control-sm rounded-3 font-monospace coord-input flex-grow-1"
+                      placeholder="latitude, longitude"
+                      @input="onAddressPinTyped('create', $event.target.value)"
+                    />
+                  </div>
+                  <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1.5 px-3"
+                      :disabled="addressPinBusy.create || !canLocateAddress('create')"
+                      title="Place the pin from the Province, City, Barangay and Street entered in this form"
+                      @click="locateAddress('create', { commit: true })"
+                    >
+                      <i :class="addressPinBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-search'" style="font-size: 0.8rem;"></i>
+                      <span>{{ addressPinBusy.create ? 'Locating...' : 'Locate Address' }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
+                      :disabled="pinFillBusy.create || !addressPin.create"
+                      title="Autofill Province, City, Barangay and Street from the pinned location"
+                      @click="applyAddressFromPin('create', addressPin.create)"
+                    >
+                      <i :class="pinFillBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-sparkles'" style="font-size: 0.8rem;"></i>
+                      <span>{{ pinFillBusy.create ? 'Filling Address...' : 'Use Pin Address' }}</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-if="addressPinApprox.create && visiblePin('create')" class="small text-warning-emphasis d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-info-circle" style="font-size: 0.75rem;"></i>
+                  <span>{{ approxPinHint('create') }}</span>
+                </div>
+                <div v-if="resolvedPinPreview.create" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-map-marker text-success" style="font-size: 0.75rem;"></i>
+                  <span class="text-truncate">Pin matches: <strong class="text-body">{{ resolvedPinPreview.create }}</strong></span>
+                </div>
+              </div>
+            </div>
             <div
               v-for="col in sec.columns"
               :key="col"
@@ -1448,9 +1503,20 @@
                       class="form-control form-control-sm rounded-3 font-monospace coord-input flex-grow-1"
                       :class="{ 'is-invalid': hasFieldError('create', col) }"
                       placeholder="latitude, longitude"
+                      @input="onStoredPinTyped('create')"
                     />
                   </div>
                   <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1.5 px-3"
+                      :disabled="addressPinBusy.create || !canLocateAddress('create')"
+                      title="Place the pin from the Province, City, Barangay and Street entered in this form"
+                      @click="locateAddress('create', { commit: true })"
+                    >
+                      <i :class="addressPinBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-search'" style="font-size: 0.8rem;"></i>
+                      <span>{{ addressPinBusy.create ? 'Locating...' : 'Locate Address' }}</span>
+                    </button>
                     <button
                       type="button"
                       class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
@@ -1462,6 +1528,10 @@
                       <span>{{ pinFillBusy.create ? 'Filling Address...' : 'Use Pin Address' }}</span>
                     </button>
                   </div>
+                </div>
+                <div v-if="addressPinApprox.create && visiblePin('create')" class="small text-warning-emphasis d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-info-circle" style="font-size: 0.75rem;"></i>
+                  <span>{{ approxPinHint('create') }}</span>
                 </div>
                 <div v-if="resolvedPinPreview.create" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
                   <i class="pi pi-map-marker text-success" style="font-size: 0.75rem;"></i>
@@ -1717,6 +1787,28 @@
           </div>
 
           <div v-else class="row g-3">
+            <div v-if="showInlineAddressMap(sec)" class="col-12 sfa-view-field sfa-address-map">
+              <label class="form-label fw-medium text-body small mb-1">Location on Map</label>
+              <div class="d-flex flex-column gap-2 w-100">
+                <CoordinatePicker v-if="addressPin.view" :model-value="addressPin.view" readonly height="220px" />
+                <div v-else-if="addressPinBusy.view" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-spinner pi-spin" style="font-size: 0.75rem;"></i><span>Locating the address on the map...</span>
+                </div>
+                <div v-else class="text-muted small py-3 text-center bg-body-tertiary rounded-3 border border-dashed">
+                  <i class="pi pi-map-marker me-1"></i> No map location could be found for this address.
+                </div>
+                <div v-if="addressPinApprox.view && visiblePin('view')" class="small text-warning-emphasis d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-info-circle" style="font-size: 0.75rem;"></i>
+                  <span>{{ approxPinHint('view') }}</span>
+                </div>
+                <div v-if="addressPin.view" class="d-flex flex-wrap align-items-center gap-2">
+                  <InputText :modelValue="addressPin.view" readonly disabled class="p-inputtext-sm bg-light font-monospace" style="min-width: 200px; max-width: 280px;" />
+                  <a :href="mapsLinkFor(addressPin.view)" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary rounded-3 text-nowrap d-inline-flex align-items-center gap-1.5 px-2.5 py-1" style="font-size: 0.75rem;" title="Open in Google Maps">
+                    <i class="pi pi-directions" style="font-size: 0.75rem;"></i><span>Maps</span>
+                  </a>
+                </div>
+              </div>
+            </div>
             <div 
               v-for="col in sec.columns" 
               v-show="isFieldShown('view', sec, col)"
@@ -1829,7 +1921,17 @@
 
               <!-- Coordinates in View Modal -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
-                <CoordinatePicker v-if="viewFormData[col]" :model-value="viewFormData[col]" readonly height="220px" />
+                <CoordinatePicker v-if="viewFormData[col] || addressPin.view" :model-value="viewFormData[col] || addressPin.view" readonly height="220px" />
+                <div v-else-if="addressPinBusy.view" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-spinner pi-spin" style="font-size: 0.75rem;"></i><span>Locating the address on the map...</span>
+                </div>
+                <div v-else-if="autoLocateEnabled" class="text-muted small py-3 text-center bg-body-tertiary rounded-3 border border-dashed">
+                  <i class="pi pi-map-marker me-1"></i> No coordinates saved, and no map location could be found for this address.
+                </div>
+                <div v-if="addressPinApprox.view && visiblePin('view')" class="small text-warning-emphasis d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-info-circle" style="font-size: 0.75rem;"></i>
+                  <span>{{ approxPinHint('view') }}</span>
+                </div>
                 <div class="d-flex flex-wrap align-items-center gap-2">
                   <InputText
                     :id="`view-${col}`"
@@ -1840,8 +1942,8 @@
                     style="min-width: 200px; max-width: 280px;"
                   />
                   <a
-                    v-if="viewFormData[col]"
-                    :href="`https://www.google.com/maps/dir/?api=1&destination=${String(viewFormData[col]).replace(/\\s/g, '')}`"
+                    v-if="viewFormData[col] || addressPin.view"
+                    :href="mapsLinkFor(viewFormData[col] || addressPin.view)"
                     target="_blank"
                     rel="noopener"
                     class="btn btn-sm btn-outline-primary rounded-3 text-nowrap d-inline-flex align-items-center gap-1.5 px-2.5 py-1"
@@ -2036,6 +2138,61 @@
           </div>
 
           <div class="row g-3">
+            <!-- Applications store no coordinates: the map pins the address on open and feeds Use Pin Address -->
+            <div v-if="showInlineAddressMap(sec)" class="col-12 sfa-form-field sfa-address-map">
+              <label :for="`address-pin-edit`" class="form-label fw-medium text-body small mb-1">
+                Location on Map
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;" title="Applications have no coordinates field; the pin only fills the address">Not saved</span>
+              </label>
+              <div class="d-flex flex-column gap-2 w-100">
+                <CoordinatePicker :model-value="addressPin.edit" height="280px" @update:model-value="onAddressPinInput('edit', $event)" />
+                <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+                  <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <span class="small text-secondary fw-semibold flex-shrink-0">
+                      <i class="pi pi-compass text-primary me-1"></i>GPS:
+                    </span>
+                    <input
+                      :id="`address-pin-edit`"
+                      :value="addressPin.edit"
+                      type="text"
+                      class="form-control form-control-sm rounded-3 font-monospace coord-input flex-grow-1"
+                      placeholder="latitude, longitude"
+                      @input="onAddressPinTyped('edit', $event.target.value)"
+                    />
+                  </div>
+                  <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1.5 px-3"
+                      :disabled="addressPinBusy.edit || !canLocateAddress('edit')"
+                      title="Place the pin from the Province, City, Barangay and Street entered in this form"
+                      @click="locateAddress('edit', { commit: true })"
+                    >
+                      <i :class="addressPinBusy.edit ? 'pi pi-spinner pi-spin' : 'pi pi-search'" style="font-size: 0.8rem;"></i>
+                      <span>{{ addressPinBusy.edit ? 'Locating...' : 'Locate Address' }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
+                      :disabled="pinFillBusy.edit || !addressPin.edit"
+                      title="Autofill Province, City, Barangay and Street from the pinned location"
+                      @click="applyAddressFromPin('edit', addressPin.edit)"
+                    >
+                      <i :class="pinFillBusy.edit ? 'pi pi-spinner pi-spin' : 'pi pi-sparkles'" style="font-size: 0.8rem;"></i>
+                      <span>{{ pinFillBusy.edit ? 'Filling Address...' : 'Use Pin Address' }}</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-if="addressPinApprox.edit && visiblePin('edit')" class="small text-warning-emphasis d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-info-circle" style="font-size: 0.75rem;"></i>
+                  <span>{{ approxPinHint('edit') }}</span>
+                </div>
+                <div v-if="resolvedPinPreview.edit" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-map-marker text-success" style="font-size: 0.75rem;"></i>
+                  <span class="text-truncate">Pin matches: <strong class="text-body">{{ resolvedPinPreview.edit }}</strong></span>
+                </div>
+              </div>
+            </div>
             <div
               v-for="col in sec.columns"
               :key="col"
@@ -2739,7 +2896,11 @@
 
               <!-- Coordinate Picker -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
-                <CoordinatePicker v-model="editFormData[col]" height="280px" />
+                <CoordinatePicker
+                  :model-value="editFormData[col] || addressPin.edit"
+                  height="280px"
+                  @update:model-value="onStoredPinInput('edit', col, $event)"
+                />
                 <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
                   <div class="d-flex align-items-center gap-2 flex-grow-1">
                     <span class="small text-secondary fw-semibold flex-shrink-0">
@@ -2753,21 +2914,36 @@
                       :class="{ 'is-invalid': hasFieldError('edit', col), 'bg-light text-muted': isFieldDisabledInEdit(col) }"
                       :disabled="isFieldDisabledInEdit(col)"
                       :readonly="isFieldDisabledInEdit(col)"
-                      placeholder="latitude, longitude"
+                      :placeholder="addressPin.edit ? `Approximate: ${addressPin.edit}` : 'latitude, longitude'"
+                      @input="onStoredPinTyped('edit')"
                     />
                   </div>
                   <div class="d-flex align-items-center gap-2 flex-shrink-0">
                     <button
                       type="button"
+                      class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1.5 px-3"
+                      :disabled="addressPinBusy.edit || !canLocateAddress('edit') || isFieldDisabledInEdit(col)"
+                      title="Place the pin from the Province, City, Barangay and Street entered in this form"
+                      @click="locateAddress('edit', { commit: true })"
+                    >
+                      <i :class="addressPinBusy.edit ? 'pi pi-spinner pi-spin' : 'pi pi-search'" style="font-size: 0.8rem;"></i>
+                      <span>{{ addressPinBusy.edit ? 'Locating...' : 'Locate Address' }}</span>
+                    </button>
+                    <button
+                      type="button"
                       class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
-                      :disabled="pinFillBusy.edit || !editFormData[col] || isFieldDisabledInEdit(col)"
+                      :disabled="pinFillBusy.edit || !(editFormData[col] || addressPin.edit) || isFieldDisabledInEdit(col)"
                       title="Autofill Province, City, Barangay and Street from the pinned location"
-                      @click="applyAddressFromPin('edit')"
+                      @click="applyAddressFromPin('edit', editFormData[col] || addressPin.edit || null)"
                     >
                       <i :class="pinFillBusy.edit ? 'pi pi-spinner pi-spin' : 'pi pi-sparkles'" style="font-size: 0.8rem;"></i>
                       <span>{{ pinFillBusy.edit ? 'Filling Address...' : 'Use Pin Address' }}</span>
                     </button>
                   </div>
+                </div>
+                <div v-if="addressPinApprox.edit && visiblePin('edit')" class="small text-warning-emphasis d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-info-circle" style="font-size: 0.75rem;"></i>
+                  <span>{{ approxPinHint('edit') }}</span>
                 </div>
                 <div v-if="resolvedPinPreview.edit" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
                   <i class="pi pi-map-marker text-success" style="font-size: 0.75rem;"></i>
@@ -3082,7 +3258,7 @@ import ImageDropzone from './ImageDropzone.vue'
 import CoordinatePicker from './CoordinatePicker.vue'
 import ExifPanel from './ExifPanel.vue'
 import { parseCoordinates } from '../services/lcpNapLocations'
-import { reverseGeocode } from '../services/geocoding'
+import { reverseGeocode, geocodeAddress, buildAddressQueries } from '../services/geocoding'
 import { downloadImage, openImageInNewTab } from '../utils/imageActions'
 import {
   resolveMenuCodesFromName,
@@ -8569,9 +8745,144 @@ const coordinatesColName = computed(() => formColumns.value.find(c => getFieldTy
 const mapPicker = ref({ visible: false, scope: 'create', coords: '', busy: false })
 
 const showMapPickerButton = (sec) => {
-  if (coordinatesColName.value || !regionColName.value) return false
+  if (coordinatesColName.value || !regionColName.value || hasInlineAddressMap.value) return false
   return (sec?.columns || []).includes(regionColName.value)
 }
+
+
+// ---- Address pin --------------------------------------------------------------
+// Records without stored coordinates (every Application, the Job Orders whose
+// addressCoordinates is blank) are pinned from their address when View or Update
+// opens. That pin lives here, not in the form: an approximate lookup is never
+// saved until the user drags it, clicks the map, searches, or presses Locate
+// Address themselves. Applications have no coordinates column at all, so their
+// pin only feeds Use Pin Address.
+const addressPin = ref({ create: '', edit: '', view: '' })
+const addressPinApprox = ref({ create: false, edit: false, view: false })
+const addressPinBusy = ref({ create: false, edit: false, view: false })
+const addressPinTier = ref({ create: null, edit: null, view: null })
+const addressPinAbort = { create: null, edit: null, view: null }
+
+const hasInlineAddressMap = computed(() => isApplicationEndpoint.value && !coordinatesColName.value && !!regionColName.value)
+const showInlineAddressMap = (sec) => hasInlineAddressMap.value && (sec?.columns || []).includes(regionColName.value)
+const autoLocateEnabled = computed(() => isJobOrderEndpoint.value || hasInlineAddressMap.value)
+
+const recordForScope = (scope) => (scope === 'view' ? viewFormData.value : formForScope(scope).value)
+
+const valueByKey = (obj, keys) => {
+  for (const k of Object.keys(obj || {})) {
+    if (!keys.includes(normalizeColKey(k))) continue
+    const v = obj[k]
+    if (v !== null && v !== undefined && String(v).trim()) return String(v)
+  }
+  return ''
+}
+
+const addressPartsFor = (scope) => {
+  const rec = recordForScope(scope)
+  return {
+    street: valueByKey(rec, ['street', 'installationaddress', 'address']),
+    barangay: valueByKey(rec, ['barangay', 'barangay1', 'barangayname']),
+    city: valueByKey(rec, ['city', 'municipality']),
+    province: valueByKey(rec, ['region', 'province'])
+  }
+}
+const canLocateAddress = (scope) => buildAddressQueries(addressPartsFor(scope)).length > 0
+
+const storedCoordsFor = (scope) => {
+  const col = coordinatesColName.value
+  if (!col) return ''
+  const v = recordForScope(scope)?.[col]
+  return v === null || v === undefined ? '' : String(v)
+}
+const visiblePin = (scope) => storedCoordsFor(scope) || addressPin.value[scope] || ''
+
+const resetAddressPin = (scope) => {
+  if (addressPinAbort[scope]) addressPinAbort[scope].abort()
+  addressPinAbort[scope] = null
+  addressPin.value[scope] = ''
+  addressPinApprox.value[scope] = false
+  addressPinBusy.value[scope] = false
+  addressPinTier.value[scope] = null
+}
+
+/**
+ * Places the pin from the address fields. `commit` (the Locate Address button)
+ * writes the result into the record's coordinates column when there is one;
+ * the silent lookup on open only sets the display pin.
+ */
+const locateAddress = async (scope, { silent = false, commit = false } = {}) => {
+  const parts = addressPartsFor(scope)
+  if (addressPinAbort[scope]) addressPinAbort[scope].abort()
+  const controller = new AbortController()
+  addressPinAbort[scope] = controller
+  addressPinBusy.value[scope] = true
+  try {
+    const hit = await geocodeAddress(parts, { signal: controller.signal })
+    if (controller.signal.aborted) return false
+    if (!hit) {
+      if (!silent) toast.add({ severity: 'warn', summary: 'Address not found', detail: 'Could not place this address on the map. Search for it or click the map to pin it by hand.', life: 4000 })
+      return false
+    }
+    const coords = `${hit.lat.toFixed(6)}, ${hit.lng.toFixed(6)}`
+    const col = coordinatesColName.value
+    if (commit && col && scope !== 'view') {
+      formForScope(scope).value[col] = coords
+      addressPin.value[scope] = ''
+    } else {
+      addressPin.value[scope] = coords
+    }
+    addressPinApprox.value[scope] = true
+    addressPinTier.value[scope] = hit.level
+    return true
+  } catch {
+    return false
+  } finally {
+    if (addressPinAbort[scope] === controller) {
+      addressPinAbort[scope] = null
+      addressPinBusy.value[scope] = false
+    }
+  }
+}
+
+const autoLocateOnOpen = (scope) => {
+  resetAddressPin(scope)
+  if (autoLocateEnabled.value && !storedCoordsFor(scope) && canLocateAddress(scope)) {
+    locateAddress(scope, { silent: true })
+  }
+}
+
+// The user moved the pin on a form that stores coordinates: the value goes into
+// the record and the approximate marker is gone.
+const onStoredPinInput = (scope, col, value) => {
+  formForScope(scope).value[col] = value
+  addressPin.value[scope] = ''
+  addressPinApprox.value[scope] = false
+}
+const onStoredPinTyped = (scope) => {
+  addressPin.value[scope] = ''
+  addressPinApprox.value[scope] = false
+}
+// Applications: the pin only lives here, and moving it fills blank address fields
+// the same way a stored coordinates field would.
+const onAddressPinInput = (scope, value) => {
+  addressPin.value[scope] = value
+  addressPinApprox.value[scope] = false
+  onCoordinatesChanged(scope, value)
+}
+const onAddressPinTyped = (scope, value) => {
+  addressPin.value[scope] = value
+  addressPinApprox.value[scope] = false
+}
+
+const approxPinHint = (scope) => {
+  const level = addressPinTier.value[scope] || 'city'
+  const fix = scope === 'view' ? '' : ' Drag the pin, search, or click the map to set the exact spot.'
+  if (level === 'gps') return `Location from the GPS reading noted in the address.${scope === 'view' ? '' : ' Adjust it if the reading is off.'}`
+  return `Approximate location from the address, placed at ${level} level.${fix}`
+}
+
+const mapsLinkFor = (coords) => `https://www.google.com/maps/dir/?api=1&destination=${String(coords || '').replace(/\s/g, '')}`
 
 const openMapPicker = (scope) => {
   mapPicker.value = { visible: true, scope, coords: '', busy: false }
@@ -8617,6 +8928,7 @@ watch(displayCreateDialog, (isOpen) => {
     resetTouchedAddressBlockers('create')
     fieldErrors.value.create = {}
     clearFieldSearch('create')
+    resetAddressPin('create')
   }
 })
 
@@ -8625,11 +8937,15 @@ watch(displayEditDialog, (isOpen) => {
     resetTouchedAddressBlockers('edit')
     fieldErrors.value.edit = {}
     clearFieldSearch('edit')
+    resetAddressPin('edit')
   }
 })
 
 watch(displayViewDialog, (isOpen) => {
-  if (!isOpen) clearFieldSearch('view')
+  if (!isOpen) {
+    clearFieldSearch('view')
+    resetAddressPin('view')
+  }
 })
 
 const getAccessLevelLabel = (id) => {
@@ -8937,6 +9253,7 @@ const getDiscountTypeTooltip = (val) => {
 
 const openCreateDialog = () => {
   clearFieldSearch('create')
+  resetAddressPin('create')
   fetchAddressData()
   fetchFormLookups()
   resetTouchedAddressBlockers('create')
@@ -9529,6 +9846,7 @@ const openViewDialog = (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   viewingRecordId.value = getRecordId(normRecord) || ''
   viewFormData.value = { ...normRecord }
+  autoLocateOnOpen('view')
   displayViewDialog.value = true
   if ((!usersList.value || usersList.value.length === 0) && (!userStore.users || userStore.users.length === 0)) {
     userStore.fetchUsers().catch(() => {})
@@ -9545,6 +9863,7 @@ const openEditDialog = async (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   editingRecordId.value = getRecordId(normRecord)
   editFormData.value = { ...normRecord }
+  autoLocateOnOpen('edit')
 
   // Normalize phone numbers on load so any phone number in the database missing leading 0 displays with 0
   formColumns.value.forEach(col => {

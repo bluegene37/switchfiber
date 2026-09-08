@@ -132,3 +132,93 @@ export const reverseGeocode = async (lat, lng, { signal } = {}) => {
     label: data?.display_name || null
   }
 }
+
+const PLACEHOLDER_PART = /^(test|testing|n\/?a|none|null|sample|-+|\.+)$/i
+const EMBEDDED_COORDS = /(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/
+
+/**
+ * Field staff sometimes type the GPS reading into the street line
+ * ("J. P. Rizal Avenue, ... GPS: 14.46476, 121.19234"). That is the exact spot,
+ * so it beats any geocoder guess. Returns { lat, lng } or null.
+ */
+export const extractEmbeddedCoordinates = (text) => {
+  const m = String(text ?? '').match(EMBEDDED_COORDS)
+  if (!m) return null
+  const lat = Number(m[1])
+  const lng = Number(m[2])
+  if (!(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) return null
+  return { lat, lng }
+}
+
+const cleanAddressPart = (value) => {
+  let s = String(value ?? '').trim().replace(/^\((.*)\)$/, '$1').trim()
+  // Drop a trailing "GPS: lat, lng" note; the coordinates are handled separately.
+  s = s.replace(/[,;\s]*(gps|coords?|coordinates)?\s*:?\s*-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}\s*$/i, '').trim()
+  if (!s || PLACEHOLDER_PART.test(s)) return ''
+  // Phone numbers and bare ids end up in the street field; they are not addresses.
+  if (!/[a-z]/i.test(s)) return ''
+  return s
+}
+
+/**
+ * Address parts -> the Nominatim queries to try, most specific first.
+ *
+ * Records without stored coordinates (every Application, the Job Orders with a
+ * blank addressCoordinates) are pinned from their address. Street-level lookups
+ * miss often on OSM's Philippine coverage, so the chain widens to barangay and
+ * then to the city before giving up. Returns [] when there is no city or province
+ * to anchor on, since a bare street name would pin somewhere random.
+ */
+export const buildAddressQueryTiers = ({ street, barangay, city, province } = {}) => {
+  const cityPart = cleanAddressPart(city)
+  const provincePart = cleanAddressPart(province)
+  if (!cityPart && !provincePart) return []
+  const barangayPart = cleanAddressPart(barangay)
+  let streetPart = cleanAddressPart(street)
+
+  // The Job Order form echoes "(Barangay, City, Province)" into the street when
+  // nothing more specific was typed; that adds nothing over the parts themselves.
+  const echo = [barangayPart, cityPart, provincePart].filter(Boolean).join(', ').toLowerCase()
+  if (streetPart && streetPart.toLowerCase() === echo) streetPart = ''
+
+  const tiers = [
+    { level: 'street', parts: [streetPart, barangayPart, cityPart, provincePart] },
+    { level: 'barangay', parts: [barangayPart, cityPart, provincePart] },
+    { level: 'city', parts: [cityPart, provincePart] }
+  ]
+  const seen = new Set()
+  const queries = []
+  tiers.forEach(({ level, parts }) => {
+    const q = [...parts.filter(Boolean), 'Philippines'].join(', ')
+    if (seen.has(q)) return
+    seen.add(q)
+    // A tier whose distinguishing part is blank is really the next level down:
+    // no street means the first query is only as precise as the barangay.
+    const actual = level === 'street' && !streetPart ? (barangayPart ? 'barangay' : 'city')
+      : level === 'barangay' && !barangayPart ? 'city'
+      : level
+    queries.push({ query: q, level: actual })
+  })
+  return queries
+}
+
+/** Query strings only, most specific first. */
+export const buildAddressQueries = (parts) => buildAddressQueryTiers(parts).map(t => t.query)
+
+/**
+ * Address parts -> { lat, lng, label, query, level } for the first query that
+ * resolves, or null. `level` is 'gps' when the street line carried coordinates,
+ * else 'street', 'barangay' or 'city': how precise the pin is, so callers can
+ * say how approximate it is.
+ */
+export const geocodeAddress = async (parts, { signal } = {}) => {
+  const embedded = extractEmbeddedCoordinates(parts?.street)
+  if (embedded) return { ...embedded, label: null, query: null, level: 'gps' }
+  for (const { query, level } of buildAddressQueryTiers(parts)) {
+    if (signal?.aborted) return null
+    const results = await searchPlaces(query, { signal })
+    const hit = results.find(r => Number.isFinite(r.lat) && Number.isFinite(r.lng))
+    if (hit) return { lat: hit.lat, lng: hit.lng, label: hit.label, query, level }
+  }
+  return null
+}
