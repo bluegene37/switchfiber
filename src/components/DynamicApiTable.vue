@@ -4547,6 +4547,9 @@ const PAYMENT_EDITABLE_COLUMNS = new Set([
 function isFieldDisabledInEdit(col) {
   if (!col) return false
   if (isReadOnlyField(col)) return true
+  // A Job Order belongs to the application it was raised from; re-pointing it
+  // at another application on Update would orphan the original one.
+  if (isJobOrderEndpoint.value && ['applicationid', 'applicationidvalue'].includes(normalizeColKey(col))) return true
   if (isPaymentEndpoint.value) {
     const key = normalizeColKey(col)
     return !PAYMENT_EDITABLE_COLUMNS.has(key)
