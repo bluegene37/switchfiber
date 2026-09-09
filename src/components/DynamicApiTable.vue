@@ -133,6 +133,21 @@
             </select>
           </div>
 
+          <!-- Access Level Filter (rows that carry accesslevel_id — the Users grid) -->
+          <div v-if="hasAccessLevelFilter" class="d-flex align-items-center gap-2 sfa-tracker-table-access-level-filter">
+            <span class="small text-secondary fw-semibold text-nowrap">Access Level:</span>
+            <select
+              v-model="selectedAccessLevelFilter"
+              class="form-select form-select-sm rounded-3 fw-medium text-body bg-body shadow-xs border status-filter-select"
+              aria-label="Filter by access level"
+            >
+              <option value="">All</option>
+              <option v-for="opt in accessLevelFilterOptions" :key="opt.value" :value="String(opt.value)">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
           <!-- Date Range Pickers & Presets (ApplicationList Pill & Calendar Style) -->
           <div v-if="hasDateFilter" class="d-flex align-items-center gap-3 flex-wrap">
             <!-- From Date Picker -->
@@ -4808,6 +4823,23 @@ const hasStatusFilter = computed(() => {
   return hasActiveColumn.value || hasStatusColumn.value
 })
 
+// Access Level filter: offered wherever the rows carry `accesslevel_id` (the
+// Users grid). The names come from the /AccessLevel lookup the grid already loads
+// to label that column, so the dropdown reads "Billing Manager", not "5".
+const accessLevelColumn = computed(() =>
+  (columns.value || []).find(c => normalizeColKey(c) === 'accesslevelid') || ''
+)
+
+const hasAccessLevelFilter = computed(() => !!accessLevelColumn.value)
+
+const selectedAccessLevelFilter = ref('')
+
+const accessLevelFilterOptions = computed(() =>
+  (accessLevels.value || [])
+    .map(l => ({ label: l.nameOnly || l.label, value: l.value }))
+    .sort((a, b) => String(a.label).localeCompare(String(b.label)))
+)
+
 const statusFilterOptions = computed(() => {
   if (hasActiveColumn.value) {
     return [
@@ -4974,6 +5006,13 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
       }
       return true
     })
+  }
+
+  // Access Level Filter — matches the row's accesslevel_id against the picked level
+  if (hasAccessLevelFilter.value && selectedAccessLevelFilter.value !== '') {
+    const wanted = String(selectedAccessLevelFilter.value)
+    const col = accessLevelColumn.value
+    list = list.filter(row => String(row?.[col] ?? '') === wanted)
   }
 
   // Connection Filter (RadiusUser) — resolved from the row group, same as the toggle
@@ -5226,6 +5265,7 @@ const activeFilterCount = computed(() => {
   if (selectedStatusFilter.value && String(selectedStatusFilter.value).trim().length > 0) count++
   if (isDateFilterActive.value) count++
   if (isRadiusUserEndpoint.value && connectionFilter.value) count++
+  if (hasAccessLevelFilter.value && selectedAccessLevelFilter.value !== '') count++
   count += activeClientFilters.value.length
   if (props.filterParams && typeof props.filterParams === 'object') {
     Object.values(props.filterParams).forEach(val => {
@@ -5273,6 +5313,7 @@ const clearAllFilters = () => {
   searchInput.value = ''
   filters.value.global.value = null
   selectedStatusFilter.value = ''
+  selectedAccessLevelFilter.value = ''
   connectionFilter.value = ''
   selectedDatePreset.value = ''
   internalFromDate.value = null
@@ -5468,7 +5509,7 @@ const recordRangeEnd = computed(() => {
   return Math.min(firstRowIndex.value + rowsPerPage.value, filteredRecordsCount.value)
 })
 
-watch([() => filters.value.global?.value, selectedStatusFilter, connectionFilter, rowsPerPage], () => {
+watch([() => filters.value.global?.value, selectedStatusFilter, selectedAccessLevelFilter, connectionFilter, rowsPerPage], () => {
   firstRowIndex.value = 0
 })
 
