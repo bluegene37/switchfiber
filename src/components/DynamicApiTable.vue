@@ -509,6 +509,9 @@
           <span v-else-if="getFieldType(col) === 'textarea' || col.toLowerCase().includes('description')" class="d-inline-block text-wrap py-1" style="min-width: 250px; max-width: 480px; white-space: normal; word-break: break-word;">
             {{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}
           </span>
+          <span v-else-if="normalizeColKey(col) === 'applicationid' || normalizeColKey(col) === 'applicationidvalue'" class="font-monospace small">
+            {{ (slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== '') ? slotProps.data[col] : (slotProps.data.applicationId ?? slotProps.data.applicationIdValue ?? '-') }}
+          </span>
           <span v-else class="d-inline-block text-truncate" style="max-width: 240px;" :title="slotProps.data[col]">
             <span v-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
               {{ slotProps.data[col].name || slotProps.data[col].title || slotProps.data[col].label || slotProps.data[col].id || '-' }}
@@ -4416,6 +4419,7 @@ const JOB_ORDER_COLUMNS = [
   // covered by the left-pinning below, keeping it frozen and readable on narrow viewports.
   'status',
   'accountNo',
+  'applicationId',
   'firstName',
   'lastName',
   'contactNumber',
@@ -4539,6 +4543,10 @@ const columns = computed(() => {
         matchedList.push(rawMap.get('coordinates'))
       } else if (normKey === 'coordinates' && rawMap.has('coordinate')) {
         matchedList.push(rawMap.get('coordinate'))
+      } else if (normKey === 'applicationid' && rawMap.has('applicationidvalue')) {
+        matchedList.push(rawMap.get('applicationidvalue'))
+      } else if (normKey === 'applicationidvalue' && rawMap.has('applicationid')) {
+        matchedList.push(rawMap.get('applicationid'))
       }
     })
     if (matchedList.length > 0) colList = matchedList
