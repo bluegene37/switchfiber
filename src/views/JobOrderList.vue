@@ -93,6 +93,25 @@
             </button>
           </div>
 
+          <!-- Assigned filter: shows the user's name, filters on assignedEmail -->
+          <div class="d-flex align-items-center gap-2 sfa-tracker-job-order-list-assigned-filter">
+            <span class="small text-secondary fw-semibold text-nowrap">Assigned:</span>
+            <Select
+              v-model="selectedAssignedEmail"
+              :options="assignedOptions"
+              optionLabel="label"
+              optionValue="value"
+              :filterFields="['label', 'email']"
+              placeholder="All assignees"
+              filterPlaceholder="Search by name or email"
+              size="small"
+              showClear
+              filter
+              class="assigned-filter-select"
+              aria-label="Filter by assigned user"
+            />
+          </div>
+
           <Button
             class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
             aria-label="Create Job Order"
@@ -136,6 +155,7 @@
         filter-endpoint="JobOrders/status-date"
         server-date-filter
         :filter-params="activeFilterParams"
+        :client-filters="clientFilters"
         :client-status-filter="!isDedicatedStatusRoute"
         :status-label="activeStatusLabel"
         :show-top-bar="false"
@@ -156,6 +176,7 @@ import { ref, computed, watch, watchEffect, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
+import Select from 'primevue/select'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRangePresets'
 
@@ -182,6 +203,14 @@ const selectedStatus = ref('')
 const fromDate = ref(null)
 const toDate = ref(null)
 const selectedDatePreset = ref('')
+
+// Assigned filter: the dropdown reads by name, the rows are matched on the email
+// the record actually stores (`assignedEmail`). Options come from the table,
+// which already holds the /Users lookup for the Assigned Email form field and
+// adds any assignee email in the loaded rows that has no user record.
+const selectedAssignedEmail = ref(null)
+const assignedOptions = computed(() => apiTableRef.value?.assignedEmailFilterOptions || [])
+const clientFilters = computed(() => ({ assignedEmail: selectedAssignedEmail.value || '' }))
 
 // The legacy /job-orders/<slug> routes still resolve, so their slugs need a
 // display spelling for the "no record has the status X" message. Real statuses
@@ -435,8 +464,9 @@ watch([fromDate, toDate], ([f, t]) => {
   }
 })
 
-// Switching tabs re-opens the question of which window holds that tab's rows.
-watch(selectedStatus, () => {
+// Switching tabs (or assignees) re-opens the question of which window holds
+// that selection's rows.
+watch([selectedStatus, selectedAssignedEmail], () => {
   if (!autoWidenEnabled.value) return
   autoWidenStep.value = -1
   autoWidenLabel.value = ''
@@ -450,6 +480,7 @@ const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''
   }
+  selectedAssignedEmail.value = null
   // "Cleared" dates mean the default week, never an unbounded range
   autoWidenEnabled.value = true
   autoWidenStep.value = -1
@@ -493,6 +524,22 @@ const clearAllFilters = () => {
 
 .date-filter-picker {
   width: 145px;
+}
+
+.assigned-filter-select {
+  width: 200px;
+}
+
+:deep(.assigned-filter-select.p-select) {
+  height: 33px;
+  border-radius: 8px;
+  align-items: center;
+}
+
+:deep(.assigned-filter-select .p-select-label) {
+  font-size: 0.8125rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
 }
 
 :deep(.date-filter-picker .p-inputtext),

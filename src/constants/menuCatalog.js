@@ -201,8 +201,43 @@ export const MENU_CATALOG = [
     name: 'Service Orders',
     serverMenu: 'Service Orders',
     aliases: ['Service Orders', 'Service Order', 'ServiceOrders', 'ServiceOrder', 'Repairs', 'Support Visits', 'Maintenance Orders', 'Service Tickets'],
-    path: '/service-orders',
-    icon: 'pi-wrench'
+    icon: 'pi-wrench',
+    // The status children follow `visitStatus`, the column Service Orders keep
+    // their lifecycle in (there is no `status` column on that table).
+    children: [
+      {
+        code: 'service-orders.all',
+        name: 'All Service Orders',
+        serverMenu: 'Service Orders',
+        aliases: ['All Service Orders', 'All Service Order', 'Service Orders', 'Service Order', 'Service Order List', 'Service Orders List'],
+        path: '/service-orders',
+        icon: 'pi-list'
+      },
+      {
+        code: 'service-orders.in-progress',
+        name: 'In Progress',
+        serverMenu: 'Service Orders In Progress',
+        aliases: ['Service Orders In Progress', 'Service Order In Progress', 'In Progress Service Orders', 'Service Orders - In Progress', 'Service Orders Inprogress', 'Service Order Inprogress'],
+        path: '/service-orders/inprogress',
+        icon: 'pi-clock'
+      },
+      {
+        code: 'service-orders.scheduled',
+        name: 'Scheduled',
+        serverMenu: 'Service Orders Scheduled',
+        aliases: ['Service Orders Scheduled', 'Service Order Scheduled', 'Scheduled Service Orders', 'Service Orders - Scheduled'],
+        path: '/service-orders/scheduled',
+        icon: 'pi-calendar'
+      },
+      {
+        code: 'service-orders.done',
+        name: 'Done',
+        serverMenu: 'Service Orders Done',
+        aliases: ['Service Orders Done', 'Service Order Done', 'Done Service Orders', 'Service Orders - Done'],
+        path: '/service-orders/done',
+        icon: 'pi-check-circle'
+      }
+    ]
   },
   {
     code: 'transaction',
@@ -591,7 +626,7 @@ const PATH_CODE_ALIASES = new Map([
  * public route, or a screen that ships outside the permission model).
  *
  * Resolution order: the catalog's own path, then a legacy/landing alias, then the
- * nearest parent path — so a status route added later (`/service-orders/pending`)
+ * nearest parent path — so a status route added later (`/service-orders/cancelled`)
  * inherits its parent's permission the day it appears, with no edit here.
  */
 export const menuCodeForPath = (path) => {

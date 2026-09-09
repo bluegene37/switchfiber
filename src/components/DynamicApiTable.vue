@@ -3360,6 +3360,22 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  // The column the status filter, tab counts and status vocabulary read. Defaults
+  // to `status`; Service Orders keep their lifecycle in `visitStatus` and have no
+  // `status` column at all, so without this every status tab there matched nothing.
+  // Only the filter path honours it — the create/edit forms still write `status`.
+  statusField: {
+    type: String,
+    default: ''
+  },
+  // Extra exact-match filters resolved in the browser, as { column: value }.
+  // Blank values are ignored. Matching is case-insensitive on the trimmed string,
+  // and the status tab counts respect them, so a narrowed set reports narrowed
+  // counts. Used by Job Orders for the Assigned (email) filter.
+  clientFilters: {
+    type: Object,
+    default: () => ({})
+  },
   // Send `filterParams.fromDate` / `toDate` upstream instead of resolving them in
   // the browser. Requires a /filter endpoint that honors date bounds — the
   // Applications backend does since Aug 2026. Keeping this opt-in preserves the
@@ -4888,6 +4904,31 @@ const resolvedInternalDateBounds = computed(() => {
 
 const rowStatusOf = (row) => String(row?.status ?? row?.Status ?? '').trim()
 
+// Case-insensitive column read: API payloads are camelCase but a parent may name
+// the field in any casing.
+const rowFieldOf = (row, field) => {
+  if (!row || !field) return ''
+  const want = String(field).toLowerCase()
+  const key = Object.keys(row).find(k => k.toLowerCase() === want)
+  return key ? String(row[key] ?? '').trim() : ''
+}
+
+// The status the *filter* path reads: `statusField` when the parent names one,
+// otherwise the `status` column.
+const rowFilterStatusOf = (row) => (props.statusField ? rowFieldOf(row, props.statusField) : rowStatusOf(row))
+
+// `clientFilters` entries that carry a value; blanks mean "no filter on that column".
+const activeClientFilters = computed(() =>
+  Object.entries(props.clientFilters || {}).filter(([, v]) =>
+    v !== undefined && v !== null && String(v).trim() !== ''
+  )
+)
+
+const matchesClientFilters = (row) =>
+  activeClientFilters.value.every(([field, value]) =>
+    rowFieldOf(row, field).toLowerCase() === String(value).trim().toLowerCase()
+  )
+
 // Rows with no recognisable date field are kept: an unknown date is not evidence
 // that the row falls outside the range.
 const isRowInDateRange = (row, from, to) => {
@@ -4941,6 +4982,11 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
     list = list.filter(row => isRowConnected(row) === wantConnected)
   }
 
+  // Parent-supplied exact-match column filters (e.g. Job Orders' Assigned email)
+  if (activeClientFilters.value.length) {
+    list = list.filter(matchesClientFilters)
+  }
+
   // Client-side FilterParams Status & Date/Timestamp Filtering
   if (props.filterParams && typeof props.filterParams === 'object') {
     const pStatus = props.filterParams.status ? String(props.filterParams.status).trim().toLowerCase() : ''
@@ -4953,7 +4999,7 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
       const normS = (s) => String(s || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
       const targetStatus = normS(pStatus)
       list = list.filter(row => {
-        const rowStatus = rowStatusOf(row)
+        const rowStatus = rowFilterStatusOf(row)
         // When the status never went to the server this filter is the only thing
         // narrowing the set, so it has to be exact — letting blank-status rows
         // through would show them under every status and make the tab counts
@@ -5097,11 +5143,13 @@ const statusCounts = computed(() => {
   const from = rawFrom ? new Date(rawFrom).getTime() : null
   const to = rawTo ? new Date(rawTo).getTime() : null
 
-  // Server-bounded responses are already inside the date range
-  const inScope = props.serverDateFilter ? rows : rows.filter(row => isRowInDateRange(row, from, to))
+  // Server-bounded responses are already inside the date range. The parent's
+  // column filters narrow the counts too, so the tabs describe the rows on screen.
+  const dated = props.serverDateFilter ? rows : rows.filter(row => isRowInDateRange(row, from, to))
+  const inScope = activeClientFilters.value.length ? dated.filter(matchesClientFilters) : dated
   const byStatus = {}
   inScope.forEach(row => {
-    const key = rowStatusOf(row).toLowerCase()
+    const key = rowFilterStatusOf(row).toLowerCase()
     if (!key) return
     byStatus[key] = (byStatus[key] || 0) + 1
   })
@@ -5138,7 +5186,7 @@ const statusVocabulary = computed(() => {
   const rows = Array.isArray(data.value) ? data.value : []
   const byStatus = {}
   rows.forEach(row => {
-    const raw = rowStatusOf(row).trim()
+    const raw = rowFilterStatusOf(row).trim()
     const key = raw.toLowerCase()
     if (!key) return
     if (!byStatus[key]) byStatus[key] = { value: raw, label: raw, count: 0 }
@@ -5178,6 +5226,7 @@ const activeFilterCount = computed(() => {
   if (selectedStatusFilter.value && String(selectedStatusFilter.value).trim().length > 0) count++
   if (isDateFilterActive.value) count++
   if (isRadiusUserEndpoint.value && connectionFilter.value) count++
+  count += activeClientFilters.value.length
   if (props.filterParams && typeof props.filterParams === 'object') {
     Object.values(props.filterParams).forEach(val => {
       if (val !== undefined && val !== null && String(val).trim() !== '') {
@@ -7237,7 +7286,7 @@ const assignedUserOptions = computed(() => {
     const fullName = [u.fname || u.firstName || u.first_name, u.lname || u.lastName || u.last_name]
       .filter(Boolean).join(' ').trim()
     const name = fullName || u.username || u.name || email
-    list.push({ label: name === email ? email : `${name} (${email})`, value: email })
+    list.push({ label: name === email ? email : `${name} (${email})`, value: email, name })
   })
   return list.sort((a, b) => a.label.localeCompare(b.label))
 })
@@ -7245,6 +7294,25 @@ const assignedUserOptions = computed(() => {
 const getAssignedUserOptions = (currentVal) => {
   return getStableOptionsWithCurrent(assignedUserOptions.value, currentVal)
 }
+
+// Options for a parent's Assigned filter: shown by name, filtered by email. Every
+// /Users row comes first; then any assignedEmail the loaded rows carry that has no
+// user record — the technician accounts (tech1@…, tech2@…) hold most job orders and
+// are not users — labelled by the email itself, so no assignee is unfilterable.
+const assignedEmailFilterOptions = computed(() => {
+  const byEmail = new Map()
+  assignedUserOptions.value.forEach(o => {
+    byEmail.set(o.value.toLowerCase(), { label: o.name || o.value, value: o.value, email: o.value })
+  })
+  const rows = Array.isArray(data.value) ? data.value : []
+  rows.forEach(row => {
+    const email = rowFieldOf(row, 'assignedEmail')
+    if (!email) return
+    const key = email.toLowerCase()
+    if (!byEmail.has(key)) byEmail.set(key, { label: email, value: email, email })
+  })
+  return Array.from(byEmail.values()).sort((a, b) => a.label.localeCompare(b.label))
+})
 
 const getPlanOptions = (col, currentVal) => {
   const isIdField = col && (col.toLowerCase() === 'planid' || col.toLowerCase() === 'plan_id')
@@ -11086,6 +11154,7 @@ defineExpose({
   statusCounts,
   statusVocabulary,
   absentStatusHint,
+  assignedEmailFilterOptions,
   hasFetched,
   lastFetchedParams
 })

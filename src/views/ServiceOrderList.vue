@@ -20,7 +20,7 @@
             type="button"
             class="btn btn-sm d-inline-flex align-items-center gap-2 rounded-pill px-3 py-1.5 fw-medium text-nowrap status-tab-btn"
             :class="[
-              selectedStatus === tab.value
+              isActiveTab(tab.value)
                 ? 'btn-primary shadow-sm text-white'
                 : 'btn-light border text-secondary bg-body-tertiary hover-tab'
             ]"
@@ -31,7 +31,7 @@
             <span
               v-if="statusCounts"
               class="badge rounded-pill status-tab-count"
-              :class="selectedStatus === tab.value
+              :class="isActiveTab(tab.value)
                 ? 'bg-white bg-opacity-25 text-white'
                 : 'bg-secondary bg-opacity-10 text-secondary'"
             >
@@ -103,18 +103,23 @@
 
       </div>
 
-      <!-- Data Table with standard inside-the-card toolbar Create button -->
+      <!-- Data Table with standard inside-the-card toolbar Create button.
+           Service Orders have no `status` column: the lifecycle the tabs and the
+           sidebar sub-menu follow is `visitStatus`, hence `status-field`. -->
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="ServiceOrders"
         :filter-params="activeFilterParams"
         client-status-filter
+        status-field="visitStatus"
+        :status-label="selectedStatus"
         :show-top-bar="false"
         :hide-create-button="false"
         :create-button-in-toolbar="false"
         hide-status-filter
         create-button-label="Create Service Order"
         @reset-filters="clearAllFilters"
+        @select-status="onSelectStatus"
       />
     </div>
   </div>
@@ -122,13 +127,14 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRangePresets'
 
 const route = useRoute()
+const router = useRouter()
 const apiTableRef = ref(null)
 
 // The create form lives in DynamicApiTable; the filter-bar button is just
@@ -140,14 +146,39 @@ const fromDate = ref(null)
 const toDate = ref(null)
 const selectedDatePreset = ref('')
 
+// The lifecycle Service Orders keep in `visitStatus` — the same three statuses the
+// sidebar sub-menu offers. Values are spelled the way the data carries them
+// ('In Progress' with a space, unlike Job Orders' 'Inprogress'); 'Scheduled' is
+// what the create form writes for a new visit. Matching downstream is
+// case- and space-insensitive.
 const statusTabs = [
   { id: 'all', label: 'All Service Orders', value: '', routePath: '/service-orders', icon: 'pi-list' },
-  { id: 'pending', label: 'Pending', value: 'Pending', routePath: '/service-orders/pending', icon: 'pi-clock' },
-  { id: 'inprogress', label: 'In Progress', value: 'In Progress', routePath: '/service-orders/inprogress', icon: 'pi-spin pi-spinner' },
-  { id: 'resolved', label: 'Resolved', value: 'Resolved', routePath: '/service-orders/resolved', icon: 'pi-check-circle' },
-  { id: 'completed', label: 'Completed', value: 'Completed', routePath: '/service-orders/completed', icon: 'pi-verified' },
-  { id: 'cancelled', label: 'Cancelled', value: 'Cancelled', routePath: '/service-orders/cancelled', icon: 'pi-ban' }
+  { id: 'inprogress', label: 'In Progress', value: 'In Progress', routePath: '/service-orders/inprogress', icon: 'pi-clock' },
+  { id: 'scheduled', label: 'Scheduled', value: 'Scheduled', routePath: '/service-orders/scheduled', icon: 'pi-calendar' },
+  { id: 'done', label: 'Done', value: 'Done', routePath: '/service-orders/done', icon: 'pi-check-circle' }
 ]
+
+// Status per /service-orders/<slug>. The first three have sidebar entries; the
+// rest are legacy routes kept alive for old links, and the empty state explains
+// when the data carries no such status.
+const ROUTE_STATUS = {
+  inprogress: 'In Progress',
+  scheduled: 'Scheduled',
+  done: 'Done',
+  pending: 'Pending',
+  resolved: 'Resolved',
+  completed: 'Completed',
+  cancelled: 'Cancelled'
+}
+
+const normStatus = (s) => String(s || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+
+const routeStatusSlug = () => {
+  const m = String(route.path || '').toLowerCase().match(/^\/service-orders\/([^/?#]+)/)
+  return m ? m[1] : ''
+}
+
+const isActiveTab = (value) => normStatus(selectedStatus.value) === normStatus(value)
 
 // Counts for the status tabs, computed by the table over the set it already holds
 const statusCounts = computed(() => {
@@ -157,56 +188,55 @@ const statusCounts = computed(() => {
   return table.statusCounts || null
 })
 
-const isDedicatedStatusRoute = computed(() => {
-  const p = route.path.toLowerCase()
-  return p.includes('/pending') || p.includes('/inprogress') || p.includes('/resolved') || p.includes('/completed') || p.includes('/cancelled')
-})
+const isDedicatedStatusRoute = computed(() => !!ROUTE_STATUS[routeStatusSlug()])
 
 const pageTitle = computed(() => {
-  const lower = (selectedStatus.value || '').toLowerCase()
-  if (lower === 'pending') return 'Pending Service Orders'
-  if (lower === 'in progress' || lower === 'inprogress') return 'In Progress Service Orders'
-  if (lower === 'resolved') return 'Resolved Service Orders'
-  if (lower === 'completed') return 'Completed Service Orders'
-  if (lower === 'cancelled') return 'Cancelled Service Orders'
-  return 'All Service Orders'
+  const status = String(selectedStatus.value || '').trim()
+  return status ? `${status} Service Orders` : 'All Service Orders'
 })
 
-const pageDescription = computed(() => {
-  const lower = (selectedStatus.value || '').toLowerCase()
-  if (lower === 'pending') return 'View and process pending subscriber service tickets and technical support requests.'
-  if (lower === 'in progress' || lower === 'inprogress') return 'Track active field dispatches, repairs, and technical support visits in progress.'
-  if (lower === 'resolved') return 'Review resolved service orders pending subscriber confirmation or final sign-off.'
-  if (lower === 'completed') return 'View completed subscriber repair tickets, maintenance jobs, and field service visits.'
-  if (lower === 'cancelled') return 'View cancelled service tickets and discontinued field service requests.'
-  return 'Manage subscriber repair requests, technical support tickets, field dispatch visits, and equipment pullouts.'
-})
-
-const syncStatusFromRoute = () => {
-  const p = route.path.toLowerCase()
-  const qStatus = String(route.query.status || '').toLowerCase()
-  if (p.includes('/pending') || qStatus === 'pending') {
-    selectedStatus.value = 'Pending'
-  } else if (p.includes('/inprogress') || qStatus === 'inprogress' || qStatus === 'in progress' || qStatus === 'in-progress') {
-    selectedStatus.value = 'In Progress'
-  } else if (p.includes('/resolved') || qStatus === 'resolved') {
-    selectedStatus.value = 'Resolved'
-  } else if (p.includes('/completed') || qStatus === 'completed') {
-    selectedStatus.value = 'Completed'
-  } else if (p.includes('/cancelled') || qStatus === 'cancelled') {
-    selectedStatus.value = 'Cancelled'
-  } else {
-    selectedStatus.value = ''
-  }
+const STATUS_DESCRIPTIONS = {
+  inprogress: 'Track active field dispatches, repairs, and technical support visits in progress.',
+  scheduled: 'View service visits scheduled for a technician but not yet started.',
+  done: 'View completed subscriber repair tickets, maintenance jobs, and field service visits.'
 }
 
-watch(() => route.path, () => {
+const pageDescription = computed(() => {
+  const key = normStatus(selectedStatus.value)
+  if (!key) return 'Manage subscriber repair requests, technical support tickets, field dispatch visits, and equipment pullouts.'
+  return STATUS_DESCRIPTIONS[key] || `View service orders whose visit status is ${selectedStatus.value}.`
+})
+
+// A dedicated route names its status; on the All page a `?status=` query (from
+// a tab, a bookmark, or the empty-state hint) does, spelled back to the tab's
+// value when it matches one so the heading reads like the tab.
+const syncStatusFromRoute = () => {
+  const slugStatus = ROUTE_STATUS[routeStatusSlug()]
+  if (slugStatus) {
+    selectedStatus.value = slugStatus
+    return
+  }
+  const q = String(route.query.status || '').trim()
+  const tab = statusTabs.find(t => t.value && normStatus(t.value) === normStatus(q))
+  selectedStatus.value = tab ? tab.value : q
+}
+
+watch([() => route.path, () => route.query.status], () => {
   syncStatusFromRoute()
 }, { immediate: true })
 
+// Clicking a tab filters in place. On a dedicated /service-orders/<status> route it
+// also leaves that route behind, so the URL never disagrees with the tab strip.
 const setStatusFilter = (status) => {
+  if (isDedicatedStatusRoute.value) {
+    router.push(status ? { path: '/service-orders', query: { status } } : { path: '/service-orders' })
+    return
+  }
   selectedStatus.value = status
 }
+
+// Picked from the empty-state hint — same destination as clicking its tab.
+const onSelectStatus = (status) => setStatusFilter(status)
 
 const formatDateParam = (dateVal, isEnd = false) => {
   if (!dateVal) return undefined

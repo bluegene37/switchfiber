@@ -53,9 +53,12 @@ const ROUTE_TITLES = {
   'error-logs-by-date': 'By Date Range',
   'error-logs-by-entity': 'By Entity & Date',
   'error-logs-by-user': 'By User & Date',
-  'service-orders': 'Service Orders',
-  'service-orders-pending': 'Pending Service Orders',
+  'service-orders': 'All Service Orders',
   'service-orders-inprogress': 'In Progress Service Orders',
+  'service-orders-scheduled': 'Scheduled Service Orders',
+  'service-orders-done': 'Done Service Orders',
+  // Legacy status routes: no menu points at them any more, kept so old links resolve.
+  'service-orders-pending': 'Pending Service Orders',
   'service-orders-resolved': 'Resolved Service Orders',
   'service-orders-completed': 'Completed Service Orders',
   'service-orders-cancelled': 'Cancelled Service Orders',
@@ -340,19 +343,32 @@ const router = createRouter({
       path: '/service-orders',
       name: 'service-orders',
       component: () => import('../views/ServiceOrderList.vue'),
-      meta: { requiresAuth: true, title: 'Service Orders' }
-    },
-    {
-      path: '/service-orders/pending',
-      name: 'service-orders-pending',
-      component: () => import('../views/ServiceOrderList.vue'),
-      meta: { requiresAuth: true, title: 'Pending Service Orders' }
+      meta: { requiresAuth: true, title: 'All Service Orders' }
     },
     {
       path: '/service-orders/inprogress',
       name: 'service-orders-inprogress',
       component: () => import('../views/ServiceOrderList.vue'),
       meta: { requiresAuth: true, title: 'In Progress Service Orders' }
+    },
+    {
+      path: '/service-orders/scheduled',
+      name: 'service-orders-scheduled',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'Scheduled Service Orders' }
+    },
+    {
+      path: '/service-orders/done',
+      name: 'service-orders-done',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'Done Service Orders' }
+    },
+    // Legacy status routes: the sidebar no longer points at them, kept so old links resolve.
+    {
+      path: '/service-orders/pending',
+      name: 'service-orders-pending',
+      component: () => import('../views/ServiceOrderList.vue'),
+      meta: { requiresAuth: true, title: 'Pending Service Orders' }
     },
     {
       path: '/service-orders/resolved',
