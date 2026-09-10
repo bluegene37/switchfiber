@@ -138,20 +138,33 @@ apiClient.interceptors.response.use((response) => {
   }
   if (!errorMessage) {
     // Several endpoints answer with a bare text body ("An error occurred while
-    // creating the access level menu") rather than a problem-details object.
-    // Without this, that sentence is dropped and the user is shown axios's
-    // "Request failed with status code 500", which says nothing.
+    // creating the access level menu") or HTML error pages from IIS/ASP.NET.
+    // Extract concise titles so the user sees the real cause instead of a generic axios message.
     const raw = error.response?.data
-    if (typeof raw === 'string' && raw.trim() && raw.trim().length <= 300) {
-      errorMessage = raw.trim()
+    if (typeof raw === 'string' && raw.trim()) {
+      if (raw.trim().length <= 300 && !/<html/i.test(raw)) {
+        errorMessage = raw.trim()
+      } else if (/<html/i.test(raw) || /<title>/i.test(raw)) {
+        const titleMatch = raw.match(/<title>\s*([\s\S]*?)\s*<\/title>/i)
+        if (titleMatch && titleMatch[1]) {
+          errorMessage = titleMatch[1].replace(/\s+/g, ' ').trim()
+        }
+      }
     }
   }
   if (!errorMessage) {
-    errorMessage = error.response?.data?.title || error.message || 'An unexpected server error occurred.'
+    if (!error.response && error.request) {
+      errorMessage = 'Unable to connect to the API server. The backend may be offline or unreachable.'
+    } else {
+      errorMessage = error.response?.data?.title || error.message || 'An unexpected server error occurred.'
+    }
   }
 
   const customError = new Error(errorMessage)
-  customError.status = error.response?.status
+  customError.status = error.response?.status || (error.code === 'ECONNABORTED' ? 408 : 0)
+  customError.url = error.config?.url
+  customError.baseURL = error.config?.baseURL
+  customError.isNetworkError = !error.response
   if (Object.keys(fieldErrors).length > 0) customError.fieldErrors = fieldErrors
 
   return Promise.reject(customError)

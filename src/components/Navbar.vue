@@ -188,16 +188,16 @@
 
     <!-- Right side: Network Status, Dark Mode, Notifications & Profile -->
     <div class="d-flex align-items-center ms-3 gap-3 sfa-tracker-navbar-right">
-      <!-- Network Status — reflects the last health check, not a fixed label -->
+      <!-- Network Status — reflects the last health check and live API availability -->
       <div
         class="d-none d-lg-flex align-items-center gap-2 px-3 py-1.5 rounded-pill border border-opacity-25 sfa-tracker-navbar-api-status"
-        :class="apiDegraded ? 'bg-danger bg-opacity-10 text-danger border-danger' : 'bg-success bg-opacity-10 text-success border-success'"
-        v-tooltip.bottom="apiDegraded ? 'One or more API endpoints are failing — open notifications for details' : 'All monitored API endpoints are responding'"
+        :class="(apiDegraded || isApiDown) ? 'bg-danger bg-opacity-10 text-danger border-danger' : 'bg-success bg-opacity-10 text-success border-success'"
+        v-tooltip.bottom="isApiDown ? 'The API server is offline — system is parked on Settings' : (apiDegraded ? 'One or more API endpoints are failing — open notifications for details' : 'All monitored API endpoints are responding')"
       >
-        <div class="spinner-grow spinner-grow-sm" :class="apiDegraded ? 'text-danger' : 'text-success'" role="status" style="width: 0.55rem; height: 0.55rem;">
+        <div class="spinner-grow spinner-grow-sm" :class="(apiDegraded || isApiDown) ? 'text-danger' : 'text-success'" role="status" style="width: 0.55rem; height: 0.55rem;">
           <span class="visually-hidden">Status indicator</span>
         </div>
-        <span class="fw-semibold" style="font-size: 0.8rem;">{{ apiDegraded ? 'Service Degraded' : 'Systems Operational' }}</span>
+        <span class="fw-semibold" style="font-size: 0.8rem;">{{ isApiDown ? 'API Offline' : (apiDegraded ? 'Service Degraded' : 'Systems Operational') }}</span>
       </div>
 
       <!-- Quick Light/Dark Mode Toggle (Access-Controlled) -->
@@ -417,7 +417,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const { isDark, toggleTheme } = useTheme()
-const { canAccessTheme, canAccessSettings, isSuperAdmin } = usePermissions()
+const { canAccessTheme, canAccessSettings, isSuperAdmin, isApiDown } = usePermissions()
 
 // Integrated Global Search Composable
 const {

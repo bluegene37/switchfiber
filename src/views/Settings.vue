@@ -19,6 +19,85 @@
         </div>
       </div>
 
+      <!-- API Offline Alert Card & Diagnostics Panel (Featured when API is down) -->
+      <div v-if="isApiDown" class="card shadow-sm border border-danger border-opacity-50 rounded-4 overflow-hidden bg-body sfa-tracker-settings-api-down">
+        <!-- Top Status Bar -->
+        <div class="bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25 px-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2.5">
+            <div class="spinner-grow spinner-grow-sm text-danger" role="status" style="width: 0.65rem; height: 0.65rem;">
+              <span class="visually-hidden">Offline status</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="fw-bold text-danger">API Service Offline</span>
+              <span class="badge bg-danger text-white rounded-pill px-2.5 py-0.5" style="font-size: 0.7rem; letter-spacing: 0.3px;">ALL MENUS HIDDEN</span>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="small text-secondary" style="font-size: 0.78rem;">
+              <i class="pi pi-clock me-1"></i>Last checked: {{ apiErrorDetails?.timestamp || 'Recently' }}
+            </span>
+            <button 
+              @click="handleRetryConnection" 
+              :disabled="isRetrying"
+              class="btn btn-sm btn-danger px-3 py-1.5 fw-semibold rounded-3 shadow-xs d-inline-flex align-items-center gap-2"
+              style="font-size: 0.82rem;"
+            >
+              <i class="pi pi-refresh" :class="{ 'spin-icon': isRetrying }"></i>
+              <span>{{ isRetrying ? 'Checking…' : 'Retry Connection' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Details Body -->
+        <div class="p-4">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-3 flex-shrink-0 d-none d-sm-flex">
+              <i class="pi pi-server fs-3"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold text-body mb-1">Backend API Server is Down</h5>
+              <p class="small text-secondary mb-0">
+                The primary SwitchFiber API server cannot be reached or returned an internal error.
+                The application is running in <strong>Safe Parking Mode</strong> on Settings with all application menus and modules hidden.
+              </p>
+            </div>
+          </div>
+
+          <!-- Technical Error Diagnostic Box -->
+          <div class="p-3 rounded-3 bg-body-tertiary border font-monospace small mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom text-secondary" style="font-size: 0.72rem;">
+              <span class="text-uppercase fw-semibold tracking-wider"><i class="pi pi-code me-1"></i> Error Telemetry & Diagnostics</span>
+              <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">HTTP {{ apiErrorDetails?.status || 500 }}</span>
+            </div>
+            <div class="row g-2" style="font-size: 0.8rem;">
+              <div class="col-12 col-md-6">
+                <span class="text-secondary d-block">Target API Endpoint:</span>
+                <span class="text-body fw-bold text-break">{{ apiUrl }}</span>
+              </div>
+              <div class="col-12 col-md-6">
+                <span class="text-secondary d-block">Request Route:</span>
+                <span class="text-body fw-bold">{{ apiErrorDetails?.url || '/api/Menus' }}</span>
+              </div>
+              <div class="col-12 mt-2">
+                <span class="text-secondary d-block">Server Error Output:</span>
+                <div class="p-2 rounded bg-body border text-danger fw-bold mt-1 text-break" style="font-size: 0.82rem;">
+                  {{ apiErrorDetails?.message || 'HTTP Error 500 - Internal Server Error' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Guidance -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 text-secondary small" style="font-size: 0.78rem;">
+            <div class="d-flex align-items-center gap-1.5">
+              <i class="pi pi-info-circle text-primary"></i>
+              <span>Theme & Appearance options below remain fully functional locally.</span>
+            </div>
+            <span class="text-secondary">SwitchFiber Network Ops &bull; Status Monitor</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Main Content Container -->
       <div class="row g-4">
         <!-- Left Column: Navigation Tabs & Profile Overview Card -->
@@ -66,7 +145,10 @@
               <i class="pi pi-user fs-5"></i>
               <span>Profile Information</span>
             </div>
-            <i class="pi pi-chevron-right small"></i>
+            <div class="d-flex align-items-center gap-2">
+              <span v-if="isApiDown" class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">Offline</span>
+              <i class="pi pi-chevron-right small"></i>
+            </div>
           </button>
 
           <button 
@@ -78,7 +160,10 @@
               <i class="pi pi-lock fs-5"></i>
               <span>Security & Password</span>
             </div>
-            <i class="pi pi-chevron-right small"></i>
+            <div class="d-flex align-items-center gap-2">
+              <span v-if="isApiDown" class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">Offline</span>
+              <i class="pi pi-chevron-right small"></i>
+            </div>
           </button>
 
           <button 
@@ -90,7 +175,10 @@
               <i class="pi pi-server fs-5"></i>
               <span>API & System Info</span>
             </div>
-            <i class="pi pi-chevron-right small"></i>
+            <div class="d-flex align-items-center gap-2">
+              <span v-if="isApiDown" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">Offline</span>
+              <i class="pi pi-chevron-right small"></i>
+            </div>
           </button>
         </div>
       </div>
@@ -589,9 +677,34 @@
             </div>
           </div>
 
+          <!-- Connection Status Box -->
+          <div v-if="isApiDown" class="alert alert-danger d-flex align-items-start gap-3 rounded-3 p-3 mb-4 small" role="alert">
+            <i class="pi pi-exclamation-triangle mt-1 fs-5 flex-shrink-0 text-danger"></i>
+            <div class="flex-grow-1">
+              <div class="fw-bold">Connection Status: Backend Offline (HTTP Error {{ apiErrorDetails?.status || 500 }})</div>
+              <div class="mt-1 text-break text-danger fw-semibold">{{ apiErrorDetails?.message || 'The server could not be reached.' }}</div>
+              <div class="mt-2 text-secondary font-monospace" style="font-size: 0.75rem;">
+                Endpoint: {{ apiUrl }} &bull; Route: {{ apiErrorDetails?.url || '/api/Menus' }}
+              </div>
+            </div>
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1.5 flex-shrink-0" 
+              :disabled="isRetrying"
+              @click="handleRetryConnection"
+            >
+              <i class="pi pi-refresh" :class="{ 'spin-icon': isRetrying }"></i>
+              <span>{{ isRetrying ? 'Checking…' : 'Retry' }}</span>
+            </button>
+          </div>
+          <div v-else class="alert alert-success d-flex align-items-center gap-2 rounded-3 p-3 mb-4 small">
+            <i class="pi pi-check-circle fs-5 flex-shrink-0 text-success"></i>
+            <div><strong>Connection Status:</strong> Connected & Operational (Online)</div>
+          </div>
+
           <div class="mb-3">
             <label class="form-label small fw-semibold text-secondary">Target API Endpoint Host</label>
-            <InputText :modelValue="apiUrl" readonly class="w-100 p-inputtext-sm bg-body-tertiary" />
+            <InputText :modelValue="apiUrl" readonly class="w-100 p-inputtext-sm bg-body-tertiary font-monospace" />
           </div>
 
           <div class="p-3 rounded-3 bg-body-tertiary border text-secondary small">
@@ -620,14 +733,47 @@ import Password from 'primevue/password'
 
 const authStore = useAuthStore()
 const { isDark, toggleTheme } = useTheme()
-const { canAccessTheme, canAccessSettings, isSuperAdmin } = usePermissions()
+const { canAccessTheme, canAccessSettings, isSuperAdmin, isApiDown, apiErrorDetails, retryConnection } = usePermissions()
 const toast = useToast()
 
-const activeSection = ref(canAccessTheme.value ? 'theme' : 'profile')
+const isRetrying = ref(false)
+
+const handleRetryConnection = async () => {
+  isRetrying.value = true
+  try {
+    await retryConnection()
+    if (!isApiDown.value) {
+      toast.add({
+        severity: 'success',
+        summary: 'API Connected',
+        detail: 'API connection restored! All menus and modules are now accessible.',
+        life: 5000
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Connection Failed',
+        detail: apiErrorDetails.value?.message || 'API server is still unreachable.',
+        life: 4500
+      })
+    }
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Connection Error',
+      detail: err.message || 'Could not connect to API server.',
+      life: 4500
+    })
+  } finally {
+    isRetrying.value = false
+  }
+}
+
+const activeSection = ref(canAccessTheme.value ? 'theme' : (isApiDown.value ? 'system' : 'profile'))
 
 watch(canAccessTheme, (allowed) => {
   if (!allowed && activeSection.value === 'theme') {
-    activeSection.value = 'profile'
+    activeSection.value = isApiDown.value ? 'system' : 'profile'
   }
 })
 const user = computed(() => authStore.user)
@@ -1036,5 +1182,12 @@ const updatePassword = async () => {
   .type-weights dd:last-child {
     margin-bottom: 0;
   }
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }
 </style>

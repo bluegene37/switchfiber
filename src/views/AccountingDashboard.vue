@@ -392,9 +392,11 @@ import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { usePermissions } from '../composables/usePermissions'
 
 const router = useRouter()
 const toast = useToast()
+const { isApiDown } = usePermissions()
 
 const isLoading = ref(false)
 const isExporting = ref(false)
@@ -568,6 +570,10 @@ const loadFinancialData = async () => {
 }
 
 onMounted(() => {
+  if (isApiDown.value) {
+    router.replace('/settings')
+    return
+  }
   loadFinancialData()
 })
 

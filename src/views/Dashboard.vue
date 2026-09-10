@@ -206,7 +206,7 @@ import autoTable from 'jspdf-autotable'
 const appStore = useAppStore()
 const router = useRouter()
 const toast = useToast()
-const { canAccess } = usePermissions()
+const { canAccess, isApiDown } = usePermissions()
 
 // Live counts pulled from the API. `null` means "not loaded / unavailable" and
 // renders as an em dash rather than an invented number. Only sources a card on
@@ -343,6 +343,10 @@ const onMapStats = ({ nodes, ports }) => {
 }
 
 onMounted(() => {
+  if (isApiDown.value) {
+    router.replace('/settings')
+    return
+  }
   appStore.fetchApplications()
   loadCounts()
   loadWindowData()

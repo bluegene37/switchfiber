@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { abortPendingNavigationRequests } from '../services/api'
 import { menuCodeForPath, ALL_MENU_ENTRIES } from '../constants/menuCatalog'
-import { ensurePermissionsLoaded, canAccess } from '../composables/usePermissions'
+import { ensurePermissionsLoaded, canAccess, isApiDown } from '../composables/usePermissions'
 
 const APP_TITLE = 'SwitchFiber Admin'
 
@@ -461,33 +461,32 @@ router.beforeEach(async (to, from) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
   }
-  if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    return { name: 'dashboard' }
+
+  // Ensure permissions and API status have been loaded before resolving access
+  if (to.meta.requiresAuth) {
+    await ensurePermissionsLoaded()
   }
 
-  // Hiding a menu entry is not enough on its own: the screen is still one typed
-  // URL away, and /access_level is the screen that edits the permissions
-  // themselves. So the same menu codes that filter the sidebar also gate the
-  // routes — resolved from the path by name, never by database id, because ids
-  // shift when the client deletes and recreates rows.
+  // When the API is down or Dashboard is not permitted, park on Settings
+  const defaultParkingRoute = canAccess('dashboard') ? { name: 'dashboard' } : { name: 'settings' }
+
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    return defaultParkingRoute
+  }
+
+  // Gating routes based on resolved permissions. When API is down, dashboard is denied and parked on Settings.
   if (to.meta.requiresAuth) {
+    if (isApiDown.value && (to.path === '/dashboard' || to.path.startsWith('/dashboard/'))) {
+      return { name: 'settings' }
+    }
     const code = menuCodeForPath(to.path)
-    // No governing menu (e.g. the 404 page): nothing to enforce.
     if (code && code !== 'dashboard' && code !== 'dashboard.main') {
-      // The sidebar tolerates a not-yet-loaded set by showing a skeleton; a
-      // guard cannot, or the first typed URL of the session always gets in.
-      await ensurePermissionsLoaded()
       if (!canAccess(code)) {
         const entry = ALL_MENU_ENTRIES.find(e => e.code === code)
         const detail = { code, menuName: entry?.name || '' }
-        // On a typed URL the whole app is booting: this guard settles before the
-        // layout has mounted its listener, so the event alone would be lost.
-        // The buffer lets the layout pick the denial up on mount.
         window.__pendingMenuDenial = detail
         window.dispatchEvent(new CustomEvent('menu-access-denied', { detail }))
-        // Dashboard is the landing screen for every outcome (it is in the
-        // fallback set), so this cannot loop.
-        return { name: 'dashboard' }
+        return defaultParkingRoute
       }
     }
   }

@@ -31,8 +31,8 @@
       </button>
     </div>
 
-    <!-- Menu Search (hidden while collapsed — there is no room for it) -->
-    <div v-if="!isCollapsed" class="px-2 pt-3 pb-0 sfa-tracker-sidebar-search">
+    <!-- Menu Search (hidden while collapsed or when API is offline) -->
+    <div v-if="!isCollapsed && !isApiDown" class="px-2 pt-3 pb-0 sfa-tracker-sidebar-search">
       <div class="position-relative">
         <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary pointer-events-none" style="left: 0.65rem; font-size: 0.8rem; z-index: 2;"></i>
         <input
@@ -149,8 +149,8 @@
 
       <!-- Fallback Empty State (only once permissions have actually resolved) -->
       <div v-else class="text-center text-muted py-4 small sfa-tracker-sidebar-menu-empty">
-        <i class="pi pi-inbox fs-4 mb-2 d-block opacity-50"></i>
-        <span v-if="!isCollapsed">No menu access</span>
+        <i :class="isApiDown ? 'pi pi-cloud text-danger opacity-75' : 'pi pi-inbox opacity-50'" class="fs-4 mb-2 d-block"></i>
+        <span v-if="!isCollapsed">{{ isApiDown ? 'API Offline · Settings Mode' : 'No menu access' }}</span>
       </div>
     </nav>
     
@@ -234,23 +234,25 @@ const emit = defineEmits(['close', 'toggle-collapse'])
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const { allowedMenuCodes, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin } = usePermissions()
+const { allowedMenuCodes, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin, isApiDown } = usePermissions()
 
 // Anyone on the fallback menu gets told why. Super admins see the full menu
-// (and why they still have it); regular users are down to Dashboard + Settings
-// and are pointed at the person who can fix it.
+// (and why they still have it); regular users are down to Settings when offline.
 const showFallbackWarning = computed(() =>
-  hasLoadedPermissions.value && !!permissionsFallbackReason.value
+  hasLoadedPermissions.value && (!!permissionsFallbackReason.value || isApiDown.value)
 )
 
 const fallbackWarningText = computed(() => {
+  if (isApiDown.value) {
+    return 'API Server Offline: The backend is unreachable or returned an error. All application menus and screens are hidden. System is parked on Settings.'
+  }
   const cause = permissionsFallbackReason.value === 'empty'
     ? 'the access level API returned no menu permissions'
     : 'the access level API could not be reached'
   if (isSuperAdmin.value) {
     return `This is a fallback menu — ${cause}. You are seeing the full menu because you are a Super Admin user.`
   }
-  return `Your menu access could not be loaded — ${cause}. Only Dashboard and Settings are available. You are not a super admin, so please check with your server administrator or the person in charge.`
+  return `Your menu access could not be loaded — ${cause}. Only Settings is available. You are not a super admin, so please check with your server administrator or the person in charge.`
 })
 
 // Permissions arrive from the API after mount. Until that first response lands,
@@ -343,10 +345,9 @@ watch(() => authStore.user, () => {
 const filteredMenuItems = computed(() => {
   if (!rawMenuItems.value || !Array.isArray(rawMenuItems.value)) return []
   const allowed = new Set(allowedMenuCodes.value || [])
-  // Access Level Management is always visible to Super Admins, even with no
-  // AccesslevelMenu row granting it — without this, a Super Admin could lose the
-  // very screen used to fix permissions. Mirrors canAccess().
-  if (isSuperAdmin.value) allowed.add('users-management.access-level')
+  // Access Level Management is always visible to Super Admins when API is up, even with no
+  // AccesslevelMenu row granting it. When API is down, all data maintenance is hidden.
+  if (isSuperAdmin.value && !isApiDown.value) allowed.add('users-management.access-level')
   return rawMenuItems.value
     .map(item => {
       if (item.children && Array.isArray(item.children)) {

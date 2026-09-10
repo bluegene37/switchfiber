@@ -29,6 +29,8 @@ const menuIdToName = ref(new Map())
 // 'error' = the access level API could not be reached / failed, 'empty' = the
 // API responded but held no usable rows. `null` = real permissions are active.
 const permissionsFallbackReason = ref(null)
+const isApiDown = ref(false)
+const apiErrorDetails = ref(null)
 
 // Menu names present in `/api/Menus` that no catalog entry claims, and catalog
 // entries that found no matching row. Surfaced for diagnostics.
@@ -82,8 +84,15 @@ const isSuperAdmin = computed(() => {
   )
 })
 
-// Fallback menu when no stored permissions are usable: Dashboard + Settings only.
-const buildFallbackMenuSet = () => new Set(['dashboard', 'dashboard.main', 'dashboard.accounting', 'settings'])
+// Fallback menu when no stored permissions are usable:
+// When the API is down ('error'): only Settings (+ settings actions). Dashboard is strictly excluded.
+// When the API is reachable but returns empty permissions ('empty'): Dashboard + Settings.
+const buildFallbackMenuSet = (reason = permissionsFallbackReason.value) => {
+  if (reason === 'error' || isApiDown.value) {
+    return new Set(['settings', 'settings.theme', 'settings.modify-password', 'settings.unmask-password'])
+  }
+  return new Set(['dashboard', 'dashboard.main', 'dashboard.accounting', 'settings', 'settings.theme'])
+}
 
 /**
  * Adopt the server's CURRENT idea of this user before resolving permissions.
@@ -154,7 +163,17 @@ const loadMenuRegistry = async () => {
   let rows = []
   try {
     rows = unwrap(await apiClient.get('/Menus', { cancelOnNavigate: false }))
-  } catch {
+    isApiDown.value = false
+    apiErrorDetails.value = null
+  } catch (err) {
+    isApiDown.value = true
+    apiErrorDetails.value = {
+      message: err.message || 'API server unreachable',
+      status: err.status || 0,
+      url: err.url || '/api/Menus',
+      baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'https://103.249.198.50:8090',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    }
     menuIdByServerKey.value = new Map()
     serverKeyByMenuId.value = new Map()
     menuIdToCodes.value = new Map()
@@ -241,18 +260,21 @@ const runFetch = async () => {
     await refreshUserFromServer()
     await resolveLevelName()
 
-    // Super Admin has every menu by definition
-    if (isSuperAdmin.value) {
-      await loadMenuRegistry()
-      allowedMenuCodes.value = new Set(ALL_MENU_CODES)
-      permissionsFallbackReason.value = null
+    const registryLoaded = await loadMenuRegistry()
+    if (!registryLoaded) {
+      isApiDown.value = true
+      allowedMenuCodes.value = buildFallbackMenuSet('error')
+      permissionsFallbackReason.value = 'error'
       return
     }
 
-    const registryLoaded = await loadMenuRegistry()
-    if (!registryLoaded) {
-      allowedMenuCodes.value = buildFallbackMenuSet()
-      permissionsFallbackReason.value = 'error'
+    isApiDown.value = false
+    apiErrorDetails.value = null
+
+    // Super Admin has every menu by definition when the API is online
+    if (isSuperAdmin.value) {
+      allowedMenuCodes.value = new Set(ALL_MENU_CODES)
+      permissionsFallbackReason.value = null
       return
     }
 
@@ -353,6 +375,11 @@ export const ensurePermissionsLoaded = async () => {
 }
 
 export const canAccess = (code) => {
+  // If API is down, only Settings and its sub-controls are accessible
+  if (isApiDown.value) {
+    return code === 'settings' || (typeof code === 'string' && code.startsWith('settings.'))
+  }
+
   // Access Level management is always reachable for a Super Admin
   if (code === 'users-management.access-level' && isSuperAdmin.value) return true
 
@@ -361,6 +388,8 @@ export const canAccess = (code) => {
   }
   return true
 }
+
+export { isApiDown, apiErrorDetails }
 
 const handleUpdateEvent = (event) => {
   if (event?.detail && typeof event.detail === 'object') {
@@ -428,6 +457,9 @@ export function usePermissions() {
     isLoadingPermissions,
     hasLoadedPermissions: hasLoadedOnce,
     permissionsFallbackReason,
+    isApiDown,
+    apiErrorDetails,
+    retryConnection: fetchPermissions,
     unmatchedServerMenus,
     unresolvedMenuCodes,
     isSuperAdmin,
