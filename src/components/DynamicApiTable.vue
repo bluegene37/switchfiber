@@ -10385,6 +10385,19 @@ const saveEdit = async () => {
 
       stampAuditFields(finalPayload, 'update', loggedInUserId)
 
+      // PUT /ServiceOrders/{id} is a full replace: the API writes CreatedDate
+      // exactly as sent and, unlike JobOrders, does not keep the stored value.
+      // The audit strip above removed the record's own createdDate, so without
+      // this every edit wiped it (LogTrail 2026-09-10: order 882 arrived from
+      // the portal intake with a real date, the first browser edit sent null,
+      // the row now reads null). Send the date the edit was opened with.
+      if (isServiceOrderEndpoint.value) {
+        const originalCreatedDate = editBaseSnapshot.value?.createdDate
+        if (originalCreatedDate !== undefined && originalCreatedDate !== null && originalCreatedDate !== '') {
+          finalPayload.createdDate = originalCreatedDate
+        }
+      }
+
       if (isPlanEndpoint.value) {
         if (finalPayload.amount !== undefined && finalPayload.amount !== null && finalPayload.amount !== '') {
           finalPayload.amount = Number(finalPayload.amount)
