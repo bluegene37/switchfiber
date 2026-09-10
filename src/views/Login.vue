@@ -8,8 +8,23 @@
       <p class="small text-secondary fw-medium">Distributed Fiber Network Management</p>
     </div>
 
+    <!-- Backend Unavailable Banner: the API host answered with a 5xx / IIS
+         error page, timed out, or could not be reached at all. The credentials
+         were never checked, so say so and tell the user who to report it to. -->
+    <div v-if="backendError" class="alert alert-danger d-flex align-items-start rounded-3 p-3 mb-3 small sfa-tracker-login-backend-down" role="alert">
+      <i class="pi pi-server me-2 fs-5 flex-shrink-0 mt-1"></i>
+      <div class="flex-grow-1">
+        <div class="fw-bold">Backend API is unavailable</div>
+        <div class="mt-1">This is not a problem with your username or password.</div>
+        <div class="mt-1 fw-semibold">Please report this to the Backend Team.</div>
+        <div class="mt-2 text-break font-monospace opacity-75" style="font-size: 0.72rem;">
+          {{ backendError.technical }}
+        </div>
+      </div>
+    </div>
+
     <!-- Error Alert Banner -->
-    <div v-if="errorMessage" class="alert alert-danger d-flex align-items-center rounded-3 p-2.5 mb-3 small sfa-tracker-login-error" role="alert">
+    <div v-else-if="errorMessage" class="alert alert-danger d-flex align-items-center rounded-3 p-2.5 mb-3 small sfa-tracker-login-error" role="alert">
       <i class="pi pi-exclamation-triangle me-2 fs-5 flex-shrink-0"></i>
       <div>{{ errorMessage }}</div>
     </div>
@@ -108,6 +123,30 @@ const isLoading = ref(false)
 const isResetting = ref(false)
 const errorMessage = ref(null)
 const infoMessage = ref(null)
+// { technical } when the failure is the backend itself rather than the credentials.
+const backendError = ref(null)
+
+// One monospace line for the Backend Team: the status code plus whatever the
+// server said. IIS titles already lead with "HTTP Error 500.31", so the code
+// is only prefixed when the message does not carry it.
+const describeBackendFailure = (error) => {
+  const detail = String(error.message || 'The API server did not respond.').trim()
+  const status = Number(error.status) || 0
+  if (!status || /^HTTP\b/i.test(detail)) return detail
+  return `HTTP ${status} \u2022 ${detail}`
+}
+
+// A login attempt can only be "wrong credentials" if the API actually ran the
+// check. A 5xx (including the IIS "HTTP Error 500.31 - Failed to load ASP.NET
+// Core runtime" page), a timeout (408) or no response at all (status 0) means
+// the backend never got that far.
+const isBackendDown = (error) => {
+  if (!error || typeof error !== 'object') return false
+  if (error.isCanceled) return false
+  if (error.isNetworkError) return true
+  const status = Number(error.status)
+  return status === 0 || status === 408 || status >= 500
+}
 
 const handleLogin = async () => {
   // Submitting an incomplete form used to return silently, leaving only a red border
@@ -117,6 +156,7 @@ const handleLogin = async () => {
   const missingPassword = !password.value
   if (missingUser || missingPassword) {
     infoMessage.value = null
+    backendError.value = null
     errorMessage.value = missingUser && missingPassword
       ? 'Enter your username or email and your password.'
       : missingUser
@@ -127,6 +167,7 @@ const handleLogin = async () => {
 
   isLoading.value = true
   errorMessage.value = null
+  backendError.value = null
   infoMessage.value = null
   try {
     await authStore.login({
@@ -138,7 +179,11 @@ const handleLogin = async () => {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     router.push(redirect.startsWith('/') ? redirect : '/dashboard')
   } catch (error) {
-    errorMessage.value = error.message || 'Failed to authenticate. Please check your credentials.'
+    if (isBackendDown(error)) {
+      backendError.value = { technical: describeBackendFailure(error) }
+    } else {
+      errorMessage.value = error.message || 'Failed to authenticate. Please check your credentials.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -146,6 +191,7 @@ const handleLogin = async () => {
 
 const handleForgotPassword = async () => {
   errorMessage.value = null
+  backendError.value = null
   infoMessage.value = null
 
   const entered = usernameOrEmail.value.trim()

@@ -781,11 +781,11 @@
                         B
                       </div>
                       <div>
-                        <div class="d-flex align-items-center gap-1.5">
+                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
                           <span class="fw-bold text-body" style="font-size: 0.88rem;">Bry</span>
-                          <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: rgba(245, 158, 11, 0.18) !important; color: #d97706 !important; border: 1px solid rgba(245, 158, 11, 0.3) !important;">UX / Polish</span>
+                          <span class="badge rounded-pill px-2 py-0.5 text-wrap text-start" style="font-size: 0.65rem; background-color: rgba(245, 158, 11, 0.18) !important; color: #d97706 !important; border: 1px solid rgba(245, 158, 11, 0.3) !important;">UX / Polish, Documentation</span>
                         </div>
-                        <div class="text-secondary" style="font-size: 0.75rem;">Systems Polish & User Experience</div>
+                        <div class="text-secondary" style="font-size: 0.75rem;">Systems Polish, User Experience & Documentation</div>
                       </div>
                     </div>
                     <p class="small text-muted mb-0 mt-auto fst-italic" style="font-size: 0.75rem; line-height: 1.4;">
