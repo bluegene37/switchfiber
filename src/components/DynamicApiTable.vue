@@ -7420,29 +7420,35 @@ const isJobOrderActivated = computed(() => {
 
 const statusOptions = computed(() => {
   if (isJobOrderEndpoint.value) {
+    // Failed is offered on every Job Order view: a visit can fail from any
+    // stage, and a technician marking it must not have to leave the tab first.
     if (isJobOrderInProgress.value) {
       return [
         { label: 'Inprogress', value: 'Inprogress' },
-        { label: 'Scheduled', value: 'Scheduled' }
+        { label: 'Scheduled', value: 'Scheduled' },
+        { label: 'Failed', value: 'Failed' }
       ]
     }
     if (isJobOrderCompleted.value) {
       return [
         { label: 'Completed', value: 'Completed' },
-        { label: 'Activated', value: 'Activated' }
+        { label: 'Activated', value: 'Activated' },
+        { label: 'Failed', value: 'Failed' }
       ]
     }
     if (isJobOrderActivated.value) {
       return [
         { label: 'Activated', value: 'Activated' },
-        { label: 'Completed', value: 'Completed' }
+        { label: 'Completed', value: 'Completed' },
+        { label: 'Failed', value: 'Failed' }
       ]
     }
     return [
       { label: 'Inprogress', value: 'Inprogress' },
       { label: 'Scheduled', value: 'Scheduled' },
       { label: 'Completed', value: 'Completed' },
-      { label: 'Activated', value: 'Activated' }
+      { label: 'Activated', value: 'Activated' },
+      { label: 'Failed', value: 'Failed' }
     ]
   }
   const vocabulary = dataStatusVocabulary.value
@@ -7532,12 +7538,16 @@ const priorityOptions = ref([
   { label: 'Critical', value: 'Critical' }
 ])
 
+// Failed is spelled the way the data already spells it: 14 support and 18
+// visit rows carry 'Failed' today, so the lists must offer it or an edit that
+// touches anything else silently rewrites the status.
 const supportStatusOptions = ref([
   { label: 'Pending', value: 'Pending' },
   { label: 'In Progress', value: 'In Progress' },
   { label: 'Resolved', value: 'Resolved' },
   { label: 'Closed', value: 'Closed' },
-  { label: 'Cancelled', value: 'Cancelled' }
+  { label: 'Cancelled', value: 'Cancelled' },
+  { label: 'Failed', value: 'Failed' }
 ])
 
 const visitStatusOptions = ref([
@@ -7545,7 +7555,8 @@ const visitStatusOptions = ref([
   { label: 'Dispatched', value: 'Dispatched' },
   { label: 'In Progress', value: 'In Progress' },
   { label: 'Completed', value: 'Completed' },
-  { label: 'Cancelled', value: 'Cancelled' }
+  { label: 'Cancelled', value: 'Cancelled' },
+  { label: 'Failed', value: 'Failed' }
 ])
 
 const repairCategoryOptions = ref([
@@ -9669,6 +9680,7 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
       if (cleanKey === 'scheduled') return 'Scheduled'
       if (cleanKey === 'completed') return 'Completed'
       if (cleanKey === 'activated') return 'Activated'
+      if (cleanKey === 'failed') return 'Failed'
       return rawStatus
     })(),
     verifiedBy: normStr(payload.verifiedBy),
