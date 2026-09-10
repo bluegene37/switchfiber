@@ -4406,11 +4406,13 @@ const SERVICE_ORDER_COLUMNS = [
   'accountNumber',
   'fullName',
   'contactNumber',
+  // The subscriber's email sits with the other contact details; the install
+  // date is still in the View Details modal, which lists the whole record.
+  'emailAddress',
   'plan',
   'concern',
   'supportStatus',
-  'visitStatus',
-  'dateInstalled'
+  'visitStatus'
 ]
 
 const JOB_ORDER_COLUMNS = [
