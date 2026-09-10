@@ -198,6 +198,11 @@
         </div>
         <span v-if="!isCollapsed" class="small fw-semibold text-nowrap">Logout</span>
       </button>
+
+      <!-- Subtle Trademark -->
+      <div v-if="!isCollapsed" class="text-center pt-2 pb-1 text-muted user-select-none" style="font-size: 0.68rem; opacity: 0.75;">
+        <span>SwitchFiber &bull; Crafted by <strong class="fw-semibold text-body-secondary">HarmonyITC</strong></span>
+      </div>
     </div>
   </aside>
 

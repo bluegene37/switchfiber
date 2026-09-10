@@ -707,10 +707,104 @@
             <InputText :modelValue="apiUrl" readonly class="w-100 p-inputtext-sm bg-body-tertiary font-monospace" />
           </div>
 
-          <div class="p-3 rounded-3 bg-body-tertiary border text-secondary small">
+          <div class="p-3 rounded-3 bg-body-tertiary border text-secondary small mb-3">
             <div class="row g-2">
               <div class="col-6"><strong>Application:</strong> Switch Fiber Management Platform</div>
               <div class="col-6"><strong>Version:</strong> v1.2.0-production</div>
+            </div>
+          </div>
+
+          <!-- HarmonyITC Engineering & Trademark Card -->
+          <div class="card border border-primary border-opacity-25 rounded-4 shadow-sm bg-body overflow-hidden">
+            <div class="p-3 bg-primary bg-opacity-10 border-bottom border-primary border-opacity-15 d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary text-white rounded-pill px-2.5 py-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                  <i class="pi pi-bolt me-1"></i>HarmonyITC
+                </span>
+                <span class="fw-bold text-body small">Engineered with Harmony</span>
+              </div>
+              <span class="badge bg-body text-secondary border border-secondary border-opacity-25 rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.68rem;">
+                Official Architecture &amp; Engineering
+              </span>
+            </div>
+
+            <div class="p-3 p-md-4">
+              <!-- Team Members Grid -->
+              <div class="row g-3">
+                <!-- Paulo (Green) -->
+                <div class="col-12 col-md-4">
+                  <div class="p-3 rounded-3 bg-body-tertiary border border-opacity-50 h-100 d-flex flex-column" style="border-left: 3.5px solid #198754 !important;">
+                    <div class="d-flex align-items-center gap-2.5 mb-2">
+                      <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.85rem; background-color: rgba(25, 135, 84, 0.15) !important; color: #198754 !important; border: 1px solid rgba(25, 135, 84, 0.3) !important;">
+                        P
+                      </div>
+                      <div>
+                        <div class="d-flex align-items-center gap-1.5">
+                          <span class="fw-bold text-body" style="font-size: 0.88rem;">Paulo</span>
+                          <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: rgba(25, 135, 84, 0.15) !important; color: #198754 !important; border: 1px solid rgba(25, 135, 84, 0.25) !important;">Backend</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.75rem;">Backend & API Architecture</div>
+                      </div>
+                    </div>
+                    <p class="small text-muted mb-0 mt-auto fst-italic" style="font-size: 0.75rem; line-height: 1.4;">
+                      "Keeping endpoints robust, data models tight, and servers running with zero packet loss."
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Gene (Blue) -->
+                <div class="col-12 col-md-4">
+                  <div class="p-3 rounded-3 bg-body-tertiary border border-opacity-50 h-100 d-flex flex-column" style="border-left: 3.5px solid #0d6efd !important;">
+                    <div class="d-flex align-items-center gap-2.5 mb-2">
+                      <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.85rem; background-color: rgba(13, 110, 253, 0.15) !important; color: #0d6efd !important; border: 1px solid rgba(13, 110, 253, 0.3) !important;">
+                        G
+                      </div>
+                      <div>
+                        <div class="d-flex align-items-center gap-1.5">
+                          <span class="fw-bold text-body" style="font-size: 0.88rem;">Gene</span>
+                          <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: rgba(13, 110, 253, 0.15) !important; color: #0d6efd !important; border: 1px solid rgba(13, 110, 253, 0.25) !important;">Frontend</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.75rem;">Frontend Craftsmanship & UI</div>
+                      </div>
+                    </div>
+                    <p class="small text-muted mb-0 mt-auto fst-italic" style="font-size: 0.75rem; line-height: 1.4;">
+                      "Splicing reactive pixels with purpose, intuitive flows, and sub-second feedback."
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Bry (Yellow) -->
+                <div class="col-12 col-md-4">
+                  <div class="p-3 rounded-3 bg-body-tertiary border border-opacity-50 h-100 d-flex flex-column" style="border-left: 3.5px solid #ffc107 !important;">
+                    <div class="d-flex align-items-center gap-2.5 mb-2">
+                      <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.85rem; background-color: rgba(245, 158, 11, 0.18) !important; color: #d97706 !important; border: 1px solid rgba(245, 158, 11, 0.35) !important;">
+                        B
+                      </div>
+                      <div>
+                        <div class="d-flex align-items-center gap-1.5">
+                          <span class="fw-bold text-body" style="font-size: 0.88rem;">Bry</span>
+                          <span class="badge rounded-pill px-2 py-0.5" style="font-size: 0.65rem; background-color: rgba(245, 158, 11, 0.18) !important; color: #d97706 !important; border: 1px solid rgba(245, 158, 11, 0.3) !important;">UX / Polish</span>
+                        </div>
+                        <div class="text-secondary" style="font-size: 0.75rem;">Systems Polish & User Experience</div>
+                      </div>
+                    </div>
+                    <p class="small text-muted mb-0 mt-auto fst-italic" style="font-size: 0.75rem; line-height: 1.4;">
+                      "Polishing every edge and ergonomic detail so the experience feels smooth as glass."
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Motto Banner -->
+              <div class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2 text-secondary" style="font-size: 0.78rem;">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="pi pi-bolt text-primary"></i>
+                  <span>Custom-crafted exclusively for <strong class="text-danger">SwitchFiber</strong> by <strong>HarmonyITC</strong>.</span>
+                </div>
+                <span class="badge bg-body-secondary text-secondary border border-secondary border-opacity-25 rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.68rem;">
+                  © 2026 HarmonyITC • Paulo &bull; Gene &bull; Bry
+                </span>
+              </div>
             </div>
           </div>
         </div>
