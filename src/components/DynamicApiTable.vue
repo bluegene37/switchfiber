@@ -7433,14 +7433,14 @@ const statusOptions = computed(() => {
       return [
         { label: 'Completed', value: 'Completed' },
         { label: 'Activated', value: 'Activated' },
-        { label: 'Failed', value: 'Failed' }
+        // { label: 'Failed', value: 'Failed' }
       ]
     }
     if (isJobOrderActivated.value) {
       return [
         { label: 'Activated', value: 'Activated' },
         { label: 'Completed', value: 'Completed' },
-        { label: 'Failed', value: 'Failed' }
+        // { label: 'Failed', value: 'Failed' }
       ]
     }
     return [
