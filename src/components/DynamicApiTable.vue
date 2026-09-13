@@ -3266,7 +3266,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick, useId } from 'vue'
 import { useRoute } from 'vue-router'
-import apiClient from '../services/api'
+import { CrudService } from '../services/crud'
 import { RadiusUserService } from '../services/radiusUsers'
 import { normalizeServiceOrder } from '../services/serviceOrders'
 import phAddressService from '../services/phAddressService'
@@ -7623,16 +7623,16 @@ const fetchFormLookups = () => {
 
   formLookupsPromise = (async () => {
     const [menuRes, lcnapRes, lcpRes, napRes, portRes, vlanRes, planRes, lcnapPortRes, , discountsRes] = await Promise.allSettled([
-      apiClient.get('/Menus'),
-      apiClient.get('/Lcpnaps'),
-      apiClient.get('/Lcps'),
-      apiClient.get('/Naps'),
-      apiClient.get('/Ports'),
-      apiClient.get('/Vlans'),
-      apiClient.get('/Plans'),
-      apiClient.get('/Lcpnapports'),
+      CrudService.list('Menus'),
+      CrudService.list('Lcpnaps'),
+      CrudService.list('Lcps'),
+      CrudService.list('Naps'),
+      CrudService.list('Ports'),
+      CrudService.list('Vlans'),
+      CrudService.list('Plans'),
+      CrudService.list('Lcpnapports'),
       fetchDiscountTypesLookup(),
-      apiClient.get('/Discounts')
+      CrudService.list('Discounts')
     ])
 
     if (menuRes.status === 'fulfilled') {
@@ -7690,7 +7690,7 @@ let discountTypesPromise = null
 
 const fetchDiscountTypesLookup = (force = false) => {
   if (!force && discountTypesPromise) return discountTypesPromise
-  discountTypesPromise = apiClient.get('/DiscountTypes')
+  discountTypesPromise = CrudService.list('DiscountTypes')
     .then(res => {
       discountTypesList.value = unwrapList(res).map((item, index) => {
         const rawId = item.id ?? item.discountTypeId ?? item.discounttype_id
@@ -7730,7 +7730,7 @@ let accessLevelsPromise = null
 
 const fetchAccessLevelsLookup = () => {
   if (accessLevelsPromise) return accessLevelsPromise
-  accessLevelsPromise = apiClient.get('/AccessLevel')
+  accessLevelsPromise = CrudService.list('AccessLevel')
     .then(res => {
       accessLevels.value = unwrapList(res).map(item => ({
         label: item.name || `ID: ${item.id}`,
@@ -7750,7 +7750,7 @@ let usersLookupPromise = null
 const fetchUsersLookup = () => {
   if (usersLookupPromise) return usersLookupPromise
   assignedUsersLoading.value = true
-  usersLookupPromise = apiClient.get('/Users')
+  usersLookupPromise = CrudService.list('Users')
     .then(res => {
       const unwrappedUsers = unwrapList(res)
       usersList.value = unwrappedUsers
@@ -9943,7 +9943,7 @@ const saveData = async () => {
     }
 
     console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, finalPayload)
-    await apiClient.post(`/${props.endpoint}`, finalPayload)
+    await CrudService.create(props.endpoint, finalPayload)
 
     // Refresh table
     await fetchData()
@@ -10245,7 +10245,7 @@ const detectEditConflict = async () => {
   if (!base) return null
   let current
   try {
-    current = await apiClient.get(`/${props.endpoint}/${editingRecordId.value}`)
+    current = await CrudService.getById(props.endpoint, editingRecordId.value)
   } catch {
     // A failed pre-check must not block a legitimate save.
     return null
@@ -10430,7 +10430,7 @@ const saveEdit = async () => {
 
     console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, finalPayload)
     const updatedId = editingRecordId.value
-    await apiClient.put(`/${props.endpoint}/${updatedId}`, finalPayload)
+    await CrudService.update(props.endpoint, updatedId, finalPayload)
     await fetchData()
     displayEditDialog.value = false
     toast.add({
@@ -10519,7 +10519,7 @@ const deleteRecord = async () => {
   deleteError.value = null
   try {
     console.log(`[DynamicApiTable] Submitting DELETE to endpoint: /api/${props.endpoint}/${targetId}`)
-    await apiClient.delete(`/${props.endpoint}/${targetId}`)
+    await CrudService.remove(props.endpoint, targetId)
     await fetchData()
     displayDeleteDialog.value = false
     toast.add({
@@ -10579,7 +10579,7 @@ const fetchData = async ({ silent = false } = {}) => {
       params = undefined
     }
 
-    const response = await apiClient.get(url, { params })
+    const response = await CrudService.list(url, params)
 
     // A newer fetch was started while this one was in flight — discard this result
     if (token !== fetchToken) return
@@ -10768,12 +10768,12 @@ const fetchAccessLevelMenus = async () => {
 
     const requests = []
     if (targetAccId) {
-      requests.push(apiClient.get(`/AccesslevelMenu/${targetAccId}`).catch(err => { console.warn(`GET /AccesslevelMenu/${targetAccId} warning:`, err); return [] }))
-      requests.push(apiClient.get(`/AccessLevelMenu/${targetAccId}`).catch(() => []))
-      requests.push(apiClient.get(`/AccesslevelMenu?accessLevelId=${targetAccId}`).catch(() => []))
-      requests.push(apiClient.get(`/AccesslevelMenu?accesslevel_id=${targetAccId}`).catch(() => []))
+      requests.push(CrudService.getById('AccesslevelMenu', targetAccId).catch(err => { console.warn(`GET /AccesslevelMenu/${targetAccId} warning:`, err); return [] }))
+      requests.push(CrudService.getById('AccessLevelMenu', targetAccId).catch(() => []))
+      requests.push(CrudService.list('AccesslevelMenu', { accessLevelId: targetAccId }).catch(() => []))
+      requests.push(CrudService.list('AccesslevelMenu', { accesslevel_id: targetAccId }).catch(() => []))
     }
-    requests.push(apiClient.get('/AccesslevelMenu').catch(() => []))
+    requests.push(CrudService.list('AccesslevelMenu').catch(() => []))
 
     const responses = await Promise.allSettled(requests)
     const combined = []
@@ -10937,18 +10937,7 @@ const isMenuLinked = (menuRow) => {
  * failed, so retrying under a second spelling cannot help — it just doubles the
  * write load on a broken endpoint and files a second entry in the error log.
  */
-const writeWithRouteCasingFallback = async (verb, path, altPath, payload) => {
-  try {
-    return payload === undefined
-      ? await apiClient[verb](path)
-      : await apiClient[verb](path, payload)
-  } catch (err) {
-    if (err.status !== 404) throw err
-    return payload === undefined
-      ? await apiClient[verb](altPath)
-      : await apiClient[verb](altPath, payload)
-  }
-}
+const writeWithRouteCasingFallback = CrudService.requestWithRouteFallback
 
 const toggleMenuLink = async (menuRow) => {
   if (!props.selectedAccessLevel || !menuRow) return
@@ -10990,7 +10979,7 @@ const toggleMenuLink = async (menuRow) => {
           icon: menuRow.icon || 'pi pi-list',
           description: menuRow.description || ''
         }
-        const createdMenu = await apiClient.post('/Menus', createMenuPayload)
+        const createdMenu = await CrudService.create('Menus', createMenuPayload)
         const newId = Number(createdMenu?.id ?? createdMenu?.Id ?? createdMenu?.data?.id)
         if (newId && !isNaN(newId)) {
           targetMenuId = newId
@@ -11090,7 +11079,7 @@ const toggleMenuLink = async (menuRow) => {
     // out so a failed toggle leaves the database exactly as it found it.
     if (createdMenuId) {
       try {
-        await apiClient.delete(`/Menus/${createdMenuId}`)
+        await CrudService.remove('Menus', createdMenuId)
         console.warn(`[DynamicApiTable] Rolled back orphan menu ${createdMenuId} after the link failed`)
         menuRow.id = null
       } catch (rollbackErr) {
