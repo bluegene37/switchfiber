@@ -259,7 +259,14 @@ const apiEndpoints = ref([
   { name: 'Error Log Entities', endpoint: 'LogError/GetEntityByDate', description: 'Distinct entity names present in the error logs' }
 ])
 
-const selectedEndpoint = ref(apiEndpoints.value[0].endpoint)
+// Opening the viewer fetches the selected endpoint at once. Applications is
+// first in the list but unbounded: 15,000+ rows, 31 MB, on every visit before
+// the user has asked for anything. Start on a small table instead; the big
+// ones are one click away and then a deliberate choice.
+const DEFAULT_ENDPOINT = 'Plans'
+const selectedEndpoint = ref(
+  apiEndpoints.value.some(e => e.endpoint === DEFAULT_ENDPOINT) ? DEFAULT_ENDPOINT : apiEndpoints.value[0].endpoint
+)
 const searchQuery = ref('')
 const viewMode = ref('tree') // 'tree' or 'raw'
 const isLoadingJson = ref(false)
