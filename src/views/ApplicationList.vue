@@ -148,6 +148,7 @@
         @reset-filters="clearAllFilters"
         @select-status="onSelectStatus"
         @widen-date-range="searchAllDates"
+        @created="onCreated"
       />
     </div>
   </div>
@@ -160,6 +161,7 @@ import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, currentWeekBounds } from '../utils/dateRangePresets'
+import { createdRecordHiddenBy } from '../utils/createdRecordVisibility'
 
 const route = useRoute()
 const router = useRouter()
@@ -309,6 +311,28 @@ const setStatusFilter = (status) => {
 
 // Picked from the empty-state hint — same destination as clicking its tab.
 const onSelectStatus = (status) => setStatusFilter(status)
+
+// A record saved from a filtered view can land outside it: an Inprogress
+// application created from the Cancelled tab or the /application/done route,
+// or any application created while a past date range is pinned. The save
+// succeeds and the toast says so, but the table (which keeps the page's
+// filters when it refetches) shows nothing, which reads as "it was not
+// saved". When the new record would be hidden, drop the filters: the list
+// sorts newest first, so it becomes the first row. A record that is already
+// visible leaves the user's filters alone.
+const onCreated = ({ payload } = {}) => {
+  const { hidden } = createdRecordHiddenBy({
+    createdStatus: payload?.status,
+    activeStatus: selectedStatus.value,
+    fromDate: fromDate.value,
+    toDate: toDate.value
+  })
+  if (!hidden) return
+  clearAllFilters()
+  // A dedicated /application/<status> route keeps its status from the URL, so
+  // the only way back to a view that can show the record is the All page.
+  if (isDedicatedStatusRoute.value) router.push({ path: '/application' })
+}
 
 const formatDateParam = (dateVal, isEnd = false) => {
   if (!dateVal) return undefined

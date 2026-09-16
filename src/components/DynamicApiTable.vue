@@ -3428,7 +3428,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded', 'select-status', 'widen-date-range'])
+const emit = defineEmits(['row-select', 'row-unselect', 'reset-filters', 'data-loaded', 'select-status', 'widen-date-range', 'created'])
 
 // Filter-param keys that are resolved client-side rather than sent to the API.
 const DATE_FILTER_PARAM_KEYS = ['fromDate', 'toDate', 'dateFrom', 'dateTo', 'DateFrom', 'DateTo']
@@ -9954,6 +9954,12 @@ const saveData = async () => {
       detail: `New ${formatLabel(props.endpoint)} record saved successfully.`,
       life: 3000
     })
+    // Tell the page what was saved. The refetch above keeps whatever status
+    // tab and date window the page had, and those can hide the new row (an
+    // Inprogress application created from the Cancelled tab, or any record
+    // created while a past range is pinned). The page decides whether to
+    // drop its filters so the record is actually on screen.
+    emit('created', { endpoint: props.endpoint, payload: finalPayload })
   } catch (err) {
     console.error(`Error creating record for ${props.endpoint}:`, err)
     saveError.value = err.message || 'Failed to create record. Please check input values.'
