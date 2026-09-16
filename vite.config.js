@@ -47,7 +47,11 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/api': {
+        // Trailing slash on purpose: vite matches proxy keys by prefix, so a
+        // bare '/api' also swallowed the app's own /api-management/* and
+        // /api-services routes, and a direct load or refresh of those pages
+        // was forwarded to the backend and answered 404 with a blank screen.
+        '/api/': {
           target: env.VITE_API_URL || 'https://103.249.198.50:8090',
           changeOrigin: true,
           secure: false // ignores self-signed cert in dev mode
