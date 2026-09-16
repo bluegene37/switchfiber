@@ -113,6 +113,7 @@
         :endpoint="config.endpoint"
         :filter-endpoint="activeFilterEndpoint"
         :filter-params="activeFilterParams"
+        server-date-filter
         :key="route.path"
         read-only
         :show-top-bar="false"
