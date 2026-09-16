@@ -96,6 +96,20 @@ const ENDPOINT_OVERRIDES = {
   ],
   plans: [
     'name', 'amount'
+  ],
+  // The Invoices and Payments DTOs are entirely nullable, so the schema
+  // demanded nothing and a blank Save created a row with only its defaults
+  // (Invoice: status "Unpaid"; Payment: method "Cash", balance 0).
+  invoices: [
+    'accountNo', 'amount', 'dueDate'
+  ],
+  // Payments columns are named by the labels the form shows, not the API
+  // keys, because the data in this table is shifted one column (see the
+  // Payments label map in DynamicApiTable): transactionID renders as
+  // "Account #", accountNo as "Customer Name", contactNo as "Paid Amount",
+  // receivedPayment as "Payment Date".
+  payments: [
+    'transactionID', 'accountNo', 'contactNo', 'receivedPayment', 'paymentMethod'
   ]
 }
 
@@ -129,9 +143,10 @@ const lookupEndpointMeta = (endpoint) => {
  * The mandatory columns for a form, expressed as names that exist in
  * `formColumns` (so callers can look them up in the form data directly).
  *
- * Endpoints with no request schema — RadiusUser, BillingStatements — and
- * those whose DTO is entirely nullable — Plans, Invoices — return an empty
- * array, leaving those forms exactly as they behaved before.
+ * Endpoints with no request schema — RadiusUser, BillingStatements — return
+ * an empty array, leaving those forms exactly as they behaved before. Those
+ * whose DTO is entirely nullable — Plans, Invoices, Payments — carry an
+ * override above so a blank form cannot be saved.
  *
  * @param {string} endpoint      the DynamicApiTable `endpoint` prop
  * @param {string[]} formColumns the columns actually rendered in the form
