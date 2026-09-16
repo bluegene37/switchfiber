@@ -8236,6 +8236,15 @@ const validateRequired = (scope) => {
         return
       }
     }
+
+    // 4. GPS coordinates need both halves. A lone latitude ("14.4649") passed
+    // the required check and was saved as the site's position, which the map
+    // then listed under "cannot be plotted".
+    if (type === 'coordinates' && !isBlank(val) && !parseCoordinates(val)) {
+      errors[col] = `${formatLabel(col)} must be latitude and longitude, e.g. 14.4649, 121.1923`
+      missing.push(col)
+      return
+    }
   })
 
   // Either-or groups: flag every member when the whole group is blank, so the
