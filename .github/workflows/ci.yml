@@ -9,22 +9,20 @@ on:
 
 jobs:
   validate:
-    name: Build & Test (Node ${{ matrix.node-version }} on ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node-version: [20.x, 22.x]
+    # One job is enough: the app builds to static files, so the OS the build
+    # runs on does not change what browsers receive. Node 22 matches the
+    # release pipeline.
+    name: Build & Test (Node 22.x on ubuntu-latest)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install Dependencies
@@ -40,7 +38,6 @@ jobs:
         run: npm run build
 
       - name: Upload Production Distribution Artifact
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
         uses: actions/upload-artifact@v4
         with:
           name: switchfiber-dist

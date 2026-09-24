@@ -107,6 +107,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { ensurePermissionsLoaded, canAccess } from '../composables/usePermissions'
 import apiClient from '../services/api'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
@@ -175,9 +176,14 @@ const handleLogin = async () => {
       password: password.value,
       rememberMe: rememberMe.value
     })
-    // Return the user to the screen the guard bounced them off of.
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
-    router.push(redirect.startsWith('/') ? redirect : '/dashboard')
+    // Resolve the appropriate landing screen: if Dashboard is granted in access menu,
+    // land on /dashboard; otherwise gracefully route to the Default Landing Screen (/landing)
+    await ensurePermissionsLoaded()
+    const defaultLanding = (canAccess('dashboard') || canAccess('dashboard.main')) ? '/dashboard' : '/landing'
+    const redirect = typeof route.query.redirect === 'string' && route.query.redirect !== '/' && route.query.redirect !== '/login'
+      ? route.query.redirect
+      : defaultLanding
+    router.push(redirect.startsWith('/') ? redirect : defaultLanding)
   } catch (error) {
     if (isBackendDown(error)) {
       backendError.value = { technical: describeBackendFailure(error) }

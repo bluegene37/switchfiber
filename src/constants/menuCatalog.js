@@ -90,6 +90,13 @@ export const parseCompoundSegments = (name) => {
 
 export const MENU_CATALOG = [
   {
+    code: 'landing',
+    name: 'Home',
+    aliases: ['Home', 'Landing', 'Portal Home', 'Default Landing', 'Start', 'Portal'],
+    path: '/landing',
+    icon: 'pi-home'
+  },
+  {
     code: 'dashboard',
     name: 'Dashboard',
     serverMenu: 'Dashboard',
@@ -608,6 +615,8 @@ export const MENU_CODE_BY_PATH = new Map(
  * door to the screen `/application` protects.
  */
 const PATH_CODE_ALIASES = new Map([
+  ['/home', 'landing'],
+  ['/welcome', 'landing'],
   ['/dashboard', 'dashboard'],
   ['/application_list', 'application.all'],
   ['/job_order', 'job-orders.all'],

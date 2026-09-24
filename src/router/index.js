@@ -10,6 +10,7 @@ const APP_TITLE = 'SwitchFiber Admin'
 // menu entry that leads there. A route missing from here just shows APP_TITLE.
 const ROUTE_TITLES = {
   login: 'Sign In',
+  landing: 'Home',
   dashboard: 'Dashboard',
   'dashboard-main': 'Main Dashboard',
   'dashboard-accounting': 'Accounting Dashboard',
@@ -82,6 +83,20 @@ const router = createRouter({
       name: 'login',
       component: () => import('../views/Login.vue'),
       meta: { requiresGuest: true }
+    },
+    {
+      path: '/landing',
+      name: 'landing',
+      component: () => import('../views/Landing.vue'),
+      meta: { requiresAuth: true, title: 'Home' }
+    },
+    {
+      path: '/home',
+      redirect: '/landing'
+    },
+    {
+      path: '/welcome',
+      redirect: '/landing'
     },
     {
       path: '/dashboard',
@@ -467,20 +482,35 @@ router.beforeEach(async (to, from) => {
     await ensurePermissionsLoaded()
   }
 
-  // When the API is down or Dashboard is not permitted, park on Settings
-  const defaultParkingRoute = canAccess('dashboard') ? { name: 'dashboard' } : { name: 'settings' }
+  // Default landing / parking route:
+  // 1. When API is down -> park on Settings.
+  // 2. When Dashboard is permitted -> park on Dashboard.
+  // 3. When Dashboard is NOT in access menu -> park on Landing (Default Landing Screen).
+  const defaultParkingRoute = isApiDown.value
+    ? { name: 'settings' }
+    : (canAccess('dashboard') || canAccess('dashboard.main'))
+      ? { name: 'dashboard' }
+      : { name: 'landing' }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     return defaultParkingRoute
   }
 
-  // Gating routes based on resolved permissions. When API is down, dashboard is denied and parked on Settings.
+  // Gating routes based on resolved permissions.
   if (to.meta.requiresAuth) {
     if (isApiDown.value && (to.path === '/dashboard' || to.path.startsWith('/dashboard/'))) {
       return { name: 'settings' }
     }
+
+    // When accessing Dashboard (/dashboard or /dashboard/main) but Dashboard is NOT granted in access menu:
+    // Route gracefully to the default landing screen (/landing) instead of showing the unauthorized dashboard
+    if ((to.path === '/dashboard' || to.path === '/dashboard/main' || to.path.startsWith('/dashboard/')) &&
+        !canAccess('dashboard') && !canAccess('dashboard.main')) {
+      return { name: 'landing' }
+    }
+
     const code = menuCodeForPath(to.path)
-    if (code && code !== 'dashboard' && code !== 'dashboard.main') {
+    if (code && code !== 'landing' && code !== 'dashboard' && code !== 'dashboard.main') {
       if (!canAccess(code)) {
         const entry = ALL_MENU_ENTRIES.find(e => e.code === code)
         const detail = { code, menuName: entry?.name || '' }

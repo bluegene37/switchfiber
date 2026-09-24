@@ -14,13 +14,16 @@
       class="d-flex align-items-center justify-content-between border-bottom overflow-hidden px-3 sfa-tracker-sidebar-brand" 
       style="height: 60px; min-height: 60px; max-height: 60px; flex-shrink: 0; box-sizing: border-box;"
     >
-      <div class="d-flex align-items-center gap-2.5 overflow-hidden" :class="{ 'justify-content-center w-100 px-0': isCollapsed }">
+      <router-link 
+        :to="defaultLandingRoute" 
+        class="d-flex align-items-center gap-2.5 overflow-hidden text-decoration-none" 
+        :class="{ 'justify-content-center w-100 px-0': isCollapsed }"
+      >
         <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 45px; height: 45px; object-fit: contain;" />
         <div v-if="!isCollapsed" class="d-flex align-items-center gap-2 overflow-hidden">
           <span class="text-body fs-5 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
-          <!-- <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">ADMIN</span> -->
         </div>
-      </div>
+      </router-link>
       <button 
         type="button" 
         class="btn btn-sm btn-link text-secondary p-1 d-md-none border-0 shadow-none text-decoration-none" 
@@ -239,7 +242,9 @@ const emit = defineEmits(['close', 'toggle-collapse'])
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const { allowedMenuCodes, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin, isApiDown } = usePermissions()
+const { allowedMenuCodes, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin, isApiDown, canAccess } = usePermissions()
+
+const defaultLandingRoute = computed(() => (canAccess('dashboard') || canAccess('dashboard.main')) ? '/dashboard' : '/landing')
 
 // Anyone on the fallback menu gets told why. Super admins see the full menu
 // (and why they still have it); regular users are down to Settings when offline.

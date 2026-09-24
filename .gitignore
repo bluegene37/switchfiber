@@ -55,10 +55,6 @@ docs/
 *.pdf
 .github/ISSUE_TEMPLATE/
 
-# Tests & Test Fixtures
-tests/
-*.test.js
-*.spec.js
 
 # Test, QA, & PDF Generation Scripts
 scripts/capture_*.js
