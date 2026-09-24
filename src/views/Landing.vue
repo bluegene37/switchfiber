@@ -274,25 +274,46 @@
               </div>
               <div>
                 <h5 class="fw-bold text-body mb-0 fs-6">Field Operations Weather</h5>
-                <span class="text-secondary text-xs">Real-time live telemetry via Open-Meteo</span>
+                <span class="text-secondary text-xs">Real-time live telemetry &bull; {{ activeLocationDisplayName }}</span>
               </div>
             </div>
 
-            <!-- City Location Selector -->
-            <div class="d-flex align-items-center gap-1.5">
+            <!-- Location Selector: Manila, Rizal, Current Location -->
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
               <div class="btn-group btn-group-sm" role="group">
                 <button 
-                  v-for="(city, key) in weatherCities" 
-                  :key="key"
                   type="button"
                   class="btn btn-sm py-1 px-2.5 fw-medium text-xs"
-                  :class="selectedCityKey === key ? 'btn-primary' : 'btn-outline-secondary'"
-                  @click="changeWeatherCity(key)"
+                  :class="selectedLocationKey === 'manila' ? 'btn-primary' : 'btn-outline-secondary'"
+                  @click="changeWeatherLocation('manila')"
                 >
-                  {{ city.name }}
+                  Manila
+                </button>
+                <button 
+                  type="button"
+                  class="btn btn-sm py-1 px-2.5 fw-medium text-xs"
+                  :class="selectedLocationKey === 'rizal' ? 'btn-primary' : 'btn-outline-secondary'"
+                  @click="changeWeatherLocation('rizal')"
+                >
+                  Rizal
+                </button>
+                <button 
+                  type="button"
+                  class="btn btn-sm py-1 px-2.5 fw-medium text-xs d-inline-flex align-items-center gap-1"
+                  :class="selectedLocationKey === 'current' ? 'btn-primary' : 'btn-outline-secondary'"
+                  @click="changeWeatherLocation('current')"
+                  :disabled="isDetectingLocation"
+                >
+                  <i :class="['pi', isDetectingLocation ? 'pi-spin pi-spinner' : 'pi-map-marker', 'text-xs']"></i>
+                  <span>Current Location</span>
                 </button>
               </div>
             </div>
+          </div>
+
+          <div v-if="locationErrorMessage" class="alert alert-warning py-1.5 px-2.5 mb-2 small text-xs rounded-3 d-flex align-items-center justify-content-between">
+            <span><i class="pi pi-exclamation-triangle me-1"></i> {{ locationErrorMessage }}</span>
+            <button type="button" class="btn-close btn-close-sm p-1" @click="locationErrorMessage = ''"></button>
           </div>
 
           <!-- Weather Content Loading State -->
@@ -562,22 +583,34 @@ const measureApiPing = async () => {
 }
 
 // Real Free Weather Integration (Open-Meteo API)
-const weatherCities = {
-  manila: { name: 'Metro Manila', lat: 14.5995, lon: 120.9842 },
-  cebu: { name: 'Cebu City', lat: 10.3157, lon: 123.8854 },
-  davao: { name: 'Davao City', lat: 7.1907, lon: 125.4553 },
-  pampanga: { name: 'Pampanga', lat: 15.0333, lon: 120.6833 }
+const weatherLocations = {
+  manila: { name: 'Manila', lat: 14.5995, lon: 120.9842 },
+  rizal: { name: 'Rizal', lat: 14.5842, lon: 121.1764 }
 }
 
-const selectedCityKey = ref('manila')
+const selectedLocationKey = ref('manila')
+const currentLocationCoords = ref(null)
+const isDetectingLocation = ref(false)
+const locationErrorMessage = ref('')
 const isLoadingWeather = ref(false)
 const weatherData = ref(null)
 
-const fetchWeather = async () => {
+const activeLocationDisplayName = computed(() => {
+  if (selectedLocationKey.value === 'manila') return 'Manila, PH'
+  if (selectedLocationKey.value === 'rizal') return 'Rizal Province, PH'
+  if (selectedLocationKey.value === 'current') {
+    if (currentLocationCoords.value) {
+      return `Current Location (${currentLocationCoords.value.lat.toFixed(2)}°, ${currentLocationCoords.value.lon.toFixed(2)}°)`
+    }
+    return 'Current Location'
+  }
+  return 'Manila, PH'
+})
+
+const fetchWeatherForCoords = async (lat, lon) => {
   isLoadingWeather.value = true
-  const city = weatherCities[selectedCityKey.value] || weatherCities.manila
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&timezone=Asia%2FManila`
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&timezone=Asia%2FManila`
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) })
     if (res.ok) {
       const json = await res.json()
@@ -600,8 +633,51 @@ const fetchWeather = async () => {
   }
 }
 
-const changeWeatherCity = (cityKey) => {
-  selectedCityKey.value = cityKey
+const fetchWeather = async () => {
+  if (selectedLocationKey.value === 'current' && currentLocationCoords.value) {
+    await fetchWeatherForCoords(currentLocationCoords.value.lat, currentLocationCoords.value.lon)
+    return
+  }
+  const loc = weatherLocations[selectedLocationKey.value] || weatherLocations.manila
+  await fetchWeatherForCoords(loc.lat, loc.lon)
+}
+
+const changeWeatherLocation = (locKey) => {
+  locationErrorMessage.value = ''
+  if (locKey === 'current') {
+    selectedLocationKey.value = 'current'
+    if (currentLocationCoords.value) {
+      fetchWeatherForCoords(currentLocationCoords.value.lat, currentLocationCoords.value.lon)
+      return
+    }
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      isDetectingLocation.value = true
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          isDetectingLocation.value = false
+          currentLocationCoords.value = {
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude
+          }
+          fetchWeatherForCoords(pos.coords.latitude, pos.coords.longitude)
+        },
+        () => {
+          isDetectingLocation.value = false
+          locationErrorMessage.value = 'Location permission unavailable. Showing Manila.'
+          selectedLocationKey.value = 'manila'
+          fetchWeather()
+        },
+        { timeout: 8000 }
+      )
+    } else {
+      locationErrorMessage.value = 'Geolocation is not supported by your browser. Showing Manila.'
+      selectedLocationKey.value = 'manila'
+      fetchWeather()
+    }
+    return
+  }
+
+  selectedLocationKey.value = locKey
   fetchWeather()
 }
 
