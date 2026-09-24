@@ -244,41 +244,22 @@
           </div>
         </div>
 
-        <!-- Operator Shift Scratchpad (Real Local Storage) -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-body">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <div class="d-flex align-items-center gap-2">
-              <div class="rounded-3 bg-secondary bg-opacity-10 p-2 text-secondary d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
-                <i class="pi pi-file-edit small"></i>
+        <!-- NOC Support & Emergency Escalation -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2.5">
+              <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                <i class="pi pi-phone small"></i>
               </div>
-              <h5 class="fw-bold text-body mb-0 fs-6">Operator Scratchpad</h5>
+              <div>
+                <div class="fw-bold text-body small">NOC Technical Support &amp; Dispatch</div>
+                <div class="text-secondary text-xs">+63 (2) 8888-FIBER &bull; noc@switchfiber.ph</div>
+              </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <span v-if="scratchpadSaved" class="badge bg-success bg-opacity-10 text-success border border-success-subtle text-xs d-inline-flex align-items-center gap-1">
-                <i class="pi pi-check"></i> Auto-saved
-              </span>
-              <button 
-                type="button" 
-                class="btn btn-sm btn-link text-secondary p-0 text-xs text-decoration-none"
-                @click="clearScratchpad"
-                :disabled="!scratchpadText"
-              >
-                Clear
-              </button>
-            </div>
+            <a href="mailto:noc@switchfiber.ph" class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1 text-xs">
+              Contact Desk
+            </a>
           </div>
-
-          <p class="text-secondary text-xs mb-2">
-            Private browser scratchpad for notes, IP addresses, or customer account numbers during your shift. Automatically saved locally.
-          </p>
-
-          <textarea 
-            v-model="scratchpadText"
-            class="form-control rounded-3 p-3 text-body bg-body-secondary border border-secondary-subtle small font-monospace"
-            rows="3"
-            placeholder="Type notes or temporary data here..."
-            @input="onScratchpadInput"
-          ></textarea>
         </div>
       </div>
 
@@ -440,24 +421,6 @@
                 {{ getDaysUntil(h.date) }}
               </span>
             </div>
-          </div>
-        </div>
-
-        <!-- NOC Support & Emergency Escalation -->
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2.5">
-              <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-                <i class="pi pi-phone small"></i>
-              </div>
-              <div>
-                <div class="fw-bold text-body small">NOC Technical Support &amp; Dispatch</div>
-                <div class="text-secondary text-xs">+63 (2) 8888-FIBER &bull; noc@switchfiber.ph</div>
-              </div>
-            </div>
-            <a href="mailto:noc@switchfiber.ph" class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1 text-xs">
-              Contact Desk
-            </a>
           </div>
         </div>
       </div>
@@ -923,24 +886,6 @@ const selectDate = (dayObj) => {
   }
 }
 
-// Operator Scratchpad (Local Persistence)
-const scratchpadText = ref('')
-const scratchpadSaved = ref(false)
-
-const onScratchpadInput = () => {
-  localStorage.setItem('sf_operator_scratchpad', scratchpadText.value)
-  scratchpadSaved.value = true
-  setTimeout(() => {
-    scratchpadSaved.value = false
-  }, 1800)
-}
-
-const clearScratchpad = () => {
-  scratchpadText.value = ''
-  localStorage.removeItem('sf_operator_scratchpad')
-  scratchpadSaved.value = false
-}
-
 // Hub Refresh Action
 const refreshHub = () => {
   fetchWeather()
@@ -952,12 +897,6 @@ onMounted(() => {
   clockInterval = setInterval(() => {
     currentTime.value = new Date()
   }, 1000)
-
-  // Load scratchpad from localStorage
-  const saved = localStorage.getItem('sf_operator_scratchpad')
-  if (saved) {
-    scratchpadText.value = saved
-  }
 
   // Network event listeners
   if (typeof window !== 'undefined') {
