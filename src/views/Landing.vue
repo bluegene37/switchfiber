@@ -120,61 +120,22 @@
               <div class="d-flex flex-column flex-grow-1">
                 <div class="d-flex align-items-center justify-content-between mb-2.5 flex-wrap gap-2">
                   <div class="d-flex align-items-center gap-1.5 text-success small fw-bold">
-                    <i :class="['pi', pictureCategoryIcon]"></i>
-                    <span>{{ pictureCategoryTitle }}</span>
+                    <i class="pi pi-image"></i>
+                    <span>Picture of the Day</span>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle text-xxs ms-1">
+                      Scenic HD
+                    </span>
                   </div>
 
-                  <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                    <!-- Category Filter Buttons: All, Scenery, Dogs, Cats -->
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Photo category filter">
-                      <button 
-                        type="button" 
-                        class="btn btn-xs py-0.5 px-2 text-xxs fw-semibold"
-                        :class="imageCategory === 'all' ? 'btn-success' : 'btn-outline-secondary'"
-                        @click="setImageCategory('all')"
-                        title="Show dogs, cats, or landscapes"
-                      >
-                        All
-                      </button>
-                      <button 
-                        type="button" 
-                        class="btn btn-xs py-0.5 px-2 text-xxs fw-semibold"
-                        :class="imageCategory === 'landscapes' ? 'btn-success' : 'btn-outline-secondary'"
-                        @click="setImageCategory('landscapes')"
-                        title="Show only landscapes and scenery"
-                      >
-                        Scenery
-                      </button>
-                      <button 
-                        type="button" 
-                        class="btn btn-xs py-0.5 px-2 text-xxs fw-semibold"
-                        :class="imageCategory === 'dogs' ? 'btn-success' : 'btn-outline-secondary'"
-                        @click="setImageCategory('dogs')"
-                        title="Show only dogs"
-                      >
-                        🐶 Dogs
-                      </button>
-                      <button 
-                        type="button" 
-                        class="btn btn-xs py-0.5 px-2 text-xxs fw-semibold"
-                        :class="imageCategory === 'cats' ? 'btn-success' : 'btn-outline-secondary'"
-                        @click="setImageCategory('cats')"
-                        title="Show only cats"
-                      >
-                        🐱 Cats
-                      </button>
-                    </div>
-
-                    <button 
-                      type="button" 
-                      class="btn btn-sm btn-link text-secondary p-0 text-xs text-decoration-none ms-1"
-                      @click="fetchPicture"
-                      :disabled="isLoadingPicture"
-                      :title="'Load new photo in current category'"
-                    >
-                      <i :class="['pi', isLoadingPicture ? 'pi-spin pi-spinner' : 'pi-refresh']"></i>
-                    </button>
-                  </div>
+                  <button 
+                    type="button" 
+                    class="btn btn-sm btn-link text-secondary p-0 text-xs text-decoration-none"
+                    @click="fetchPicture"
+                    :disabled="isLoadingPicture"
+                    title="Shuffle beautiful scenery photo"
+                  >
+                    <i :class="['pi', isLoadingPicture ? 'pi-spin pi-spinner' : 'pi-refresh']"></i>
+                  </button>
                 </div>
 
                 <div class="rounded-3 overflow-hidden border border-secondary-subtle position-relative shadow-inner mb-2 flex-grow-1 d-flex flex-column" style="min-height: 280px; background: #111;">
@@ -864,7 +825,7 @@
                   <i class="pi pi-image text-success"></i>
                   <div>
                     <div class="fw-bold small text-body">Picture of the Day</div>
-                    <div class="text-secondary text-xs">Dogs, cats, or scenic landscapes</div>
+                    <div class="text-secondary text-xs">Scenic landscape &amp; nature photography</div>
                   </div>
                 </div>
                 <div class="form-check form-switch m-0">
@@ -875,48 +836,6 @@
                     :checked="widgetPrefs.showPicture" 
                     @change="toggleWidget('showPicture')"
                   />
-                </div>
-              </div>
-
-              <!-- Photo Category Selector (When Picture is enabled) -->
-              <div v-if="widgetPrefs.showPicture" class="p-2.5 rounded-3 bg-body-secondary border border-secondary-subtle ms-2">
-                <div class="d-flex align-items-center justify-content-between mb-1.5">
-                  <span class="text-secondary text-xs fw-semibold">Photo Content Filter:</span>
-                  <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle text-xxs">Curated</span>
-                </div>
-                <div class="btn-group btn-group-sm w-100" role="group">
-                  <button 
-                    type="button" 
-                    class="btn btn-xs py-1 text-xxs fw-semibold"
-                    :class="imageCategory === 'all' ? 'btn-success' : 'btn-outline-secondary'"
-                    @click="setImageCategory('all')"
-                  >
-                    All Mix
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-xs py-1 text-xxs fw-semibold"
-                    :class="imageCategory === 'landscapes' ? 'btn-success' : 'btn-outline-secondary'"
-                    @click="setImageCategory('landscapes')"
-                  >
-                    Scenery
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-xs py-1 text-xxs fw-semibold"
-                    :class="imageCategory === 'dogs' ? 'btn-success' : 'btn-outline-secondary'"
-                    @click="setImageCategory('dogs')"
-                  >
-                    🐶 Dogs
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-xs py-1 text-xxs fw-semibold"
-                    :class="imageCategory === 'cats' ? 'btn-success' : 'btn-outline-secondary'"
-                    @click="setImageCategory('cats')"
-                  >
-                    🐱 Cats
-                  </button>
                 </div>
               </div>
 
