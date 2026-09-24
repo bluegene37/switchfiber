@@ -76,14 +76,11 @@ describe('Landing Page Widget Customization & Free APIs Suite', () => {
     )
   })
 
-  test('Landing.vue restricts image feed to dogs, cats, and landscapes with dedicated filter controls', () => {
-    assert.ok(landingSource.includes('imageCategory'), 'Must define reactive imageCategory')
-    assert.ok(landingSource.includes('setImageCategory'), 'Must define setImageCategory function')
-    assert.ok(landingSource.includes('sf_landing_image_category'), 'Must persist imageCategory preference in localStorage')
-    assert.ok(landingSource.includes('dog.ceo'), 'Must integrate Dog.ceo free dog API')
-    assert.ok(landingSource.includes('thecatapi.com'), 'Must integrate TheCatAPI free cat API')
+  test('Landing.vue integrates single high-definition photography API (Lorem Picsum / Unsplash) without dog or cat APIs', () => {
+    assert.ok(landingSource.includes('picsum.photos'), 'Must integrate Lorem Picsum HD photo API')
     assert.ok(landingSource.includes('CURATED_LANDSCAPES'), 'Must maintain curated landscapes collection')
-    assert.ok(landingSource.includes('pictureCategoryTitle'), 'Must dynamically update picture title based on category')
-    assert.ok(landingSource.includes('pictureCategoryIcon'), 'Must dynamically update category icon')
+    assert.ok(!landingSource.includes('dog.ceo'), 'Must not include dog.ceo API')
+    assert.ok(!landingSource.includes('thecatapi.com'), 'Must not include thecatapi.com API')
+    assert.ok(landingSource.includes('fetchPicture'), 'Must provide fetchPicture method')
   })
 })

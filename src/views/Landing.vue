@@ -1436,12 +1436,6 @@ const loadWidgetPreferences = () => {
     widgetPrefs.value = { ...DEFAULT_WIDGET_PREFS }
   }
 
-  try {
-    const savedCat = localStorage.getItem('sf_landing_image_category')
-    if (savedCat && ['all', 'landscapes', 'dogs', 'cats'].includes(savedCat)) {
-      imageCategory.value = savedCat
-    }
-  } catch (err) {}
 }
 
 const saveWidgetPreferences = () => {
@@ -1462,10 +1456,9 @@ const toggleSection = () => {
 
 const resetWidgetPreferences = () => {
   widgetPrefs.value = { ...DEFAULT_WIDGET_PREFS }
-  imageCategory.value = 'all'
   saveWidgetPreferences()
   try {
-    localStorage.setItem('sf_landing_image_category', 'all')
+    localStorage.removeItem('sf_landing_image_category')
   } catch (err) {}
   fetchPicture()
 }
@@ -1902,122 +1895,63 @@ const CURATED_LANDSCAPES = [
   { id: '318', author: 'Lukas Budimaier', title: 'High Summit Above Clouds' },
   { id: '325', author: 'Vadim Sherbakov', title: 'Turquoise Shoreline & Coastal Sands' },
   { id: '342', author: 'Vadim Sherbakov', title: 'Winding River & Mountain Bluff' },
-  { id: '413', author: 'Lukas Budimaier', title: 'Pristine Snow Peak Summit' }
+  { id: '413', author: 'Lukas Budimaier', title: 'Pristine Snow Peak Summit' },
+  { id: '433', author: 'Thomas Lefebvre', title: 'Sunbeams Through Redwoods' },
+  { id: '445', author: 'Lukas Budimaier', title: 'Emerald Alpine Vista' },
+  { id: '514', author: 'Lukas Budimaier', title: 'Misty Dawn Mountain Pass' },
+  { id: '534', author: 'Lukas Budimaier', title: 'Alpine Valley Morning Light' }
 ]
-
-const imageCategory = ref('all') // 'all' | 'landscapes' | 'dogs' | 'cats'
-
-const pictureCategoryTitle = computed(() => {
-  if (imageCategory.value === 'dogs') return 'Dog of the Day'
-  if (imageCategory.value === 'cats') return 'Cat of the Day'
-  if (imageCategory.value === 'landscapes') return 'Scenery & Landscapes of the Day'
-  return 'Picture of the Day (Dogs, Cats & Scenery)'
-})
-
-const pictureCategoryIcon = computed(() => {
-  if (imageCategory.value === 'dogs') return 'pi-heart'
-  if (imageCategory.value === 'cats') return 'pi-sparkles'
-  if (imageCategory.value === 'landscapes') return 'pi-compass'
-  return 'pi-image'
-})
-
-const setImageCategory = (catKey) => {
-  if (['all', 'landscapes', 'dogs', 'cats'].includes(catKey)) {
-    imageCategory.value = catKey
-    try {
-      localStorage.setItem('sf_landing_image_category', catKey)
-    } catch (e) {}
-    fetchPicture()
-  }
-}
 
 const pictureData = ref({
   id: '10',
   author: 'Paul Jarvis • Mountain Lake & Pine Forest',
   url: 'https://picsum.photos/id/10/1000/600',
-  pageUrl: 'https://unsplash.com',
-  sourceLabel: 'Lorem Picsum / Unsplash • Scenery',
-  badgeLabel: '🏔️ Scenic Landscape'
+  pageUrl: 'https://unsplash.com/photos/6J--NXulQCs',
+  sourceLabel: 'Lorem Picsum / Unsplash',
+  badgeLabel: '🏔️ Scenic Photography'
 })
 const isLoadingPicture = ref(false)
-
-const formatDogBreed = (url) => {
-  try {
-    const match = url.match(/breeds\/([^/]+)/)
-    if (match && match[1]) {
-      const parts = match[1].split('-').reverse()
-      return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
-    }
-  } catch (e) {}
-  return 'Canine Companion'
-}
 
 const fetchPicture = async () => {
   isLoadingPicture.value = true
   try {
-    // Resolve target category
-    let target = imageCategory.value
-    if (target === 'all') {
-      const pool = ['landscapes', 'dogs', 'cats']
-      target = pool[Math.floor(Math.random() * pool.length)]
-    }
-
-    if (target === 'dogs') {
-      const res = await fetch('https://dog.ceo/api/breeds/image/random', { signal: AbortSignal.timeout(5000) })
-      if (res.ok) {
-        const json = await res.json()
-        if (json?.status === 'success' && json?.message) {
-          const breed = formatDogBreed(json.message)
-          pictureData.value = {
-            id: 'dog-' + Date.now(),
-            author: `${breed} • Dog.ceo`,
-            url: json.message,
-            pageUrl: json.message,
-            sourceLabel: 'Dog.ceo Free Dog API • Open Source',
-            badgeLabel: '🐶 Dog Photography'
-          }
-          return
+    // 1. Fetch live photography feed from Lorem Picsum (Powered by Unsplash)
+    const randomPage = Math.floor(Math.random() * 8) + 1
+    const res = await fetch(`https://picsum.photos/v2/list?page=${randomPage}&limit=25`, { signal: AbortSignal.timeout(5000) })
+    if (res.ok) {
+      const list = await res.json()
+      if (Array.isArray(list) && list.length > 0) {
+        const item = list[Math.floor(Math.random() * list.length)]
+        pictureData.value = {
+          id: item.id,
+          author: item.author ? `${item.author} • Unsplash` : 'Unsplash Photography',
+          url: `https://picsum.photos/id/${item.id}/1000/600`,
+          pageUrl: item.url || `https://unsplash.com/photos/${item.id}`,
+          sourceLabel: 'Lorem Picsum / Unsplash',
+          badgeLabel: '🏔️ Scenic Photography'
         }
-      }
-    } else if (target === 'cats') {
-      const res = await fetch('https://api.thecatapi.com/v1/images/search?mime_types=jpg,png', { signal: AbortSignal.timeout(5000) })
-      if (res.ok) {
-        const list = await res.json()
-        if (Array.isArray(list) && list.length > 0 && list[0]?.url) {
-          const cat = list[0]
-          pictureData.value = {
-            id: cat.id || 'cat-' + Date.now(),
-            author: 'Curated Feline • TheCatAPI',
-            url: cat.url,
-            pageUrl: cat.url,
-            sourceLabel: 'TheCatAPI.com • Free Feline API',
-            badgeLabel: '🐱 Cat Photography'
-          }
-          return
-        }
+        return
       }
     }
-
-    // Default / Landscapes: strictly pick from CURATED_LANDSCAPES
+    // 2. High-definition curated landscape fallback
     const pick = CURATED_LANDSCAPES[Math.floor(Math.random() * CURATED_LANDSCAPES.length)]
     pictureData.value = {
       id: pick.id,
       author: `${pick.author} • ${pick.title}`,
       url: `https://picsum.photos/id/${pick.id}/1000/600`,
       pageUrl: `https://unsplash.com/photos/${pick.id}`,
-      sourceLabel: 'Lorem Picsum / Unsplash • Scenery',
-      badgeLabel: '🏔️ Scenic Landscape'
+      sourceLabel: 'Lorem Picsum / Unsplash',
+      badgeLabel: '🏔️ Scenic Photography'
     }
   } catch (err) {
-    // Guaranteed scenic fallback on error
     const pick = CURATED_LANDSCAPES[Math.floor(Math.random() * CURATED_LANDSCAPES.length)]
     pictureData.value = {
       id: pick.id,
       author: `${pick.author} • ${pick.title}`,
       url: `https://picsum.photos/id/${pick.id}/1000/600`,
       pageUrl: 'https://unsplash.com',
-      sourceLabel: 'Curated Offline Archive',
-      badgeLabel: '🏔️ Scenic Landscape'
+      sourceLabel: 'Lorem Picsum / Unsplash',
+      badgeLabel: '🏔️ Scenic Photography'
     }
   } finally {
     isLoadingPicture.value = false
