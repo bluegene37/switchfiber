@@ -83,4 +83,15 @@ describe('Landing Page Widget Customization & Free APIs Suite', () => {
     assert.ok(!landingSource.includes('thecatapi.com'), 'Must not include thecatapi.com API')
     assert.ok(landingSource.includes('fetchPicture'), 'Must provide fetchPicture method')
   })
+
+  test('Landing.vue does not contain NOC Technical Support & Dispatch or placeholder NOC contacts', () => {
+    assert.ok(!landingSource.includes('NOC Technical Support'), 'Must not contain NOC Technical Support')
+    assert.ok(!landingSource.includes('noc@switchfiber.ph'), 'Must not contain noc@switchfiber.ph')
+  })
+
+  test('Landing.vue configures Bible verse widget with King James Version (KJV)', () => {
+    assert.ok(landingSource.includes('translation=kjv'), 'Must query KJV translation from Bible API')
+    assert.ok(landingSource.includes('King James Version'), 'Must reference King James Version')
+    assert.ok(!landingSource.includes('World English Bible'), 'Must not use World English Bible')
+  })
 })

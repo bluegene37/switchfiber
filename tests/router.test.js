@@ -64,4 +64,38 @@ describe('Router & Browser Tab Title Suite', () => {
       )
     }
   })
+
+  test('Router redirects root path / dynamically to landing for authenticated users and login for guests', () => {
+    const content = fs.readFileSync(routerPath, 'utf8')
+    assert.ok(
+      content.includes("authStore.isAuthenticated ? '/landing' : '/login'"),
+      'Root route / must redirect to /landing when authenticated and /login when guest'
+    )
+  })
+
+  test('Router defaultParkingRoute parks authenticated guests and fallback on landing (Home)', () => {
+    const content = fs.readFileSync(routerPath, 'utf8')
+    assert.ok(
+      content.includes("const defaultParkingRoute = isApiDown.value") && content.includes(": { name: 'landing' }"),
+      'defaultParkingRoute must default to landing (Home) unless API is offline'
+    )
+  })
+
+  test('Login.vue redirects fresh login with no payload to /landing (Home)', () => {
+    const loginPath = path.resolve(__dirname, '../src/views/Login.vue')
+    const loginContent = fs.readFileSync(loginPath, 'utf8')
+    assert.ok(
+      loginContent.includes("const defaultLanding = isApiDown.value ? '/settings' : '/landing'"),
+      'Login.vue must use /landing (Home) as default landing destination'
+    )
+  })
+
+  test('Sidebar.vue defaultLandingRoute points brand logo to /landing (Home)', () => {
+    const sidebarPath = path.resolve(__dirname, '../src/components/Sidebar.vue')
+    const sidebarContent = fs.readFileSync(sidebarPath, 'utf8')
+    assert.ok(
+      sidebarContent.includes("const defaultLandingRoute = computed(() => isApiDown.value ? '/settings' : '/landing')"),
+      'Sidebar.vue brand logo must route to /landing (Home)'
+    )
+  })
 })

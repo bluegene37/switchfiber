@@ -76,7 +76,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/login'
+      redirect: () => {
+        const authStore = useAuthStore()
+        return authStore.isAuthenticated ? '/landing' : '/login'
+      }
     },
     {
       path: '/login',
@@ -474,7 +477,8 @@ router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
+    const isHomePath = to.fullPath === '/' || to.fullPath === '/landing' || to.fullPath === '/home'
+    return { name: 'login', query: !isHomePath ? { redirect: to.fullPath } : undefined }
   }
 
   // Ensure permissions and API status have been loaded before resolving access
@@ -484,13 +488,10 @@ router.beforeEach(async (to, from) => {
 
   // Default landing / parking route:
   // 1. When API is down -> park on Settings.
-  // 2. When Dashboard is permitted -> park on Dashboard.
-  // 3. When Dashboard is NOT in access menu -> park on Landing (Default Landing Screen).
+  // 2. Default landing / parking screen is Home (Landing screen).
   const defaultParkingRoute = isApiDown.value
     ? { name: 'settings' }
-    : (canAccess('dashboard') || canAccess('dashboard.main'))
-      ? { name: 'dashboard' }
-      : { name: 'landing' }
+    : { name: 'landing' }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     return defaultParkingRoute

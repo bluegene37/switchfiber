@@ -183,7 +183,10 @@
                       <div class="d-flex align-items-center gap-1.5 text-warning small fw-bold">
                         <i class="pi pi-bookmark"></i>
                         <span>Bible Verse</span>
-                        <span v-if="bibleVerseData.theme" class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle text-xxs ms-1">
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle text-xxs ms-1">
+                          KJV
+                        </span>
+                        <span v-if="bibleVerseData.theme" class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle text-xxs">
                           {{ bibleVerseData.theme }}
                         </span>
                       </div>
@@ -203,13 +206,13 @@
                         &ldquo;{{ bibleVerseData.text }}&rdquo;
                       </blockquote>
                       <div class="text-end fw-bold text-warning text-xs">
-                        &mdash; {{ bibleVerseData.reference }}
+                        &mdash; {{ bibleVerseData.reference }} <span class="fw-normal text-muted">(KJV)</span>
                       </div>
                     </div>
                   </div>
 
                   <div class="mt-2 pt-2 border-top border-secondary-subtle d-flex align-items-center justify-content-between text-muted text-xs">
-                    <span>Bible-API.com</span>
+                    <span>{{ bibleVerseData.translation || 'King James Version' }}</span>
                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle text-xxs">
                       {{ bibleVerseData.theme || 'Daily Bread' }}
                     </span>
@@ -500,24 +503,6 @@
             </div>
           </div>
         </div>
-
-        <!-- NOC Support & Emergency Escalation -->
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2.5">
-              <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-                <i class="pi pi-phone small"></i>
-              </div>
-              <div>
-                <div class="fw-bold text-body small">NOC Technical Support &amp; Dispatch</div>
-                <div class="text-secondary text-xs">+63 (2) 8888-FIBER &bull; noc@switchfiber.ph</div>
-              </div>
-            </div>
-            <a href="mailto:noc@switchfiber.ph" class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1 text-xs">
-              Contact Desk
-            </a>
-          </div>
-        </div>
       </div>
 
       <!-- Right Column: Operations Time, Field Weather & Philippine Public Holidays -->
@@ -765,7 +750,7 @@
                   <i class="pi pi-bookmark text-warning"></i>
                   <div>
                     <div class="fw-bold small text-body">Daily Bible Verse</div>
-                    <div class="text-secondary text-xs">Scripture verse from public domain Bible API</div>
+                    <div class="text-secondary text-xs">Scripture verse (King James Version - KJV)</div>
                   </div>
                 </div>
                 <div class="form-check form-switch m-0">
@@ -974,7 +959,7 @@ const currentShift = computed(() => {
     }
   } else {
     return {
-      name: 'NOC / Graveyard Shift',
+      name: 'Graveyard Shift',
       hours: '22:00 – 06:00',
       icon: 'pi-moon',
       badgeClass: 'bg-info bg-opacity-10 text-info border-info-subtle'
@@ -1490,216 +1475,216 @@ const hasAnyRightWidget = computed(() => {
   )
 })
 
-// 1. Bible Verse of the Day (Popular Verses: Love, Family, Grace, Faith, Hope & Strength)
+// 1. Bible Verse of the Day (King James Version - KJV: Love, Family, Grace, Faith, Hope & Strength)
 const POPULAR_INSPIRING_VERSES = [
   // Love
   {
     reference: '1 Corinthians 13:4-7',
-    text: 'Love is patient and is kind; love doesn’t envy. Love doesn’t brag, is not proud, doesn’t behave itself inappropriately, doesn’t seek its own way, is not provoked, takes no account of evil; doesn’t rejoice in unrighteousness, but rejoices with the truth; bears all things, believes all things, hopes all things, and endures all things.',
+    text: 'Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up, Doth not behave itself unseemly, seeketh not her own, is not easily provoked, thinketh no evil; Rejoiceth not in iniquity, but rejoiceth in the truth; Beareth all things, believeth all things, hopeth all things, endureth all things.',
     theme: 'Love & Patience',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: '1 John 4:18-19',
-    text: 'There is no fear in love; but perfect love casts out fear. We love him, because he first loved us.',
+    text: 'There is no fear in love; but perfect love casteth out fear: because fear hath torment. He that feareth is not made perfect in love. We love him, because he first loved us.',
     theme: 'Perfect Love',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'John 15:12',
-    text: 'This is my commandment, that you love one another, even as I have loved you.',
+    text: 'This is my commandment, That ye love one another, as I have loved you.',
     theme: 'Love One Another',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Colossians 3:14',
-    text: 'Above all these things, walk in love, which is the bond of perfection.',
+    text: 'And above all these things put on charity, which is the bond of perfectness.',
     theme: 'Bond of Love',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: '1 Corinthians 16:14',
-    text: 'Let all that you do be done in love.',
+    text: 'Let all your things be done with charity.',
     theme: 'Love in All Things',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Romans 12:10',
-    text: 'In love of the brothers be tenderly affectionate to one another; in honor preferring one another.',
+    text: 'Be kindly affectioned one to another with brotherly love; in honour preferring one another.',
     theme: 'Brotherly Love',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
 
   // Family & Unity
   {
     reference: 'Joshua 24:15',
-    text: 'As for me and my house, we will serve Yahweh.',
+    text: 'And if it seem evil unto you to serve the LORD, choose you this day whom ye will serve; but as for me and my house, we will serve the LORD.',
     theme: 'Family & Devotion',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Proverbs 22:6',
-    text: 'Train up a child in the way he should go, and when he is old he will not depart from it.',
+    text: 'Train up a child in the way he should go: and when he is old, he will not depart from it.',
     theme: 'Family & Guidance',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Ephesians 4:32',
-    text: 'Be kind to one another, tenderhearted, forgiving each other, just as God also in Christ forgave you.',
+    text: 'And be ye kind one to another, tenderhearted, forgiving one another, even as God for Christ’s sake hath forgiven you.',
     theme: 'Kindness & Family',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Psalm 133:1',
-    text: 'See how good and how pleasant it is for brothers to live together in unity!',
+    text: 'Behold, how good and how pleasant it is for brethren to dwell together in unity!',
     theme: 'Family & Unity',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Proverbs 17:17',
-    text: 'A friend loves at all times; and a brother is born for adversity.',
+    text: 'A friend loveth at all times, and a brother is born for adversity.',
     theme: 'Family & Loyalty',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
 
   // Grace & Mercy
   {
     reference: 'Ephesians 2:8-9',
-    text: 'For by grace you have been saved through faith, and that not of yourselves; it is the gift of God, not of works, that no one would boast.',
+    text: 'For by grace are ye saved through faith; and that not of yourselves: it is the gift of God: Not of works, lest any man should boast.',
     theme: 'Grace & Gift',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: '2 Corinthians 12:9',
-    text: 'My grace is sufficient for you, for my power is made perfect in weakness.',
+    text: 'And he said unto me, My grace is sufficient for thee: for my strength is made perfect in weakness. Most gladly therefore will I rather glory in my infirmities, that the power of Christ may rest upon me.',
     theme: 'Sufficient Grace',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Hebrews 4:16',
-    text: 'Let us therefore draw near with boldness to the throne of grace, that we may receive mercy and find grace to help in time of need.',
+    text: 'Let us therefore come boldly unto the throne of grace, that we may obtain mercy, and find grace to help in time of need.',
     theme: 'Throne of Grace',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'John 1:16',
-    text: 'From his fullness we all received grace upon grace.',
+    text: 'And of his fulness have all we received, and grace for grace.',
     theme: 'Grace Upon Grace',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Titus 2:11',
-    text: 'For the grace of God has appeared, bringing salvation to all men.',
+    text: 'For the grace of God that bringeth salvation hath appeared to all men.',
     theme: 'Saving Grace',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
 
   // Faith & Trust
   {
     reference: 'Proverbs 3:5-6',
-    text: 'Trust in Yahweh with all your heart, and don’t lean on your own understanding. In all your ways acknowledge him, and he will make your paths straight.',
+    text: 'Trust in the LORD with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths.',
     theme: 'Faith & Trust',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Hebrews 11:1',
-    text: 'Now faith is assurance of things hoped for, proof of things not seen.',
+    text: 'Now faith is the substance of things hoped for, the evidence of things not seen.',
     theme: 'Unwavering Faith',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: '2 Corinthians 5:7',
     text: 'For we walk by faith, not by sight.',
     theme: 'Walking by Faith',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Mark 11:24',
-    text: 'All things whatever you pray and ask for, believe that you have received them, and you will have them.',
+    text: 'Therefore I say unto you, What things soever ye desire, when ye pray, believe that ye receive them, and ye shall have them.',
     theme: 'Faith & Prayer',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Matthew 17:20',
-    text: 'If you have faith even as small as a grain of mustard seed, you will tell this mountain, ‘Move from here to there,’ and it will move; and nothing will be impossible for you.',
+    text: 'If ye have faith as a grain of mustard seed, ye shall say unto this mountain, Remove hence to yonder place; and it shall remove; and nothing shall be impossible unto you.',
     theme: 'Power of Faith',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
 
   // Hope, Peace & Strength
   {
     reference: 'Jeremiah 29:11',
-    text: 'For I know the thoughts that I think toward you, says Yahweh, thoughts of peace, and not of evil, to give you hope and a future.',
+    text: 'For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end.',
     theme: 'Hope & Future',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Philippians 4:13',
-    text: 'I can do all things through Christ, who strengthens me.',
+    text: 'I can do all things through Christ which strengtheneth me.',
     theme: 'Strength & Hope',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Isaiah 40:31',
-    text: 'Those who wait for Yahweh will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint.',
+    text: 'But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.',
     theme: 'Renewed Strength',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Psalm 23:1-3',
-    text: 'Yahweh is my shepherd: I shall lack nothing. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.',
+    text: 'The LORD is my shepherd; I shall not want. He maketh me to lie down in green pastures: he leadeth me beside the still waters. He restoreth my soul.',
     theme: 'Comfort & Peace',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Romans 8:28',
-    text: 'We know that all things work together for good for those who love God, to those who are called according to his purpose.',
+    text: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.',
     theme: 'Hope & Purpose',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Joshua 1:9',
-    text: 'Be strong and courageous. Don’t be afraid, neither be dismayed: for Yahweh your God is with you wherever you go.',
+    text: 'Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest.',
     theme: 'Courage & Hope',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Romans 15:13',
-    text: 'Now may the God of hope fill you with all joy and peace in believing, that you may abound in hope, in the power of the Holy Spirit.',
+    text: 'Now the God of hope fill you with all joy and peace in believing, that ye may abound in hope, through the power of the Holy Ghost.',
     theme: 'Abounding Hope',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Matthew 11:28',
-    text: 'Come to me, all you who labor and are heavily burdened, and I will give you rest.',
+    text: 'Come unto me, all ye that labour and are heavy laden, and I will give you rest.',
     theme: 'Peace & Rest',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'John 14:27',
-    text: 'Peace I leave with you. My peace I give to you; not as the world gives, do I give to you. Don’t let your heart be troubled, neither let it be fearful.',
+    text: 'Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.',
     theme: 'Peace & Comfort',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Psalm 46:1',
     text: 'God is our refuge and strength, a very present help in trouble.',
     theme: 'Refuge & Strength',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   },
   {
     reference: 'Zephaniah 3:17',
-    text: 'Yahweh your God is among you, a mighty one who will save. He will rejoice over you with joy. He will calm you in his love.',
+    text: 'The LORD thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing.',
     theme: 'Unfailing Love & Hope',
-    translation: 'World English Bible'
+    translation: 'King James Version'
   }
 ]
 
 const bibleVerseData = ref({
   reference: 'Jeremiah 29:11',
-  text: 'For I know the thoughts that I think toward you, says Yahweh, thoughts of peace, and not of evil, to give you hope and a future.',
+  text: 'For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end.',
   theme: 'Hope & Future',
-  translation: 'World English Bible'
+  translation: 'King James Version'
 })
 const isLoadingVerse = ref(false)
 
@@ -1708,7 +1693,7 @@ const fetchBibleVerse = async () => {
   try {
     const pick = POPULAR_INSPIRING_VERSES[Math.floor(Math.random() * POPULAR_INSPIRING_VERSES.length)]
     const encoded = encodeURIComponent(pick.reference)
-    const res = await fetch(`https://bible-api.com/${encoded}`, { signal: AbortSignal.timeout(4000) })
+    const res = await fetch(`https://bible-api.com/${encoded}?translation=kjv`, { signal: AbortSignal.timeout(4000) })
     if (res.ok) {
       const data = await res.json()
       if (data?.text && data?.reference) {
@@ -1716,7 +1701,7 @@ const fetchBibleVerse = async () => {
           reference: data.reference,
           text: data.text.trim().replace(/\s+/g, ' '),
           theme: pick.theme,
-          translation: data.translation_name || 'World English Bible'
+          translation: data.translation_name || 'King James Version'
         }
         return
       }

@@ -11,7 +11,7 @@
 
     <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
       <router-link :to="homePath" class="btn btn-primary fw-semibold px-4">
-        <i class="pi pi-home me-2"></i>{{ isAuthenticated ? 'Back to Dashboard' : 'Go to Sign in' }}
+        <i class="pi pi-home me-2"></i>{{ isAuthenticated ? 'Back to Home' : 'Go to Sign in' }}
       </router-link>
       <button type="button" class="btn btn-outline-secondary fw-semibold px-4" @click="router.back()">
         <i class="pi pi-arrow-left me-2"></i>Go back
@@ -30,5 +30,5 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
-const homePath = computed(() => (isAuthenticated.value ? '/dashboard' : '/login'))
+const homePath = computed(() => (isAuthenticated.value ? '/landing' : '/login'))
 </script>

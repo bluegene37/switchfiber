@@ -107,7 +107,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { ensurePermissionsLoaded, canAccess } from '../composables/usePermissions'
+import { ensurePermissionsLoaded, canAccess, isApiDown } from '../composables/usePermissions'
 import apiClient from '../services/api'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
@@ -176,11 +176,15 @@ const handleLogin = async () => {
       password: password.value,
       rememberMe: rememberMe.value
     })
-    // Resolve the appropriate landing screen: if Dashboard is granted in access menu,
-    // land on /dashboard; otherwise gracefully route to the Default Landing Screen (/landing)
+    // Resolve the appropriate landing screen: Home (/landing) is the default screen.
+    // When API is down, gracefully fallback to /settings.
     await ensurePermissionsLoaded()
-    const defaultLanding = (canAccess('dashboard') || canAccess('dashboard.main')) ? '/dashboard' : '/landing'
-    const redirect = typeof route.query.redirect === 'string' && route.query.redirect !== '/' && route.query.redirect !== '/login'
+    const defaultLanding = isApiDown.value ? '/settings' : '/landing'
+    const redirect = typeof route.query.redirect === 'string' &&
+                     route.query.redirect !== '/' &&
+                     route.query.redirect !== '/login' &&
+                     route.query.redirect !== '/landing' &&
+                     route.query.redirect !== '/home'
       ? route.query.redirect
       : defaultLanding
     router.push(redirect.startsWith('/') ? redirect : defaultLanding)

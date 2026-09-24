@@ -244,7 +244,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const { allowedMenuCodes, canAccessSettings, fetchPermissions, hasLoadedPermissions, permissionsFallbackReason, isSuperAdmin, isApiDown, canAccess } = usePermissions()
 
-const defaultLandingRoute = computed(() => (canAccess('dashboard') || canAccess('dashboard.main')) ? '/dashboard' : '/landing')
+const defaultLandingRoute = computed(() => isApiDown.value ? '/settings' : '/landing')
 
 // Anyone on the fallback menu gets told why. Super admins see the full menu
 // (and why they still have it); regular users are down to Settings when offline.
