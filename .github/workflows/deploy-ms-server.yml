@@ -63,6 +63,8 @@ jobs:
           if (-not (Test-Path $target)) {
               New-Item -Path $target -ItemType Directory -Force | Out-Null
           }
+          # Clear any ReadOnly flags on destination files before copying
+          Get-ChildItem -Path $target -Recurse -File -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.IsReadOnly = $false }
           Copy-Item -Path ".\dist\*" -Destination $target -Recurse -Force
           icacls $target /grant "IIS_IUSRS:(OI)(CI)RX" /grant "IUSR:(OI)(CI)RX" /T /Q | Out-Null
 
