@@ -52,16 +52,33 @@ jobs:
 
       - name: Deploy to IIS wwwroot\switchfiberadmin
         shell: powershell
+        env:
+          TARGET_DIR: ${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiberadmin' }}
         run: |
-          Import-Module WebAdministration
-          $target = "${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiberadmin' }}"
+          $target = $env:TARGET_DIR
+          if ([string]::IsNullOrWhiteSpace($target)) {
+              $target = "C:\inetpub\wwwroot\switchfiberadmin"
+          }
           Write-Host "🚚 Deploying built bundle to $target..." -ForegroundColor Cyan
           if (-not (Test-Path $target)) {
               New-Item -Path $target -ItemType Directory -Force | Out-Null
           }
           Copy-Item -Path ".\dist\*" -Destination $target -Recurse -Force
           icacls $target /grant "IIS_IUSRS:(OI)(CI)RX" /grant "IUSR:(OI)(CI)RX" /T /Q | Out-Null
-          Restart-WebAppPool -Name "SwitchFiberPool"
+
+          # Recycle SwitchFiberPool via appcmd or WebAdministration
+          $appcmd = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
+          if (Test-Path $appcmd) {
+              Write-Host "Recycling SwitchFiberPool via appcmd..." -ForegroundColor Cyan
+              & $appcmd recycle apppool "SwitchFiberPool"
+          } else {
+              try {
+                  Import-Module WebAdministration -ErrorAction SilentlyContinue
+                  Restart-WebAppPool -Name "SwitchFiberPool" -ErrorAction SilentlyContinue
+              } catch {
+                  Write-Warning "AppPool recycle skipped: $_"
+              }
+          }
           Write-Host "✅ SwitchFiber successfully deployed and SwitchFiberPool recycled!" -ForegroundColor Green
 
   # =========================================================================
