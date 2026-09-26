@@ -1,6 +1,10 @@
 name: Deploy to Windows Server (IIS)
 
 on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       deploy_method:
@@ -11,17 +15,10 @@ on:
         options:
           - 'self-hosted'
           - 'remote-ssh'
-      site_name:
-        description: 'IIS Website Name'
-        required: false
-        default: 'SwitchFiber'
       target_dir:
         description: 'Physical Path on MS Server'
         required: false
         default: 'C:\inetpub\wwwroot\switchfiber'
-  push:
-    tags:
-      - 'v*'
 
 jobs:
   # =========================================================================
@@ -29,7 +26,7 @@ jobs:
   # Zero inbound firewall ports required; runner polls GitHub over HTTPS.
   # =========================================================================
   deploy-self-hosted:
-    name: Deploy via Self-Hosted Windows Runner
+    name: Build & Deploy via Self-Hosted Windows Runner
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_method == 'self-hosted')
     runs-on: [self-hosted, windows]
     steps:
@@ -53,12 +50,19 @@ jobs:
       - name: Build Production Web Bundle
         run: npm run build
 
-      - name: Execute Automated IIS Deployment Script
+      - name: Deploy to IIS wwwroot\switchfiber
         shell: powershell
         run: |
-          $siteName = "${{ github.event.inputs.site_name || 'SwitchFiber' }}"
-          $targetDir = "${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiber' }}"
-          .\scripts\deploy_iis.ps1 -DistDirectory .\dist -SiteName $siteName -TargetDirectory $targetDir
+          Import-Module WebAdministration
+          $target = "${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiber' }}"
+          Write-Host "🚚 Deploying built bundle to $target..." -ForegroundColor Cyan
+          if (-not (Test-Path $target)) {
+              New-Item -Path $target -ItemType Directory -Force | Out-Null
+          }
+          Copy-Item -Path ".\dist\*" -Destination $target -Recurse -Force
+          icacls $target /grant "IIS_IUSRS:(OI)(CI)RX" /grant "IUSR:(OI)(CI)RX" /T /Q | Out-Null
+          Restart-WebAppPool -Name "SwitchFiberPool"
+          Write-Host "✅ SwitchFiber successfully deployed and SwitchFiberPool recycled!" -ForegroundColor Green
 
   # =========================================================================
   # STRATEGY B: GitHub-Hosted Runner + Remote Deploy over SSH / SCP
