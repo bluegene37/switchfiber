@@ -895,10 +895,27 @@ const userRoleName = computed(() => {
   const u = authStore.user
   if (u?.role) return u.role
   if (u?.accessLevelName) return u.accessLevelName
-  if (userAccessLevelId.value === 3) return 'Super Admin'
-  if (userAccessLevelId.value === 4) return 'Developer'
-  if (userAccessLevelId.value === 103) return 'QA Testing'
-  return `Role (${userAccessLevelId.value})`
+  const idMap = {
+    3: 'Super Admin',
+    4: 'Developer',
+    5: 'Billing Manager',
+    6: 'Technical Support',
+    7: 'Customer Support',
+    8: 'Data Input Team',
+    9: 'Field Installation Team',
+    10: 'Network Operations Center',
+    11: 'Guest',
+    95: 'Sales & Marketing Representative',
+    99: 'Cashier / Payment Collector',
+    100: 'Dispatcher / Schedule Coordinator',
+    101: 'Accounting',
+    103: 'QA Testing',
+    104: 'Executive / General Manager',
+    105: 'Fiber Plant Engineer (OSP)',
+    106: 'Auditor / Compliance Officer',
+    107: 'Warehouse & Inventory Officer'
+  }
+  return idMap[userAccessLevelId.value] || `Role (${userAccessLevelId.value})`
 })
 
 // Real-Time Clock & Session Timing

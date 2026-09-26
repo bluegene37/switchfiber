@@ -15,7 +15,8 @@
     "release:pack": "node scripts/package_release.js",
     "gen:schema": "node scripts/generate_schema_meta.js",
     "gen:soa": "node scripts/generate_soa_deliverables.js",
-    "sync:menus": "node scripts/sync_menu_codes_api.js"
+    "sync:menus": "node scripts/sync_menu_codes_api.js",
+    "sync:access-levels": "node scripts/configure_access_levels_api.js"
   },
   "dependencies": {
     "@primevue/themes": "^4.5.4",

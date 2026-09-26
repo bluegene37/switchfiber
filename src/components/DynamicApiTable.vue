@@ -10691,27 +10691,6 @@ const fetchData = async ({ silent = false } = {}) => {
           name: getMenuDisplayName(row) || row.name
         }))
 
-      // Index all codes already represented by rows in menuList without parent expansion
-      // so specific submenus (e.g. Main Dashboard, Accounting Dashboard) remain representable
-      const existingCodes = new Set(
-        menuList.flatMap(m => resolveMenuCodesFromName(m?.name ?? m?.Name, { expandChildren: false }))
-      )
-
-      // Ensure every standard leaf screen & standalone control is available in the table
-      // (as placeholder with id: null if not yet present in /api/Menus)
-      LEAF_MENU_CATALOG_ENTRIES.forEach(entry => {
-        if (!existingCodes.has(entry.code)) {
-          menuList.push({
-            id: null,
-            name: getMenuDisplayName(entry),
-            route: entry.path || '',
-            icon: entry.icon || 'pi pi-list',
-            description: `Manage access for ${entry.name}`
-          })
-          existingCodes.add(entry.code)
-        }
-      })
-
       unwrappedData = menuList
     }
 
