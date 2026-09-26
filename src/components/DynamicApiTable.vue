@@ -220,8 +220,8 @@
           v-tooltip.top="'Sync menu names with first-letter codes via backend API'"
         >
           <i class="pi pi-sync"></i>
-          <span class="d-none d-sm-inline">Update via API</span>
-          <span class="d-sm-none">Update API</span>
+          <span class="d-none d-sm-inline">Sync Menu Codes</span>
+          <span class="d-sm-none">Sync Codes</span>
         </Button>
         <Button 
           v-if="showTopCreateButton" 
@@ -393,8 +393,8 @@
               v-tooltip.top="'Sync menu names with first-letter codes via backend API'"
             >
               <i class="pi pi-sync"></i>
-              <span class="d-none d-sm-inline">Update via API</span>
-              <span class="d-sm-none">Update API</span>
+              <span class="d-none d-sm-inline">Sync Menu Codes</span>
+              <span class="d-sm-none">Sync Codes</span>
             </Button>
             <!-- Primary Action: Create Button -->
             <Button 

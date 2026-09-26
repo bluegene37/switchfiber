@@ -458,5 +458,32 @@ describe('Submenu Independent Permission & Parent Auto-Show', () => {
     assert.ok(promoSource.includes('Work In Progress'), 'Promo.vue must display Work In Progress state')
     assert.ok(promoSource.includes('/api/Promos'), 'Promo.vue must note pending API endpoint')
   })
+
+  test('All menu entries have unique shortCodes and DynamicApiTable features Sync Menu Codes button', async () => {
+    const { ALL_MENU_ENTRIES, LEAF_MENU_CATALOG_ENTRIES, MENU_CODE_MAP, normalizeMenuName } = await import('../src/constants/menuCatalog.js')
+    
+    // 1. Verify every entry has a valid shortCode
+    const missing = ALL_MENU_ENTRIES.filter(e => !e.shortCode)
+    assert.equal(missing.length, 0, 'Every menu entry in catalog must have a shortCode')
+
+    // 2. Verify all shortCodes are unique
+    const seen = new Map()
+    ALL_MENU_ENTRIES.forEach(e => {
+      assert.ok(!seen.has(e.shortCode), `Duplicate shortCode found: ${e.shortCode} in ${e.name} and ${seen.get(e.shortCode)}`)
+      seen.set(e.shortCode, e.name)
+    })
+
+    // 3. Verify every leaf shortCode maps back to its canonical code in MENU_CODE_MAP
+    LEAF_MENU_CATALOG_ENTRIES.forEach(leaf => {
+      const mapped = MENU_CODE_MAP.get(normalizeMenuName(leaf.shortCode))
+      assert.equal(mapped, leaf.code, `Short code ${leaf.shortCode} must resolve to canonical code ${leaf.code}`)
+    })
+
+    // 4. Verify DynamicApiTable.vue contains the renamed 'Sync Menu Codes' button label
+    const tableSource = read('../src/components/DynamicApiTable.vue')
+    assert.ok(tableSource.includes('Sync Menu Codes'), 'DynamicApiTable.vue must have Sync Menu Codes button')
+    assert.ok(!tableSource.includes('Update via API'), 'DynamicApiTable.vue must not have old Update via API label')
+  })
 })
+
 
