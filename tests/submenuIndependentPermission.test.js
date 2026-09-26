@@ -432,7 +432,31 @@ describe('Submenu Independent Permission & Parent Auto-Show', () => {
     assert.equal(MENU_CODE_MAP.get(normalizeMenuName('LNM1')), 'lcp-nap-locations.map')
     assert.equal(MENU_CODE_MAP.get(normalizeMenuName('LNR1')), 'lcp-nap-locations.records')
     assert.equal(MENU_CODE_MAP.get(normalizeMenuName('FM1')), 'file-maintenance')
+    assert.equal(MENU_CODE_MAP.get(normalizeMenuName('PR1')), 'file-maintenance.promo')
     assert.equal(MENU_CODE_MAP.get(normalizeMenuName('H1')), 'landing')
+  })
+
+  test('Promo menu is configured under File Maintenance with WIP empty screen', async () => {
+    const { MENU_CATALOG, getMenuDisplayName, extractExplicitMenuCode, menuCodeForPath } = await import('../src/constants/menuCatalog.js')
+    const fileMaint = MENU_CATALOG.find(i => i.code === 'file-maintenance')
+    assert.ok(fileMaint, 'File Maintenance must exist in MENU_CATALOG')
+
+    const promoChild = fileMaint.children.find(c => c.code === 'file-maintenance.promo')
+    assert.ok(promoChild, 'Promo child must exist under File Maintenance')
+    assert.equal(promoChild.shortCode, 'PR1')
+    assert.equal(promoChild.path, '/promo')
+    assert.equal(promoChild.name, 'Promo')
+    assert.equal(promoChild.icon, 'pi-gift')
+
+    assert.equal(getMenuDisplayName(promoChild), 'Promo (PR1)')
+    assert.equal(extractExplicitMenuCode('Promo (PR1)'), 'file-maintenance.promo')
+    assert.equal(menuCodeForPath('/promo'), 'file-maintenance.promo')
+
+    // Verify Promo.vue file exists and contains work in progress content
+    const promoSource = read('../src/views/Promo.vue')
+    assert.ok(promoSource.includes('Promo (PR1)'), 'Promo.vue must display Promo (PR1) badge')
+    assert.ok(promoSource.includes('Work In Progress'), 'Promo.vue must display Work In Progress state')
+    assert.ok(promoSource.includes('/api/Promos'), 'Promo.vue must note pending API endpoint')
   })
 })
 
