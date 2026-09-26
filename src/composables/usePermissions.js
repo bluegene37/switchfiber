@@ -198,8 +198,10 @@ const loadMenuRegistry = async () => {
     byId.set(id, key)
     idToNameMap.set(id, rawName)
 
-    // Intelligently parse and resolve codes for this row name
-    const codes = resolveMenuCodesFromName(rawName)
+    // Intelligently parse and resolve codes for this row name.
+    // Do not expand parent categories to their children here so each live server
+    // row maps strictly to its own catalog screen code (1 row = 1 screen).
+    const codes = resolveMenuCodesFromName(rawName, { expandChildren: false })
     idToCodesMap.set(id, codes)
 
     codes.forEach(code => {
@@ -316,16 +318,22 @@ const runFetch = async () => {
         if (codes && codes.length > 0) {
           codes.forEach(code => {
             allowed.add(code)
-            // If a parent category is granted, grant all its child items
+            // If a parent category is granted, only auto-grant children that do NOT
+            // have their own separate row in /api/Menus (like status tabs in Service Orders).
+            // Any child that HAS its own row in /api/Menus must be granted via its own row.
             if (PARENT_TO_CHILD_CODES.has(code)) {
-              PARENT_TO_CHILD_CODES.get(code).forEach(child => allowed.add(child))
+              PARENT_TO_CHILD_CODES.get(code).forEach(child => {
+                if (!codeToMenuIds.value.has(child)) {
+                  allowed.add(child)
+                }
+              })
             }
           })
         } else {
           // Fallback via normalized server key
           const key = serverKeyByMenuId.value.get(id)
           if (key) {
-            const matched = resolveMenuCodesFromName(key)
+            const matched = resolveMenuCodesFromName(key, { expandChildren: false })
             matched.forEach(c => allowed.add(c))
           }
         }
@@ -398,12 +406,12 @@ const handleUpdateEvent = (event) => {
 
     let codes = []
     if (menuName) {
-      codes = resolveMenuCodesFromName(menuName)
+      codes = resolveMenuCodesFromName(menuName, { expandChildren: false })
     } else if (menuId && menuIdToCodes.value.has(Number(menuId))) {
       codes = menuIdToCodes.value.get(Number(menuId))
     } else {
       const key = serverKeyByMenuId.value.get(Number(menuId))
-      if (key) codes = resolveMenuCodesFromName(key)
+      if (key) codes = resolveMenuCodesFromName(key, { expandChildren: false })
     }
 
     if (!codes || !codes.length) return
@@ -413,10 +421,21 @@ const handleUpdateEvent = (event) => {
       if (linked) {
         nextSet.add(code)
         if (PARENT_TO_CHILD_CODES.has(code)) {
-          PARENT_TO_CHILD_CODES.get(code).forEach(child => nextSet.add(child))
+          PARENT_TO_CHILD_CODES.get(code).forEach(child => {
+            if (!codeToMenuIds.value.has(child)) {
+              nextSet.add(child)
+            }
+          })
         }
       } else {
         nextSet.delete(code)
+        if (PARENT_TO_CHILD_CODES.has(code)) {
+          PARENT_TO_CHILD_CODES.get(code).forEach(child => {
+            if (!codeToMenuIds.value.has(child)) {
+              nextSet.delete(child)
+            }
+          })
+        }
       }
     })
     allowedMenuCodes.value = nextSet

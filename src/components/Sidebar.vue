@@ -361,7 +361,9 @@ const filteredMenuItems = computed(() => {
   return rawMenuItems.value
     .map(item => {
       if (item.children && Array.isArray(item.children)) {
-        const validChildren = item.children.filter(child => child && (allowed.has(child.code) || allowed.has(item.code)))
+        // A child is shown only if the child itself is allowed.
+        // The parent folder is automatically shown if it has at least one valid child.
+        const validChildren = item.children.filter(child => child && allowed.has(child.code))
         if (validChildren.length > 0) {
           return { ...item, children: validChildren }
         }

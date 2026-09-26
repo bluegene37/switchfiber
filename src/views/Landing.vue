@@ -482,15 +482,6 @@
               </span>
             </div>
 
-            <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 bg-body-secondary border border-secondary-subtle">
-              <div class="d-flex align-items-center gap-2">
-                <i class="pi pi-wifi text-success"></i>
-                <span class="small fw-semibold text-body">Browser Connectivity</span>
-              </div>
-              <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-2 py-0.5 small">
-                {{ networkConnectionType }} &bull; {{ isOnline ? 'Connected' : 'Offline' }}
-              </span>
-            </div>
 
             <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 bg-body-secondary border border-secondary-subtle">
               <div class="d-flex align-items-center gap-2">
@@ -983,12 +974,6 @@ const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
 const apiPingMs = ref(null)
 const isPinging = ref(false)
 
-const networkConnectionType = computed(() => {
-  if (typeof navigator !== 'undefined' && navigator.connection?.effectiveType) {
-    return navigator.connection.effectiveType.toUpperCase()
-  }
-  return 'BROADBAND'
-})
 
 const measureApiPing = async () => {
   isPinging.value = true
