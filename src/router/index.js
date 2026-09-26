@@ -39,6 +39,7 @@ const ROUTE_TITLES = {
   discount_types: 'Discount Types',
   discounts: 'Discounts',
   discount: 'Discounts',
+  promo: 'Promo',
   user: 'User',
   menu: 'Menu',
   access_level: 'Access Level',
@@ -104,7 +105,11 @@ const router = createRouter({
     {
       path: '/dashboard',
       name: 'dashboard',
-      redirect: '/dashboard/main'
+      redirect: () => {
+        if (canAccess('dashboard.main')) return '/dashboard/main'
+        if (canAccess('dashboard.accounting')) return '/dashboard/accounting'
+        return '/landing'
+      }
     },
     {
       path: '/dashboard/main',
@@ -176,6 +181,12 @@ const router = createRouter({
       path: '/discounts',
       name: 'discounts',
       component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/promo',
+      name: 'promo',
+      component: () => import('../views/Promo.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -503,16 +514,20 @@ router.beforeEach(async (to, from) => {
       return { name: 'settings' }
     }
 
-    // When accessing Dashboard (/dashboard or /dashboard/main) but Dashboard is NOT granted in access menu:
-    // Route gracefully to the default landing screen (/landing) instead of showing the unauthorized dashboard
-    if ((to.path === '/dashboard' || to.path === '/dashboard/main' || to.path.startsWith('/dashboard/')) &&
-        !canAccess('dashboard') && !canAccess('dashboard.main')) {
+    // When accessing /dashboard directly, route to first accessible dashboard screen or landing
+    if (to.path === '/dashboard') {
+      if (canAccess('dashboard.main')) return { path: '/dashboard/main' }
+      if (canAccess('dashboard.accounting')) return { path: '/dashboard/accounting' }
       return { name: 'landing' }
     }
 
     const code = menuCodeForPath(to.path)
-    if (code && code !== 'landing' && code !== 'dashboard' && code !== 'dashboard.main') {
+    if (code && code !== 'landing' && code !== 'dashboard') {
       if (!canAccess(code)) {
+        // If they attempted to access main dashboard but only have accounting dashboard, gracefully redirect
+        if (code === 'dashboard.main' && canAccess('dashboard.accounting')) {
+          return { path: '/dashboard/accounting' }
+        }
         const entry = ALL_MENU_ENTRIES.find(e => e.code === code)
         const detail = { code, menuName: entry?.name || '' }
         window.__pendingMenuDenial = detail

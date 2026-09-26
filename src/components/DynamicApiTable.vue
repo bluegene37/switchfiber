@@ -210,10 +210,22 @@
           </button>
         </div>
 
-        <!-- Right: Primary Action (Create Button) -->
+        <!-- Right: Actions (Sync API for Menus, Create Button) -->
+        <Button
+          v-if="isMenuEndpoint"
+          class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
+          :class="{ 'ms-auto': !showTopCreateButton }"
+          :loading="isSyncingMenuCodes"
+          @click="syncMenuCodesViaApi"
+          v-tooltip.top="'Sync menu names with first-letter codes via backend API'"
+        >
+          <i class="pi pi-sync"></i>
+          <span class="d-none d-sm-inline">Update via API</span>
+          <span class="d-sm-none">Update API</span>
+        </Button>
         <Button 
           v-if="showTopCreateButton" 
-          class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-table-topbar-create-btn" 
+          class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-2 fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-table-topbar-create-btn" 
           :aria-label="createButtonLabel || 'Create'" 
           @click="openCreateDialog"
         >
@@ -372,6 +384,18 @@
               </div>
             </div>
 
+            <!-- Sync Menu Codes via API (Menus only) -->
+            <Button
+              v-if="isMenuEndpoint"
+              class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 ms-1"
+              :loading="isSyncingMenuCodes"
+              @click="syncMenuCodesViaApi"
+              v-tooltip.top="'Sync menu names with first-letter codes via backend API'"
+            >
+              <i class="pi pi-sync"></i>
+              <span class="d-none d-sm-inline">Update via API</span>
+              <span class="d-sm-none">Update API</span>
+            </Button>
             <!-- Primary Action: Create Button -->
             <Button 
               v-if="showToolbarCreateButton" 
@@ -511,6 +535,10 @@
           </span>
           <span v-else-if="normalizeColKey(col) === 'applicationid' || normalizeColKey(col) === 'applicationidvalue'" class="font-monospace small">
             {{ (slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== '') ? slotProps.data[col] : (slotProps.data.applicationId ?? slotProps.data.applicationIdValue ?? '-') }}
+          </span>
+          <!-- Menu Name Column with First Letter Code with number (Menus endpoint) -->
+          <span v-else-if="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name')" class="d-inline-flex align-items-center gap-2">
+            <span class="fw-medium text-body">{{ getMenuDisplayName(slotProps.data) || slotProps.data[col] || '-' }}</span>
           </span>
           <span v-else class="d-inline-block text-truncate" style="max-width: 240px;" :title="slotProps.data[col]">
             <span v-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
@@ -1693,7 +1721,7 @@
                 }" 
                 :disabled="isReadOnlyField(col)"
                 :readonly="isReadOnlyField(col)"
-                :placeholder="col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)" 
+                :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
               />
 
               <div
@@ -3091,7 +3119,7 @@
                 }" 
                 :disabled="isFieldDisabledInEdit(col)"
                 :readonly="isFieldDisabledInEdit(col)"
-                :placeholder="col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)" 
+                :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
               />
 
               <div
@@ -3282,7 +3310,15 @@ import {
   resolveMenuCodesFromName,
   isSuperAdminName,
   MENU_CATALOG,
-  CONTROL_MENU_CATALOG
+  CONTROL_MENU_CATALOG,
+  findPrimaryMenuCodeForName,
+  getShortCodeForCatalogCode,
+  isParentMenu,
+  isHomeMenu,
+  isStandaloneMenu,
+  LEAF_MENU_CATALOG_ENTRIES,
+  getMenuDisplayName,
+  stripMenuCodeFromName
 } from '../constants/menuCatalog'
 import { usePermissions } from '../composables/usePermissions'
 import DataTable from 'primevue/datatable'
@@ -7636,7 +7672,9 @@ const fetchFormLookups = () => {
     ])
 
     if (menuRes.status === 'fulfilled') {
-      menusList.value = unwrapList(menuRes.value).map(item => ({ label: `${item.name} (${item.route || 'ID: ' + item.id})`, value: item.id }))
+      menusList.value = unwrapList(menuRes.value)
+        .filter(item => !isParentMenu(item?.name || item?.Name) && !isHomeMenu(item?.name || item?.Name))
+        .map(item => ({ label: `${getMenuDisplayName(item)} (${item.route || 'ID: ' + item.id})`, value: item.id }))
     }
     if (lcnapRes.status === 'fulfilled') {
       lcpnapsList.value = unwrapList(lcnapRes.value).map(item => ({ label: `${item.name || 'LCNAP #' + item.id}`, value: item.name || item.id, id: item.id }))
@@ -8450,6 +8488,25 @@ const runPreSubmitChecks = async (scope) => {
     toast.add({ severity: 'warn', summary: 'Duplicate name', detail: msg, life: 6000 })
     await focusFirstInvalid(scope, nameCol)
     return false
+  }
+
+  if (isMenuEndpoint.value) {
+    const form = formForScope(scope).value
+    const nameVal = form?.name || form?.Name
+    if (nameVal) {
+      if (isHomeMenu(nameVal)) {
+        const msg = 'Home is permanently accessible to all users and cannot be added as a configurable menu.'
+        setError(msg)
+        toast.add({ severity: 'warn', summary: 'Restricted Menu Name', detail: msg, life: 5000 })
+        return false
+      }
+      if (isParentMenu(nameVal)) {
+        const msg = 'Parent categories are automatically managed based on child screens and cannot be added directly to the Menu List. Please add individual screen menus instead.'
+        setError(msg)
+        toast.add({ severity: 'warn', summary: 'Restricted Menu Name', detail: msg, life: 5000 })
+        return false
+      }
+    }
   }
 
   return true
@@ -9996,6 +10053,10 @@ const openViewDialog = (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   viewingRecordId.value = getRecordId(normRecord) || ''
   viewFormData.value = { ...normRecord }
+  if (isMenuEndpoint.value && viewFormData.value) {
+    const disp = getMenuDisplayName(viewFormData.value)
+    if (disp) viewFormData.value.name = disp
+  }
   autoLocateOnOpen('view')
   displayViewDialog.value = true
   if ((!usersList.value || usersList.value.length === 0) && (!userStore.users || userStore.users.length === 0)) {
@@ -10013,6 +10074,10 @@ const openEditDialog = async (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   editingRecordId.value = getRecordId(normRecord)
   editFormData.value = { ...normRecord }
+  if (isMenuEndpoint.value && editFormData.value) {
+    const disp = getMenuDisplayName(editFormData.value)
+    if (disp) editFormData.value.name = disp
+  }
   autoLocateOnOpen('edit')
 
   // Normalize phone numbers on load so any phone number in the database missing leading 0 displays with 0
@@ -10610,26 +10675,35 @@ const fetchData = async ({ silent = false } = {}) => {
     }
     
     if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
-      const menuList = unwrappedData || []
+      const rawList = unwrappedData || []
       
+      // Filter out parent category groups (which have children) and Home (landing).
+      // Home is always accessible to all users and is not configured in the Menu List.
+      // Parent categories are automatically shown in the sidebar if any child is allowed.
+      const menuList = rawList
+        .filter(row => {
+          const name = row?.name || row?.Name || ''
+          const code = row?.code || row?.Code
+          return !isParentMenu(code || name) && !isHomeMenu(code || name)
+        })
+        .map(row => ({
+          ...row,
+          name: getMenuDisplayName(row) || row.name
+        }))
+
       // Index all codes already represented by rows in menuList without parent expansion
       // so specific submenus (e.g. Main Dashboard, Accounting Dashboard) remain representable
       const existingCodes = new Set(
         menuList.flatMap(m => resolveMenuCodesFromName(m?.name ?? m?.Name, { expandChildren: false }))
       )
 
-      // Ensure every standard catalog screen & control is available in the table
+      // Ensure every standard leaf screen & standalone control is available in the table
       // (as placeholder with id: null if not yet present in /api/Menus)
-      const ALL_ENTRIES = [
-        ...MENU_CATALOG.flatMap(item => (item.children ? [item, ...item.children] : [item])),
-        ...CONTROL_MENU_CATALOG
-      ]
-
-      ALL_ENTRIES.forEach(entry => {
+      LEAF_MENU_CATALOG_ENTRIES.forEach(entry => {
         if (!existingCodes.has(entry.code)) {
           menuList.push({
             id: null,
-            name: entry.name,
+            name: getMenuDisplayName(entry),
             route: entry.path || '',
             icon: entry.icon || 'pi pi-list',
             description: `Manage access for ${entry.name}`
@@ -10910,6 +10984,65 @@ const explainLockedMenuToggle = () => {
     detail: 'Super Admin always has every menu. Its permissions are fixed and cannot be changed.',
     life: 4000
   })
+}
+
+const getMenuShortCodeBadge = (menuRow) => {
+  const name = menuRow?.name || menuRow?.Name || ''
+  const code = findPrimaryMenuCodeForName(name)
+  if (!code) return null
+  return getShortCodeForCatalogCode(code)
+}
+
+const getMenuCatalogCode = (menuRow) => {
+  const name = menuRow?.name || menuRow?.Name || ''
+  return findPrimaryMenuCodeForName(name) || ''
+}
+
+const isSyncingMenuCodes = ref(false)
+
+const syncMenuCodesViaApi = async () => {
+  if (isSyncingMenuCodes.value) return
+  isSyncingMenuCodes.value = true
+  try {
+    const raw = await CrudService.list('Menus')
+    const list = unwrapList(raw)
+    let updatedCount = 0
+
+    for (const menu of list) {
+      const currentName = menu.name || ''
+      const targetName = getMenuDisplayName(menu)
+
+      if (targetName && currentName !== targetName) {
+        await CrudService.update('Menus', menu.id, {
+          name: targetName,
+          description: menu.description || '',
+          modifiedBy: Number(authStore.user?.id) || 1,
+          modifiedDate: null
+        })
+        updatedCount++
+      }
+    }
+
+    await fetchData()
+    toast.add({
+      severity: 'success',
+      summary: 'Menu Names Synchronized',
+      detail: updatedCount > 0 
+        ? `Successfully updated ${updatedCount} menu name(s) in backend API.` 
+        : 'All menu names in the database are already up-to-date with their codes.',
+      life: 4000
+    })
+  } catch (err) {
+    console.error('Error syncing menu codes via API:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Sync Failed',
+      detail: err.message || 'Failed to update menus via the API.',
+      life: 5000
+    })
+  } finally {
+    isSyncingMenuCodes.value = false
+  }
 }
 
 const getToggleSwitchTitle = (menuRow) => {

@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useAuthStore } from '../stores/auth'
-import apiClient from '../services/api'
+import { useAuthStore } from '../stores/auth.js'
+import apiClient from '../services/api.js'
 import {
   ALL_MENU_CODES,
   MENU_CODE_TO_SERVER_KEY,
@@ -8,8 +8,11 @@ import {
   PARENT_TO_CHILD_CODES,
   normalizeMenuName,
   resolveMenuCodesFromName,
-  isSuperAdminName
-} from '../constants/menuCatalog'
+  isSuperAdminName,
+  extractExplicitMenuCode,
+  getShortCodeForCatalogCode,
+  MENU_CODE_MAP
+} from '../constants/menuCatalog.js'
 
 // Shared reactive state across all components
 const allowedMenuCodes = ref(new Set())
@@ -199,14 +202,21 @@ const loadMenuRegistry = async () => {
     idToNameMap.set(id, rawName)
 
     // Intelligently parse and resolve codes for this row name.
-    // Do not expand parent categories to their children here so each live server
-    // row maps strictly to its own catalog screen code (1 row = 1 screen).
-    const codes = resolveMenuCodesFromName(rawName, { expandChildren: false })
+    // Prioritize explicit code in name (e.g. "Main Dashboard (MD1)" -> "dashboard.main")
+    const explicitCode = extractExplicitMenuCode(rawName)
+    const codes = explicitCode 
+      ? [explicitCode] 
+      : resolveMenuCodesFromName(rawName, { expandChildren: false })
     idToCodesMap.set(id, codes)
 
     codes.forEach(code => {
       if (!codeToIdsMap.has(code)) codeToIdsMap.set(code, [])
       codeToIdsMap.get(code).push(id)
+      const shortCode = getShortCodeForCatalogCode(code)
+      if (shortCode) {
+        if (!codeToIdsMap.has(shortCode)) codeToIdsMap.set(shortCode, [])
+        codeToIdsMap.get(shortCode).push(id)
+      }
     })
   })
 
@@ -318,6 +328,8 @@ const runFetch = async () => {
         if (codes && codes.length > 0) {
           codes.forEach(code => {
             allowed.add(code)
+            const shortCode = getShortCodeForCatalogCode(code)
+            if (shortCode) allowed.add(shortCode)
             // If a parent category is granted, only auto-grant children that do NOT
             // have their own separate row in /api/Menus (like status tabs in Service Orders).
             // Any child that HAS its own row in /api/Menus must be granted via its own row.
@@ -325,6 +337,8 @@ const runFetch = async () => {
               PARENT_TO_CHILD_CODES.get(code).forEach(child => {
                 if (!codeToMenuIds.value.has(child)) {
                   allowed.add(child)
+                  const childShort = getShortCodeForCatalogCode(child)
+                  if (childShort) allowed.add(childShort)
                 }
               })
             }
@@ -383,19 +397,52 @@ export const ensurePermissionsLoaded = async () => {
 }
 
 export const canAccess = (code) => {
+  if (!code) return false
+
   // If API is down, only Settings and its sub-controls are accessible
   if (isApiDown.value) {
     return code === 'settings' || (typeof code === 'string' && code.startsWith('settings.'))
   }
 
+  // Home (landing) is always accessible to all authenticated users and is excluded from the menu list
+  if (code === 'landing') return true
+  if (code === 'H1') return true
+
+  // Resolve canonical code and shortCode via MENU_CODE_MAP
+  const norm = normalizeMenuName(code)
+  const canonicalCode = MENU_CODE_MAP.get(norm) || code
+  const shortCode = getShortCodeForCatalogCode(canonicalCode)
+
   // Access Level management is always reachable for a Super Admin
-  if (code === 'users-management.access-level' && isSuperAdmin.value) return true
+  if ((canonicalCode === 'users-management.access-level' || code === 'AL1') && isSuperAdmin.value) return true
+
+  // Super Admin has full access when online
+  if (isSuperAdmin.value) return true
+
+  // Parent categories automatically inherit access if at least one child submenu is permitted
+  if (PARENT_TO_CHILD_CODES.has(code)) {
+    const children = PARENT_TO_CHILD_CODES.get(code)
+    if (children && children.length > 0) {
+      return children.some(childCode => canAccess(childCode))
+    }
+  }
+  if (PARENT_TO_CHILD_CODES.has(canonicalCode)) {
+    const children = PARENT_TO_CHILD_CODES.get(canonicalCode)
+    if (children && children.length > 0) {
+      return children.some(childCode => canAccess(childCode))
+    }
+  }
 
   if (hasLoadedOnce.value) {
-    return allowedMenuCodes.value.has(code)
+    return (
+      allowedMenuCodes.value.has(canonicalCode) ||
+      (shortCode && allowedMenuCodes.value.has(shortCode)) ||
+      allowedMenuCodes.value.has(code)
+    )
   }
   return true
 }
+
 
 export { isApiDown, apiErrorDetails }
 
@@ -406,33 +453,44 @@ const handleUpdateEvent = (event) => {
 
     let codes = []
     if (menuName) {
-      codes = resolveMenuCodesFromName(menuName, { expandChildren: false })
+      const explicitCode = extractExplicitMenuCode(menuName)
+      codes = explicitCode ? [explicitCode] : resolveMenuCodesFromName(menuName, { expandChildren: false })
     } else if (menuId && menuIdToCodes.value.has(Number(menuId))) {
       codes = menuIdToCodes.value.get(Number(menuId))
     } else {
       const key = serverKeyByMenuId.value.get(Number(menuId))
-      if (key) codes = resolveMenuCodesFromName(key, { expandChildren: false })
+      if (key) {
+        const explicitCode = extractExplicitMenuCode(key)
+        codes = explicitCode ? [explicitCode] : resolveMenuCodesFromName(key, { expandChildren: false })
+      }
     }
 
     if (!codes || !codes.length) return
 
     const nextSet = new Set(allowedMenuCodes.value)
     codes.forEach(code => {
+      const shortCode = getShortCodeForCatalogCode(code)
       if (linked) {
         nextSet.add(code)
+        if (shortCode) nextSet.add(shortCode)
         if (PARENT_TO_CHILD_CODES.has(code)) {
           PARENT_TO_CHILD_CODES.get(code).forEach(child => {
             if (!codeToMenuIds.value.has(child)) {
               nextSet.add(child)
+              const childShort = getShortCodeForCatalogCode(child)
+              if (childShort) nextSet.add(childShort)
             }
           })
         }
       } else {
         nextSet.delete(code)
+        if (shortCode) nextSet.delete(shortCode)
         if (PARENT_TO_CHILD_CODES.has(code)) {
           PARENT_TO_CHILD_CODES.get(code).forEach(child => {
             if (!codeToMenuIds.value.has(child)) {
               nextSet.delete(child)
+              const childShort = getShortCodeForCatalogCode(child)
+              if (childShort) nextSet.delete(childShort)
             }
           })
         }

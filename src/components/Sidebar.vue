@@ -355,21 +355,36 @@ watch(() => authStore.user, () => {
 const filteredMenuItems = computed(() => {
   if (!rawMenuItems.value || !Array.isArray(rawMenuItems.value)) return []
   const allowed = new Set(allowedMenuCodes.value || [])
+  // Home is permanently available to all authenticated users and is not configured in the menu list
+  allowed.add('landing')
+  allowed.add('H1')
   // Access Level Management is always visible to Super Admins when API is up, even with no
   // AccesslevelMenu row granting it. When API is down, all data maintenance is hidden.
-  if (isSuperAdmin.value && !isApiDown.value) allowed.add('users-management.access-level')
+  if (isSuperAdmin.value && !isApiDown.value) {
+    allowed.add('users-management.access-level')
+    allowed.add('AL1')
+  }
   return rawMenuItems.value
     .map(item => {
       if (item.children && Array.isArray(item.children)) {
         // A child is shown only if the child itself is allowed.
         // The parent folder is automatically shown if it has at least one valid child.
-        const validChildren = item.children.filter(child => child && allowed.has(child.code))
+        const validChildren = item.children.filter(child => {
+          if (!child) return false
+          const isAllowedByCode = allowed.has(child.code)
+          const isAllowedByShortCode = child.shortCode && allowed.has(child.shortCode)
+          const isAllowedByCanAccess = canAccess(child.code) || (child.shortCode && canAccess(child.shortCode))
+          return isAllowedByCode || isAllowedByShortCode || isAllowedByCanAccess
+        })
         if (validChildren.length > 0) {
           return { ...item, children: validChildren }
         }
         return null
       }
-      return allowed.has(item.code) ? item : null
+      const isAllowedByCode = allowed.has(item.code)
+      const isAllowedByShortCode = item.shortCode && allowed.has(item.shortCode)
+      const isAllowedByCanAccess = canAccess(item.code) || (item.shortCode && canAccess(item.shortCode))
+      return (isAllowedByCode || isAllowedByShortCode || isAllowedByCanAccess) ? item : null
     })
     .filter(Boolean)
 })
