@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const apiClient = axios.create({
-  // Using relative path '/api' so it hits our Vite proxy defined in vite.config.js
-  baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || '/api',
+  baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.DEV ? '/api' : 'https://103.249.198.50:8090/api'),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
