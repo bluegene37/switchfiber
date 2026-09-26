@@ -1,0 +1,117 @@
+name: Deploy to Windows Server (IIS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_method:
+        description: 'Deployment Strategy'
+        required: true
+        default: 'self-hosted'
+        type: choice
+        options:
+          - 'self-hosted'
+          - 'remote-ssh'
+      site_name:
+        description: 'IIS Website Name'
+        required: false
+        default: 'SwitchFiber'
+      target_dir:
+        description: 'Physical Path on MS Server'
+        required: false
+        default: 'C:\inetpub\wwwroot\switchfiber'
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # =========================================================================
+  # STRATEGY A: Self-Hosted Runner on Microsoft Windows Server (Recommended)
+  # Zero inbound firewall ports required; runner polls GitHub over HTTPS.
+  # =========================================================================
+  deploy-self-hosted:
+    name: Deploy via Self-Hosted Windows Runner
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_method == 'self-hosted')
+    runs-on: [self-hosted, windows]
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Quality Verification Gates
+        run: |
+          npm run lint
+          npm test
+
+      - name: Build Production Web Bundle
+        run: npm run build
+
+      - name: Execute Automated IIS Deployment Script
+        shell: powershell
+        run: |
+          $siteName = "${{ github.event.inputs.site_name || 'SwitchFiber' }}"
+          $targetDir = "${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiber' }}"
+          .\scripts\deploy_iis.ps1 -DistDirectory .\dist -SiteName $siteName -TargetDirectory $targetDir
+
+  # =========================================================================
+  # STRATEGY B: GitHub-Hosted Runner + Remote Deploy over SSH / SCP
+  # Builds on cloud runner, transfers zip package to Windows Server via OpenSSH.
+  # Requires secrets: MS_SERVER_HOST, MS_SERVER_USER, MS_SERVER_SSH_KEY
+  # =========================================================================
+  build-and-deploy-remote:
+    name: Build & Deploy via Remote SSH / SCP
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_method == 'remote-ssh'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Quality Verification Gates
+        run: |
+          npm run lint
+          npm test
+
+      - name: Build Production Web Bundle
+        run: npm run build
+
+      - name: Package Release Archives
+        run: npm run release:pack
+
+      - name: Transfer Release Package to Windows Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.MS_SERVER_HOST }}
+          username: ${{ secrets.MS_SERVER_USER }}
+          key: ${{ secrets.MS_SERVER_SSH_KEY }}
+          port: ${{ secrets.MS_SERVER_SSH_PORT || 22 }}
+          source: "release-assets/*.zip,scripts/deploy_iis.ps1"
+          target: "C:/inetpub/deploy-temp"
+
+      - name: Execute Remote IIS Deployment Script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MS_SERVER_HOST }}
+          username: ${{ secrets.MS_SERVER_USER }}
+          key: ${{ secrets.MS_SERVER_SSH_KEY }}
+          port: ${{ secrets.MS_SERVER_SSH_PORT || 22 }}
+          script: |
+            powershell.exe -ExecutionPolicy Bypass -Command "
+              $zip = (Get-ChildItem C:\inetpub\deploy-temp\release-assets\switchfiber-web-*.zip | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+              C:\inetpub\deploy-temp\scripts\deploy_iis.ps1 -PackagePath $zip -SiteName '${{ github.event.inputs.site_name || 'SwitchFiber' }}' -TargetDirectory '${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiber' }}'
+            "

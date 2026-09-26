@@ -26,21 +26,36 @@ const tarPath = path.join(releaseOutDir, tarName)
 
 console.log(`📦 Packaging SwitchFiber Web Distribution v${version}...`)
 
-// Create tarball of dist/
-try {
-  execSync(`tar -czf "${tarPath}" -C "${rootDir}" dist`, { stdio: 'inherit' })
-  console.log(`✅ Created release archive: ${tarName}`)
-
-  // Generate SHA256 checksum
-  const fileBuffer = fs.readFileSync(tarPath)
+// Helper to write SHA256 checksum file
+function writeChecksum(filePath, fileName) {
+  const fileBuffer = fs.readFileSync(filePath)
   const hashSum = crypto.createHash('sha256')
   hashSum.update(fileBuffer)
   const hex = hashSum.digest('hex')
+  const checksumFile = path.join(releaseOutDir, `${fileName}.sha256`)
+  fs.writeFileSync(checksumFile, `${hex}  ${fileName}\n`)
+  console.log(`✅ Generated SHA256: ${hex} (${fileName})`)
+}
 
-  const checksumFile = path.join(releaseOutDir, `${tarName}.sha256`)
-  fs.writeFileSync(checksumFile, `${hex}  ${tarName}\n`)
-  console.log(`✅ Generated SHA256: ${hex}`)
+// 1. Create tarball of dist/
+try {
+  execSync(`tar -czf "${tarPath}" -C "${rootDir}" dist`, { stdio: 'inherit' })
+  console.log(`✅ Created tar release archive: ${tarName}`)
+  writeChecksum(tarPath, tarName)
 } catch (err) {
-  console.error('❌ Failed to package release archive:', err)
+  console.error('❌ Failed to package tar release archive:', err)
   process.exit(1)
+}
+
+// 2. Create zip archive for Windows Server / IIS deployments
+const zipName = `switchfiber-web-v${version}.zip`
+const zipPath = path.join(releaseOutDir, zipName)
+
+try {
+  // Zip contents inside dist/ directly so extracting unzips files into current folder
+  execSync(`cd "${distDir}" && zip -rq "${zipPath}" .`, { stdio: 'inherit' })
+  console.log(`✅ Created zip release archive: ${zipName}`)
+  writeChecksum(zipPath, zipName)
+} catch (err) {
+  console.warn('⚠️ Warning: zip utility not available, skipping zip packaging:', err.message)
 }
