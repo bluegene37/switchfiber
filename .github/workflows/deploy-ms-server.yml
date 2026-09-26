@@ -18,7 +18,7 @@ on:
       target_dir:
         description: 'Physical Path on MS Server'
         required: false
-        default: 'C:\inetpub\wwwroot\switchfiber'
+        default: 'C:\inetpub\wwwroot\switchfiberadmin'
 
 jobs:
   # =========================================================================
@@ -50,11 +50,11 @@ jobs:
       - name: Build Production Web Bundle
         run: npm run build
 
-      - name: Deploy to IIS wwwroot\switchfiber
+      - name: Deploy to IIS wwwroot\switchfiberadmin
         shell: powershell
         run: |
           Import-Module WebAdministration
-          $target = "${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiber' }}"
+          $target = "${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiberadmin' }}"
           Write-Host "🚚 Deploying built bundle to $target..." -ForegroundColor Cyan
           if (-not (Test-Path $target)) {
               New-Item -Path $target -ItemType Directory -Force | Out-Null
@@ -117,5 +117,5 @@ jobs:
           script: |
             powershell.exe -ExecutionPolicy Bypass -Command "
               $zip = (Get-ChildItem C:\inetpub\deploy-temp\release-assets\switchfiber-web-*.zip | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
-              C:\inetpub\deploy-temp\scripts\deploy_iis.ps1 -PackagePath $zip -SiteName '${{ github.event.inputs.site_name || 'SwitchFiber' }}' -TargetDirectory '${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiber' }}'
+              C:\inetpub\deploy-temp\scripts\deploy_iis.ps1 -PackagePath $zip -SiteName '${{ github.event.inputs.site_name || 'SwitchFiber' }}' -TargetDirectory '${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiberadmin' }}'
             "
