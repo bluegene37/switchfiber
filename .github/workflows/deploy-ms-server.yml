@@ -50,7 +50,7 @@ jobs:
       - name: Build Production Web Bundle
         run: npm run build
 
-      - name: Deploy to IIS wwwroot\switchfiberadmin
+      - name: Deploy to IIS via deploy_iis.ps1
         shell: powershell
         env:
           TARGET_DIR: ${{ github.event.inputs.target_dir || 'C:\inetpub\wwwroot\switchfiberadmin' }}
@@ -59,29 +59,7 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($target)) {
               $target = "C:\inetpub\wwwroot\switchfiberadmin"
           }
-          Write-Host "🚚 Deploying built bundle to $target..." -ForegroundColor Cyan
-          if (-not (Test-Path $target)) {
-              New-Item -Path $target -ItemType Directory -Force | Out-Null
-          }
-          # Clear any ReadOnly flags on destination files before copying
-          Get-ChildItem -Path $target -Recurse -File -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.IsReadOnly = $false }
-          Copy-Item -Path ".\dist\*" -Destination $target -Recurse -Force
-          icacls $target /grant "IIS_IUSRS:(OI)(CI)RX" /grant "IUSR:(OI)(CI)RX" /T /Q | Out-Null
-
-          # Recycle SwitchFiberPool via appcmd or WebAdministration
-          $appcmd = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
-          if (Test-Path $appcmd) {
-              Write-Host "Recycling SwitchFiberPool via appcmd..." -ForegroundColor Cyan
-              & $appcmd recycle apppool "SwitchFiberPool"
-          } else {
-              try {
-                  Import-Module WebAdministration -ErrorAction SilentlyContinue
-                  Restart-WebAppPool -Name "SwitchFiberPool" -ErrorAction SilentlyContinue
-              } catch {
-                  Write-Warning "AppPool recycle skipped: $_"
-              }
-          }
-          Write-Host "✅ SwitchFiber successfully deployed and SwitchFiberPool recycled!" -ForegroundColor Green
+          .\scripts\deploy_iis.ps1 -DistDirectory .\dist -SiteName "Default Web Site" -AppPoolName "SwitchFiberPool" -TargetDirectory $target -BackupDirectory "C:\inetpub\backups\switchfiber"
 
   # =========================================================================
   # STRATEGY B: GitHub-Hosted Runner + Remote Deploy over SSH / SCP
