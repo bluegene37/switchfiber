@@ -90,6 +90,25 @@
             </button>
           </div>
 
+          <!-- Assigned filter: shows the user's name, filters on assignedEmail -->
+          <div class="d-flex align-items-center gap-2 sfa-tracker-service-order-list-assigned-filter">
+            <span class="small text-secondary fw-semibold text-nowrap">Assigned:</span>
+            <Select
+              v-model="selectedAssignedEmail"
+              :options="assignedOptions"
+              optionLabel="label"
+              optionValue="value"
+              :filterFields="['label', 'email']"
+              placeholder="All assignees"
+              filterPlaceholder="Search by name or email"
+              size="small"
+              showClear
+              filter
+              class="assigned-filter-select"
+              aria-label="Filter by assigned user"
+            />
+          </div>
+
           <Button
             class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
             aria-label="Create Service Order"
@@ -110,6 +129,7 @@
         ref="apiTableRef"
         endpoint="ServiceOrders"
         :filter-params="activeFilterParams"
+        :client-filters="clientFilters"
         client-status-filter
         status-field="visitStatus"
         :status-label="selectedStatus"
@@ -130,6 +150,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
+import Select from 'primevue/select'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRangePresets'
 
@@ -145,6 +166,15 @@ const selectedStatus = ref('')
 const fromDate = ref(null)
 const toDate = ref(null)
 const selectedDatePreset = ref('')
+
+// Assigned filter: the dropdown reads by name, the rows are matched on the email
+// the record actually stores (`assignedEmail`). Options come from the table,
+// which already holds the /Users lookup for the Assigned Email form field and
+// every distinct email in the loaded rows (so technician accounts that have
+// no /Users record are not lost).
+const selectedAssignedEmail = ref(null)
+const assignedOptions = computed(() => apiTableRef.value?.assignedEmailFilterOptions || [])
+const clientFilters = computed(() => ({ assignedEmail: selectedAssignedEmail.value || '' }))
 
 // The lifecycle Service Orders keep in `visitStatus` — the same three statuses the
 // sidebar sub-menu offers. Values are spelled the way the data carries them
@@ -319,6 +349,7 @@ const clearAllFilters = () => {
     selectedStatus.value = ''
   }
   selectedDatePreset.value = ''
+  selectedAssignedEmail.value = null
   fromDate.value = null
   toDate.value = null
 }
@@ -368,5 +399,23 @@ const clearAllFilters = () => {
   font-size: 0.8125rem;
   height: 33px !important;
   border-radius: 8px !important;
+}
+
+.assigned-filter-select {
+  width: 170px;
+}
+
+:deep(.assigned-filter-select.p-select) {
+  height: 33px !important;
+  border-radius: 8px !important;
+  font-size: 0.8125rem;
+}
+
+:deep(.assigned-filter-select .p-select-label) {
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  padding-left: 0.75rem !important;
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 </style>

@@ -4448,7 +4448,8 @@ const SERVICE_ORDER_COLUMNS = [
   'plan',
   'concern',
   'supportStatus',
-  'visitStatus'
+  'visitStatus',
+  'assignedEmail'
 ]
 
 const JOB_ORDER_COLUMNS = [
@@ -6734,7 +6735,8 @@ const buildPaymentSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_F
 const QUICK_SECTION_KEY = 'quick'
 const PINNED_FIELDS_STORAGE_KEY = 'switchfiber_pinned_fields_v1'
 const DEFAULT_PINNED_FIELDS = {
-  joborders: ['status', 'assignedEmail', 'planId', 'installationFee', 'billingDay', 'contactNumber']
+  joborders: ['status', 'assignedEmail', 'planId', 'installationFee', 'billingDay', 'contactNumber'],
+  serviceorders: ['visitStatus', 'assignedEmail', 'supportStatus', 'priorityLevel', 'concern']
 }
 const pinnedFields = ref([])
 const pinnedEndpointKey = computed(() => String(props.endpoint || '').toLowerCase().replace(/[^a-z0-9]/g, ''))
@@ -7670,6 +7672,9 @@ const fetchFormLookups = () => {
       fetchDiscountTypesLookup(),
       CrudService.list('Discounts')
     ])
+    if (needsUserLookup.value) {
+      fetchUsersLookup()
+    }
 
     if (menuRes.status === 'fulfilled') {
       menusList.value = unwrapList(menuRes.value)
@@ -11294,7 +11299,8 @@ const needsAccessLevelLookup = computed(() =>
   columns.value.some(c => normalizeColKey(c) === 'accesslevelid')
 )
 const needsUserLookup = computed(() =>
-  columns.value.some(c => isUserRefField(c) || getFieldType(c) === 'assignedemail_dropdown')
+  columns.value.some(c => isUserRefField(c) || getFieldType(c) === 'assignedemail_dropdown') ||
+  formColumns.value.some(c => isUserRefField(c) || getFieldType(c) === 'assignedemail_dropdown')
 )
 // Plans.discountId, Applications.applicablePromo and Discounts.discounttype_id
 // all print a discount type NAME in the grid, which needs /DiscountTypes loaded
