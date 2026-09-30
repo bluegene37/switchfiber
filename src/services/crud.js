@@ -11,9 +11,18 @@ import apiClient from './api.js'
  * in api.js.
  */
 
-/** "JobOrders", "/JobOrders" and "JobOrders/" all resolve to "/JobOrders". */
+/*
 export const toPath = (endpoint) => {
   const trimmed = String(endpoint ?? '').trim().replace(/^\/+|\/+$/g, '')
+  return `/${trimmed}`
+}
+*/
+// Gene - Sept 30, 2026: Normalize 'Payments' endpoint to singular '/Payment' matching the ASP.NET controller route
+export const toPath = (endpoint) => {
+  let trimmed = String(endpoint ?? '').trim().replace(/^\/+|\/+$/g, '')
+  if (/^Payments([/?#]|$)/i.test(trimmed)) {
+    trimmed = trimmed.replace(/^Payments([/?#]|$)/i, 'Payment$1')
+  }
   return `/${trimmed}`
 }
 

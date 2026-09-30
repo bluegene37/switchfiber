@@ -9880,6 +9880,82 @@ const capStr = (val, max = 255) => {
   return String(val).trim().slice(0, max)
 }
 
+// Gene - Sept 30, 2026: Build normalized BillingDetails payload preserving all required string fields expected by ASP.NET Create/UpdateBillingDetailsRequest
+const buildBillingPayload = (payload, mode, loggedInUserId) => {
+  const normStr = (val) => (val !== null && val !== undefined ? String(val).trim() : '')
+  const normNum = (val, defaultVal = 0) => {
+    if (val === null || val === undefined || val === '') return defaultVal
+    const n = Number(val)
+    return isNaN(n) ? defaultVal : n
+  }
+  const normNullableNum = (val) => {
+    if (val === null || val === undefined || val === '') return null
+    const n = Number(val)
+    return isNaN(n) ? null : n
+  }
+  const normDate = (val) => {
+    if (!val) return null
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val.toISOString()
+    const str = String(val).trim()
+    if (!str) return null
+    const d = new Date(str)
+    return isNaN(d.getTime()) ? null : d.toISOString()
+  }
+
+  const result = {
+    accountNo: normStr(payload.accountNo),
+    dateInstalled: normDate(payload.dateInstalled),
+    fullName: normStr(payload.fullName),
+    contactNumber: normStr(payload.contactNumber),
+    emailAddress: normStr(payload.emailAddress),
+    address: normStr(payload.address),
+    location: normStr(payload.location),
+    plan: normStr(payload.plan),
+    provider: normStr(payload.provider),
+    accountBalance: normNum(payload.accountBalance, 0),
+    balanceUpdateDate: normDate(payload.balanceUpdateDate),
+    username: normStr(payload.username),
+    connectionType: normStr(payload.connectionType),
+    routerModemSn: normStr(payload.routerModemSn),
+    ip: normStr(payload.ip),
+    lcp: normStr(payload.lcp),
+    nap: normStr(payload.nap),
+    port: normStr(payload.port),
+    vlan: normStr(payload.vlan),
+    lcpNap: normStr(payload.lcpNap),
+    status: normStr(payload.status || 'Active'),
+    group: normStr(payload.group),
+    splynxId: normNullableNum(payload.splynxId),
+    mikrotikId: normNullableNum(payload.mikrotikId),
+    modifiedBy: String(loggedInUserId || 1),
+    modifiedDate: localAuditTimestamp(),
+    userEmail: normStr(payload.userEmail || authStore.user?.email || 'admin@switchfiber.com'),
+    billingDay: normNullableNum(payload.billingDay) ?? 1,
+    billingStatus: normStr(payload.billingStatus || 'Pending'),
+    deliveryStatus: normStr(payload.deliveryStatus || 'Delivered'),
+    routerModel: normStr(payload.routerModel),
+    barangay: normStr(payload.barangay),
+    city: normStr(payload.city),
+    region: normStr(payload.region),
+    lcpNapPort: normStr(payload.lcpNapPort),
+    usageType: normStr(payload.usageType),
+    renter: normStr(payload.renter || 'No'),
+    attachment1: normStr(payload.attachment1),
+    attachment2: normStr(payload.attachment2),
+    attachment3: normStr(payload.attachment3),
+    referredBy: normStr(payload.referredBy),
+    secondContactNumber: normStr(payload.secondContactNumber),
+    addressCoordinates: normStr(payload.addressCoordinates),
+    referrersAccountNumber: normStr(payload.referrersAccountNumber)
+  }
+
+  if (mode === 'create') {
+    result.houseFront = normStr(payload.houseFront)
+  }
+
+  return result
+}
+
 const saveData = async () => {
   saveError.value = null
 
@@ -9969,6 +10045,9 @@ const saveData = async () => {
         modifiedBy: loggedInUserId,
         modifiedDate: null
       }
+    } else if (isBillingEndpoint.value) {
+      // Gene - Sept 30, 2026: Use normalized billing payload for CreateBillingDetails
+      finalPayload = buildBillingPayload(payload, 'create', loggedInUserId)
     } else {
       // Drop whatever audit values came back with the record — they describe the
       // old state. Fresh ones are stamped below, after the empty-value cleanup.
@@ -10462,6 +10541,9 @@ const saveEdit = async () => {
         modifiedBy: loggedInUserId,
         modifiedDate: null
       }
+    } else if (isBillingEndpoint.value) {
+      // Gene - Sept 30, 2026: Use normalized billing payload for UpdateBillingDetails
+      finalPayload = buildBillingPayload(payload, 'update', loggedInUserId)
     } else {
       // Drop the record's existing audit values before restamping — they
       // describe the state this edit is replacing.
@@ -10510,6 +10592,13 @@ const saveEdit = async () => {
 
       if (isPaymentEndpoint.value) {
         finalPayload.id = Number(editingRecordId.value) || editingRecordId.value
+      }
+
+      if (isUserEndpoint.value) {
+        // Gene - Sept 30, 2026: If password was omitted or left blank in edit form, preserve existing password snapshot so ASP.NET [Required] validation passes
+        if (!finalPayload.password && editBaseSnapshot.value?.password) {
+          finalPayload.password = editBaseSnapshot.value.password
+        }
       }
     }
 

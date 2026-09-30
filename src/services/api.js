@@ -32,6 +32,7 @@ const releaseNavController = (config) => {
   }
 }
 
+/*
 // Request interceptor
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
@@ -50,6 +51,29 @@ apiClient.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error)
 })
+*/
+// Gene - Sept 30, 2026: Transparently map /Payments routes to singular /Payment to match the live ASP.NET backend controller
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  if (token && typeof token === 'string' && token.trim()) {
+    config.headers.Authorization = `Bearer ${token.trim()}`
+  }
+  if (config.url && typeof config.url === 'string') {
+    config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
+  }
+  // Only reads are cancellable — a mutation must never be killed mid-flight.
+  // A caller-supplied signal is left alone.
+  if ((config.method || 'get').toLowerCase() === 'get' && config.cancelOnNavigate !== false && !config.signal) {
+    const controller = new AbortController()
+    config.signal = controller.signal
+    config._navAbortController = controller
+    navCancellable.add(controller)
+  }
+  return config
+}, (error) => {
+  return Promise.reject(error)
+})
+
 
 // ASP.NET keys deserializer failures by JSON path (`$.accountNo`) rather than by
 // property name. Strip the path syntax so the user sees the field, not the shape

@@ -500,11 +500,20 @@ const loadFinancialData = async () => {
   isLoading.value = true
   isDegraded.value = false
   try {
+/*
     const [invRes, billingRes, planRes, paymentRes] = await Promise.allSettled([
       apiClient.get('/Invoices').catch(() => apiClient.get('/Invoice')),
       apiClient.get('/BillingDetails'),
       apiClient.get('/Plans'),
       apiClient.get('/Payments')
+    ])
+*/
+    // Gene - Sept 30, 2026: Request singular /Payment first (matching backend controller), with fallback to /Payments
+    const [invRes, billingRes, planRes, paymentRes] = await Promise.allSettled([
+      apiClient.get('/Invoices').catch(() => apiClient.get('/Invoice')),
+      apiClient.get('/BillingDetails'),
+      apiClient.get('/Plans'),
+      apiClient.get('/Payment').catch(() => apiClient.get('/Payments'))
     ])
 
     let loadedInvoices = []
