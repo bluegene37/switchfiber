@@ -863,6 +863,47 @@ html[data-bs-theme="dark"] .badge.bg-primary.bg-opacity-10,
   color: var(--theme-primary-on-dark, #ff8591) !important;
 }
 
+/* Gene - Oct 3, 2026: Distinct purple badge styling for Rescheduled / Reschedule status (light & dark mode support) */
+.sfa-status-rescheduled,
+.badge-purple,
+.badge.badge-purple,
+.badge.sfa-status-rescheduled {
+  background-color: rgba(124, 58, 237, 0.12) !important;
+  color: #7c3aed !important;
+  border-color: rgba(124, 58, 237, 0.28) !important;
+}
+
+.text-purple {
+  color: #7c3aed !important;
+}
+
+.border-purple {
+  border-color: rgba(124, 58, 237, 0.28) !important;
+}
+
+html[data-bs-theme="dark"] .sfa-status-rescheduled,
+.dark .sfa-status-rescheduled,
+html[data-bs-theme="dark"] .badge-purple,
+.dark .badge-purple,
+html[data-bs-theme="dark"] .badge.badge-purple,
+.dark .badge.badge-purple,
+html[data-bs-theme="dark"] .badge.sfa-status-rescheduled,
+.dark .badge.sfa-status-rescheduled {
+  background-color: rgba(168, 85, 247, 0.22) !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+html[data-bs-theme="dark"] .text-purple,
+.dark .text-purple {
+  color: #c084fc !important;
+}
+
+html[data-bs-theme="dark"] .border-purple,
+.dark .border-purple {
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
 /* Dark Mode Text Readability & High-Contrast Muted Colors */
 html[data-bs-theme="dark"] .text-secondary,
 .dark .text-secondary {

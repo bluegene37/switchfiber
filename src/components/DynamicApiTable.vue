@@ -9159,11 +9159,76 @@ const getAccessLevelLabel = (id) => {
   return found ? (found.nameOnly || found.label) : `ID: ${id}`
 }
 
+// Gene - Oct 3, 2026: Preserved previous getStatusBadgeConfig implementation intact
+/*
 const getStatusBadgeConfig = (val) => {
   if (val === null || val === undefined || val === '') return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: '-' }
   const str = String(val).trim()
   const lower = str.toLowerCase()
   
+  if (
+    lower === 'done' || 
+    lower === 'completed' || 
+    lower === 'paid' || 
+    lower === 'approved' || 
+    lower === 'active' || 
+    lower === 'activated' ||
+    lower === 'installed' ||
+    lower === 'delivered'
+  ) {
+    return { class: 'bg-success bg-opacity-10 text-success border-success border-opacity-25', label: str }
+  }
+  if (
+    lower === 'pending' || 
+    lower === 'in progress' || 
+    lower === 'inprogress' || 
+    lower === 'waiting' || 
+    lower === 'onsite pending' || 
+    lower === 'schedule' || 
+    lower === 'applied' ||
+    lower === 'processing'
+  ) {
+    return { class: 'bg-warning bg-opacity-15 text-warning-emphasis border-warning border-opacity-25', label: str }
+  }
+  if (
+    lower === 'unbilled' || 
+    lower === 'draft' || 
+    lower === 'inactive' || 
+    lower === 'unassigned'
+  ) {
+    return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: str }
+  }
+  if (
+    lower === 'failed' || 
+    lower === 'rejected' || 
+    lower === 'cancelled' || 
+    lower === 'canceled' || 
+    lower === 'denied' || 
+    lower === 'duplicate' || 
+    lower === 'no slot' || 
+    lower === 'noslot' ||
+    lower === 'no facility' ||
+    lower === 'nofacility'
+  ) {
+    return { class: 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25', label: str }
+  }
+  return { class: 'bg-info bg-opacity-10 text-info border-info border-opacity-25', label: str }
+}
+*/
+// Gene - Oct 3, 2026: Differentiated Rescheduled / Reschedule status with dedicated purple badge styling so it differs from Scheduled (which remains blue).
+const getStatusBadgeConfig = (val) => {
+  if (val === null || val === undefined || val === '') return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: '-' }
+  const str = String(val).trim()
+  const lower = str.toLowerCase()
+  
+  if (
+    lower === 'rescheduled' ||
+    lower === 'reschedule' ||
+    lower === 're-scheduled' ||
+    lower === 're-schedule'
+  ) {
+    return { class: 'sfa-status-rescheduled badge-purple text-purple border-purple', label: str }
+  }
   if (
     lower === 'done' || 
     lower === 'completed' || 
@@ -11647,6 +11712,22 @@ defineExpose({
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-info),
 :deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-info *) {
   color: #343a40 !important;
+}
+
+/* Gene - Oct 3, 2026: Maintain crisp purple text for Rescheduled status on highlighted/selected rows */
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-purple),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-purple *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.badge-purple),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.badge-purple *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.sfa-status-rescheduled),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.sfa-status-rescheduled *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-purple),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-purple *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.badge-purple),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.badge-purple *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.sfa-status-rescheduled),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.sfa-status-rescheduled *) {
+  color: #7c3aed !important;
 }
 
 /* Ensure action buttons on highlighted rows are crisp white with soft white glass hover */

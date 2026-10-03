@@ -162,7 +162,9 @@
 
         <Column field="status" header="Status" :sortable="true" style="min-width: 8rem">
           <template #body="{ data }">
-            <Tag :severity="getSeverity(data.status)" :value="data.status" rounded></Tag>
+            <!-- Gene - Oct 3, 2026: Preserved old Tag and updated with distinct purple badge styling for Rescheduled status -->
+            <!-- <Tag :severity="getSeverity(data.status)" :value="data.status" rounded></Tag> -->
+            <Tag :severity="getSeverity(data.status)" :value="data.status" :class="isRescheduled(data.status) ? 'sfa-status-rescheduled badge-purple text-purple' : ''" rounded></Tag>
           </template>
         </Column>
 
@@ -541,7 +543,25 @@ const filteredRecentConnections = computed(() => {
   })
 })
 
+// Gene - Oct 3, 2026: Helper to detect rescheduled status variants
+const isRescheduled = (status) => {
+  const lower = String(status || '').trim().toLowerCase()
+  return lower === 'rescheduled' || lower === 'reschedule' || lower === 're-scheduled' || lower === 're-schedule'
+}
+
+// Gene - Oct 3, 2026: Preserved old getSeverity and updated to return null for Rescheduled so Tag custom purple styling applies cleanly
+/*
 const getSeverity = (status) => {
+  switch (status) {
+    case 'Active': return 'success'
+    case 'Suspended': return 'danger'
+    case 'Maintenance': return 'warn'
+    default: return 'info'
+  }
+}
+*/
+const getSeverity = (status) => {
+  if (isRescheduled(status)) return null
   switch (status) {
     case 'Active': return 'success'
     case 'Suspended': return 'danger'
@@ -839,6 +859,8 @@ const buildStatusDoughnut = ({ counts, meta, sourceLabel, seriesName, noun }) =>
   }
 }
 
+// Gene - Oct 3, 2026: Preserved previous jobOrdersChartOption and added reschedule/rescheduled purple mapping
+/*
 const jobOrdersChartOption = computed(() => buildStatusDoughnut({
   counts: statusTallies.value.jobOrders,
   meta: {
@@ -850,15 +872,47 @@ const jobOrdersChartOption = computed(() => buildStatusDoughnut({
   seriesName: 'Job Orders',
   noun: 'job orders'
 }))
+*/
+const jobOrdersChartOption = computed(() => buildStatusDoughnut({
+  counts: statusTallies.value.jobOrders,
+  meta: {
+    inprogress: { label: 'In Progress', color: STATUS.warning },
+    completed: { label: 'Completed', color: STATUS.success },
+    activated: { label: 'Activated', color: BRAND.base },
+    reschedule: { label: 'Rescheduled', color: '#7c3aed' },
+    rescheduled: { label: 'Rescheduled', color: '#7c3aed' }
+  },
+  sourceLabel: 'Job Orders',
+  seriesName: 'Job Orders',
+  noun: 'job orders'
+}))
 
 // Scoped to the selected timeframe window, like the trend and plan charts —
 // the statuses are spelled the way the data spells them ('Inprogress').
+// Gene - Oct 3, 2026: Preserved previous applicationsChartOption and added reschedule/rescheduled purple mapping
+/*
 const applicationsChartOption = computed(() => buildStatusDoughnut({
   counts: statusTallies.value.applications,
   meta: {
     inprogress: { label: 'In Progress', color: STATUS.warning },
     submitted: { label: 'Submitted', color: BRAND.light },
     schedule: { label: 'Schedule', color: BRAND.base },
+    cancelled: { label: 'Cancelled', color: STATUS.danger },
+    duplicate: { label: 'Duplicate', color: STATUS.warning }
+  },
+  sourceLabel: 'Applications',
+  seriesName: 'Applications',
+  noun: 'applications'
+}))
+*/
+const applicationsChartOption = computed(() => buildStatusDoughnut({
+  counts: statusTallies.value.applications,
+  meta: {
+    inprogress: { label: 'In Progress', color: STATUS.warning },
+    submitted: { label: 'Submitted', color: BRAND.light },
+    schedule: { label: 'Schedule', color: BRAND.base },
+    reschedule: { label: 'Rescheduled', color: '#7c3aed' },
+    rescheduled: { label: 'Rescheduled', color: '#7c3aed' },
     cancelled: { label: 'Cancelled', color: STATUS.danger },
     duplicate: { label: 'Duplicate', color: STATUS.warning }
   },
