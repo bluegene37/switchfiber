@@ -872,7 +872,9 @@ watch(canAccessTheme, (allowed) => {
 })
 const user = computed(() => authStore.user)
 
-const apiUrl = ref(import.meta.env.VITE_API_URL || 'https://103.249.198.50:8090')
+// const apiUrl = ref(import.meta.env.VITE_API_URL || 'https://103.249.198.50:8090')
+// Gene - Oct 5, 2026: Updated fallback API URL to https://admin.switchfiber.ph
+const apiUrl = ref(import.meta.env.VITE_API_URL || 'https://admin.switchfiber.ph')
 
 const isSavingProfile = ref(false)
 const isUpdatingPassword = ref(false)

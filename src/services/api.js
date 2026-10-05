@@ -1,8 +1,21 @@
 import axios from 'axios'
 
+/*
 const apiClient = axios.create({
   baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
     (typeof import.meta !== 'undefined' && import.meta.env?.DEV ? '/api' : 'https://103.249.198.50:8090/api'),
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  // Allow up to 60 seconds for large unpaginated backend datasets, or customize via env
+  timeout: Number(typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_TIMEOUT) || 60000,
+})
+*/
+// Gene - Oct 5, 2026: Updated production fallback API URL to use the new domain https://admin.switchfiber.ph/api
+const apiClient = axios.create({
+  baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.DEV ? '/api' : 'https://admin.switchfiber.ph/api'),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'

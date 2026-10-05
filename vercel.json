@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://103.249.198.50:8090/api/:path*"
+      "destination": "https://admin.switchfiber.ph/api/:path*"
     },
     {
       "source": "/openapi/:path*",
-      "destination": "https://103.249.198.50:8090/openapi/:path*"
+      "destination": "https://admin.switchfiber.ph/openapi/:path*"
     },
     {
       "source": "/(.*)",

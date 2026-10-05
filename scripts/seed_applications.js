@@ -1,7 +1,9 @@
 import https from 'https';
 
 const agent = new https.Agent({ rejectUnauthorized: false });
-const API_BASE = 'https://103.249.198.50:8090/api';
+// const API_BASE = 'https://103.249.198.50:8090/api';
+// Gene - Oct 5, 2026: Updated API URL to https://admin.switchfiber.ph/api
+const API_BASE = 'https://admin.switchfiber.ph/api';
 
 export const applicationsSeedData = [
   {

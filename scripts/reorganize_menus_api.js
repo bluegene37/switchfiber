@@ -1,7 +1,9 @@
 import https from 'node:https'
 
 const agent = new https.Agent({ rejectUnauthorized: false })
-const API_BASE = process.env.VITE_API_URL || 'https://103.249.198.50:8090'
+// const API_BASE = process.env.VITE_API_URL || 'https://103.249.198.50:8090'
+// Gene - Oct 5, 2026: Updated fallback API URL to https://admin.switchfiber.ph
+const API_BASE = process.env.VITE_API_URL || 'https://admin.switchfiber.ph'
 
 function request(url, options = {}, body = null) {
   return new Promise((resolve, reject) => {

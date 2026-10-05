@@ -174,7 +174,9 @@ const loadMenuRegistry = async () => {
       message: err.message || 'API server unreachable',
       status: err.status || 0,
       url: err.url || '/api/Menus',
-      baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'https://103.249.198.50:8090',
+      // baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'https://103.249.198.50:8090',
+      // Gene - Oct 5, 2026: Updated fallback API URL to https://admin.switchfiber.ph
+      baseURL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'https://admin.switchfiber.ph',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     }
     menuIdByServerKey.value = new Map()

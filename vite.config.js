@@ -52,6 +52,7 @@ export default defineConfig(({ mode }) => {
         // bare '/api' also swallowed the app's own /api-management/* and
         // /api-services routes, and a direct load or refresh of those pages
         // was forwarded to the backend and answered 404 with a blank screen.
+        /*
         '/api/': {
           target: env.VITE_API_URL || 'https://103.249.198.50:8090',
           changeOrigin: true,
@@ -64,6 +65,18 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_URL || 'https://103.249.198.50:8090',
           changeOrigin: true,
           secure: false // ignores self-signed cert in dev mode
+        }
+        */
+        // Gene - Oct 5, 2026: Updated dev proxy targets to use the production domain https://admin.switchfiber.ph with valid CA SSL
+        '/api/': {
+          target: env.VITE_API_URL || 'https://admin.switchfiber.ph',
+          changeOrigin: true,
+          secure: true
+        },
+        '/openapi/': {
+          target: env.VITE_API_URL || 'https://admin.switchfiber.ph',
+          changeOrigin: true,
+          secure: true
         }
       }
     }

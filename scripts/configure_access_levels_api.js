@@ -1,7 +1,9 @@
 import https from 'node:https'
 
 const agent = new https.Agent({ rejectUnauthorized: false })
-const BASE_URL = 'https://103.249.198.50:8090/api'
+// const BASE_URL = 'https://103.249.198.50:8090/api'
+// Gene - Oct 5, 2026: Updated API URL to https://admin.switchfiber.ph/api
+const BASE_URL = 'https://admin.switchfiber.ph/api'
 
 const apiRequest = (path, method = 'GET', data = null) => {
   return new Promise((resolve, reject) => {

@@ -460,8 +460,14 @@
                 <i class="pi pi-database text-primary"></i>
                 <span class="small fw-semibold text-body">REST API Server</span>
               </div>
+              <!--
               <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-2 py-0.5 small">
                 103.249.198.50:8090
+              </span>
+              -->
+              <!-- Gene - Oct 5, 2026: Updated displayed API Server domain to admin.switchfiber.ph -->
+              <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-2 py-0.5 small">
+                admin.switchfiber.ph
               </span>
             </div>
 
