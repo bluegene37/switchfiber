@@ -1,10 +1,23 @@
 name: CI Quality Gate
 
+# Gene - Oct, 06, 2026: Deprecated restricted main-only trigger to enable automated CI runs across all branches and pull requests
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+#   workflow_dispatch:
+
+# Gene - Oct, 06, 2026: Auto-run CI Quality Gate on push to any branch and all pull requests
 on:
   push:
-    branches: [ main ]
+    branches:
+      - '**'
+    tags-ignore:
+      - 'v*'
   pull_request:
-    branches: [ main ]
+    branches:
+      - '**'
   workflow_dispatch:
 
 jobs:
