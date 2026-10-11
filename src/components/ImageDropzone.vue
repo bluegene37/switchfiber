@@ -198,7 +198,11 @@ const props = defineProps({
   }
 })
 
+/*
 const emit = defineEmits(['update:modelValue', 'change', 'exif'])
+*/
+// Gene - Oct 11, 2026: Added file-selected and file-removed emits to pass compressed binary File/Blob to parent forms for multipart upload
+const emit = defineEmits(['update:modelValue', 'change', 'exif', 'file-selected', 'file-removed'])
 
 const dropzoneElement = ref(null)
 const dropzoneElementId = ref(`dropzone-${props.fieldId}`)
@@ -285,6 +289,7 @@ const extractImportantExif = async (file) => {
   }
 }
 
+/*
 const compressImage = async (file) => {
   let bitmap
   try {
@@ -307,6 +312,33 @@ const compressImage = async (file) => {
     ctx.fillRect(0, 0, w, h)
     ctx.drawImage(bitmap, 0, 0, w, h)
     return canvas.toDataURL('image/jpeg', COMPRESS_QUALITY)
+  } finally {
+    bitmap.close()
+  }
+}
+*/
+// Gene - Oct 11, 2026: Enhanced compressImage to return both base64 preview dataURL and compressed binary Blob for multipart/form-data upload
+const compressImage = async (file) => {
+  let bitmap
+  try {
+    bitmap = await createImageBitmap(file)
+  } catch (e) {
+    return null
+  }
+  try {
+    const scale = Math.min(1, COMPRESS_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
+    const w = Math.max(1, Math.round(bitmap.width * scale))
+    const h = Math.max(1, Math.round(bitmap.height * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, w, h)
+    ctx.drawImage(bitmap, 0, 0, w, h)
+    const dataUrl = canvas.toDataURL('image/jpeg', COMPRESS_QUALITY)
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', COMPRESS_QUALITY))
+    return { dataUrl, blob }
   } finally {
     bitmap.close()
   }
@@ -334,6 +366,7 @@ const initDropzone = () => {
       dictInvalidFileType: 'Invalid file type. Please upload an image.'
     })
 
+    /*
     dropzoneInstance.on('addedfile', async (file) => {
       if (props.disabled) return
 
@@ -368,6 +401,43 @@ const initDropzone = () => {
         }
       }, 100)
     })
+    */
+    // Gene - Oct 11, 2026: Emit binary compressed File/Blob alongside base64 preview for multipart upload
+    dropzoneInstance.on('addedfile', async (file) => {
+      if (props.disabled) return
+
+      try {
+        const meta = await extractImportantExif(file)
+        const original = await readAsDataURL(file)
+        const compressed = file.size > COMPRESS_THRESHOLD_BYTES ? await compressImage(file) : null
+
+        let base64 = original
+        let binaryBlob = file
+        originalSize.value = formatBytes(file.size)
+        compressedSize.value = ''
+        if (compressed && compressed.blob && compressed.blob.size < file.size) {
+          base64 = compressed.dataUrl
+          const newName = file.name ? file.name.replace(/\.[^.]+$/, '.jpg') : 'compressed.jpg'
+          binaryBlob = new File([compressed.blob], newName, { type: 'image/jpeg' })
+          compressedSize.value = formatBytes(compressed.blob.size)
+        }
+
+        photoExif.value = meta
+        emit('update:modelValue', base64)
+        emit('change', base64)
+        emit('exif', meta)
+        emit('file-selected', { file: binaryBlob, col: props.fieldId, name: binaryBlob.name || file.name })
+      } catch (e) {
+        console.warn('Image could not be processed:', e)
+      }
+
+      // Clear Dropzone queue so it is ready for subsequent files
+      setTimeout(() => {
+        if (dropzoneInstance) {
+          dropzoneInstance.removeAllFiles(true)
+        }
+      }, 100)
+    })
 
     dropzoneInstance.on('error', (file, message) => {
       console.warn('Dropzone upload error:', message)
@@ -383,6 +453,7 @@ const initDropzone = () => {
   }
 }
 
+/*
 const removeImage = () => {
   originalSize.value = ''
   compressedSize.value = ''
@@ -390,6 +461,20 @@ const removeImage = () => {
   emit('update:modelValue', '')
   emit('change', '')
   emit('exif', null)
+  if (dropzoneInstance) {
+    dropzoneInstance.removeAllFiles(true)
+  }
+}
+*/
+// Gene - Oct 11, 2026: Emit file-removed on removal so parent form registers deletion flag and clears binary file
+const removeImage = () => {
+  originalSize.value = ''
+  compressedSize.value = ''
+  photoExif.value = null
+  emit('update:modelValue', '')
+  emit('change', '')
+  emit('exif', null)
+  emit('file-removed', { col: props.fieldId })
   if (dropzoneInstance) {
     dropzoneInstance.removeAllFiles(true)
   }

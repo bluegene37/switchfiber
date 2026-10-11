@@ -1587,12 +1587,24 @@
 
               <!-- Image Upload (Dropzone) -->
               <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
+                <!--
                 <ImageDropzone
                   v-model="formData[col]"
                   :fieldId="col"
                   :label="formatLabel(col)"
                   :required="isFieldRequired(col)"
                   @exif="onPhotoExif('create', col, $event)"
+                />
+                -->
+                <!-- Gene - Oct 11, 2026: Wire up file-selected and file-removed on ImageDropzone for multipart upload -->
+                <ImageDropzone
+                  v-model="formData[col]"
+                  :fieldId="col"
+                  :label="formatLabel(col)"
+                  :required="isFieldRequired(col)"
+                  @exif="onPhotoExif('create', col, $event)"
+                  @file-selected="onFileSelected('create', col, $event)"
+                  @file-removed="onFileRemoved('create', col)"
                 />
               </div>
 
@@ -2999,6 +3011,7 @@
 
               <!-- Image Upload (Dropzone) -->
               <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
+                <!--
                 <ImageDropzone
                   v-model="editFormData[col]"
                   :fieldId="`edit-${col}`"
@@ -3006,6 +3019,18 @@
                   :required="isFieldRequired(col, 'edit')"
                   :disabled="isFieldDisabledInEdit(col)"
                   @exif="onPhotoExif('edit', col, $event)"
+                />
+                -->
+                <!-- Gene - Oct 11, 2026: Wire up file-selected and file-removed on ImageDropzone for multipart upload -->
+                <ImageDropzone
+                  v-model="editFormData[col]"
+                  :fieldId="`edit-${col}`"
+                  :label="formatLabel(col)"
+                  :required="isFieldRequired(col, 'edit')"
+                  :disabled="isFieldDisabledInEdit(col)"
+                  @exif="onPhotoExif('edit', col, $event)"
+                  @file-selected="onFileSelected('edit', col, $event)"
+                  @file-removed="onFileRemoved('edit', col)"
                 />
               </div>
 
@@ -8108,6 +8133,26 @@ const onPhotoExif = (scope, col, meta) => {
   }
 }
 
+// Gene - Oct 11, 2026: Track binary image files and deletion flags for multipart/form-data endpoints
+const selectedFilesByCol = ref({ create: {}, edit: {} })
+const removedImagesByCol = ref({ create: {}, edit: {} })
+
+const onFileSelected = (scope, col, { file } = {}) => {
+  const normKey = normalizeColKey(col)
+  if (!selectedFilesByCol.value[scope]) selectedFilesByCol.value[scope] = {}
+  if (!removedImagesByCol.value[scope]) removedImagesByCol.value[scope] = {}
+  selectedFilesByCol.value[scope][normKey] = file || null
+  removedImagesByCol.value[scope][normKey] = false
+}
+
+const onFileRemoved = (scope, col) => {
+  const normKey = normalizeColKey(col)
+  if (!selectedFilesByCol.value[scope]) selectedFilesByCol.value[scope] = {}
+  if (!removedImagesByCol.value[scope]) removedImagesByCol.value[scope] = {}
+  selectedFilesByCol.value[scope][normKey] = null
+  removedImagesByCol.value[scope][normKey] = true
+}
+
 // The house front photo wins — it is taken at the installation site.
 const PHOTO_GPS_PREFERENCE = ['houseFrontPicture', 'governmentValidId', 'secondGovernmentValidId', 'proofOfBilling', 'documentPicture']
 
@@ -9529,6 +9574,9 @@ const openCreateDialog = () => {
   resetTouchedAddressBlockers('create')
   fieldErrors.value.create = {}
   photoExifByCol.value.create = {}
+  // Gene - Oct 11, 2026: Reset selected files and image removal flags when opening create dialog
+  selectedFilesByCol.value.create = {}
+  removedImagesByCol.value.create = {}
   saveError.value = null
   showPasswordState.value = {}
   formData.value = {}
@@ -10058,6 +10106,7 @@ const saveData = async () => {
     delete payload.last_modified_by
 
     let finalPayload
+    /*
     if (isApplicationEndpoint.value) {
       finalPayload = {
         timestamp: payload.timestamp ? (payload.timestamp instanceof Date ? payload.timestamp.toISOString() : String(payload.timestamp)) : nowIso,
@@ -10098,6 +10147,93 @@ const saveData = async () => {
       // Required by the Applications contract, not optional metadata: omitting
       // these two is what made every create 400.
       stampAuditFields(finalPayload, 'create', loggedInUserId)
+    }
+    */
+    // Gene - Oct 11, 2026: Switched Applications create to FormData (multipart/form-data) to support real binary image uploads
+    if (isApplicationEndpoint.value) {
+      const form = new FormData()
+      form.append('Timestamp', payload.timestamp ? (payload.timestamp instanceof Date ? payload.timestamp.toISOString() : String(payload.timestamp)) : nowIso)
+      form.append('EmailAddress', capStr(payload.emailAddress, 100))
+      form.append('Region', capStr(payload.region, 100))
+      form.append('City', capStr(payload.city, 100))
+      form.append('Barangay', capStr(payload.barangay, 100))
+      form.append('ReferredBy', capStr(payload.referredBy, 150))
+      form.append('FirstName', capStr(payload.firstName, 100))
+      form.append('MiddleName', capStr(payload.middleName, 100))
+      form.append('LastName', capStr(payload.lastName, 100))
+      form.append('MobileNumber', capStr(payload.mobileNumber, 20))
+      form.append('SecondaryMobileNumber', capStr(payload.secondaryMobileNumber, 20))
+      form.append('InstallationAddress', capStr(payload.installationAddress, 255))
+      form.append('Landmark', capStr(payload.landmark, 255))
+      form.append('DesiredPlan', capStr(payload.desiredPlan, 100))
+      form.append('TermsAndConditionsAgreement', normalizeAgreementValue(payload.termsAndConditionsAgreement))
+      form.append('FirstNearestLandmark', capStr(payload.firstNearestLandmark, 255))
+      form.append('SecondNearestLandmark', capStr(payload.secondNearestLandmark, 255))
+      form.append('ApplicablePromo', capStr(payload.applicablePromo, 100))
+      form.append('barangay1', capStr(payload.barangay1 || payload.barangay, 100))
+      form.append('barangay2', capStr(payload.barangay2, 100))
+      form.append('ReferrersAccountNumber', capStr(payload.referrersAccountNumber, 100))
+      form.append('ApplyingFor', capStr(payload.applyingFor || 'Residential Fiber', 100))
+      form.append('Status', capStr(payload.status || defaultNewStatus.value, 50))
+      form.append('VisitBy', capStr(payload.visitBy, 100))
+      form.append('VisitWith', capStr(payload.visitWith, 100))
+      form.append('VisitWithOther', capStr(payload.visitWithOther, 100))
+      form.append('Remarks', capStr(withPhotoGps('create', payload.remarks), 255))
+      form.append('UserEmail', capStr(currentUserEmail, 100))
+      form.append('CreatedBy', loggedInUserId)
+      form.append('CreatedDate', nowIso)
+      form.append('ModifiedBy', loggedInUserId)
+      form.append('ModifiedDate', nowIso)
+
+      // Attach uploaded binary files
+      const files = selectedFilesByCol.value.create || {}
+      const fileMap = {
+        landmark: 'LandmarkFile',
+        proofofbilling: 'ProofOfBillingFile',
+        governmentvalidid: 'GovernmentValidIdFile',
+        secondgovernmentvalidid: 'SecondGovernmentValidIdFile',
+        housefrontpicture: 'HouseFrontPictureFile',
+        secondnearestlandmark: 'SecondNearestLandmarkFile',
+        documentpicture: 'DocumentPictureFile',
+        pictureofstatmentbillingfromotherprovider: 'PictureOfStatementBillingFromOtherProviderFile',
+        pictureofstatementbillingfromotherprovider: 'PictureOfStatementBillingFromOtherProviderFile'
+      }
+      Object.entries(fileMap).forEach(([colKey, formField]) => {
+        const fileObj = files[colKey]
+        if (fileObj && (fileObj instanceof Blob || (typeof File !== 'undefined' && fileObj instanceof File))) {
+          form.append(formField, fileObj, fileObj.name || `${formField}.jpg`)
+        }
+      })
+      finalPayload = form
+    } else if (isLcpNapEndpoint.value) {
+      // Gene - Oct 11, 2026: Switched LCP NAP create to FormData (multipart/form-data) to support real binary image uploads
+      const form = new FormData()
+      if (payload.lcpnap) form.append('LCPNAP', String(payload.lcpnap))
+      if (payload.lcp) form.append('LCP', String(payload.lcp))
+      if (payload.nap) form.append('NAP', String(payload.nap))
+      if (payload.portTotal !== undefined && payload.portTotal !== null && payload.portTotal !== '') form.append('PortTotal', String(payload.portTotal))
+      if (payload.coordinates) form.append('Coordinates', String(payload.coordinates))
+      if (payload.street) form.append('Street', String(payload.street))
+      if (payload.barangay) form.append('Barangay', String(payload.barangay))
+      if (payload.city) form.append('City', String(payload.city))
+      if (payload.region) form.append('Region', String(payload.region))
+      form.append('CreatedBy', loggedInUserId)
+      form.append('CreatedDate', nowIso)
+      form.append('ModifiedBy', loggedInUserId)
+      form.append('ModifiedDate', nowIso)
+      form.append('UserEmail', capStr(currentUserEmail, 100))
+
+      const files = selectedFilesByCol.value.create || {}
+      if (files['image'] && (files['image'] instanceof Blob || files['image'] instanceof File)) {
+        form.append('Image', files['image'], files['image'].name || 'image.jpg')
+      }
+      if (files['image2'] && (files['image2'] instanceof Blob || files['image2'] instanceof File)) {
+        form.append('Image2', files['image2'], files['image2'].name || 'image2.jpg')
+      }
+      if (files['readingimage'] && (files['readingimage'] instanceof Blob || files['readingimage'] instanceof File)) {
+        form.append('ReadingImage', files['readingimage'], files['readingimage'].name || 'readingImage.jpg')
+      }
+      finalPayload = form
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'create', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(finalPayload, numericUserId, 'create')
@@ -10174,7 +10310,11 @@ const saveData = async () => {
     // Inprogress application created from the Cancelled tab, or any record
     // created while a past range is pinned). The page decides whether to
     // drop its filters so the record is actually on screen.
+    /*
     emit('created', { endpoint: props.endpoint, payload: finalPayload })
+    */
+    // Gene - Oct 11, 2026: Provide plain payload properties to created event when finalPayload is a FormData instance
+    emit('created', { endpoint: props.endpoint, payload: (typeof FormData !== 'undefined' && finalPayload instanceof FormData) ? payload : finalPayload })
   } catch (err) {
     console.error(`Error creating record for ${props.endpoint}:`, err)
     saveError.value = err.message || 'Failed to create record. Please check input values.'
@@ -10218,6 +10358,9 @@ const openEditDialog = async (record) => {
   resetTouchedAddressBlockers('edit')
   fieldErrors.value.edit = {}
   photoExifByCol.value.edit = {}
+  // Gene - Oct 11, 2026: Reset selected files and image removal flags when opening edit dialog
+  selectedFilesByCol.value.edit = {}
+  removedImagesByCol.value.edit = {}
   editError.value = null
   showPasswordState.value = {}
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
@@ -10473,8 +10616,18 @@ const detectEditConflict = async () => {
   const base = editBaseSnapshot.value
   if (!base) return null
   let current
+  /*
   try {
     current = await CrudService.getById(props.endpoint, editingRecordId.value)
+  } catch {
+    // A failed pre-check must not block a legitimate save.
+    return null
+  }
+  */
+  // Gene - Oct 11, 2026: Use applicationid string identifier when querying Applications endpoint since GET /api/Applications/{id} looks up by applicationid
+  try {
+    const lookupId = isApplicationEndpoint.value ? (base.applicationid || editingRecordId.value) : editingRecordId.value
+    current = await CrudService.getById(props.endpoint, lookupId)
   } catch {
     // A failed pre-check must not block a legitimate save.
     return null
@@ -10559,6 +10712,7 @@ const saveEdit = async () => {
     delete payload.last_modified_by
 
     let finalPayload
+    /*
     if (isApplicationEndpoint.value) {
       finalPayload = {
         emailAddress: capStr(payload.emailAddress, 100),
@@ -10596,6 +10750,99 @@ const saveEdit = async () => {
         userEmail: capStr(payload.userEmail || currentUserEmail, 100)
       }
       stampAuditFields(finalPayload, 'update', loggedInUserId)
+    }
+    */
+    // Gene - Oct 11, 2026: Switched Applications update to FormData (multipart/form-data) supporting image uploads and removal flags
+    if (isApplicationEndpoint.value) {
+      const form = new FormData()
+      form.append('EmailAddress', capStr(payload.emailAddress, 100))
+      form.append('Region', capStr(payload.region, 100))
+      form.append('City', capStr(payload.city, 100))
+      form.append('Barangay', capStr(payload.barangay, 100))
+      form.append('ReferredBy', capStr(payload.referredBy, 150))
+      form.append('FirstName', capStr(payload.firstName, 100))
+      form.append('MiddleName', capStr(payload.middleName, 100))
+      form.append('LastName', capStr(payload.lastName, 100))
+      form.append('MobileNumber', capStr(payload.mobileNumber, 20))
+      form.append('SecondaryMobileNumber', capStr(payload.secondaryMobileNumber, 20))
+      form.append('InstallationAddress', capStr(payload.installationAddress, 255))
+      form.append('Landmark', capStr(payload.landmark, 255))
+      form.append('DesiredPlan', capStr(payload.desiredPlan, 100))
+      form.append('TermsAndConditionsAgreement', normalizeAgreementValue(payload.termsAndConditionsAgreement))
+      form.append('FirstNearestLandmark', capStr(payload.firstNearestLandmark, 255))
+      form.append('SecondNearestLandmark', capStr(payload.secondNearestLandmark, 255))
+      form.append('ApplicablePromo', capStr(payload.applicablePromo, 100))
+      form.append('barangay1', capStr(payload.barangay1 || payload.barangay, 100))
+      form.append('barangay2', capStr(payload.barangay2, 100))
+      form.append('ReferrersAccountNumber', capStr(payload.referrersAccountNumber, 100))
+      form.append('ApplyingFor', capStr(payload.applyingFor || 'Residential Fiber', 100))
+      form.append('Status', capStr(payload.status || defaultNewStatus.value, 50))
+      form.append('VisitBy', capStr(payload.visitBy, 100))
+      form.append('VisitWith', capStr(payload.visitWith, 100))
+      form.append('VisitWithOther', capStr(payload.visitWithOther, 100))
+      form.append('Remarks', capStr(withPhotoGps('edit', payload.remarks), 255))
+      form.append('UserEmail', capStr(payload.userEmail || currentUserEmail, 100))
+      form.append('ModifiedBy', loggedInUserId)
+      form.append('ModifiedDate', nowIso)
+
+      // Removal boolean flags
+      const removed = removedImagesByCol.value.edit || {}
+      if (removed['landmark']) form.append('RemoveLandmark', 'true')
+      if (removed['proofofbilling']) form.append('RemoveProofOfBilling', 'true')
+      if (removed['governmentvalidid']) form.append('RemoveGovernmentValidId', 'true')
+      if (removed['secondgovernmentvalidid']) form.append('RemoveSecondGovernmentValidId', 'true')
+      if (removed['housefrontpicture']) form.append('RemoveHouseFrontPicture', 'true')
+      if (removed['documentpicture']) form.append('RemoveDocumentPicture', 'true')
+      if (removed['pictureofstatmentbillingfromotherprovider'] || removed['pictureofstatementbillingfromotherprovider']) {
+        form.append('RemovePictureOfStatementBillingFromOtherProvider', 'true')
+      }
+
+      // Attach newly selected binary files
+      const files = selectedFilesByCol.value.edit || {}
+      const fileMap = {
+        landmark: 'LandmarkFile',
+        proofofbilling: 'ProofOfBillingFile',
+        governmentvalidid: 'GovernmentValidIdFile',
+        secondgovernmentvalidid: 'SecondGovernmentValidIdFile',
+        housefrontpicture: 'HouseFrontPictureFile',
+        documentpicture: 'DocumentPictureFile',
+        pictureofstatmentbillingfromotherprovider: 'PictureOfStatementBillingFromOtherProviderFile',
+        pictureofstatementbillingfromotherprovider: 'PictureOfStatementBillingFromOtherProviderFile'
+      }
+      Object.entries(fileMap).forEach(([colKey, formField]) => {
+        const fileObj = files[colKey]
+        if (fileObj && (fileObj instanceof Blob || (typeof File !== 'undefined' && fileObj instanceof File))) {
+          form.append(formField, fileObj, fileObj.name || `${formField}.jpg`)
+        }
+      })
+      finalPayload = form
+    } else if (isLcpNapEndpoint.value) {
+      // Gene - Oct 11, 2026: Switched LCP NAP update to FormData (multipart/form-data) to support real binary image uploads
+      const form = new FormData()
+      if (payload.lcpnap) form.append('LCPNAP', String(payload.lcpnap))
+      if (payload.lcp) form.append('LCP', String(payload.lcp))
+      if (payload.nap) form.append('NAP', String(payload.nap))
+      if (payload.portTotal !== undefined && payload.portTotal !== null && payload.portTotal !== '') form.append('PortTotal', String(payload.portTotal))
+      if (payload.coordinates) form.append('Coordinates', String(payload.coordinates))
+      if (payload.street) form.append('Street', String(payload.street))
+      if (payload.barangay) form.append('Barangay', String(payload.barangay))
+      if (payload.city) form.append('City', String(payload.city))
+      if (payload.region) form.append('Region', String(payload.region))
+      form.append('ModifiedBy', loggedInUserId)
+      form.append('ModifiedDate', nowIso)
+      form.append('UserEmail', capStr(payload.userEmail || currentUserEmail, 100))
+
+      const files = selectedFilesByCol.value.edit || {}
+      if (files['image'] && (files['image'] instanceof Blob || files['image'] instanceof File)) {
+        form.append('Image', files['image'], files['image'].name || 'image.jpg')
+      }
+      if (files['image2'] && (files['image2'] instanceof Blob || files['image2'] instanceof File)) {
+        form.append('Image2', files['image2'], files['image2'].name || 'image2.jpg')
+      }
+      if (files['readingimage'] && (files['readingimage'] instanceof Blob || files['readingimage'] instanceof File)) {
+        form.append('ReadingImage', files['readingimage'], files['readingimage'].name || 'readingImage.jpg')
+      }
+      finalPayload = form
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(finalPayload, numericUserId, 'update')

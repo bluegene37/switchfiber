@@ -303,21 +303,291 @@
         "tags": [
           "Applications"
         ],
+        "parameters": [
+          {
+            "name": "Timestamp",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EmailAddress",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "City",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Barangay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ReferredBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "FirstName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MiddleName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LastName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MobileNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SecondaryMobileNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "InstallationAddress",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Landmark",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DesiredPlan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ProofOfBilling",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "GovernmentValidId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SecondGovernmentValidId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "HouseFrontPicture",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TermsAndConditionsAgreement",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "FirstNearestLandmark",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SecondNearestLandmark",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ApplicablePromo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DocumentPicture",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "barangay1",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "barangay2",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pictureofstatmentbillingfromotherprovider",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ReferrersAccountNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ApplyingFor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWith",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWithOther",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Remarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedDate",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "UserEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/CreateApplicationRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateApplicationRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateApplicationRequest"
+                "type": "object",
+                "properties": {
+                  "LandmarkFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "ProofOfBillingFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "GovernmentValidIdFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "SecondGovernmentValidIdFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "HouseFrontPictureFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "SecondNearestLandmarkFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "DocumentPictureFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "PictureOfStatementBillingFromOtherProviderFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
               }
             }
           },
@@ -443,23 +713,330 @@
               ],
               "format": "int32"
             }
+          },
+          {
+            "name": "EmailAddress",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "City",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Barangay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ReferredBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "FirstName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MiddleName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LastName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MobileNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SecondaryMobileNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "InstallationAddress",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Landmark",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RemoveLandmark",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "DesiredPlan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ProofOfBilling",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RemoveProofOfBilling",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "GovernmentValidId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RemoveGovernmentValidId",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "SecondGovernmentValidId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RemoveSecondGovernmentValidId",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "HouseFrontPicture",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RemoveHouseFrontPicture",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "TermsAndConditionsAgreement",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "FirstNearestLandmark",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SecondNearestLandmark",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ApplicablePromo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DocumentPicture",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RemoveDocumentPicture",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "barangay1",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "barangay2",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pictureofstatmentbillingfromotherprovider",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RemovePictureOfStatementBillingFromOtherProvider",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "ReferrersAccountNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ApplyingFor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWith",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWithOther",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Remarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedDate",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "UserEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateApplicationRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateApplicationRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateApplicationRequest"
+                "type": "object",
+                "properties": {
+                  "LandmarkFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "ProofOfBillingFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "GovernmentValidIdFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "SecondGovernmentValidIdFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "HouseFrontPictureFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "DocumentPictureFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "PictureOfStatementBillingFromOtherProviderFile": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
               }
             }
           },
@@ -2142,6 +2719,40 @@
         }
       }
     },
+    "/api/JobOrders/applicationid/{applicationId}": {
+      "get": {
+        "tags": [
+          "JobOrders"
+        ],
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdBy",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/JobOrders/status/{status}": {
       "get": {
         "tags": [
@@ -2216,21 +2827,118 @@
         "tags": [
           "LCPNapLocations"
         ],
+        "parameters": [
+          {
+            "name": "LCPNAP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LCP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NAP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PortTotal",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Coordinates",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "UserEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Street",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Barangay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "City",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/CreateLCPNapLocationCommand"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateLCPNapLocationCommand"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateLCPNapLocationCommand"
+                "type": "object",
+                "properties": {
+                  "Image": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "Image2": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "ReadingImage": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
               }
             }
           },
@@ -2286,23 +2994,118 @@
               ],
               "format": "int32"
             }
+          },
+          {
+            "name": "LCPNAP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LCP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NAP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PortTotal",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Coordinates",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "UserEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Street",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Barangay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "City",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateLCPNapLocationCommand"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateLCPNapLocationCommand"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateLCPNapLocationCommand"
+                "type": "object",
+                "properties": {
+                  "Image": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "Image2": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "ReadingImage": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
               }
             }
           },
@@ -3860,11 +4663,11 @@
           "200": {
             "description": "OK"
           },
-          "503": {
-            "description": "Service Unavailable"
-          },
           "500": {
             "description": "Internal Server Error"
+          },
+          "503": {
+            "description": "Service Unavailable"
           }
         }
       }
@@ -3888,11 +4691,11 @@
           "200": {
             "description": "OK"
           },
-          "503": {
-            "description": "Service Unavailable"
-          },
           "500": {
             "description": "Internal Server Error"
+          },
+          "503": {
+            "description": "Service Unavailable"
           }
         }
       },
@@ -3914,11 +4717,11 @@
           "204": {
             "description": "No Content"
           },
-          "503": {
-            "description": "Service Unavailable"
-          },
           "500": {
             "description": "Internal Server Error"
+          },
+          "503": {
+            "description": "Service Unavailable"
           }
         }
       }
@@ -4478,8 +5281,8 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "text/plain": {
                 "schema": {
@@ -4498,8 +5301,8 @@
               }
             }
           },
-          "401": {
-            "description": "Unauthorized",
+          "404": {
+            "description": "Not Found",
             "content": {
               "text/plain": {
                 "schema": {
@@ -5276,157 +6079,6 @@
           }
         }
       },
-      "CreateApplicationRequest": {
-        "required": [
-          "timestamp",
-          "emailAddress",
-          "region",
-          "city",
-          "barangay",
-          "referredBy",
-          "firstName",
-          "middleName",
-          "lastName",
-          "mobileNumber",
-          "secondaryMobileNumber",
-          "installationAddress",
-          "landmark",
-          "desiredPlan",
-          "proofOfBilling",
-          "governmentValidId",
-          "secondGovernmentValidId",
-          "houseFrontPicture",
-          "termsAndConditionsAgreement",
-          "firstNearestLandmark",
-          "secondNearestLandmark",
-          "applicablePromo",
-          "documentPicture",
-          "barangay1",
-          "barangay2",
-          "pictureofstatmentbillingfromotherprovider",
-          "referrersAccountNumber",
-          "applyingFor",
-          "status",
-          "visitBy",
-          "visitWith",
-          "visitWithOther",
-          "remarks",
-          "modifiedBy",
-          "modifiedDate",
-          "userEmail"
-        ],
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "string"
-          },
-          "emailAddress": {
-            "type": "string"
-          },
-          "region": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "barangay": {
-            "type": "string"
-          },
-          "referredBy": {
-            "type": "string"
-          },
-          "firstName": {
-            "type": "string"
-          },
-          "middleName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "mobileNumber": {
-            "type": "string"
-          },
-          "secondaryMobileNumber": {
-            "type": "string"
-          },
-          "installationAddress": {
-            "type": "string"
-          },
-          "landmark": {
-            "type": "string"
-          },
-          "desiredPlan": {
-            "type": "string"
-          },
-          "proofOfBilling": {
-            "type": "string"
-          },
-          "governmentValidId": {
-            "type": "string"
-          },
-          "secondGovernmentValidId": {
-            "type": "string"
-          },
-          "houseFrontPicture": {
-            "type": "string"
-          },
-          "termsAndConditionsAgreement": {
-            "type": "string"
-          },
-          "firstNearestLandmark": {
-            "type": "string"
-          },
-          "secondNearestLandmark": {
-            "type": "string"
-          },
-          "applicablePromo": {
-            "type": "string"
-          },
-          "documentPicture": {
-            "type": "string"
-          },
-          "barangay1": {
-            "type": "string"
-          },
-          "barangay2": {
-            "type": "string"
-          },
-          "pictureofstatmentbillingfromotherprovider": {
-            "type": "string"
-          },
-          "referrersAccountNumber": {
-            "type": "string"
-          },
-          "applyingFor": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "visitBy": {
-            "type": "string"
-          },
-          "visitWith": {
-            "type": "string"
-          },
-          "visitWithOther": {
-            "type": "string"
-          },
-          "remarks": {
-            "type": "string"
-          },
-          "modifiedBy": {
-            "type": "string"
-          },
-          "modifiedDate": {
-            "type": "string"
-          },
-          "userEmail": {
-            "type": "string"
-          }
-        }
-      },
       "CreateBarangayRequest": {
         "required": [
           "name",
@@ -5446,6 +6098,7 @@
         "required": [
           "accountNo",
           "dateInstalled",
+          "installationDate",
           "fullName",
           "contactNumber",
           "emailAddress",
@@ -5505,6 +6158,13 @@
             ],
             "format": "date-time"
           },
+          "installationDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "fullName": {
             "type": [
               "null",
@@ -5524,16 +6184,28 @@
             ]
           },
           "address": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "location": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "plan": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "provider": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "accountBalance": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -5552,37 +6224,70 @@
             "format": "date-time"
           },
           "username": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "connectionType": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "routerModemSn": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ip": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcp": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nap": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "port": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vlan": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpNap": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "status": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "group": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "splynxId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5603,7 +6308,10 @@
             "format": "int64"
           },
           "modifiedBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "modifiedDate": {
             "type": [
@@ -5613,7 +6321,10 @@
             "format": "date-time"
           },
           "userEmail": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "billingDay": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5625,55 +6336,106 @@
             "format": "int32"
           },
           "billingStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "deliveryStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "routerModel": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "barangay": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "city": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "region": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpNapPort": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "usageType": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "renter": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "attachment1": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "attachment2": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "attachment3": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "referredBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "secondContactNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "addressCoordinates": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "referrersAccountNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "houseFront": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5727,6 +6489,7 @@
           "billingStatus",
           "routerModel",
           "dateInstalled",
+          "installationDate",
           "clientSignature",
           "ip",
           "signedContractImage",
@@ -5771,124 +6534,208 @@
         "type": "object",
         "properties": {
           "emailAddress": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "referredBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "firstName": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "middleInitial": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lastName": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "contactNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "applicantEmailAddress": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "address": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "location": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "barangay": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "city": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "region": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "planId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "installationFee": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "contractTemplate": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "billingDay": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "preferredDay": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "joRemarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "status": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "verifiedBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "modemRouterSN": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "provider": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
               "string"
-            ],
-            "format": "int32"
+            ]
           },
           "napId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
               "string"
-            ],
-            "format": "int32"
+            ]
           },
           "portId": {
-            "type": "string"
-          },
-          "vlanId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
               "string"
-            ],
-            "format": "int32"
+            ]
+          },
+          "vlanId": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "username": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "visitBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "visitWith": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "visitWithOther": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "onsiteStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "onsiteRemarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "modifiedBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "modifiedDate": {
             "type": [
@@ -5898,19 +6745,34 @@
             "format": "date-time"
           },
           "contractLink": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "connectionType": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "assignedEmail": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "setupImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "speedtestImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "startTimeStamp": {
             "type": [
@@ -5927,19 +6789,34 @@
             "format": "date-time"
           },
           "duration": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "externalId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpnapId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "billingStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "routerModel": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "dateInstalled": {
             "type": [
@@ -5948,119 +6825,240 @@
             ],
             "format": "date-time"
           },
+          "installationDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "clientSignature": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ip": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "signedContractImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "boxReadingImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "routerReadingImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "usernameStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpnapportId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName1": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity1": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName2": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity2": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName3": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity3": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName4": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity4": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName5": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity5": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName6": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity6": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName7": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity7": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName8": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity8": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName9": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity9": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName10": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity10": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "usageType": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "renter": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "installationLandmark": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "statusRemarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "portLabelImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "secondContactNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "accountNo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "addressCoordinates": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "referrersAccountNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "applicationId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "houseFront": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "createdBy": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -6077,122 +7075,6 @@
               "string"
             ],
             "format": "date-time"
-          }
-        }
-      },
-      "CreateLCPNapLocationCommand": {
-        "required": [
-          "lcpnap",
-          "lcp",
-          "nap",
-          "portTotal",
-          "coordinates",
-          "image",
-          "modifiedBy",
-          "modifiedDate",
-          "userEmail",
-          "image2",
-          "readingImage",
-          "street",
-          "barangay",
-          "city",
-          "region"
-        ],
-        "type": "object",
-        "properties": {
-          "lcpnap": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lcp": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "nap": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "portTotal": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "coordinates": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "image": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "userEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "image2": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "readingImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "street": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "barangay": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "region": {
-            "type": [
-              "null",
-              "string"
-            ]
           }
         }
       },
@@ -7624,6 +8506,10 @@
           }
         }
       },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
+      },
       "InvoiceDto": {
         "type": "object",
         "properties": {
@@ -8244,153 +9130,6 @@
           }
         }
       },
-      "UpdateApplicationRequest": {
-        "required": [
-          "emailAddress",
-          "region",
-          "city",
-          "barangay",
-          "referredBy",
-          "firstName",
-          "middleName",
-          "lastName",
-          "mobileNumber",
-          "secondaryMobileNumber",
-          "installationAddress",
-          "landmark",
-          "desiredPlan",
-          "proofOfBilling",
-          "governmentValidId",
-          "secondGovernmentValidId",
-          "houseFrontPicture",
-          "termsAndConditionsAgreement",
-          "firstNearestLandmark",
-          "secondNearestLandmark",
-          "applicablePromo",
-          "documentPicture",
-          "barangay1",
-          "barangay2",
-          "pictureofstatmentbillingfromotherprovider",
-          "referrersAccountNumber",
-          "applyingFor",
-          "status",
-          "visitBy",
-          "visitWith",
-          "visitWithOther",
-          "remarks",
-          "modifiedBy",
-          "modifiedDate",
-          "userEmail"
-        ],
-        "type": "object",
-        "properties": {
-          "emailAddress": {
-            "type": "string"
-          },
-          "region": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "barangay": {
-            "type": "string"
-          },
-          "referredBy": {
-            "type": "string"
-          },
-          "firstName": {
-            "type": "string"
-          },
-          "middleName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "mobileNumber": {
-            "type": "string"
-          },
-          "secondaryMobileNumber": {
-            "type": "string"
-          },
-          "installationAddress": {
-            "type": "string"
-          },
-          "landmark": {
-            "type": "string"
-          },
-          "desiredPlan": {
-            "type": "string"
-          },
-          "proofOfBilling": {
-            "type": "string"
-          },
-          "governmentValidId": {
-            "type": "string"
-          },
-          "secondGovernmentValidId": {
-            "type": "string"
-          },
-          "houseFrontPicture": {
-            "type": "string"
-          },
-          "termsAndConditionsAgreement": {
-            "type": "string"
-          },
-          "firstNearestLandmark": {
-            "type": "string"
-          },
-          "secondNearestLandmark": {
-            "type": "string"
-          },
-          "applicablePromo": {
-            "type": "string"
-          },
-          "documentPicture": {
-            "type": "string"
-          },
-          "barangay1": {
-            "type": "string"
-          },
-          "barangay2": {
-            "type": "string"
-          },
-          "pictureofstatmentbillingfromotherprovider": {
-            "type": "string"
-          },
-          "referrersAccountNumber": {
-            "type": "string"
-          },
-          "applyingFor": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "visitBy": {
-            "type": "string"
-          },
-          "visitWith": {
-            "type": "string"
-          },
-          "visitWithOther": {
-            "type": "string"
-          },
-          "remarks": {
-            "type": "string"
-          },
-          "modifiedBy": {
-            "type": "string"
-          },
-          "modifiedDate": {
-            "type": "string"
-          },
-          "userEmail": {
-            "type": "string"
-          }
-        }
-      },
       "UpdateBarangayRequest": {
         "required": [
           "name",
@@ -8678,6 +9417,7 @@
           "billingStatus",
           "routerModel",
           "dateInstalled",
+          "installationDate",
           "clientSignature",
           "ip",
           "signedContractImage",
@@ -8722,106 +9462,208 @@
         "type": "object",
         "properties": {
           "emailAddress": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "referredBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "firstName": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "middleInitial": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lastName": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "contactNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "applicantEmailAddress": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "address": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "location": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "barangay": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "city": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "region": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "planId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "installationFee": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "contractTemplate": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "billingDay": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "preferredDay": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "joRemarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "status": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "verifiedBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "modemRouterSN": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "provider": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "napId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "portId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vlanId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "username": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "visitBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "visitWith": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "visitWithOther": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "onsiteStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "onsiteRemarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "modifiedBy": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "modifiedDate": {
             "type": [
@@ -8831,19 +9673,34 @@
             "format": "date-time"
           },
           "contractLink": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "connectionType": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "assignedEmail": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "setupImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "speedtestImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "startTimeStamp": {
             "type": [
@@ -8860,19 +9717,34 @@
             "format": "date-time"
           },
           "duration": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "externalId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpnapId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "billingStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "routerModel": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "dateInstalled": {
             "type": [
@@ -8881,119 +9753,240 @@
             ],
             "format": "date-time"
           },
+          "installationDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "clientSignature": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ip": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "signedContractImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "boxReadingImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "routerReadingImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "usernameStatus": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "lcpnapportId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName1": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity1": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName2": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity2": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName3": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity3": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName4": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity4": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName5": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity5": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName6": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity6": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName7": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity7": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName8": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity8": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName9": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity9": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemName10": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itemQuantity10": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "usageType": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "renter": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "installationLandmark": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "statusRemarks": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "portLabelImage": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "secondContactNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "accountNo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "addressCoordinates": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "referrersAccountNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "applicationId": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "houseFront": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "createdBy": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -9010,131 +10003,6 @@
               "string"
             ],
             "format": "date-time"
-          }
-        }
-      },
-      "UpdateLCPNapLocationCommand": {
-        "required": [
-          "id",
-          "lcpnap",
-          "lcp",
-          "nap",
-          "portTotal",
-          "coordinates",
-          "image",
-          "modifiedBy",
-          "modifiedDate",
-          "userEmail",
-          "image2",
-          "readingImage",
-          "street",
-          "barangay",
-          "city",
-          "region"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "lcpnap": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lcp": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "nap": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "portTotal": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "coordinates": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "image": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "userEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "image2": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "readingImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "street": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "barangay": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "region": {
-            "type": [
-              "null",
-              "string"
-            ]
           }
         }
       },
