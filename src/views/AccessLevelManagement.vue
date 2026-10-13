@@ -18,7 +18,16 @@
               <i class="pi pi-shield text-primary fs-5"></i>
               <h5 class="fw-bold text-body mb-0">Access Level</h5>
             </div>
+            <!-- Gene - Oct 13, 2026: Added Sync Codes button for Access Levels -->
             <div class="d-flex align-items-center gap-2">
+              <Button 
+                label="Sync Codes" 
+                icon="pi pi-sync" 
+                class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs" 
+                :loading="isSyncingAccessLevelCodes" 
+                @click="syncAccessLevelCodes" 
+                v-tooltip.top="'Sync access level names with codes via backend API'" 
+              />
               <Button 
                 label="Create Access Level" 
                 icon="pi pi-plus" 
@@ -49,7 +58,16 @@
               <i class="pi pi-list text-primary fs-5"></i>
               <h5 class="fw-bold text-body mb-0 me-1">Menu List</h5>
             </div>
+            <!-- Gene - Oct 13, 2026: Added Sync Codes button for Menu List -->
             <div class="d-flex align-items-center gap-2">
+              <Button 
+                label="Sync Codes" 
+                icon="pi pi-sync" 
+                class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs" 
+                :loading="isSyncingMenuCodes" 
+                @click="syncMenuCodes" 
+                v-tooltip.top="'Sync menu names with first-letter codes via backend API'" 
+              />
               <Button 
                 label="Create Menu" 
                 icon="pi pi-plus" 
@@ -107,6 +125,32 @@ const openCreateAccessLevel = () => {
 const openCreateMenu = () => {
   if (menuTableRef.value) {
     menuTableRef.value.openCreateDialog()
+  }
+}
+
+// Gene - Oct 13, 2026: Provide sync handlers for Access Level codes and Menu codes
+const isSyncingAccessLevelCodes = ref(false)
+const isSyncingMenuCodes = ref(false)
+
+const syncAccessLevelCodes = async () => {
+  if (accessLevelTableRef.value?.syncAccessLevelCodesViaApi) {
+    isSyncingAccessLevelCodes.value = true
+    try {
+      await accessLevelTableRef.value.syncAccessLevelCodesViaApi()
+    } finally {
+      isSyncingAccessLevelCodes.value = false
+    }
+  }
+}
+
+const syncMenuCodes = async () => {
+  if (menuTableRef.value?.syncMenuCodesViaApi) {
+    isSyncingMenuCodes.value = true
+    try {
+      await menuTableRef.value.syncMenuCodesViaApi()
+    } finally {
+      isSyncingMenuCodes.value = false
+    }
   }
 }
 </script>

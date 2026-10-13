@@ -210,7 +210,7 @@
           </button>
         </div>
 
-        <!-- Right: Actions (Sync API for Menus, Create Button) -->
+        <!-- Right: Actions (Sync API for Menus and Access Levels, Create Button) -->
         <Button
           v-if="isMenuEndpoint"
           class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
@@ -221,6 +221,19 @@
         >
           <i class="pi pi-sync"></i>
           <span class="d-none d-sm-inline">Sync Menu Codes</span>
+          <span class="d-sm-none">Sync Codes</span>
+        </Button>
+        <!-- Gene - Oct 13, 2026: Sync Access Level names with shortCodes via backend API -->
+        <Button
+          v-if="isAccessLevelEndpoint"
+          class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
+          :class="{ 'ms-auto': !showTopCreateButton }"
+          :loading="isSyncingAccessLevelCodes"
+          @click="syncAccessLevelCodesViaApi"
+          v-tooltip.top="'Sync access level names with codes via backend API'"
+        >
+          <i class="pi pi-sync"></i>
+          <span class="d-none d-sm-inline">Sync Access Level Codes</span>
           <span class="d-sm-none">Sync Codes</span>
         </Button>
         <Button 
@@ -396,6 +409,18 @@
               <span class="d-none d-sm-inline">Sync Menu Codes</span>
               <span class="d-sm-none">Sync Codes</span>
             </Button>
+            <!-- Gene - Oct 13, 2026: Sync Access Level names with shortCodes via backend API -->
+            <Button
+              v-if="isAccessLevelEndpoint"
+              class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 ms-1"
+              :loading="isSyncingAccessLevelCodes"
+              @click="syncAccessLevelCodesViaApi"
+              v-tooltip.top="'Sync access level names with codes via backend API'"
+            >
+              <i class="pi pi-sync"></i>
+              <span class="d-none d-sm-inline">Sync Access Level Codes</span>
+              <span class="d-sm-none">Sync Codes</span>
+            </Button>
             <!-- Primary Action: Create Button -->
             <Button 
               v-if="showToolbarCreateButton" 
@@ -537,8 +562,17 @@
             {{ (slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== '') ? slotProps.data[col] : (slotProps.data.applicationId ?? slotProps.data.applicationIdValue ?? '-') }}
           </span>
           <!-- Menu Name Column with First Letter Code with number (Menus endpoint) -->
+          <!--
           <span v-else-if="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name')" class="d-inline-flex align-items-center gap-2">
             <span class="fw-medium text-body">{{ getMenuDisplayName(slotProps.data) || slotProps.data[col] || '-' }}</span>
+          </span>
+          -->
+          <!-- Gene - Oct 13, 2026: Format Access Level names with shortCodes matching Menu List conventions -->
+          <span v-else-if="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name')" class="d-inline-flex align-items-center gap-2">
+            <span class="fw-medium text-body">{{ getMenuDisplayName(slotProps.data) || slotProps.data[col] || '-' }}</span>
+          </span>
+          <span v-else-if="isAccessLevelEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name')" class="d-inline-flex align-items-center gap-2">
+            <span class="fw-medium text-body">{{ getAccessLevelDisplayName(slotProps.data) || slotProps.data[col] || '-' }}</span>
           </span>
           <span v-else class="d-inline-block text-truncate" style="max-width: 240px;" :title="slotProps.data[col]">
             <span v-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
@@ -3345,6 +3379,12 @@ import {
   getMenuDisplayName,
   stripMenuCodeFromName
 } from '../constants/menuCatalog'
+// Gene - Oct 13, 2026: Import Access Level catalog display formatter, Super Admin checker, and condition helpers
+import {
+  getAccessLevelDisplayName,
+  isSuperAdminAccessLevel,
+  hasAccessLevel
+} from '../constants/accessLevelCatalog'
 import { usePermissions } from '../composables/usePermissions'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -7796,6 +7836,7 @@ const fetchDiscountTypesLookup = (force = false) => {
 // which is what keeps them off every other list page.
 let accessLevelsPromise = null
 
+/*
 const fetchAccessLevelsLookup = () => {
   if (accessLevelsPromise) return accessLevelsPromise
   accessLevelsPromise = CrudService.list('AccessLevel')
@@ -7805,6 +7846,27 @@ const fetchAccessLevelsLookup = () => {
         nameOnly: item.name || `ID: ${item.id}`,
         value: item.id
       }))
+    })
+    .catch(err => {
+      console.error('Error fetching access levels:', err)
+      accessLevelsPromise = null
+    })
+  return accessLevelsPromise
+}
+*/
+// Gene - Oct 13, 2026: Format Access Level options in dropdowns with shortCodes via getAccessLevelDisplayName
+const fetchAccessLevelsLookup = () => {
+  if (accessLevelsPromise) return accessLevelsPromise
+  accessLevelsPromise = CrudService.list('AccessLevel')
+    .then(res => {
+      accessLevels.value = unwrapList(res).map(item => {
+        const formatted = getAccessLevelDisplayName(item) || item.name || `ID: ${item.id}`
+        return {
+          label: formatted,
+          nameOnly: formatted,
+          value: item.id
+        }
+      })
     })
     .catch(err => {
       console.error('Error fetching access levels:', err)
@@ -10237,9 +10299,21 @@ const saveData = async () => {
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'create', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(finalPayload, numericUserId, 'create')
+    /*
     } else if (isAccessLevelEndpoint.value) {
       finalPayload = {
         name: payload.name !== undefined && payload.name !== null ? String(payload.name).trim() : '',
+        description: payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : '',
+        createdBy: loggedInUserId,
+        createdDate: null,
+        modifiedBy: loggedInUserId,
+        modifiedDate: null
+      }
+    */
+    // Gene - Oct 13, 2026: Auto-attach shortCode to Access Level name upon creation to match Menu List convention
+    } else if (isAccessLevelEndpoint.value) {
+      finalPayload = {
+        name: payload.name !== undefined && payload.name !== null ? (getAccessLevelDisplayName(String(payload.name).trim()) || String(payload.name).trim()) : '',
         description: payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : '',
         createdBy: loggedInUserId,
         createdDate: null,
@@ -10342,8 +10416,18 @@ const openViewDialog = (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   viewingRecordId.value = getRecordId(normRecord) || ''
   viewFormData.value = { ...normRecord }
+  /*
   if (isMenuEndpoint.value && viewFormData.value) {
     const disp = getMenuDisplayName(viewFormData.value)
+    if (disp) viewFormData.value.name = disp
+  }
+  */
+  // Gene - Oct 13, 2026: Format display name with code for both Menus and Access Levels in View dialog
+  if (isMenuEndpoint.value && viewFormData.value) {
+    const disp = getMenuDisplayName(viewFormData.value)
+    if (disp) viewFormData.value.name = disp
+  } else if (isAccessLevelEndpoint.value && viewFormData.value) {
+    const disp = getAccessLevelDisplayName(viewFormData.value)
     if (disp) viewFormData.value.name = disp
   }
   autoLocateOnOpen('view')
@@ -10366,8 +10450,18 @@ const openEditDialog = async (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   editingRecordId.value = getRecordId(normRecord)
   editFormData.value = { ...normRecord }
+  /*
   if (isMenuEndpoint.value && editFormData.value) {
     const disp = getMenuDisplayName(editFormData.value)
+    if (disp) editFormData.value.name = disp
+  }
+  */
+  // Gene - Oct 13, 2026: Format display name with code for both Menus and Access Levels in Edit dialog
+  if (isMenuEndpoint.value && editFormData.value) {
+    const disp = getMenuDisplayName(editFormData.value)
+    if (disp) editFormData.value.name = disp
+  } else if (isAccessLevelEndpoint.value && editFormData.value) {
+    const disp = getAccessLevelDisplayName(editFormData.value)
     if (disp) editFormData.value.name = disp
   }
   autoLocateOnOpen('edit')
@@ -10846,9 +10940,19 @@ const saveEdit = async () => {
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(finalPayload, numericUserId, 'update')
+    /*
     } else if (isAccessLevelEndpoint.value) {
       finalPayload = {
         name: payload.name !== undefined && payload.name !== null ? String(payload.name).trim() : '',
+        description: payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : '',
+        modifiedBy: loggedInUserId,
+        modifiedDate: null
+      }
+    */
+    // Gene - Oct 13, 2026: Auto-attach shortCode to Access Level name upon update to match Menu List convention
+    } else if (isAccessLevelEndpoint.value) {
+      finalPayload = {
+        name: payload.name !== undefined && payload.name !== null ? (getAccessLevelDisplayName(String(payload.name).trim()) || String(payload.name).trim()) : '',
         description: payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : '',
         modifiedBy: loggedInUserId,
         modifiedDate: null
@@ -11316,9 +11420,21 @@ const activeLinkedMenuIds = computed(() => {
  *
  * Every other level — Developer included — is granted menu by menu.
  */
+/*
 const isSuperAdminAccessLevelProtected = () => {
   if (!props.selectedAccessLevel) return false
   return isSuperAdminName(
+    props.selectedAccessLevel.name ||
+    props.selectedAccessLevel.Name ||
+    props.selectedAccessLevel.role ||
+    ''
+  )
+}
+*/
+// Gene - Oct 13, 2026: Check Super Admin protection using isSuperAdminAccessLevel and name matching
+const isSuperAdminAccessLevelProtected = () => {
+  if (!props.selectedAccessLevel) return false
+  return isSuperAdminAccessLevel(props.selectedAccessLevel) || isSuperAdminName(
     props.selectedAccessLevel.name ||
     props.selectedAccessLevel.Name ||
     props.selectedAccessLevel.role ||
@@ -11427,6 +11543,55 @@ const syncMenuCodesViaApi = async () => {
     })
   } finally {
     isSyncingMenuCodes.value = false
+  }
+}
+
+// Gene - Oct 13, 2026: Synchronize Access Level names with their shortCodes via backend API
+const isSyncingAccessLevelCodes = ref(false)
+
+const syncAccessLevelCodesViaApi = async () => {
+  if (isSyncingAccessLevelCodes.value) return
+  isSyncingAccessLevelCodes.value = true
+  try {
+    const raw = await CrudService.list('AccessLevel')
+    const list = unwrapList(raw)
+    let updatedCount = 0
+
+    for (const level of list) {
+      const currentName = level.name || ''
+      const targetName = getAccessLevelDisplayName(level)
+
+      if (targetName && currentName !== targetName) {
+        await CrudService.update('AccessLevel', level.id, {
+          name: targetName,
+          description: level.description || '',
+          modifiedBy: Number(authStore.user?.id) || 1,
+          modifiedDate: null
+        })
+        updatedCount++
+      }
+    }
+
+    await fetchData()
+    fetchAccessLevelsLookup()
+    toast.add({
+      severity: 'success',
+      summary: 'Access Level Names Synchronized',
+      detail: updatedCount > 0 
+        ? `Successfully updated ${updatedCount} access level name(s) in backend API.` 
+        : 'All access level names in the database are already up-to-date with their codes.',
+      life: 4000
+    })
+  } catch (err) {
+    console.error('Error syncing access level codes via API:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Sync Failed',
+      detail: err.message || 'Failed to update access levels via the API.',
+      life: 5000
+    })
+  } finally {
+    isSyncingAccessLevelCodes.value = false
   }
 }
 
@@ -11755,7 +11920,10 @@ defineExpose({
   absentStatusHint,
   assignedEmailFilterOptions,
   hasFetched,
-  lastFetchedParams
+  lastFetchedParams,
+  // Gene - Oct 13, 2026: Expose sync menu and access level code methods for parent management views
+  syncMenuCodesViaApi,
+  syncAccessLevelCodesViaApi
 })
 </script>
 

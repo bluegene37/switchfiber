@@ -1261,9 +1261,22 @@ const SUPER_ADMIN_LEVEL_NAMES = new Set([
   'supersadmin'
 ])
 
+/*
 export const isSuperAdminName = (levelName) => {
   if (!levelName) return false
   const norm = String(levelName).toLowerCase().replace(/[^a-z0-9]/g, '')
+  return SUPER_ADMIN_LEVEL_NAMES.has(norm)
+}
+*/
+// Gene - Oct 13, 2026: Strips code tags like (SA1) and matches short codes to preserve Super Admin detection when access levels carry codes
+export const isSuperAdminName = (levelName) => {
+  if (!levelName) return false
+  const stripped = String(levelName)
+    .replace(/^[\(\[\{<]\s*[A-Za-z0-9_.-]+\s*[\)\]\}>]\s*[-:–—|]?\s*/, '')
+    .replace(/\s*[\(\[\{<]\s*[A-Za-z0-9_.-]+\s*[\)\]\}>]\s*$/, '')
+    .trim()
+  const norm = String(stripped).toLowerCase().replace(/[^a-z0-9]/g, '')
+  if (norm === 'sa1' || norm === 'sa' || norm === 'superadmin') return true
   return SUPER_ADMIN_LEVEL_NAMES.has(norm)
 }
 

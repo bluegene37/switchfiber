@@ -374,6 +374,8 @@ import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { useSearch } from '../composables/useSearch'
 import { usePermissions } from '../composables/usePermissions'
+// Gene - Oct 13, 2026: Import getAccessLevelDisplayName to display user role with shortCode in top navbar
+import { getAccessLevelDisplayName } from '../constants/accessLevelCatalog'
 import apiClient from '../services/api'
 import { MONITORED_ENDPOINTS, probePathFor } from '../models/monitoredEndpoints'
 
@@ -549,6 +551,7 @@ onMounted(async () => {
   refreshNotifications()
 })
 
+/*
 const userRole = computed(() => {
   if (!user.value) return 'Super Admin'
   const userAccId = Number(user.value.accesslevel_id || user.value.accessLevelId || 0)
@@ -557,6 +560,17 @@ const userRole = computed(() => {
   if (user.value.role) return user.value.role
   if (user.value.accessLevelName) return user.value.accessLevelName
   return (userAccId === 1 || userAccId === 3 || isSuperAdmin.value) ? 'Super Admin' : (userAccId ? `Access Level ${userAccId}` : 'User')
+})
+*/
+// Gene - Oct 13, 2026: Format user role with shortCode in Navbar using getAccessLevelDisplayName
+const userRole = computed(() => {
+  if (!user.value) return 'Super Admin (SA1)'
+  const userAccId = Number(user.value.accesslevel_id || user.value.accessLevelId || 0)
+  const found = accessLevelsList.value.find(a => Number(a.id || a.Id) === userAccId)
+  if (found && (found.name || found.Name)) return getAccessLevelDisplayName(found)
+  if (user.value.role) return getAccessLevelDisplayName(user.value.role)
+  if (user.value.accessLevelName) return getAccessLevelDisplayName(user.value.accessLevelName)
+  return (userAccId === 1 || userAccId === 3 || isSuperAdmin.value) ? 'Super Admin (SA1)' : (userAccId ? (getAccessLevelDisplayName(userAccId) || `Access Level ${userAccId}`) : 'User')
 })
 
 // Notifications Dropdown Logic & Dummy Data

@@ -880,6 +880,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { usePermissions } from '../composables/usePermissions'
+// Gene - Oct 13, 2026: Import getAccessLevelDisplayName to display user role with shortCode
+import { getAccessLevelDisplayName } from '../constants/accessLevelCatalog'
 
 const authStore = useAuthStore()
 const { canAccess } = usePermissions()
@@ -897,6 +899,7 @@ const userDisplayName = computed(() => {
 
 const currentUserId = computed(() => authStore.user?.id || 1)
 const userAccessLevelId = computed(() => authStore.user?.accesslevel_id || authStore.user?.accessLevelId || 103)
+/*
 const userRoleName = computed(() => {
   const u = authStore.user
   if (u?.role) return u.role
@@ -922,6 +925,34 @@ const userRoleName = computed(() => {
     107: 'Warehouse & Inventory Officer'
   }
   return idMap[userAccessLevelId.value] || `Role (${userAccessLevelId.value})`
+})
+*/
+// Gene - Oct 13, 2026: Format user role name with shortCode using getAccessLevelDisplayName
+const userRoleName = computed(() => {
+  const u = authStore.user
+  if (u?.role) return getAccessLevelDisplayName(u.role)
+  if (u?.accessLevelName) return getAccessLevelDisplayName(u.accessLevelName)
+  const idMap = {
+    3: 'Super Admin (SA1)',
+    4: 'Developer (DEV1)',
+    5: 'Billing Manager (BM1)',
+    6: 'Technical Support (TS1)',
+    7: 'Customer Support (CS1)',
+    8: 'Data Input Team (DIT1)',
+    9: 'Field Installation Team (FIT1)',
+    10: 'Network Operations Center (NOC1)',
+    11: 'Guest (GST1)',
+    95: 'Sales & Marketing Representative (SMR1)',
+    99: 'Cashier / Payment Collector (CPC1)',
+    100: 'Dispatcher / Schedule Coordinator (DSC1)',
+    101: 'Accounting (ACC1)',
+    103: 'QA Tester (QAT1)',
+    104: 'Executive / General Manager (EGM1)',
+    105: 'Fiber Plant Engineer (OSP) (FPE1)',
+    106: 'Auditor / Compliance Officer (ACO1)',
+    107: 'Warehouse & Inventory Officer (WIO1)'
+  }
+  return idMap[userAccessLevelId.value] || getAccessLevelDisplayName(userAccessLevelId.value) || `Role (${userAccessLevelId.value})`
 })
 
 // Real-Time Clock & Session Timing

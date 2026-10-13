@@ -13,6 +13,13 @@ import {
   getShortCodeForCatalogCode,
   MENU_CODE_MAP
 } from '../constants/menuCatalog.js'
+// Gene - Oct 13, 2026: Import access level code helpers and display formatters
+import {
+  getAccessLevelShortCode,
+  getAccessLevelCode,
+  hasAccessLevel,
+  isSuperAdminAccessLevel
+} from '../constants/accessLevelCatalog.js'
 
 // Shared reactive state across all components
 const allowedMenuCodes = ref(new Set())
@@ -78,6 +85,7 @@ const userAccessLevel = computed(() => {
  * and a level named "Developer" is an ordinary level whose menus are granted row
  * by row like everyone else's.
  */
+/*
 const isSuperAdmin = computed(() => {
   const user = currentUser()
   return (
@@ -86,6 +94,36 @@ const isSuperAdmin = computed(() => {
     isSuperAdminName(user?.accessLevelName)
   )
 })
+*/
+// Gene - Oct 13, 2026: Enhanced Super Admin check using code matching (SA1 / super_admin) and name matching
+const isSuperAdmin = computed(() => {
+  const user = currentUser()
+  return (
+    isSuperAdminAccessLevel(resolvedLevelName.value) ||
+    isSuperAdminAccessLevel(user) ||
+    isSuperAdminName(resolvedLevelName.value) ||
+    isSuperAdminName(user?.role) ||
+    isSuperAdminName(user?.accessLevelName)
+  )
+})
+
+// Gene - Oct 13, 2026: Reactive current user access level shortCode ('SA1') and code slug ('super_admin')
+const currentAccessLevelCode = computed(() => {
+  return getAccessLevelShortCode(resolvedLevelName.value || currentUser())
+})
+
+const currentAccessLevelSlug = computed(() => {
+  return getAccessLevelCode(resolvedLevelName.value || currentUser())
+})
+
+/**
+ * Flexible condition / if-statement helper for checking the current user's role:
+ * E.g. if (hasRole('SA1', 'DEV1')) { ... }
+ *      if (hasRole('billing_manager')) { ... }
+ */
+const hasRole = (...codes) => {
+  return hasAccessLevel(resolvedLevelName.value || currentUser(), ...codes)
+}
 
 // Fallback menu when no stored permissions are usable:
 // When the API is down ('error'): only Settings (+ settings actions). Dashboard is strictly excluded.
@@ -548,6 +586,11 @@ export function usePermissions() {
     canAccessSettings,
     canAccessTheme,
     canAccessModifyPassword,
-    canAccessUnmaskPassword
+    canAccessUnmaskPassword,
+    // Gene - Oct 13, 2026: Export reactive access level short code, code slug, and flexible condition checker
+    currentAccessLevelCode,
+    currentAccessLevelSlug,
+    hasRole,
+    hasAccessLevel
   }
 }
