@@ -149,4 +149,20 @@ describe('Promotions Form Controls Suite', () => {
       'saveData/saveEdit must join placement array with commas'
     )
   })
+
+  test('Highlighted and selected row styles preserve visible red text on primary badges and pills', () => {
+    assert.ok(
+      dynamicApiTableSource.includes('.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-primary'),
+      'DynamicApiTable must preserve text-primary color on p-highlight badge'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes('.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-primary'),
+      'DynamicApiTable must preserve text-primary color on aria-selected badge'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes('color: var(--bs-primary-active, #c02e3c) !important'),
+      'DynamicApiTable must style primary badge text with high-contrast red'
+    )
+  })
 })
+

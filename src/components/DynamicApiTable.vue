@@ -12890,6 +12890,33 @@ defineExpose({
   color: var(--bs-danger-text-emphasis, #b02a37) !important;
 }
 
+/* Gene - Oct, 16, 2026: Preserve crisp visible red font for primary badges/pills (Promotions placement chips, discount types, payment methods) on highlighted/selected rows */
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-primary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-primary *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.badge-primary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.badge-primary *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.bg-primary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.bg-primary *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.bg-primary-subtle),
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.bg-primary-subtle *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-primary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.text-primary *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.badge-primary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.badge-primary *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.bg-primary),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.bg-primary *),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.bg-primary-subtle),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .badge.bg-primary-subtle *) {
+  color: var(--bs-primary-active, #c02e3c) !important;
+}
+
+/* Gene - Oct, 16, 2026: Preserve visible boundary on color dots (Theme Color preview) on highlighted/selected rows */
+:deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .rounded-circle.border),
+:deep(.highlight-selected-row .p-datatable-tbody > tr[aria-selected="true"] .rounded-circle.border) {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9) !important;
+}
+
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning),
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning *),
 :deep(.highlight-selected-row .p-datatable-tbody > tr.p-highlight .badge.text-warning-emphasis),
