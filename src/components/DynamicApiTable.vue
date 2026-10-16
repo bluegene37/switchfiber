@@ -3678,8 +3678,30 @@ const isPaymentEndpoint = computed(() => {
   return ep === 'payments' || ep === 'payment'
 })
 
+// Gene - Oct, 16, 2026: Added endpoint flags for Promotions, Inventory Category, Inventory Item, and Inventory Logs
+const isPromotionEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'promotions' || ep === 'promotion' || ep === 'promos' || ep === 'promo'
+})
+
+const isInventoryCategoryEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'inventorycategory' || ep === 'inventory_category' || ep === 'inventorycategories'
+})
+
+const isInventoryItemEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'inventoryitem' || ep === 'inventory_item' || ep === 'inventoryitems'
+})
+
+const isInventoryLogEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'inventorylogs' || ep === 'inventory_logs' || ep === 'inventorylog' || ep === 'inventory_log'
+})
+
 // Determine if the endpoint needs a wider 3-column modal (Applications, Job Orders,
 // Billing Details, LCP NAP Locations & Service Orders — the field-heavy forms) or the standard 2-column modal
+/*
 const isWideForm = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
   return (
@@ -3704,6 +3726,35 @@ const isWideForm = computed(() => {
     ep === 'discounts' ||
     ep === 'discount' ||
     isPaymentEndpoint.value
+  )
+})
+*/
+// Gene - Oct, 16, 2026: Include Promotions in 3-column wide modal layout
+const isWideForm = computed(() => {
+  const ep = (props.endpoint || '').toLowerCase()
+  return (
+    ep === 'joborders' ||
+    ep === 'joborder' ||
+    ep === 'billingdetails' ||
+    ep === 'billingdetail' ||
+    ep === 'billing_details' ||
+    ep === 'billing_detail' ||
+    ep === 'job_order' ||
+    ep === 'billing' ||
+    ep === 'applications' ||
+    ep === 'application' ||
+    ep === 'lcpnaplocations' ||
+    ep === 'lcpnaplocation' ||
+    ep === 'lcp_nap_locations' ||
+    ep === 'lcp_nap_location' ||
+    ep === 'serviceorders' ||
+    ep === 'serviceorder' ||
+    ep === 'service_orders' ||
+    ep === 'service_order' ||
+    ep === 'discounts' ||
+    ep === 'discount' ||
+    isPaymentEndpoint.value ||
+    isPromotionEndpoint.value
   )
 })
 
@@ -4009,7 +4060,17 @@ function formatLabel(col) {
     image1: 'Site Photo 1',
     image2: 'Site Photo 2',
     image3: 'Site Photo 3',
-    clientsignature: 'Client Signature'
+    clientsignature: 'Client Signature',
+    // Gene - Oct, 16, 2026: Added human-readable labels for Promotions and Inventory tables
+    promocode: 'Promo Code',
+    badgetext: 'Badge Text',
+    themecolor: 'Theme Color',
+    ctatext: 'CTA Button Text',
+    ctalink: 'CTA Link URL',
+    imageurl: 'Banner Image',
+    imagesize: 'Image Size',
+    itemid: 'Item Code / ID',
+    requestedwith: 'Requested With'
   }
   const normKey = col.toLowerCase().replace(/_/g, '')
   if (customOverrides[normKey]) {
@@ -4051,7 +4112,11 @@ function formatLabel(col) {
 // secondGovernmentValidId hold the URL of a scanned document. Treating those as
 // numbers rendered an InputNumber showing NaN and wrote that over the stored
 // link on save, so they are kept out of the numeric heuristic.
+/*
 const NON_NUMERIC_ID_HINTS = ['valid', 'picture', 'photo', 'image', 'document', 'file', 'url', 'attachment', 'proof']
+*/
+// Gene - Oct, 16, 2026: Include 'itemid' in NON_NUMERIC_ID_HINTS so InventoryItem/InventoryLogs string itemId stays a text input
+const NON_NUMERIC_ID_HINTS = ['valid', 'picture', 'photo', 'image', 'document', 'file', 'url', 'attachment', 'proof', 'itemid']
 
 function isNonNumericIdField(lower) {
   return NON_NUMERIC_ID_HINTS.some(hint => lower.includes(hint))
@@ -4118,6 +4183,7 @@ function getFieldType(col) {
   }
 
   // Image / Picture upload fields (Government Valid ID, Second Government Valid ID, House Front Picture, Document Picture, Picture of Statement Billing From Other Provider, etc.)
+  /*
   if (
     lower.includes('picture') ||
     lower.includes('photo') ||
@@ -4133,6 +4199,28 @@ function getFieldType(col) {
     (lower.includes('statement') && (lower.includes('provider') || lower.includes('billing') || lower.includes('picture') || lower.includes('image') || lower.includes('proof') || lower.includes('doc'))) ||
     (lower.includes('billing') && (lower.includes('provider') || lower.includes('picture') || lower.includes('photo') || lower.includes('image') || lower.includes('proof') || lower.includes('attachment') || lower.includes('statement') || lower.includes('doc'))) ||
     (lower.includes('image') && !lower.includes('duration')) ||
+    lower.includes('signature') ||
+    lower.startsWith('attachment')
+  ) {
+    return 'image_upload'
+  }
+  */
+  // Gene - Oct, 16, 2026: Exclude imageSize from image_upload classification so Promotions.imageSize renders as a text input
+  if (
+    lower.includes('picture') ||
+    lower.includes('photo') ||
+    lower.includes('validid') ||
+    lower.includes('governmentvalidid') ||
+    lower.includes('housefront') ||
+    lower.includes('documentpicture') ||
+    lower.includes('proofofbilling') ||
+    lower.includes('statementbilling') ||
+    lower.includes('statementofbilling') ||
+    lower.includes('statementofaccount') ||
+    lower.includes('billingstatement') ||
+    (lower.includes('statement') && (lower.includes('provider') || lower.includes('billing') || lower.includes('picture') || lower.includes('image') || lower.includes('proof') || lower.includes('doc'))) ||
+    (lower.includes('billing') && (lower.includes('provider') || lower.includes('picture') || lower.includes('photo') || lower.includes('image') || lower.includes('proof') || lower.includes('attachment') || lower.includes('statement') || lower.includes('doc'))) ||
+    (lower.includes('image') && !lower.includes('duration') && lower !== 'imagesize') ||
     lower.includes('signature') ||
     lower.startsWith('attachment')
   ) {
@@ -4187,12 +4275,26 @@ function getFieldType(col) {
   if (lower === 'active' || lower === 'isactive' || lower === 'enabled') {
     return 'toggle'
   }
+  /*
   if (
     lower === 'termsandconditionsagreement' ||
     lower === 'termsandconditions' ||
     lower === 'termsagreement' ||
     lower.includes('termsandconditions') ||
     (lower.includes('agreement') && !lower.includes('id'))
+  ) {
+    return 'agreement_checkbox'
+  }
+  */
+  // Gene - Oct, 16, 2026: On Promotions, termsAndConditions is a multiline promo policy text rather than an applicant agreement checkbox
+  if (
+    !isPromotionEndpoint.value && (
+      lower === 'termsandconditionsagreement' ||
+      lower === 'termsandconditions' ||
+      lower === 'termsagreement' ||
+      lower.includes('termsandconditions') ||
+      (lower.includes('agreement') && !lower.includes('id'))
+    )
   ) {
     return 'agreement_checkbox'
   }
@@ -4290,6 +4392,15 @@ function getFieldType(col) {
   if (lower === 'usagetype') {
     return 'usagetype_dropdown'
   }
+  /*
+  if (lower === 'prioritylevel' || lower === 'priority_level' || lower === 'priority') {
+    return 'priority_dropdown'
+  }
+  */
+  // Gene - Oct, 16, 2026: Promotions.priority is an integer display sort order rather than a Low/Medium/High priority dropdown
+  if (isPromotionEndpoint.value && lower === 'priority') {
+    return 'number'
+  }
   if (lower === 'prioritylevel' || lower === 'priority_level' || lower === 'priority') {
     return 'priority_dropdown'
   }
@@ -4331,12 +4442,27 @@ function getFieldType(col) {
     return 'number'
   }
   // Multiline text fields
+  /*
   if (
     lower.includes('remark') ||
     lower.includes('concern') ||
     lower.includes('description') ||
     lower === 'details' ||
     lower === 'notes'
+  ) {
+    return 'textarea'
+  }
+  */
+  // Gene - Oct, 16, 2026: Include termsAndConditions, perks, and requirements in multiline textarea fields
+  if (
+    lower.includes('remark') ||
+    lower.includes('concern') ||
+    lower.includes('description') ||
+    lower === 'details' ||
+    lower === 'notes' ||
+    lower === 'termsandconditions' ||
+    lower === 'perks' ||
+    lower === 'requirements'
   ) {
     return 'textarea'
   }
@@ -4556,6 +4682,19 @@ const PAYMENT_COLUMNS = [
   'userEmail'
 ]
 
+// Gene - Oct, 16, 2026: Concise table columns for Promotions list (full 18-field schema shown in View/Edit modals)
+const PROMOTION_COLUMNS = [
+  'id',
+  'promoCode',
+  'title',
+  'subtitle',
+  'discountTypeId',
+  'badgeText',
+  'placement',
+  'priority',
+  'isActive'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
@@ -4621,7 +4760,12 @@ const CONCISE_ENDPOINT_COLUMNS = {
   serviceorders: SERVICE_ORDER_COLUMNS,
   service_orders: SERVICE_ORDER_COLUMNS,
   serviceorder: SERVICE_ORDER_COLUMNS,
-  service_order: SERVICE_ORDER_COLUMNS
+  service_order: SERVICE_ORDER_COLUMNS,
+  // Gene - Oct, 16, 2026: Register Promotions concise columns
+  Promotions: PROMOTION_COLUMNS,
+  promotions: PROMOTION_COLUMNS,
+  Promo: PROMOTION_COLUMNS,
+  promo: PROMOTION_COLUMNS
 }
 
 // Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
@@ -6729,6 +6873,83 @@ const PAYMENT_FORM_LAYOUT = [
   }
 ]
 
+// Gene - Oct, 16, 2026: Added structured form layouts for Promotions, Inventory Category, Inventory Item, and Inventory Logs
+const PROMOTION_FORM_LAYOUT = [
+  {
+    key: 'campaign',
+    title: 'Campaign Overview & Placement',
+    icon: 'pi pi-megaphone',
+    badgeClass: 'text-primary',
+    columns: [
+      'promoCode',
+      'title',
+      'subtitle',
+      'discountTypeId',
+      'placement',
+      'priority',
+      'isActive',
+      'startDate',
+      'endDate'
+    ]
+  },
+  {
+    key: 'creative',
+    title: 'Visual Styling & Call to Action',
+    icon: 'pi pi-palette',
+    badgeClass: 'text-info',
+    columns: [
+      'badgeText',
+      'themeColor',
+      'ctaText',
+      'ctaLink',
+      'imageSize',
+      'imageUrl'
+    ]
+  },
+  {
+    key: 'terms',
+    title: 'Description, Perks & Terms',
+    icon: 'pi pi-file-edit',
+    badgeClass: 'text-success',
+    columns: [
+      'description',
+      'perks',
+      'requirements',
+      'termsAndConditions'
+    ]
+  }
+]
+
+const INVENTORY_CATEGORY_FORM_LAYOUT = [
+  {
+    key: 'category',
+    title: 'Inventory Category Information',
+    icon: 'pi pi-tags',
+    badgeClass: 'text-primary',
+    columns: ['name']
+  }
+]
+
+const INVENTORY_ITEM_FORM_LAYOUT = [
+  {
+    key: 'item',
+    title: 'Inventory Item Details',
+    icon: 'pi pi-box',
+    badgeClass: 'text-primary',
+    columns: ['itemId', 'name', 'category', 'quantity', 'supplier', 'userEmail', 'description', 'image']
+  }
+]
+
+const INVENTORY_LOG_FORM_LAYOUT = [
+  {
+    key: 'log',
+    title: 'Inventory Transaction & Request Details',
+    icon: 'pi pi-history',
+    badgeClass: 'text-primary',
+    columns: ['itemId', 'quantity', 'status', 'requestedBy', 'requestedWith', 'remarks']
+  }
+]
+
 // Generic layout builder helper for standardized section construction
 const buildLayoutSections = (cols, layout, { includeAudit = false } = {}) => {
   const pool = new Map()
@@ -6788,6 +7009,11 @@ const buildAccessLevelSections = (cols, opts) => buildLayoutSections(cols, ACCES
 const buildDiscountTypeSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_TYPE_FORM_LAYOUT, opts)
 const buildDiscountSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_FORM_LAYOUT, opts)
 const buildPaymentSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_FORM_LAYOUT, opts)
+// Gene - Oct, 16, 2026: Section builders for Promotions and Inventory endpoints
+const buildPromotionSections = (cols, opts) => buildLayoutSections(cols, PROMOTION_FORM_LAYOUT, opts)
+const buildInventoryCategorySections = (cols, opts) => buildLayoutSections(cols, INVENTORY_CATEGORY_FORM_LAYOUT, opts)
+const buildInventoryItemSections = (cols, opts) => buildLayoutSections(cols, INVENTORY_ITEM_FORM_LAYOUT, opts)
+const buildInventoryLogSections = (cols, opts) => buildLayoutSections(cols, INVENTORY_LOG_FORM_LAYOUT, opts)
 
 // Columns for Create & Edit forms (excludes system audit fields completely)
 // ---- Quick Fields ---------------------------------------------------------
@@ -6998,6 +7224,19 @@ const baseFormSections = computed(() => {
   if (isPaymentEndpoint.value) {
     return buildPaymentSections(formColumns.value)
   }
+  // Gene - Oct, 16, 2026: Use dedicated section builders for Promotions and Inventory endpoints
+  if (isPromotionEndpoint.value) {
+    return buildPromotionSections(formColumns.value)
+  }
+  if (isInventoryCategoryEndpoint.value) {
+    return buildInventoryCategorySections(formColumns.value)
+  }
+  if (isInventoryItemEndpoint.value) {
+    return buildInventoryItemSections(formColumns.value)
+  }
+  if (isInventoryLogEndpoint.value) {
+    return buildInventoryLogSections(formColumns.value)
+  }
 
   const groups = {
     profile: [],
@@ -7099,6 +7338,19 @@ const viewFormSections = computed(() => {
   }
   if (isPaymentEndpoint.value) {
     return buildPaymentSections(viewFormColumns.value, { includeAudit: true })
+  }
+  // Gene - Oct, 16, 2026: Use dedicated section builders for Promotions and Inventory endpoints in View modal
+  if (isPromotionEndpoint.value) {
+    return buildPromotionSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isInventoryCategoryEndpoint.value) {
+    return buildInventoryCategorySections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isInventoryItemEndpoint.value) {
+    return buildInventoryItemSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isInventoryLogEndpoint.value) {
+    return buildInventoryLogSections(viewFormColumns.value, { includeAudit: true })
   }
 
   const groups = {
@@ -7552,6 +7804,16 @@ const statusOptions = computed(() => {
       { label: 'Completed', value: 'Completed' },
       { label: 'Activated', value: 'Activated' },
       { label: 'Failed', value: 'Failed' }
+    ]
+  }
+  // Gene - Oct, 16, 2026: Provide inventory transaction status options for InventoryLogs when table is empty
+  if (isInventoryLogEndpoint.value && !dataStatusVocabulary.value.length) {
+    return [
+      { label: 'Pending', value: 'Pending' },
+      { label: 'Approved', value: 'Approved' },
+      { label: 'Issued', value: 'Issued' },
+      { label: 'Returned', value: 'Returned' },
+      { label: 'Rejected', value: 'Rejected' }
     ]
   }
   const vocabulary = dataStatusVocabulary.value
@@ -9766,6 +10028,41 @@ const openCreateDialog = () => {
       formData.value[uEmailCol] = authStore.user?.email || 'admin@switchfiber.com'
     }
   }
+
+  // Gene - Oct, 16, 2026: Pre-fill sensible defaults for Promotions, Inventory Item, and Inventory Logs create dialogs
+  if (isPromotionEndpoint.value) {
+    const priorityCol = formColumns.value.find(c => c.toLowerCase() === 'priority')
+    if (priorityCol && (formData.value[priorityCol] === '' || formData.value[priorityCol] === undefined)) {
+      formData.value[priorityCol] = 1
+    }
+  }
+
+  if (isInventoryItemEndpoint.value) {
+    const qtyCol = formColumns.value.find(c => c.toLowerCase() === 'quantity')
+    if (qtyCol && (formData.value[qtyCol] === '' || formData.value[qtyCol] === undefined)) {
+      formData.value[qtyCol] = 0
+    }
+    const uEmailCol = formColumns.value.find(c => normalizeColKey(c) === 'useremail')
+    if (uEmailCol && !formData.value[uEmailCol]) {
+      formData.value[uEmailCol] = authStore.user?.email || 'admin@switchfiber.com'
+    }
+  }
+
+  if (isInventoryLogEndpoint.value) {
+    const qtyCol = formColumns.value.find(c => c.toLowerCase() === 'quantity')
+    if (qtyCol && (formData.value[qtyCol] === '' || formData.value[qtyCol] === undefined)) {
+      formData.value[qtyCol] = 1
+    }
+    const reqByCol = formColumns.value.find(c => c.toLowerCase() === 'requestedby')
+    if (reqByCol && !formData.value[reqByCol] && currentUser) {
+      formData.value[reqByCol] = currentUser
+    }
+    const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
+    if (statusCol && !formData.value[statusCol]) {
+      formData.value[statusCol] = 'Pending'
+    }
+  }
+
   // Default province for Create modal if empty (the plant lives in Binangonan, Rizal)
   const createRegCol = formColumns.value.find(c => getFieldType(c) === 'region_dropdown')
   if (createRegCol && !formData.value[createRegCol]) {
@@ -10364,6 +10661,22 @@ const saveData = async () => {
         } else {
           delete finalPayload.discountId
         }
+      }
+
+      // Gene - Oct, 16, 2026: Normalize numeric fields for Promotions and int32 modifiedBy for InventoryCategory on create
+      if (isPromotionEndpoint.value) {
+        finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
+          ? Number(finalPayload.priority)
+          : 0
+        if (finalPayload.discountTypeId !== undefined && finalPayload.discountTypeId !== null && finalPayload.discountTypeId !== '' && finalPayload.discountTypeId !== 0 && finalPayload.discountTypeId !== '0') {
+          finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
+        } else {
+          delete finalPayload.discountTypeId
+        }
+      }
+
+      if (isInventoryCategoryEndpoint.value) {
+        finalPayload.modifiedBy = numericUserId
       }
     }
 
@@ -10988,7 +11301,16 @@ const saveEdit = async () => {
       // this every edit wiped it (LogTrail 2026-09-10: order 882 arrived from
       // the portal intake with a real date, the first browser edit sent null,
       // the row now reads null). Send the date the edit was opened with.
+      /*
       if (isServiceOrderEndpoint.value) {
+        const originalCreatedDate = editBaseSnapshot.value?.createdDate
+        if (originalCreatedDate !== undefined && originalCreatedDate !== null && originalCreatedDate !== '') {
+          finalPayload.createdDate = originalCreatedDate
+        }
+      }
+      */
+      // Gene - Oct, 16, 2026: Preserve original createdDate for ServiceOrders and InventoryLogs on PUT
+      if (isServiceOrderEndpoint.value || isInventoryLogEndpoint.value) {
         const originalCreatedDate = editBaseSnapshot.value?.createdDate
         if (originalCreatedDate !== undefined && originalCreatedDate !== null && originalCreatedDate !== '') {
           finalPayload.createdDate = originalCreatedDate
@@ -11004,6 +11326,22 @@ const saveEdit = async () => {
         } else {
           finalPayload.discountId = null
         }
+      }
+
+      // Gene - Oct, 16, 2026: Normalize numeric fields for Promotions and int32 modifiedBy for InventoryCategory on update
+      if (isPromotionEndpoint.value) {
+        finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
+          ? Number(finalPayload.priority)
+          : 0
+        if (finalPayload.discountTypeId !== undefined && finalPayload.discountTypeId !== null && finalPayload.discountTypeId !== '' && finalPayload.discountTypeId !== 0 && finalPayload.discountTypeId !== '0') {
+          finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
+        } else {
+          finalPayload.discountTypeId = null
+        }
+      }
+
+      if (isInventoryCategoryEndpoint.value) {
+        finalPayload.modifiedBy = numericUserId
       }
 
       if (isPaymentEndpoint.value) {
@@ -11871,10 +12209,19 @@ const needsUserLookup = computed(() =>
 // Plans.discountId, Applications.applicablePromo and Discounts.discounttype_id
 // all print a discount type NAME in the grid, which needs /DiscountTypes loaded
 // before the first render rather than on the first dialog open.
+/*
 const needsDiscountTypeLookup = computed(() =>
   columns.value.some(c => getFieldType(c) === 'discounttype_dropdown') ||
   isPlanEndpoint.value ||
   isDiscountEndpoint.value
+)
+*/
+// Gene - Oct, 16, 2026: Include Promotions in needsDiscountTypeLookup so discountTypeId resolves Discount Type names in the table grid
+const needsDiscountTypeLookup = computed(() =>
+  columns.value.some(c => getFieldType(c) === 'discounttype_dropdown') ||
+  isPlanEndpoint.value ||
+  isDiscountEndpoint.value ||
+  isPromotionEndpoint.value
 )
 
 const needsPlanLookup = computed(() =>

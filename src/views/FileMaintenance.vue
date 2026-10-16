@@ -229,6 +229,55 @@ const routeMap = {
     endpoint: 'Discounts',
     icon: 'pi-ticket',
     description: 'Track customer discount redemptions, promo applications, approved subsidies, and account deductions.'
+  },
+  // Gene - Oct, 16, 2026: Added File Maintenance route mappings for Promo (/api/Promotions), Inventory Category (/api/InventoryCategory), Inventory Item (/api/InventoryItem), and Inventory Logs (/api/InventoryLogs)
+  '/promo': {
+    title: 'Promo',
+    endpoint: 'Promotions',
+    icon: 'pi-gift',
+    description: 'Configure promotional campaigns, promo codes, website banners, discount links, perks, and terms.'
+  },
+  '/promotions': {
+    title: 'Promo',
+    endpoint: 'Promotions',
+    icon: 'pi-gift',
+    description: 'Configure promotional campaigns, promo codes, website banners, discount links, perks, and terms.'
+  },
+  '/inventory-category': {
+    title: 'Inventory Category',
+    endpoint: 'InventoryCategory',
+    icon: 'pi-tags',
+    description: 'Manage warehouse and network equipment categories for classifying fiber hardware, cables, and stock items.'
+  },
+  '/inventory_category': {
+    title: 'Inventory Category',
+    endpoint: 'InventoryCategory',
+    icon: 'pi-tags',
+    description: 'Manage warehouse and network equipment categories for classifying fiber hardware, cables, and stock items.'
+  },
+  '/inventory-item': {
+    title: 'Inventory Item',
+    endpoint: 'InventoryItem',
+    icon: 'pi-box',
+    description: 'Manage hardware stock items, item codes, categories, suppliers, available quantities, and item images.'
+  },
+  '/inventory_item': {
+    title: 'Inventory Item',
+    endpoint: 'InventoryItem',
+    icon: 'pi-box',
+    description: 'Manage hardware stock items, item codes, categories, suppliers, available quantities, and item images.'
+  },
+  '/inventory-logs': {
+    title: 'Inventory Logs',
+    endpoint: 'InventoryLogs',
+    icon: 'pi-history',
+    description: 'Track inventory stock requests, item dispatches, quantities, technicians, statuses, and remarks.'
+  },
+  '/inventory_logs': {
+    title: 'Inventory Logs',
+    endpoint: 'InventoryLogs',
+    icon: 'pi-history',
+    description: 'Track inventory stock requests, item dispatches, quantities, technicians, statuses, and remarks.'
   }
 }
 

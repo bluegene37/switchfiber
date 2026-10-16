@@ -110,6 +110,19 @@ const ENDPOINT_OVERRIDES = {
   // receivedPayment as "Payment Date".
   payments: [
     'transactionID', 'accountNo', 'contactNo', 'receivedPayment', 'paymentMethod'
+  ],
+  // Gene - Oct, 16, 2026: Added mandatory form field overrides for Promotions, InventoryCategory, InventoryItem, and InventoryLogs whose DTO properties are nullable in OpenAPI
+  promotions: [
+    'promoCode', 'title'
+  ],
+  inventorycategory: [
+    'name'
+  ],
+  inventoryitem: [
+    'name', 'quantity'
+  ],
+  inventorylogs: [
+    'itemId', 'quantity', 'requestedBy', 'status'
   ]
 }
 

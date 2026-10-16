@@ -40,6 +40,14 @@ const ROUTE_TITLES = {
   discounts: 'Discounts',
   discount: 'Discounts',
   promo: 'Promo',
+  // Gene - Oct, 16, 2026: Added route titles for Promotions and Inventory File Maintenance tables
+  promotions: 'Promo',
+  'inventory-category': 'Inventory Category',
+  inventory_category: 'Inventory Category',
+  'inventory-item': 'Inventory Item',
+  inventory_item: 'Inventory Item',
+  'inventory-logs': 'Inventory Logs',
+  inventory_logs: 'Inventory Logs',
   user: 'User',
   menu: 'Menu',
   access_level: 'Access Level',
@@ -186,7 +194,51 @@ const router = createRouter({
     {
       path: '/promo',
       name: 'promo',
-      component: () => import('../views/Promo.vue'),
+      // component: () => import('../views/Promo.vue'),
+      // Gene - Oct, 16, 2026: Connected /promo to FileMaintenance.vue (/api/Promotions) and registered Inventory File Maintenance routes
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/promotions',
+      name: 'promotions',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory-category',
+      name: 'inventory-category',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory_category',
+      name: 'inventory_category',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory-item',
+      name: 'inventory-item',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory_item',
+      name: 'inventory_item',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory-logs',
+      name: 'inventory-logs',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inventory_logs',
+      name: 'inventory_logs',
+      component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },
     {

@@ -27,7 +27,12 @@ export const MONITORED_ENDPOINTS = [
   { key: 'ports', path: '/Ports', label: 'Ports' },
   { key: 'users', path: '/Users', label: 'Users' },
   { key: 'discountTypes', path: '/DiscountTypes', label: 'Discount Types' },
-  { key: 'discounts', path: '/Discounts', label: 'Discounts' }
+  { key: 'discounts', path: '/Discounts', label: 'Discounts' },
+  // Gene - Oct, 16, 2026: Added Promotions, Inventory Category, Inventory Item, and Inventory Logs to monitored endpoints
+  { key: 'promotions', path: '/Promotions', label: 'Promotions' },
+  { key: 'inventoryCategory', path: '/InventoryCategory', label: 'Inventory Categories' },
+  { key: 'inventoryItem', path: '/InventoryItem', label: 'Inventory Items' },
+  { key: 'inventoryLogs', path: '/InventoryLogs', label: 'Inventory Logs' }
 ]
 
 export const labelForPath = (path) =>

@@ -44,89 +44,6 @@ export const EndpointSchemaMeta = {
       ]
     }
   },
-  "Applications": {
-    "create": {
-      "schema": "CreateApplicationRequest",
-      "required": [
-        "timestamp",
-        "emailAddress",
-        "region",
-        "city",
-        "barangay",
-        "referredBy",
-        "firstName",
-        "middleName",
-        "lastName",
-        "mobileNumber",
-        "secondaryMobileNumber",
-        "installationAddress",
-        "landmark",
-        "desiredPlan",
-        "proofOfBilling",
-        "governmentValidId",
-        "secondGovernmentValidId",
-        "houseFrontPicture",
-        "termsAndConditionsAgreement",
-        "firstNearestLandmark",
-        "secondNearestLandmark",
-        "applicablePromo",
-        "documentPicture",
-        "barangay1",
-        "barangay2",
-        "pictureofstatmentbillingfromotherprovider",
-        "referrersAccountNumber",
-        "applyingFor",
-        "status",
-        "visitBy",
-        "visitWith",
-        "visitWithOther",
-        "remarks",
-        "modifiedBy",
-        "modifiedDate",
-        "userEmail"
-      ]
-    },
-    "update": {
-      "schema": "UpdateApplicationRequest",
-      "required": [
-        "emailAddress",
-        "region",
-        "city",
-        "barangay",
-        "referredBy",
-        "firstName",
-        "middleName",
-        "lastName",
-        "mobileNumber",
-        "secondaryMobileNumber",
-        "installationAddress",
-        "landmark",
-        "desiredPlan",
-        "proofOfBilling",
-        "governmentValidId",
-        "secondGovernmentValidId",
-        "houseFrontPicture",
-        "termsAndConditionsAgreement",
-        "firstNearestLandmark",
-        "secondNearestLandmark",
-        "applicablePromo",
-        "documentPicture",
-        "barangay1",
-        "barangay2",
-        "pictureofstatmentbillingfromotherprovider",
-        "referrersAccountNumber",
-        "applyingFor",
-        "status",
-        "visitBy",
-        "visitWith",
-        "visitWithOther",
-        "remarks",
-        "modifiedBy",
-        "modifiedDate",
-        "userEmail"
-      ]
-    }
-  },
   "Barangays": {
     "create": {
       "schema": "CreateBarangayRequest",
@@ -146,42 +63,7 @@ export const EndpointSchemaMeta = {
   "BillingDetails": {
     "create": {
       "schema": "CreateBillingDetailsRequest",
-      "required": [
-        "address",
-        "location",
-        "plan",
-        "provider",
-        "username",
-        "connectionType",
-        "routerModemSn",
-        "ip",
-        "lcp",
-        "nap",
-        "port",
-        "vlan",
-        "lcpNap",
-        "status",
-        "group",
-        "modifiedBy",
-        "userEmail",
-        "billingStatus",
-        "deliveryStatus",
-        "routerModel",
-        "barangay",
-        "city",
-        "region",
-        "lcpNapPort",
-        "usageType",
-        "renter",
-        "attachment1",
-        "attachment2",
-        "attachment3",
-        "referredBy",
-        "secondContactNumber",
-        "addressCoordinates",
-        "referrersAccountNumber",
-        "houseFront"
-      ]
+      "required": []
     },
     "update": {
       "schema": "UpdateBillingDetailsRequest",
@@ -255,6 +137,36 @@ export const EndpointSchemaMeta = {
       "required": []
     }
   },
+  "InventoryCategory": {
+    "create": {
+      "schema": "InventoryCategoryCreateDto",
+      "required": []
+    },
+    "update": {
+      "schema": "InventoryCategoryUpdateDto",
+      "required": []
+    }
+  },
+  "InventoryItem": {
+    "create": {
+      "schema": "InventoryItemCreateDto",
+      "required": []
+    },
+    "update": {
+      "schema": "InventoryItemUpdateDto",
+      "required": []
+    }
+  },
+  "InventoryLogs": {
+    "create": {
+      "schema": "InventoryLogCreateDto",
+      "required": []
+    },
+    "update": {
+      "schema": "InventoryLogUpdateDto",
+      "required": []
+    }
+  },
   "Invoice": {
     "create": {
       "schema": "InvoiceDto",
@@ -278,186 +190,11 @@ export const EndpointSchemaMeta = {
   "JobOrders": {
     "create": {
       "schema": "CreateJobOrderRequest",
-      "required": [
-        "emailAddress",
-        "referredBy",
-        "firstName",
-        "middleInitial",
-        "lastName",
-        "contactNumber",
-        "applicantEmailAddress",
-        "address",
-        "location",
-        "barangay",
-        "city",
-        "region",
-        "planId",
-        "remarks",
-        "installationFee",
-        "contractTemplate",
-        "billingDay",
-        "preferredDay",
-        "joRemarks",
-        "status",
-        "verifiedBy",
-        "modemRouterSN",
-        "provider",
-        "portId",
-        "username",
-        "visitBy",
-        "visitWith",
-        "visitWithOther",
-        "onsiteStatus",
-        "onsiteRemarks",
-        "modifiedBy",
-        "contractLink",
-        "connectionType",
-        "assignedEmail",
-        "setupImage",
-        "speedtestImage",
-        "duration",
-        "externalId",
-        "lcpnapId",
-        "billingStatus",
-        "routerModel",
-        "clientSignature",
-        "ip",
-        "signedContractImage",
-        "boxReadingImage",
-        "routerReadingImage",
-        "usernameStatus",
-        "lcpnapportId",
-        "itemName1",
-        "itemQuantity1",
-        "itemName2",
-        "itemQuantity2",
-        "itemName3",
-        "itemQuantity3",
-        "itemName4",
-        "itemQuantity4",
-        "itemName5",
-        "itemQuantity5",
-        "itemName6",
-        "itemQuantity6",
-        "itemName7",
-        "itemQuantity7",
-        "itemName8",
-        "itemQuantity8",
-        "itemName9",
-        "itemQuantity9",
-        "itemName10",
-        "itemQuantity10",
-        "usageType",
-        "renter",
-        "installationLandmark",
-        "statusRemarks",
-        "portLabelImage",
-        "secondContactNumber",
-        "accountNo",
-        "addressCoordinates",
-        "referrersAccountNumber",
-        "applicationId",
-        "houseFront"
-      ]
-    },
-    "update": {
-      "schema": "UpdateJobOrderRequest",
-      "required": [
-        "emailAddress",
-        "referredBy",
-        "firstName",
-        "middleInitial",
-        "lastName",
-        "contactNumber",
-        "applicantEmailAddress",
-        "address",
-        "location",
-        "barangay",
-        "city",
-        "region",
-        "planId",
-        "remarks",
-        "installationFee",
-        "contractTemplate",
-        "billingDay",
-        "preferredDay",
-        "joRemarks",
-        "status",
-        "verifiedBy",
-        "modemRouterSN",
-        "provider",
-        "lcpId",
-        "napId",
-        "portId",
-        "vlanId",
-        "username",
-        "visitBy",
-        "visitWith",
-        "visitWithOther",
-        "onsiteStatus",
-        "onsiteRemarks",
-        "modifiedBy",
-        "contractLink",
-        "connectionType",
-        "assignedEmail",
-        "setupImage",
-        "speedtestImage",
-        "duration",
-        "externalId",
-        "lcpnapId",
-        "billingStatus",
-        "routerModel",
-        "clientSignature",
-        "ip",
-        "signedContractImage",
-        "boxReadingImage",
-        "routerReadingImage",
-        "usernameStatus",
-        "lcpnapportId",
-        "itemName1",
-        "itemQuantity1",
-        "itemName2",
-        "itemQuantity2",
-        "itemName3",
-        "itemQuantity3",
-        "itemName4",
-        "itemQuantity4",
-        "itemName5",
-        "itemQuantity5",
-        "itemName6",
-        "itemQuantity6",
-        "itemName7",
-        "itemQuantity7",
-        "itemName8",
-        "itemQuantity8",
-        "itemName9",
-        "itemQuantity9",
-        "itemName10",
-        "itemQuantity10",
-        "usageType",
-        "renter",
-        "installationLandmark",
-        "statusRemarks",
-        "portLabelImage",
-        "secondContactNumber",
-        "accountNo",
-        "addressCoordinates",
-        "referrersAccountNumber",
-        "applicationId",
-        "houseFront"
-      ]
-    }
-  },
-  "LCPNapLocations": {
-    "create": {
-      "schema": "CreateLCPNapLocationCommand",
       "required": []
     },
     "update": {
-      "schema": "UpdateLCPNapLocationCommand",
-      "required": [
-        "id"
-      ]
+      "schema": "UpdateJobOrderRequest",
+      "required": []
     }
   },
   "Lcpnapports": {
@@ -574,6 +311,16 @@ export const EndpointSchemaMeta = {
         "name",
         "description"
       ]
+    }
+  },
+  "Promotions": {
+    "create": {
+      "schema": "PromotionCreateDto",
+      "required": []
+    },
+    "update": {
+      "schema": "PromotionUpdateDto",
+      "required": []
     }
   },
   "Routers": {

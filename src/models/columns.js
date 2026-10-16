@@ -590,5 +590,55 @@ export const EndpointColumns = {
     "userEmail",
     "createdDate",
     "createdBy"
+  ],
+  // Gene - Oct, 16, 2026: Added column definitions for Promotions, InventoryCategory, InventoryItem, and InventoryLogs endpoints
+  "Promotions": [
+    "id",
+    "promoCode",
+    "title",
+    "subtitle",
+    "description",
+    "discountTypeId",
+    "badgeText",
+    "themeColor",
+    "placement",
+    "ctaText",
+    "ctaLink",
+    "imageUrl",
+    "imageSize",
+    "perks",
+    "requirements",
+    "termsAndConditions",
+    "priority",
+    "isActive"
+  ],
+  "InventoryCategory": [
+    "id",
+    "name",
+    "description",
+    "modifiedBy",
+    "modifiedDate"
+  ],
+  "InventoryItem": [
+    "id",
+    "itemId",
+    "name",
+    "category",
+    "description",
+    "supplier",
+    "quantity",
+    "image",
+    "userEmail",
+    "modifiedDate"
+  ],
+  "InventoryLogs": [
+    "id",
+    "createdDate",
+    "itemId",
+    "quantity",
+    "requestedBy",
+    "requestedWith",
+    "status",
+    "remarks"
   ]
 }

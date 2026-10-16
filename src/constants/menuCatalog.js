@@ -46,6 +46,10 @@ export const stemMenuToken = (token) => {
   if (t === 'discounttypes' || t === 'discounttype') return 'discount type'
   if (t === 'discounts' || t === 'discount') return 'discount'
   if (t === 'promos' || t === 'promo' || t === 'promotions' || t === 'promotion') return 'promo'
+  // Gene - Oct, 16, 2026: Added stemming tokens for Inventory Category, Inventory Item, and Inventory Logs
+  if (t === 'inventorycategories' || t === 'inventorycategory') return 'inventory category'
+  if (t === 'inventoryitems' || t === 'inventoryitem') return 'inventory item'
+  if (t === 'inventorylogs' || t === 'inventorylog') return 'inventory log'
 
   // Standard plural stripping
   if (t.endsWith('ies') && t.length > 4) return t.slice(0, -3) + 'y'
@@ -493,7 +497,9 @@ export const MENU_CATALOG = [
         codeAliases: ['FMDISCOUNTTYPES', 'DISCOUNTTYPES', 'DISCOUNT_TYPES', 'FM_DISCOUNT_TYPES'],
         name: 'Discount Types',
         serverMenu: 'Discount Types',
-        aliases: ['Discount Types', 'Discount Type', 'DiscountTypes', 'DiscountType', 'Promo Types', 'Promotions', 'File Maintenance - Discount Types'],
+        // aliases: ['Discount Types', 'Discount Type', 'DiscountTypes', 'DiscountType', 'Promo Types', 'Promotions', 'File Maintenance - Discount Types'],
+        // Gene - Oct, 16, 2026: Moved 'Promotions' alias exclusively to file-maintenance.promo now that /api/Promotions is live
+        aliases: ['Discount Types', 'Discount Type', 'DiscountTypes', 'DiscountType', 'Promo Types', 'File Maintenance - Discount Types'],
         path: '/discount-types',
         icon: 'pi-percentage'
       },
@@ -510,11 +516,44 @@ export const MENU_CATALOG = [
       {
         code: 'file-maintenance.promo',
         shortCode: 'PR1',
-        codeAliases: ['FMPROMO', 'PROMO', 'PROMOS', 'FM_PROMO', 'PRM1'],
+        // codeAliases: ['FMPROMO', 'PROMO', 'PROMOS', 'FM_PROMO', 'PRM1'],
+        // Gene - Oct, 16, 2026: Connected Promo (PR1) to live /api/Promotions endpoint and added Inventory Category, Inventory Item, and Inventory Logs under File Maintenance
+        codeAliases: ['FMPROMO', 'PROMO', 'PROMOS', 'PROMOTIONS', 'PROMOTION', 'FM_PROMO', 'PRM1'],
         name: 'Promo',
-        aliases: ['Promo', 'Promos', 'Promotions', 'Campaigns', 'Promotional Codes', 'File Maintenance - Promo', 'Promotional Discounts'],
+        serverMenu: 'Promo',
+        aliases: ['Promo', 'Promos', 'Promotions', 'Promotion', 'Campaigns', 'Promotional Codes', 'File Maintenance - Promo', 'Promotional Discounts'],
         path: '/promo',
         icon: 'pi-gift'
+      },
+      {
+        code: 'file-maintenance.inventory-category',
+        shortCode: 'IC1',
+        codeAliases: ['FMINVCAT', 'INVENTORY_CATEGORY', 'INVENTORYCATEGORY', 'FM_INVENTORY_CATEGORY', 'INVCAT1'],
+        name: 'Inventory Category',
+        serverMenu: 'Inventory Category',
+        aliases: ['Inventory Category', 'Inventory Categories', 'InventoryCategory', 'Stock Category', 'Item Category', 'File Maintenance - Inventory Category'],
+        path: '/inventory-category',
+        icon: 'pi-tags'
+      },
+      {
+        code: 'file-maintenance.inventory-item',
+        shortCode: 'II1',
+        codeAliases: ['FMINVITEM', 'INVENTORY_ITEM', 'INVENTORYITEM', 'FM_INVENTORY_ITEM', 'INVITEM1'],
+        name: 'Inventory Item',
+        serverMenu: 'Inventory Item',
+        aliases: ['Inventory Item', 'Inventory Items', 'InventoryItem', 'Stock Item', 'Stock Items', 'Warehouse Items', 'File Maintenance - Inventory Item'],
+        path: '/inventory-item',
+        icon: 'pi-box'
+      },
+      {
+        code: 'file-maintenance.inventory-logs',
+        shortCode: 'IL1',
+        codeAliases: ['FMINVLOGS', 'INVENTORY_LOGS', 'INVENTORYLOGS', 'INVENTORY_LOG', 'INVENTORYLOG', 'FM_INVENTORY_LOGS', 'INVLOG1'],
+        name: 'Inventory Logs',
+        serverMenu: 'Inventory Logs',
+        aliases: ['Inventory Logs', 'Inventory Log', 'InventoryLogs', 'InventoryLog', 'Stock Logs', 'Inventory History', 'File Maintenance - Inventory Logs'],
+        path: '/inventory-logs',
+        icon: 'pi-history'
       }
     ]
   },
@@ -755,7 +794,12 @@ const PATH_CODE_ALIASES = new Map([
   ['/menu', 'users-management.access-level'],
   ['/access_level_menu', 'users-management.access-level'],
   ['/lcp-nap-locations', 'lcp-nap-locations.map'],
-  ['/logs', 'audit-trail.all']
+  ['/logs', 'audit-trail.all'],
+  // Gene - Oct, 16, 2026: Added path aliases for Promotions and Inventory File Maintenance routes
+  ['/promotions', 'file-maintenance.promo'],
+  ['/inventory_category', 'file-maintenance.inventory-category'],
+  ['/inventory_item', 'file-maintenance.inventory-item'],
+  ['/inventory_logs', 'file-maintenance.inventory-logs']
 ])
 
 /**

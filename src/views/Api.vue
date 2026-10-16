@@ -240,6 +240,11 @@ const apiEndpoints = ref([
   { name: 'Plans', endpoint: 'Plans', description: 'Subscription plans and pricing tiers' },
   { name: 'Discount Types', endpoint: 'DiscountTypes', description: 'Broadband discount tiers, promo campaigns, and validity schedule' },
   { name: 'Discounts', endpoint: 'Discounts', description: 'Customer discount assignments, subsidies, and deductions' },
+  // Gene - Oct, 16, 2026: Added Promotions, Inventory Category, Inventory Item, and Inventory Logs to API Viewer endpoint list
+  { name: 'Promotions', endpoint: 'Promotions', description: 'Promotional campaigns, promo codes, banners, perks, and terms' },
+  { name: 'Inventory Category', endpoint: 'InventoryCategory', description: 'Warehouse and network equipment inventory categories' },
+  { name: 'Inventory Item', endpoint: 'InventoryItem', description: 'Hardware stock items, suppliers, quantities, and item codes' },
+  { name: 'Inventory Logs', endpoint: 'InventoryLogs', description: 'Inventory stock movement logs, requests, and dispatch history' },
   { name: 'Ports', endpoint: 'Ports', description: 'Fiber port connections' },
   { name: 'Routers', endpoint: 'Routers', description: 'Router and ONT modem inventory' },
   { name: 'VLANs', endpoint: 'Vlans', description: 'Virtual Local Area Network configurations' },
