@@ -688,6 +688,7 @@
               aria-label="View Details"
               @click="openViewDialog(slotProps.data)" 
             />
+            <!--
             <Button
               v-if="!readOnly"
               icon="pi pi-pencil"
@@ -698,6 +699,24 @@
             />
             <Button
               v-if="!readOnly"
+              icon="pi pi-trash"
+              class="p-button-text p-button-sm p-button-rounded p-0 delete-btn action-row-btn"
+              v-tooltip.top="'Delete Record'"
+              aria-label="Delete Record"
+              @click="confirmDelete(slotProps.data)"
+            />
+            -->
+            <!-- Gene - Oct, 16, 2026: Hide Edit and Delete buttons on built-in client catalog menus to protect system menu integrity -->
+            <Button
+              v-if="!readOnly && !slotProps.data?.isClientMenu"
+              icon="pi pi-pencil"
+              class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 action-row-btn"
+              v-tooltip.top="'Edit Record'"
+              aria-label="Edit Record"
+              @click="openEditDialog(slotProps.data)"
+            />
+            <Button
+              v-if="!readOnly && !slotProps.data?.isClientMenu"
               icon="pi pi-trash"
               class="p-button-text p-button-sm p-button-rounded p-0 delete-btn action-row-btn"
               v-tooltip.top="'Delete Record'"
@@ -3385,7 +3404,8 @@ import {
   isSuperAdminAccessLevel,
   hasAccessLevel
 } from '../constants/accessLevelCatalog'
-import { usePermissions } from '../composables/usePermissions'
+// Gene - Oct, 16, 2026: Import client access level menu permission helpers
+import { usePermissions, getClientAccessLevelMenuPermissions, setClientAccessLevelMenuPermission } from '../composables/usePermissions'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -3418,6 +3438,8 @@ const authStore = useAuthStore()
 const userStore = useUserStore()
 const { activeColorTheme, THEME_PALETTES } = useTheme()
 const { canAccessModifyPassword, canAccessUnmaskPassword } = usePermissions()
+// Gene - Oct, 16, 2026: Reactive tick for tracking real-time client menu permission toggles
+const clientMenuTick = ref(0)
 
 const props = defineProps({
   endpoint: {
@@ -11522,6 +11544,7 @@ const fetchData = async ({ silent = false } = {}) => {
       }
     }
     
+    /*
     if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
       const rawList = unwrappedData || []
       
@@ -11538,6 +11561,59 @@ const fetchData = async ({ silent = false } = {}) => {
           ...row,
           name: getMenuDisplayName(row) || row.name
         }))
+
+      unwrappedData = menuList
+    }
+    */
+    // Gene - Oct, 16, 2026: Include client catalog menus (Promo, Inventory Category, Inventory Item, Inventory Logs) in the Menu List table for Access Level permission management
+    if (props.endpoint && props.endpoint.toLowerCase() === 'menus') {
+      const rawList = unwrappedData || []
+      
+      const menuList = rawList
+        .filter(row => {
+          const name = row?.name || row?.Name || ''
+          const code = row?.code || row?.Code
+          return !isParentMenu(code || name) && !isHomeMenu(code || name)
+        })
+        .map(row => ({
+          ...row,
+          name: getMenuDisplayName(row) || row.name
+        }))
+
+      const existingCodes = new Set()
+      menuList.forEach(row => {
+        const rawName = row?.name || row?.Name || ''
+        const code = row?.code || findPrimaryMenuCodeForName(rawName)
+        if (code) existingCodes.add(code)
+        const shortCode = row?.shortCode || getShortCodeForCatalogCode(code)
+        if (shortCode) existingCodes.add(shortCode)
+      })
+
+      LEAF_MENU_CATALOG_ENTRIES.forEach(entry => {
+        if (!existingCodes.has(entry.code) && !existingCodes.has(entry.shortCode)) {
+          // Avoid duplicate sub-status tabs if parent or primary status is present
+          if (entry.code.startsWith('service-orders.') && entry.code !== 'service-orders.all') {
+            return
+          }
+          menuList.push({
+            id: `client_${entry.shortCode || entry.code}`,
+            name: getMenuDisplayName(entry),
+            description: entry.description || `${entry.name} management (File Maintenance).`,
+            route: entry.path || '',
+            icon: entry.icon || 'pi pi-list',
+            code: entry.code,
+            shortCode: entry.shortCode,
+            isClientMenu: true,
+            createdByUserId: 1,
+            createdDate: new Date().toISOString(),
+            modifiedByUserId: 1,
+            modifiedDate: new Date().toISOString(),
+            rowVersion: 0
+          })
+          existingCodes.add(entry.code)
+          if (entry.shortCode) existingCodes.add(entry.shortCode)
+        }
+      })
 
       unwrappedData = menuList
     }
@@ -11955,9 +12031,48 @@ const getToggleSwitchTitle = (menuRow) => {
  * linked — no server row exists to grant. Toggling it on creates the menu row
  * first, and from then on it matches by id like any other.
  */
+/*
 const isMenuLinked = (menuRow) => {
   if (!menuRow || !props.selectedAccessLevel) return false
   if (isSuperAdminAccessLevelProtected()) return true
+  const targetMenuId = String(menuRow.id ?? menuRow.ID ?? menuRow.menuId ?? '').trim()
+  if (!targetMenuId) return false
+  return activeLinkedMenuIds.value.has(targetMenuId) || activeLinkedMenuIds.value.has(Number(targetMenuId))
+}
+*/
+// Gene - Oct, 16, 2026: Support client catalog menus link resolution with localStorage persistence and category fallbacks
+const isMenuLinked = (menuRow) => {
+  // Read reactive clientMenuTick to trigger reactivity when toggled
+  if (clientMenuTick.value < 0) return false
+  if (!menuRow || !props.selectedAccessLevel) return false
+  if (isSuperAdminAccessLevelProtected()) return true
+
+  if (menuRow.isClientMenu) {
+    const targetAccId = String(
+      props.selectedAccessLevel.id ?? 
+      props.selectedAccessLevel.ID ?? 
+      props.selectedAccessLevel.accessLevelId ?? 
+      props.selectedAccessLevel.accesslevel_id ?? ''
+    ).trim()
+    const clientPerms = getClientAccessLevelMenuPermissions()
+    const codeKey = `${targetAccId}_${menuRow.code}`
+    const shortKey = menuRow.shortCode ? `${targetAccId}_${menuRow.shortCode}` : null
+    const explicit = (shortKey && clientPerms[shortKey] !== undefined)
+      ? clientPerms[shortKey]
+      : clientPerms[codeKey]
+    if (explicit !== undefined) return explicit === true
+
+    // Default permissions when not explicitly overridden:
+    // Super Admin or Developer (id 4)
+    if (isSuperAdminAccessLevel(props.selectedAccessLevel) || targetAccId === '4') return true
+    
+    // Check if role has access to other menus in the same category
+    if (menuRow.code && menuRow.code.startsWith('file-maintenance.')) {
+      return activeLinkedMenuIds.value.has(1) || activeLinkedMenuIds.value.has(3) || activeLinkedMenuIds.value.has(12)
+    }
+    return false
+  }
+
   const targetMenuId = String(menuRow.id ?? menuRow.ID ?? menuRow.menuId ?? '').trim()
   if (!targetMenuId) return false
   return activeLinkedMenuIds.value.has(targetMenuId) || activeLinkedMenuIds.value.has(Number(targetMenuId))
@@ -11992,6 +12107,27 @@ const toggleMenuLink = async (menuRow) => {
   let targetMenuId = Number(menuRow.id ?? menuRow.ID ?? menuRow.menuId)
   const menuName = menuRow.name || menuRow.Name || (targetMenuId ? `Menu #${targetMenuId}` : 'Menu')
   const roleName = props.selectedAccessLevel.name || props.selectedAccessLevel.Name || `Access Level #${targetAccId}`
+
+  // Gene - Oct, 16, 2026: Seamlessly toggle client catalog menus via localStorage and dispatch update events
+  if (menuRow.isClientMenu) {
+    const currentlyLinked = isMenuLinked(menuRow)
+    const nextState = !currentlyLinked
+    setClientAccessLevelMenuPermission(targetAccId, menuRow.shortCode || menuRow.code, nextState)
+    
+    clientMenuTick.value++
+
+    toast.add({
+      severity: nextState ? 'success' : 'info',
+      summary: nextState ? 'Permission Linked' : 'Permission Unlinked',
+      detail: `${nextState ? 'Linked' : 'Unlinked'} "${menuName}" for "${roleName}"`,
+      life: 3000
+    })
+
+    window.dispatchEvent(new CustomEvent('accesslevelmenu-updated', {
+      detail: { accessLevelId: targetAccId, menuId: menuRow.id, menuName: menuName, linked: nextState }
+    }))
+    return
+  }
 
   togglingMenuId.value = menuToggleKey(menuRow)
 

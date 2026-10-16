@@ -21,6 +21,28 @@ import {
   isSuperAdminAccessLevel
 } from '../constants/accessLevelCatalog.js'
 
+// Gene - Oct, 16, 2026: Added client-side localStorage access level permission helpers for menus not yet seeded in backend /api/Menus
+export const getClientAccessLevelMenuPermissions = () => {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem('client_access_level_menus') : null
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+export const setClientAccessLevelMenuPermission = (accessLevelId, menuCodeOrShortCode, isLinked) => {
+  try {
+    if (typeof window === 'undefined') return
+    const data = getClientAccessLevelMenuPermissions()
+    const key = `${accessLevelId}_${menuCodeOrShortCode}`
+    data[key] = !!isLinked
+    window.localStorage.setItem('client_access_level_menus', JSON.stringify(data))
+  } catch (e) {
+    console.error('Failed to save client access level menu permission:', e)
+  }
+}
+
 // Shared reactive state across all components
 const allowedMenuCodes = ref(new Set())
 const isLoadingPermissions = ref(false)
@@ -395,9 +417,49 @@ const runFetch = async () => {
 
       // Screens with no serverMenu row in the catalog are client features
       // granted unless explicitly denied
+      /*
       ALL_MENU_CODES.forEach(code => {
         if (!MENU_CODE_TO_SERVER_KEY.has(code) && !codeToMenuIds.value.has(code)) {
           allowed.add(code)
+        }
+      })
+      */
+      // Gene - Oct, 16, 2026: Auto-grant client catalog menus (Promo, Inventory Category, Inventory Item, Inventory Logs) and support client localStorage permission overrides
+      const clientPerms = getClientAccessLevelMenuPermissions()
+      ALL_MENU_CODES.forEach(code => {
+        if (!codeToMenuIds.value.has(code)) {
+          const shortCode = getShortCodeForCatalogCode(code)
+          const keyByCode = `${levelId}_${code}`
+          const keyByShort = shortCode ? `${levelId}_${shortCode}` : null
+          const explicit = (keyByShort && clientPerms[keyByShort] !== undefined)
+            ? clientPerms[keyByShort]
+            : clientPerms[keyByCode]
+
+          if (explicit === true) {
+            allowed.add(code)
+            if (shortCode) allowed.add(shortCode)
+          } else if (explicit === false) {
+            // Explicitly unlinked/denied for this access level in client configuration
+          } else {
+            // Default permission grant when no explicit toggle override exists:
+            // 1. Super Admin or Developer (DEV1 / id 4) gets all client features
+            // 2. Or if the user has access to sibling menus in the same category
+            const isDevOrAdmin = isSuperAdmin.value || Number(levelId) === 4 || hasRole('DEV1', 'developer', 'SA1', 'superadmin')
+            let belongsToParent = false
+            let hasSiblingAccess = false
+            for (const [, children] of PARENT_TO_CHILD_CODES.entries()) {
+              if (children.includes(code)) {
+                belongsToParent = true
+                hasSiblingAccess = children.some(sibling => allowed.has(sibling))
+                break
+              }
+            }
+
+            if (isDevOrAdmin || hasSiblingAccess || !belongsToParent) {
+              allowed.add(code)
+              if (shortCode) allowed.add(shortCode)
+            }
+          }
         }
       })
 
@@ -591,6 +653,9 @@ export function usePermissions() {
     currentAccessLevelCode,
     currentAccessLevelSlug,
     hasRole,
-    hasAccessLevel
+    hasAccessLevel,
+    // Gene - Oct, 16, 2026: Export client access level menu permission helpers
+    getClientAccessLevelMenuPermissions,
+    setClientAccessLevelMenuPermission
   }
 }
