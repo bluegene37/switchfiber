@@ -541,6 +541,32 @@
             </span>
             <span v-else class="text-muted">-</span>
           </span>
+          <!-- Gene - Oct, 16, 2026: Render formatted chips for placement surfaces, color dot badge for themeColor, and stylized pill for imageSize in Promotions table -->
+          <div v-else-if="isPromotionEndpoint && col.toLowerCase() === 'placement'" class="d-flex flex-wrap gap-1">
+            <span
+              v-for="plc in parsePlacementArray(slotProps.data[col])"
+              :key="plc"
+              class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill px-2 py-0.5 text-xs"
+            >
+              <!-- {{ plc }} -->
+              <!-- Gene - Oct, 16, 2026: Display friendly placement label in table cell -->
+              {{ getPlacementLabel(plc) }}
+            </span>
+            <span v-if="!parsePlacementArray(slotProps.data[col]).length" class="text-muted">-</span>
+          </div>
+          <div v-else-if="isPromotionEndpoint && (col.toLowerCase() === 'themecolor' || col.toLowerCase() === 'theme_color')" class="d-inline-flex align-items-center gap-1.5">
+            <span
+              v-if="slotProps.data[col]"
+              class="rounded-circle border flex-shrink-0"
+              :style="{ width: '10px', height: '10px', backgroundColor: getThemeColorHex(slotProps.data[col]) }"
+            ></span>
+            <span class="small fw-semibold text-capitalize">{{ slotProps.data[col] || '-' }}</span>
+          </div>
+          <div v-else-if="isPromotionEndpoint && (col.toLowerCase() === 'imagesize' || col.toLowerCase() === 'image_size')">
+            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 text-xs text-capitalize">
+              {{ slotProps.data[col] || '-' }}
+            </span>
+          </div>
           <!-- Payment Method / Transaction Type Dropdown Reference -->
           <span v-else-if="getFieldType(col) === 'paymentmethod_dropdown'" class="fw-medium">
             <span v-if="slotProps.data[col]" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill">
@@ -1239,6 +1265,64 @@
                 placeholder="Select Discount Status" 
                 class="w-100 p-inputtext-sm" 
               />
+
+              <!-- Gene - Oct, 16, 2026: Promotion Placement MultiSelect in Create Modal -->
+              <MultiSelect
+                v-else-if="getFieldType(col) === 'promotion_placement_multiselect'"
+                :id="col"
+                v-model="formData[col]"
+                :options="promotionPlacementOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select Placement Surfaces"
+                display="chip"
+                class="w-100 p-inputtext-sm"
+              />
+
+              <!-- Gene - Oct, 16, 2026: Promotion Image Size Select in Create Modal -->
+              <Select
+                v-else-if="getFieldType(col) === 'promotion_imagesize_select'"
+                :id="col"
+                v-model="formData[col]"
+                :options="promotionImageSizeOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select Image Size"
+                class="w-100 p-inputtext-sm"
+              />
+
+              <!-- Gene - Oct, 16, 2026: Promotion Theme Color Select with color dots in Create Modal -->
+              <Select
+                v-else-if="getFieldType(col) === 'promotion_themecolor_select'"
+                :id="col"
+                v-model="formData[col]"
+                :options="promotionThemeColorOptions"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                placeholder="Select Theme Color"
+                class="w-100 p-inputtext-sm"
+              >
+                <template #value="slotProps">
+                  <div v-if="slotProps.value" class="d-flex align-items-center gap-2">
+                    <span
+                      class="rounded-circle border flex-shrink-0"
+                      :style="{ width: '12px', height: '12px', backgroundColor: getThemeColorHex(slotProps.value) }"
+                    ></span>
+                    <span>{{ getThemeColorLabel(slotProps.value) }}</span>
+                  </div>
+                  <span v-else>{{ slotProps.placeholder }}</span>
+                </template>
+                <template #option="slotProps">
+                  <div class="d-flex align-items-center gap-2">
+                    <span
+                      class="rounded-circle border flex-shrink-0"
+                      :style="{ width: '14px', height: '14px', backgroundColor: slotProps.option.hex }"
+                    ></span>
+                    <span>{{ slotProps.option.label }}</span>
+                  </div>
+                </template>
+              </Select>
 
               <!-- Referred By Dropdown -->
               <Select 
@@ -2111,6 +2195,35 @@
                 class="w-100 p-inputtext-sm bg-light font-monospace" 
               />
 
+              <!-- Gene - Oct, 16, 2026: Promotion Placement in View Modal -->
+              <div v-else-if="getFieldType(col) === 'promotion_placement_multiselect'" class="d-flex flex-wrap gap-1.5 pt-1">
+                <span
+                  v-for="plc in parsePlacementArray(viewFormData[col])"
+                  :key="plc"
+                  class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1"
+                >
+                  {{ getPlacementLabel(plc) }}
+                </span>
+                <span v-if="!parsePlacementArray(viewFormData[col]).length" class="text-muted">-</span>
+              </div>
+
+              <!-- Gene - Oct, 16, 2026: Promotion Image Size in View Modal -->
+              <div v-else-if="getFieldType(col) === 'promotion_imagesize_select'" class="pt-1">
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-1">
+                  {{ getImageSizeLabel(viewFormData[col]) }}
+                </span>
+              </div>
+
+              <!-- Gene - Oct, 16, 2026: Promotion Theme Color in View Modal -->
+              <div v-else-if="getFieldType(col) === 'promotion_themecolor_select'" class="d-flex align-items-center gap-2 pt-1">
+                <span
+                  v-if="viewFormData[col]"
+                  class="rounded-circle border flex-shrink-0"
+                  :style="{ width: '14px', height: '14px', backgroundColor: getThemeColorHex(viewFormData[col]) }"
+                ></span>
+                <span class="small fw-semibold">{{ getThemeColorLabel(viewFormData[col]) }}</span>
+              </div>
+
               <!-- Status in View Details Modal (Prominent Standout Badge) -->
               <div v-else-if="col.toLowerCase().includes('status')" class="d-flex align-items-center pt-1">
                 <span 
@@ -2611,6 +2724,67 @@
                 placeholder="Select Discount Status" 
                 class="w-100 p-inputtext-sm" 
               />
+
+              <!-- Gene - Oct, 16, 2026: Promotion Placement MultiSelect in Edit Modal -->
+              <MultiSelect
+                v-else-if="getFieldType(col) === 'promotion_placement_multiselect'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="promotionPlacementOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select Placement Surfaces"
+                display="chip"
+                class="w-100 p-inputtext-sm"
+                :disabled="isFieldDisabledInEdit(col)"
+              />
+
+              <!-- Gene - Oct, 16, 2026: Promotion Image Size Select in Edit Modal -->
+              <Select
+                v-else-if="getFieldType(col) === 'promotion_imagesize_select'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="promotionImageSizeOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select Image Size"
+                class="w-100 p-inputtext-sm"
+                :disabled="isFieldDisabledInEdit(col)"
+              />
+
+              <!-- Gene - Oct, 16, 2026: Promotion Theme Color Select with color dots in Edit Modal -->
+              <Select
+                v-else-if="getFieldType(col) === 'promotion_themecolor_select'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="promotionThemeColorOptions"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                placeholder="Select Theme Color"
+                class="w-100 p-inputtext-sm"
+                :disabled="isFieldDisabledInEdit(col)"
+              >
+                <template #value="slotProps">
+                  <div v-if="slotProps.value" class="d-flex align-items-center gap-2">
+                    <span
+                      class="rounded-circle border flex-shrink-0"
+                      :style="{ width: '12px', height: '12px', backgroundColor: getThemeColorHex(slotProps.value) }"
+                    ></span>
+                    <span>{{ getThemeColorLabel(slotProps.value) }}</span>
+                  </div>
+                  <span v-else>{{ slotProps.placeholder }}</span>
+                </template>
+                <template #option="slotProps">
+                  <div class="d-flex align-items-center gap-2">
+                    <span
+                      class="rounded-circle border flex-shrink-0"
+                      :style="{ width: '14px', height: '14px', backgroundColor: slotProps.option.hex }"
+                    ></span>
+                    <span>{{ slotProps.option.label }}</span>
+                  </div>
+                </template>
+              </Select>
 
               <!-- Referred By Dropdown -->
               <Select 
@@ -3416,6 +3590,8 @@ import Dialog from 'primevue/dialog'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Checkbox from 'primevue/checkbox'
 import Select from 'primevue/select'
+// Gene - Oct, 16, 2026: Import MultiSelect component from PrimeVue for multi-select form fields
+import MultiSelect from 'primevue/multiselect'
 import DatePicker from 'primevue/datepicker'
 import Password from 'primevue/password'
 import Menu from 'primevue/menu'
@@ -4180,9 +4356,74 @@ const getRowCoordinateValue = (row, col) => {
   return fallback ? String(fallback).trim() : null
 }
 
+// Gene - Oct, 16, 2026: Multi-select options and helpers for Promotions placement surfaces
+const promotionPlacementOptions = [
+  { label: 'Top Announcement Bar (top_bar)', value: 'top_bar' },
+  { label: 'Home Page Deal Spotlight (home_banner)', value: 'home_banner' },
+  { label: 'Plans & Pricing Page (plans_page)', value: 'plans_page' }
+]
+
+const parsePlacementArray = (val) => {
+  if (Array.isArray(val)) return val
+  if (typeof val === 'string' && val.trim()) {
+    return val.split(',').map(s => s.trim()).filter(Boolean)
+  }
+  return []
+}
+
+const getPlacementLabel = (val) => {
+  const found = promotionPlacementOptions.find(o => o.value === val)
+  return found ? found.label.split(' (')[0] : val
+}
+
+// Gene - Oct, 16, 2026: Select options and helper for Promotions image sizes
+const promotionImageSizeOptions = [
+  { label: 'Medium (Standard 16:10 card layout)', value: 'medium' },
+  { label: 'Wide (Panoramic 21:9 banner layout)', value: 'wide' },
+  { label: 'Large (Square Hero 1:1 showcase layout)', value: 'large' }
+]
+
+const getImageSizeLabel = (val) => {
+  const found = promotionImageSizeOptions.find(o => o.value === val)
+  return found ? found.label : (val || '-')
+}
+
+// Gene - Oct, 16, 2026: Dropdown options and helpers for Promotions theme colors
+const promotionThemeColorOptions = [
+  { label: 'Red (Switch Red - Brand Primary)', value: 'red', hex: '#ee2824' },
+  { label: 'Amber (Amber Gold - MSME Business)', value: 'amber', hex: '#d97706' },
+  { label: 'Yellow (Vibrant Yellow - Academic / Student)', value: 'yellow', hex: '#eab308' },
+  { label: 'Emerald (Emerald Green - Mandated Subsidy / Senior)', value: 'emerald', hex: '#059669' },
+  { label: 'Sky (Sky Blue - Fiber Deals)', value: 'sky', hex: '#0284c7' },
+  { label: 'Indigo (Indigo Royal - Ultra Tier)', value: 'indigo', hex: '#4f46e5' },
+  { label: 'Purple (Purple Accent - Special Offers)', value: 'purple', hex: '#9333ea' },
+  { label: 'Orange (Vibrant Orange - Flash Deals)', value: 'orange', hex: '#ea580c' },
+  { label: 'Pink (Pink Rose - Seasonal Campaign)', value: 'pink', hex: '#db2777' },
+  { label: 'Teal (Teal Cyan - Community Connect)', value: 'teal', hex: '#0d9488' },
+  { label: 'Lime (Lime Neon - Speed Boost)', value: 'lime', hex: '#65a30d' },
+  { label: 'Slate (Slate Neutral - Modern Minimal)', value: 'slate', hex: '#475569' }
+]
+
+const getThemeColorHex = (val) => {
+  const found = promotionThemeColorOptions.find(o => o.value === val || o.label === val)
+  return found ? found.hex : (val || '#ee2824')
+}
+
+const getThemeColorLabel = (val) => {
+  const found = promotionThemeColorOptions.find(o => o.value === val)
+  return found ? found.label : (val || '-')
+}
+
 function getFieldType(col) {
   if (!col) return 'text'
   const lower = col.toLowerCase().replace(/_/g, '')
+
+  // Gene - Oct, 16, 2026: Promotions endpoint specific field types for placement multi-select, imageSize select, and themeColor dropdown
+  if (isPromotionEndpoint.value) {
+    if (lower === 'placement') return 'promotion_placement_multiselect'
+    if (lower === 'imagesize' || lower === 'image_size') return 'promotion_imagesize_select'
+    if (lower === 'themecolor' || lower === 'theme_color') return 'promotion_themecolor_select'
+  }
 
   // Payments endpoint specific overrides:
   // - Fiber Plan (stored in image, plan, or fiberplan) must link to Plan API as a dropdown
@@ -9974,6 +10215,22 @@ const openCreateDialog = () => {
       formData.value[col] = discountStatusOptions.value[0].value
     } else if (type === 'paymentmethod_dropdown' && paymentMethodOptions.value.length > 0) {
       formData.value[col] = paymentMethodOptions.value[0].value
+    /*
+    } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown' || type === 'discounttype_dropdown') {
+      formData.value[col] = null
+    } else if (isReadOnlyField(col)) {
+      formData.value[col] = 0
+    } else {
+      formData.value[col] = ''
+    }
+    */
+    // Gene - Oct, 16, 2026: Initialize default values for Promotions placement multi-select, imageSize, and themeColor
+    } else if (type === 'promotion_placement_multiselect') {
+      formData.value[col] = ['home_banner', 'plans_page']
+    } else if (type === 'promotion_imagesize_select') {
+      formData.value[col] = 'medium'
+    } else if (type === 'promotion_themecolor_select') {
+      formData.value[col] = 'red'
     } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown' || type === 'discounttype_dropdown') {
       formData.value[col] = null
     } else if (isReadOnlyField(col)) {
@@ -10685,6 +10942,7 @@ const saveData = async () => {
         }
       }
 
+      /*
       // Gene - Oct, 16, 2026: Normalize numeric fields for Promotions and int32 modifiedBy for InventoryCategory on create
       if (isPromotionEndpoint.value) {
         finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
@@ -10694,6 +10952,22 @@ const saveData = async () => {
           finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
         } else {
           delete finalPayload.discountTypeId
+        }
+      }
+      */
+      // Gene - Oct, 16, 2026: Normalize numeric fields and serialize placement array to comma-separated string for Promotions on create
+      if (isPromotionEndpoint.value) {
+        finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
+          ? Number(finalPayload.priority)
+          : 0
+        if (finalPayload.discountTypeId !== undefined && finalPayload.discountTypeId !== null && finalPayload.discountTypeId !== '' && finalPayload.discountTypeId !== 0 && finalPayload.discountTypeId !== '0') {
+          finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
+        } else {
+          delete finalPayload.discountTypeId
+        }
+        const plcKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'placement')
+        if (plcKey && Array.isArray(finalPayload[plcKey])) {
+          finalPayload[plcKey] = finalPayload[plcKey].join(',')
         }
       }
 
@@ -10822,6 +11096,15 @@ const openEditDialog = async (record) => {
         if (match) {
           editFormData.value[col] = match.value
         }
+      }
+    }
+    // Gene - Oct, 16, 2026: Parse comma-separated placement string into array for MultiSelect in edit modal
+    if (getFieldType(col) === 'promotion_placement_multiselect') {
+      const currentVal = editFormData.value[col]
+      if (typeof currentVal === 'string') {
+        editFormData.value[col] = currentVal.split(',').map(s => s.trim()).filter(Boolean)
+      } else if (!Array.isArray(currentVal)) {
+        editFormData.value[col] = []
       }
     }
     if (isReadOnlyField(col)) {
@@ -11350,6 +11633,7 @@ const saveEdit = async () => {
         }
       }
 
+      /*
       // Gene - Oct, 16, 2026: Normalize numeric fields for Promotions and int32 modifiedBy for InventoryCategory on update
       if (isPromotionEndpoint.value) {
         finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
@@ -11359,6 +11643,22 @@ const saveEdit = async () => {
           finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
         } else {
           finalPayload.discountTypeId = null
+        }
+      }
+      */
+      // Gene - Oct, 16, 2026: Normalize numeric fields and serialize placement array to comma-separated string for Promotions on update
+      if (isPromotionEndpoint.value) {
+        finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
+          ? Number(finalPayload.priority)
+          : 0
+        if (finalPayload.discountTypeId !== undefined && finalPayload.discountTypeId !== null && finalPayload.discountTypeId !== '' && finalPayload.discountTypeId !== 0 && finalPayload.discountTypeId !== '0') {
+          finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
+        } else {
+          finalPayload.discountTypeId = null
+        }
+        const plcKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'placement')
+        if (plcKey && Array.isArray(finalPayload[plcKey])) {
+          finalPayload[plcKey] = finalPayload[plcKey].join(',')
         }
       }
 
