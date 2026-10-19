@@ -494,6 +494,33 @@
             </span>
             <span v-else class="text-muted">-</span>
           </span>
+          <!-- Gene - Oct, 20, 2026: Specialized table cell renderer for promotion_media_url supporting YouTube, video, and image previews -->
+          <span v-else-if="getFieldType(col) === 'promotion_media_url'">
+            <span v-if="slotProps.data[col]" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="openImagePreview(slotProps.data[col], formatLabel(col))">
+              <template v-if="isYouTubeUrl(slotProps.data[col])">
+                <span class="position-relative d-inline-block rounded border overflow-hidden flex-shrink-0" style="width: 28px; height: 28px; background-color: #000;">
+                  <img :src="getYouTubeThumbnail(slotProps.data[col])" alt="YouTube" style="width: 100%; height: 100%; object-fit: cover;" />
+                  <i class="pi pi-youtube text-danger position-absolute top-50 start-50 translate-middle" style="font-size: 0.85rem; text-shadow: 0 0 2px #fff;"></i>
+                </span>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-0.5 text-xs fw-semibold d-inline-flex align-items-center gap-1">
+                  <i class="pi pi-youtube"></i> YouTube
+                </span>
+              </template>
+              <template v-else-if="isDirectVideoUrl(slotProps.data[col])">
+                <div class="rounded border bg-dark d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width: 28px; height: 28px;">
+                  <i class="pi pi-video" style="font-size: 0.75rem;"></i>
+                </div>
+                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2 py-0.5 text-xs fw-semibold d-inline-flex align-items-center gap-1">
+                  <i class="pi pi-video"></i> Video
+                </span>
+              </template>
+              <template v-else>
+                <img :src="slotProps.data[col]" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
+                <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">View</span>
+              </template>
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
           <span v-else-if="getFieldType(col) === 'coordinates'">
             <template v-for="coordVal in [getRowCoordinateValue(slotProps.data, col)]" :key="col">
               <a
@@ -1745,6 +1772,108 @@
                 />
               </div>
 
+              <!-- Gene - Oct, 20, 2026: Dedicated Promo Media URL control for YouTube, video, and image web links in Create Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
+                <div class="d-flex flex-column gap-2">
+                  <!-- Mode toggle pills -->
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                    <label class="form-label small fw-semibold text-secondary mb-0">
+                      {{ formatLabel(col) }}
+                      <span v-if="isFieldRequired(col)" class="text-danger">*</span>
+                    </label>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button
+                        type="button"
+                        class="btn py-1 px-2.5 text-xs fw-medium"
+                        :class="promoMediaMode.create === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
+                        @click="promoMediaMode.create = 'video'"
+                      >
+                        <i class="pi pi-video me-1"></i> YouTube / Video URL
+                      </button>
+                      <button
+                        type="button"
+                        class="btn py-1 px-2.5 text-xs fw-medium"
+                        :class="promoMediaMode.create === 'image' ? 'btn-primary' : 'btn-outline-secondary'"
+                        @click="promoMediaMode.create = 'image'"
+                      >
+                        <i class="pi pi-image me-1"></i> Image URL
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Text input for URL -->
+                  <div class="p-inputgroup flex-1">
+                    <span class="p-inputgroup-addon bg-light border-end-0">
+                      <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info' : 'pi pi-link text-secondary')"></i>
+                    </span>
+                    <InputText
+                      :id="col"
+                      v-model="formData[col]"
+                      class="form-control form-control-sm border-start-0"
+                      :placeholder="promoMediaMode.create === 'video' ? 'https://www.youtube.com/watch?v=... or https://youtu.be/... or .mp4' : 'https://example.com/banner.jpg'"
+                    />
+                    <button
+                      v-if="formData[col]"
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      title="Clear URL"
+                      @click="formData[col] = ''"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+
+                  <!-- URL Character count warning for SQL 100-char limit -->
+                  <div class="d-flex align-items-center justify-content-between text-xs px-1">
+                    <span v-if="formData[col] && formData[col].length > 100" class="text-danger fw-semibold">
+                      <i class="pi pi-exclamation-triangle me-1"></i> URL is {{ formData[col].length }} chars (max 100 chars in database)
+                    </span>
+                    <span v-else class="text-muted">
+                      Supports YouTube links, .mp4/.webm videos, or hosted image URLs
+                    </span>
+                    <span class="font-monospace text-muted" :class="{ 'text-danger fw-bold': formData[col] && formData[col].length > 100 }">
+                      {{ (formData[col] || '').length }}/100
+                    </span>
+                  </div>
+
+                  <!-- Live Media Preview Card -->
+                  <div v-if="formData[col]" class="border rounded-3 p-2 bg-body-tertiary mt-1">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                        {{ isYouTubeUrl(formData[col]) ? 'YouTube Video Preview' : (isDirectVideoUrl(formData[col]) ? 'HTML5 Video Stream Preview' : 'Image Preview') }}
+                      </span>
+                      <a :href="formData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                        Test Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                      </a>
+                    </div>
+
+                    <div v-if="isYouTubeUrl(formData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
+                      <iframe
+                        :src="getYouTubeEmbedUrl(formData[col])"
+                        title="YouTube video player"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                        class="w-100 h-100"
+                      ></iframe>
+                    </div>
+                    <div v-else-if="isDirectVideoUrl(formData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
+                      <video :src="formData[col]" controls class="w-100 h-100"></video>
+                    </div>
+                    <div v-else class="text-center p-1">
+                      <img
+                        :src="formData[col]"
+                        alt="Promo Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 180px; object-fit: contain;"
+                        @error="$event.target.style.display = 'none'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Password Field -->
               <div v-else-if="getFieldType(col) === 'password'">
                 <div class="position-relative w-100">
@@ -2159,6 +2288,44 @@
                   :label="formatLabel(col)"
                   disabled
                 />
+              </div>
+
+              <!-- Gene - Oct, 20, 2026: Promo Media Player in View Modal -->
+              <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
+                <div v-if="viewFormData[col]" class="border rounded-3 p-2.5 bg-body-tertiary">
+                  <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                    <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                      <i :class="isYouTubeUrl(viewFormData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(viewFormData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                      {{ isYouTubeUrl(viewFormData[col]) ? 'YouTube Promo Video' : (isDirectVideoUrl(viewFormData[col]) ? 'Video Stream' : 'Promo Banner Image') }}
+                    </span>
+                    <a :href="viewFormData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                      Open Original <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                    </a>
+                  </div>
+
+                  <div v-if="isYouTubeUrl(viewFormData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
+                    <iframe
+                      :src="getYouTubeEmbedUrl(viewFormData[col])"
+                      title="YouTube video player"
+                      frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen
+                      class="w-100 h-100"
+                    ></iframe>
+                  </div>
+                  <div v-else-if="isDirectVideoUrl(viewFormData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
+                    <video :src="viewFormData[col]" controls class="w-100 h-100"></video>
+                  </div>
+                  <div v-else class="text-center p-1">
+                    <img
+                      :src="viewFormData[col]"
+                      alt="Promo Image"
+                      class="img-fluid rounded border shadow-xs"
+                      style="max-height: 220px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+                <div v-else class="text-muted small fst-italic">No promo media configured</div>
               </div>
 
               <!-- Textarea for Multiline Fields -->
@@ -3261,6 +3428,111 @@
                 />
               </div>
 
+              <!-- Gene - Oct, 20, 2026: Dedicated Promo Media URL control for YouTube, video, and image web links in Edit Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
+                <div class="d-flex flex-column gap-2">
+                  <!-- Mode toggle pills -->
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                    <label class="form-label small fw-semibold text-secondary mb-0">
+                      {{ formatLabel(col) }}
+                      <span v-if="isFieldRequired(col, 'edit')" class="text-danger">*</span>
+                    </label>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button
+                        type="button"
+                        class="btn py-1 px-2.5 text-xs fw-medium"
+                        :class="promoMediaMode.edit === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
+                        :disabled="isFieldDisabledInEdit(col)"
+                        @click="promoMediaMode.edit = 'video'"
+                      >
+                        <i class="pi pi-video me-1"></i> YouTube / Video URL
+                      </button>
+                      <button
+                        type="button"
+                        class="btn py-1 px-2.5 text-xs fw-medium"
+                        :class="promoMediaMode.edit === 'image' ? 'btn-primary' : 'btn-outline-secondary'"
+                        :disabled="isFieldDisabledInEdit(col)"
+                        @click="promoMediaMode.edit = 'image'"
+                      >
+                        <i class="pi pi-image me-1"></i> Image URL
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Text input for URL -->
+                  <div class="p-inputgroup flex-1">
+                    <span class="p-inputgroup-addon bg-light border-end-0">
+                      <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info' : 'pi pi-link text-secondary')"></i>
+                    </span>
+                    <InputText
+                      :id="`edit-${col}`"
+                      v-model="editFormData[col]"
+                      class="form-control form-control-sm border-start-0"
+                      :disabled="isFieldDisabledInEdit(col)"
+                      :placeholder="promoMediaMode.edit === 'video' ? 'https://www.youtube.com/watch?v=... or https://youtu.be/... or .mp4' : 'https://example.com/banner.jpg'"
+                    />
+                    <button
+                      v-if="editFormData[col] && !isFieldDisabledInEdit(col)"
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      title="Clear URL"
+                      @click="editFormData[col] = ''"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+
+                  <!-- URL Character count warning for SQL 100-char limit -->
+                  <div class="d-flex align-items-center justify-content-between text-xs px-1">
+                    <span v-if="editFormData[col] && editFormData[col].length > 100" class="text-danger fw-semibold">
+                      <i class="pi pi-exclamation-triangle me-1"></i> URL is {{ editFormData[col].length }} chars (max 100 chars in database)
+                    </span>
+                    <span v-else class="text-muted">
+                      Supports YouTube links, .mp4/.webm videos, or hosted image URLs
+                    </span>
+                    <span class="font-monospace text-muted" :class="{ 'text-danger fw-bold': editFormData[col] && editFormData[col].length > 100 }">
+                      {{ (editFormData[col] || '').length }}/100
+                    </span>
+                  </div>
+
+                  <!-- Live Media Preview Card -->
+                  <div v-if="editFormData[col]" class="border rounded-3 p-2 bg-body-tertiary mt-1">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                        {{ isYouTubeUrl(editFormData[col]) ? 'YouTube Video Preview' : (isDirectVideoUrl(editFormData[col]) ? 'HTML5 Video Stream Preview' : 'Image Preview') }}
+                      </span>
+                      <a :href="editFormData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                        Test Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                      </a>
+                    </div>
+
+                    <div v-if="isYouTubeUrl(editFormData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
+                      <iframe
+                        :src="getYouTubeEmbedUrl(editFormData[col])"
+                        title="YouTube video player"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                        class="w-100 h-100"
+                      ></iframe>
+                    </div>
+                    <div v-else-if="isDirectVideoUrl(editFormData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
+                      <video :src="editFormData[col]" controls class="w-100 h-100"></video>
+                    </div>
+                    <div v-else class="text-center p-1">
+                      <img
+                        :src="editFormData[col]"
+                        alt="Promo Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 180px; object-fit: contain;"
+                        @error="$event.target.style.display = 'none'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- DatePicker for Date Fields -->
               <DatePicker 
                 v-else-if="getFieldType(col) === 'date'" 
@@ -3460,6 +3732,7 @@
     </Dialog>
 
     <!-- Image Preview Lightbox Dialog for Table -->
+    <!--
     <Dialog class="sfa-tracker-dialog-image-preview"
       v-model:visible="tableImagePreviewVisible"
       modal
@@ -3486,6 +3759,68 @@
             @click="tableImageExifVisible = !tableImageExifVisible"
           />
           <Button
+            label="Download"
+            icon="pi pi-download"
+            class="p-button-sm p-button-outlined p-button-secondary rounded-3 px-3"
+            @click="downloadImage(tableImagePreviewUrl, tableImagePreviewTitle)"
+          />
+          <Button
+            label="Open in New Tab"
+            icon="pi pi-external-link"
+            class="p-button-sm p-button-outlined p-button-secondary rounded-3 px-3"
+            @click="openImageInNewTab(tableImagePreviewUrl)"
+          />
+          <Button label="Close" icon="pi pi-times" class="p-button-sm p-button-secondary rounded-3 px-3" @click="tableImagePreviewVisible = false" />
+        </div>
+      </template>
+    </Dialog>
+    -->
+    <!-- Gene - Oct, 20, 2026: Enhanced image preview lightbox to embed YouTube and HTML5 video players when previewing video media -->
+    <Dialog class="sfa-tracker-dialog-image-preview"
+      v-model:visible="tableImagePreviewVisible"
+      modal
+      :header="tableImagePreviewTitle || (isVideoMediaUrl(tableImagePreviewUrl) ? 'Video Preview' : 'Image Preview')"
+      :style="{ width: '90vw', maxWidth: isVideoMediaUrl(tableImagePreviewUrl) ? '720px' : '600px' }"
+      :closable="true"
+    >
+      <div class="text-center p-2">
+        <template v-if="isVideoMediaUrl(tableImagePreviewUrl)">
+          <div v-if="isYouTubeUrl(tableImagePreviewUrl)" class="ratio ratio-16x9 rounded overflow-hidden shadow-sm bg-black">
+            <iframe
+              :src="getYouTubeEmbedUrl(tableImagePreviewUrl)"
+              title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              class="w-100 h-100"
+            ></iframe>
+          </div>
+          <div v-else class="ratio ratio-16x9 rounded overflow-hidden shadow-sm bg-black">
+            <video :src="tableImagePreviewUrl" controls autoplay class="w-100 h-100"></video>
+          </div>
+        </template>
+        <template v-else>
+          <img
+            :src="tableImagePreviewUrl"
+            alt="Full Image Preview"
+            class="img-fluid rounded shadow-sm"
+            style="max-height: 70vh; object-fit: contain;"
+          />
+          <ExifPanel v-if="tableImageExifVisible" :src="tableImagePreviewUrl" />
+        </template>
+      </div>
+      <template #footer>
+        <div class="d-flex justify-content-end gap-2 flex-wrap">
+          <Button
+            v-if="!isVideoMediaUrl(tableImagePreviewUrl)"
+            label="EXIF Info"
+            icon="pi pi-info-circle"
+            class="p-button-sm rounded-3 px-3"
+            :class="tableImageExifVisible ? 'p-button-secondary' : 'p-button-outlined p-button-secondary'"
+            @click="tableImageExifVisible = !tableImageExifVisible"
+          />
+          <Button
+            v-if="!isYouTubeUrl(tableImagePreviewUrl)"
             label="Download"
             icon="pi pi-download"
             class="p-button-sm p-button-outlined p-button-secondary rounded-3 px-3"
@@ -4414,15 +4749,53 @@ const getThemeColorLabel = (val) => {
   return found ? found.label : (val || '-')
 }
 
+// Gene - Oct, 20, 2026: YouTube and video link helpers for Promotions video & media URL support
+const extractYouTubeId = (url) => {
+  if (!url || typeof url !== 'string') return null
+  const regExp = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i
+  const match = url.trim().match(regExp)
+  return match ? match[1] : null
+}
+
+const isYouTubeUrl = (url) => Boolean(extractYouTubeId(url))
+
+const isDirectVideoUrl = (url) => {
+  if (!url || typeof url !== 'string') return false
+  return /\.(mp4|webm|ogg|m4v|mov)(\?.*)?$/i.test(url.trim())
+}
+
+const isVideoMediaUrl = (url) => isYouTubeUrl(url) || isDirectVideoUrl(url)
+
+const getYouTubeEmbedUrl = (urlOrId) => {
+  const id = extractYouTubeId(urlOrId) || urlOrId
+  return id ? `https://www.youtube-nocookie.com/embed/${id}` : ''
+}
+
+const getYouTubeThumbnail = (urlOrId) => {
+  const id = extractYouTubeId(urlOrId) || urlOrId
+  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : ''
+}
+
+const promoMediaMode = ref({ create: 'video', edit: 'video' })
+
 function getFieldType(col) {
   if (!col) return 'text'
   const lower = col.toLowerCase().replace(/_/g, '')
 
+  /*
   // Gene - Oct, 16, 2026: Promotions endpoint specific field types for placement multi-select, imageSize select, and themeColor dropdown
   if (isPromotionEndpoint.value) {
     if (lower === 'placement') return 'promotion_placement_multiselect'
     if (lower === 'imagesize' || lower === 'image_size') return 'promotion_imagesize_select'
     if (lower === 'themecolor' || lower === 'theme_color') return 'promotion_themecolor_select'
+  }
+  */
+  // Gene - Oct, 20, 2026: Added promotion_media_url field type for Promotions.imageUrl to support YouTube, video, and image URL links without SQL truncation
+  if (isPromotionEndpoint.value) {
+    if (lower === 'placement') return 'promotion_placement_multiselect'
+    if (lower === 'imagesize' || lower === 'image_size') return 'promotion_imagesize_select'
+    if (lower === 'themecolor' || lower === 'theme_color') return 'promotion_themecolor_select'
+    if (lower === 'imageurl' || lower === 'image_url' || lower === 'image') return 'promotion_media_url'
   }
 
   // Payments endpoint specific overrides:
@@ -10308,11 +10681,23 @@ const openCreateDialog = () => {
     }
   }
 
+  /*
   // Gene - Oct, 16, 2026: Pre-fill sensible defaults for Promotions, Inventory Item, and Inventory Logs create dialogs
   if (isPromotionEndpoint.value) {
     const priorityCol = formColumns.value.find(c => c.toLowerCase() === 'priority')
     if (priorityCol && (formData.value[priorityCol] === '' || formData.value[priorityCol] === undefined)) {
       formData.value[priorityCol] = 1
+    }
+  }
+  */
+  // Gene - Oct, 20, 2026: Pre-fill sensible defaults and set default promoMediaMode to video for Promotions create dialog
+  if (isPromotionEndpoint.value) {
+    const priorityCol = formColumns.value.find(c => c.toLowerCase() === 'priority')
+    if (priorityCol && (formData.value[priorityCol] === '' || formData.value[priorityCol] === undefined)) {
+      formData.value[priorityCol] = 1
+    }
+    if (promoMediaMode.value) {
+      promoMediaMode.value.create = 'video'
     }
   }
 
@@ -10955,6 +11340,7 @@ const saveData = async () => {
         }
       }
       */
+      /*
       // Gene - Oct, 16, 2026: Normalize numeric fields and serialize placement array to comma-separated string for Promotions on create
       if (isPromotionEndpoint.value) {
         finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
@@ -10968,6 +11354,26 @@ const saveData = async () => {
         const plcKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'placement')
         if (plcKey && Array.isArray(finalPayload[plcKey])) {
           finalPayload[plcKey] = finalPayload[plcKey].join(',')
+        }
+      }
+      */
+      // Gene - Oct, 20, 2026: Normalize numeric fields, serialize placement array, and sanitize media imageUrl string for Promotions on create
+      if (isPromotionEndpoint.value) {
+        finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
+          ? Number(finalPayload.priority)
+          : 0
+        if (finalPayload.discountTypeId !== undefined && finalPayload.discountTypeId !== null && finalPayload.discountTypeId !== '' && finalPayload.discountTypeId !== 0 && finalPayload.discountTypeId !== '0') {
+          finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
+        } else {
+          delete finalPayload.discountTypeId
+        }
+        const plcKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'placement')
+        if (plcKey && Array.isArray(finalPayload[plcKey])) {
+          finalPayload[plcKey] = finalPayload[plcKey].join(',')
+        }
+        const imgKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'imageurl' || k.toLowerCase() === 'image')
+        if (imgKey && typeof finalPayload[imgKey] === 'string') {
+          finalPayload[imgKey] = finalPayload[imgKey].trim()
         }
       }
 
@@ -11098,6 +11504,7 @@ const openEditDialog = async (record) => {
         }
       }
     }
+    /*
     // Gene - Oct, 16, 2026: Parse comma-separated placement string into array for MultiSelect in edit modal
     if (getFieldType(col) === 'promotion_placement_multiselect') {
       const currentVal = editFormData.value[col]
@@ -11105,6 +11512,26 @@ const openEditDialog = async (record) => {
         editFormData.value[col] = currentVal.split(',').map(s => s.trim()).filter(Boolean)
       } else if (!Array.isArray(currentVal)) {
         editFormData.value[col] = []
+      }
+    }
+    */
+    // Gene - Oct, 20, 2026: Parse placement string into array and auto-detect promotion media mode (video vs image) in edit modal
+    if (getFieldType(col) === 'promotion_placement_multiselect') {
+      const currentVal = editFormData.value[col]
+      if (typeof currentVal === 'string') {
+        editFormData.value[col] = currentVal.split(',').map(s => s.trim()).filter(Boolean)
+      } else if (!Array.isArray(currentVal)) {
+        editFormData.value[col] = []
+      }
+    }
+    if (getFieldType(col) === 'promotion_media_url') {
+      const mediaVal = editFormData.value[col]
+      if (mediaVal && isVideoMediaUrl(mediaVal)) {
+        promoMediaMode.value.edit = 'video'
+      } else if (mediaVal) {
+        promoMediaMode.value.edit = 'image'
+      } else {
+        promoMediaMode.value.edit = 'video'
       }
     }
     if (isReadOnlyField(col)) {
@@ -11646,6 +12073,7 @@ const saveEdit = async () => {
         }
       }
       */
+      /*
       // Gene - Oct, 16, 2026: Normalize numeric fields and serialize placement array to comma-separated string for Promotions on update
       if (isPromotionEndpoint.value) {
         finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
@@ -11659,6 +12087,26 @@ const saveEdit = async () => {
         const plcKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'placement')
         if (plcKey && Array.isArray(finalPayload[plcKey])) {
           finalPayload[plcKey] = finalPayload[plcKey].join(',')
+        }
+      }
+      */
+      // Gene - Oct, 20, 2026: Normalize numeric fields, serialize placement array, and sanitize media imageUrl string for Promotions on update
+      if (isPromotionEndpoint.value) {
+        finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
+          ? Number(finalPayload.priority)
+          : 0
+        if (finalPayload.discountTypeId !== undefined && finalPayload.discountTypeId !== null && finalPayload.discountTypeId !== '' && finalPayload.discountTypeId !== 0 && finalPayload.discountTypeId !== '0') {
+          finalPayload.discountTypeId = Number(finalPayload.discountTypeId)
+        } else {
+          finalPayload.discountTypeId = null
+        }
+        const plcKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'placement')
+        if (plcKey && Array.isArray(finalPayload[plcKey])) {
+          finalPayload[plcKey] = finalPayload[plcKey].join(',')
+        }
+        const imgKey = Object.keys(finalPayload).find(k => k.toLowerCase() === 'imageurl' || k.toLowerCase() === 'image')
+        if (imgKey && typeof finalPayload[imgKey] === 'string') {
+          finalPayload[imgKey] = finalPayload[imgKey].trim()
         }
       }
 
