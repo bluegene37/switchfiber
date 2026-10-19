@@ -1030,7 +1030,26 @@
                 }
               ]"
             >
+              <!--
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="col" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+                <button
+                  v-if="canPinField(col)"
+                  type="button"
+                  class="sfa-pin-btn"
+                  :class="{ 'is-pinned': isPinned(col) }"
+                  :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                  :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                  :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                  @click.prevent.stop="togglePin(col)"
+                ><i class="pi pi-thumbtack"></i></button>
+                <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
+                <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
+                <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+              </label>
+              -->
+              <!-- Gene - Oct, 20, 2026: Suppress generic small label for promotion_media_url, promotion_title, and promotion_subtitle as they render self-contained prominent headers in Create Dialog -->
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother' && getFieldType(col) !== 'promotion_media_url' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle'" :for="col" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <button
                   v-if="canPinField(col)"
@@ -1772,10 +1791,10 @@
                 />
               </div>
 
-              <!-- Gene - Oct, 20, 2026: Dedicated Promo Media URL control for YouTube, video, and image web links in Create Dialog -->
+              <!--
+              // Gene - Oct, 20, 2026: Dedicated Promo Media URL control for YouTube, video, and image web links in Create Dialog
               <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
                 <div class="d-flex flex-column gap-2">
-                  <!-- Mode toggle pills -->
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                     <label class="form-label small fw-semibold text-secondary mb-0">
                       {{ formatLabel(col) }}
@@ -1800,8 +1819,6 @@
                       </button>
                     </div>
                   </div>
-
-                  <!-- Text input for URL -->
                   <div class="p-inputgroup flex-1">
                     <span class="p-inputgroup-addon bg-light border-end-0">
                       <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info' : 'pi pi-link text-secondary')"></i>
@@ -1822,8 +1839,6 @@
                       <i class="pi pi-times"></i>
                     </button>
                   </div>
-
-                  <!-- URL Character count warning for SQL 100-char limit -->
                   <div class="d-flex align-items-center justify-content-between text-xs px-1">
                     <span v-if="formData[col] && formData[col].length > 100" class="text-danger fw-semibold">
                       <i class="pi pi-exclamation-triangle me-1"></i> URL is {{ formData[col].length }} chars (max 100 chars in database)
@@ -1835,8 +1850,6 @@
                       {{ (formData[col] || '').length }}/100
                     </span>
                   </div>
-
-                  <!-- Live Media Preview Card -->
                   <div v-if="formData[col]" class="border rounded-3 p-2 bg-body-tertiary mt-1">
                     <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
                       <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
@@ -1847,7 +1860,6 @@
                         Test Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
                       </a>
                     </div>
-
                     <div v-if="isYouTubeUrl(formData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
                       <iframe
                         :src="getYouTubeEmbedUrl(formData[col])"
@@ -1867,6 +1879,239 @@
                         alt="Promo Image"
                         class="img-fluid rounded border shadow-xs"
                         style="max-height: 180px; object-fit: contain;"
+                        @error="$event.target.style.display = 'none'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              -->
+              <!-- Gene - Oct, 20, 2026: Enhanced prominent headline input for Promotion Title in Create Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_title'" class="w-100">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label :for="col" class="form-label fw-bold text-body mb-0 d-inline-flex align-items-center gap-1.5" style="font-size: 0.95rem;">
+                    <i class="pi pi-bolt text-warning"></i>
+                    {{ formatLabel(col) }} (Main Headline)
+                    <span v-if="isFieldRequired(col)" class="text-danger ms-0.5">*</span>
+                  </label>
+                  <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-0.5 text-xs fw-semibold">
+                    Primary Banner Headline
+                  </span>
+                </div>
+                <div class="position-relative">
+                  <InputText
+                    :id="col"
+                    v-model="formData[col]"
+                    class="w-100 form-control rounded-3 shadow-none fw-bold text-body"
+                    style="font-size: 1.15rem; min-height: 48px; letter-spacing: -0.01em;"
+                    placeholder="e.g. 50% OFF UNLIMITED FIBER BOOST - 100 MBPS AT ₱999"
+                  />
+                </div>
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                  Large, bold headline displayed prominently across website banners, customer dashboard promotions, and popups.
+                </small>
+              </div>
+
+              <!-- Gene - Oct, 20, 2026: Enhanced supporting sub-headline input for Promotion Subtitle in Create Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_subtitle'" class="w-100">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label :for="col" class="form-label fw-semibold text-body mb-0 d-inline-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
+                    <i class="pi pi-align-left text-primary"></i>
+                    {{ formatLabel(col) }} (Tagline / Hook)
+                    <span v-if="isFieldRequired(col)" class="text-danger ms-0.5">*</span>
+                  </label>
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-0.5 text-xs fw-medium">
+                    Supporting Sub-headline
+                  </span>
+                </div>
+                <div class="position-relative">
+                  <InputText
+                    :id="col"
+                    v-model="formData[col]"
+                    class="w-100 form-control rounded-3 shadow-none text-body fw-medium"
+                    style="font-size: 1rem; min-height: 42px;"
+                    placeholder="e.g. Enjoy blazing fast speeds with free installation and WiFi 6 router included. Limited-time offer!"
+                  />
+                </div>
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                  Secondary promotional copy explaining the offer value, terms, and perks.
+                </small>
+              </div>
+
+              <!-- Gene - Oct, 20, 2026: Elevated Media Showcase control with YouTube, video, image upload dropzone helper, and 16:9 live preview in Create Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
+                <div class="card border rounded-3 p-3 bg-body shadow-xs">
+                  <!-- Header with Title, Mode Switcher & Actions -->
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center p-2" style="width: 36px; height: 36px;">
+                        <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                      </div>
+                      <div>
+                        <div class="fw-bold text-body" style="font-size: 0.95rem;">
+                          Promotion Media (YouTube Video or Hosted Banner Image)
+                          <span v-if="isFieldRequired(col)" class="text-danger">*</span>
+                        </div>
+                        <div class="text-muted text-xs">
+                          Choose media format: YouTube video, direct video stream, or hosted image link
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium"
+                          :class="promoMediaMode.create === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
+                          @click="promoMediaMode.create = 'video'"
+                        >
+                          <i class="pi pi-video me-1"></i> YouTube / Video URL
+                        </button>
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium"
+                          :class="promoMediaMode.create === 'image' ? 'btn-primary' : 'btn-outline-secondary'"
+                          @click="promoMediaMode.create = 'image'"
+                        >
+                          <i class="pi pi-image me-1"></i> Image URL
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs"
+                        title="Paste from clipboard"
+                        @click="pastePromoMediaFromClipboard('create', col)"
+                      >
+                        <i class="pi pi-clipboard"></i> Paste
+                      </button>
+                      <button
+                        v-if="formData[col] || promoLocalImagePreview.create"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1 text-xs"
+                        title="Clear media input"
+                        @click="clearPromoMedia('create', col)"
+                      >
+                        <i class="pi pi-times"></i> Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Text input for URL -->
+                  <div class="p-inputgroup flex-1">
+                    <span class="p-inputgroup-addon bg-body-tertiary border-end-0">
+                      <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger fs-6' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info fs-6' : (formData[col] ? 'pi pi-image text-primary fs-6' : 'pi pi-link text-secondary fs-6'))"></i>
+                    </span>
+                    <InputText
+                      :id="col"
+                      v-model="formData[col]"
+                      class="form-control border-start-0"
+                      style="font-size: 0.95rem; min-height: 42px;"
+                      :placeholder="promoMediaMode.create === 'video' ? 'Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...) or .mp4' : 'Paste banner image URL (e.g. https://switchfiber.ph/assets/promo.jpg)'"
+                    />
+                    <button
+                      v-if="formData[col]"
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      title="Clear URL"
+                      @click="clearPromoMedia('create', col)"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+
+                  <!-- Validation & Character count bar -->
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 text-xs px-1 mt-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <span v-if="isYouTubeUrl(formData[col])" class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1">
+                        <i class="pi pi-check-circle me-1"></i>YouTube Video Detected (ID: <code>{{ extractYouTubeId(formData[col]) }}</code>)
+                      </span>
+                      <span v-else-if="isDirectVideoUrl(formData[col])" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1">
+                        <i class="pi pi-check-circle me-1"></i>Direct Video Stream (.mp4/.webm)
+                      </span>
+                      <span v-else-if="formData[col] && formData[col].startsWith('http')" class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1">
+                        <i class="pi pi-check-circle me-1"></i>Web Image Link
+                      </span>
+                      <template v-else-if="!formData[col]">
+                        <span class="text-muted">Quick test links:</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-danger fw-semibold d-inline-flex align-items-center gap-1 text-xs" @click="applySamplePromoMedia('create', col, 'youtube')">
+                          <i class="pi pi-youtube"></i> Try Sample YouTube
+                        </button>
+                        <span class="text-muted">·</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1 text-xs" @click="applySamplePromoMedia('create', col, 'image')">
+                          <i class="pi pi-image"></i> Try Sample Banner
+                        </button>
+                      </template>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                      <span v-if="formData[col] && formData[col].length > 100" class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-2 py-0.5 fw-bold">
+                        <i class="pi pi-exclamation-triangle me-1"></i>{{ formData[col].length }}/100 (Exceeds database VARCHAR(100) limit)
+                      </span>
+                      <span v-else-if="formData[col]" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                        {{ formData[col].length }}/100 chars
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Dropzone file browse helper (shown when in Image mode and no URL is typed) -->
+                  <div v-if="promoMediaMode.create === 'image' && !formData[col]" class="mt-2.5">
+                    <label class="border border-dashed rounded-3 text-center p-3 cursor-pointer bg-body-tertiary mb-0 d-block w-100 hover-border-primary">
+                      <input type="file" accept="image/*" class="d-none" @change="onPromoLocalImageSelected('create', $event)" />
+                      <div class="d-flex flex-column align-items-center justify-content-center gap-1 text-muted small">
+                        <i class="pi pi-cloud-upload text-primary fs-4"></i>
+                        <span class="fw-medium text-body">Click to browse a local image file for live visual preview</span>
+                        <span class="text-xs text-secondary">To save permanently, host image on your web server / CDN and paste the URL (max 100 chars).</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Live Media Preview Theater Container -->
+                  <div v-if="formData[col] || promoLocalImagePreview.create" class="border rounded-3 p-3 bg-body-tertiary mt-2.5">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                        {{ isYouTubeUrl(formData[col]) ? 'Live YouTube Player Preview' : (isDirectVideoUrl(formData[col]) ? 'HTML5 Video Stream Player' : (promoLocalImagePreview.create ? 'Local Image File Preview' : 'Image Banner Preview')) }}
+                      </span>
+                      <div class="d-flex align-items-center gap-2">
+                        <a v-if="formData[col] && formData[col].startsWith('http')" :href="formData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                          Test Original Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                        </a>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-danger text-decoration-none text-xs" @click="clearPromoMedia('create', col)">
+                          <i class="pi pi-trash me-1"></i>Remove
+                        </button>
+                      </div>
+                    </div>
+
+                    <div v-if="isYouTubeUrl(formData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                      <iframe
+                        :src="getYouTubeEmbedUrl(formData[col])"
+                        title="YouTube video player"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                        class="w-100 h-100"
+                      ></iframe>
+                    </div>
+                    <div v-else-if="isDirectVideoUrl(formData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                      <video :src="formData[col]" controls class="w-100 h-100"></video>
+                    </div>
+                    <div v-else-if="promoLocalImagePreview.create" class="text-center p-2 rounded-3 bg-black">
+                      <img
+                        :src="promoLocalImagePreview.create"
+                        alt="Local Promo Preview"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 260px; object-fit: contain;"
+                      />
+                      <div class="text-xs text-warning-emphasis bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded-pill px-3 py-1 mt-2 d-inline-block">
+                        <i class="pi pi-info-circle me-1"></i>Local test preview only. Remember to upload this image to your server and enter the public URL before saving.
+                      </div>
+                    </div>
+                    <div v-else class="text-center p-2 rounded-3 bg-black">
+                      <img
+                        :src="formData[col]"
+                        alt="Promo Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 260px; object-fit: contain;"
                         @error="$event.target.style.display = 'none'"
                       />
                     </div>
@@ -2146,7 +2391,13 @@
                 }
               ]"
             >
+              <!--
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="`view-${col}`" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+              </label>
+              -->
+              <!-- Gene - Oct, 20, 2026: Suppress generic small label for promotion_media_url, promotion_title, and promotion_subtitle as they render self-contained prominent headers in View Dialog -->
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother' && getFieldType(col) !== 'promotion_media_url' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle'" :for="`view-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
               </label>
 
@@ -2290,7 +2541,8 @@
                 />
               </div>
 
-              <!-- Gene - Oct, 20, 2026: Promo Media Player in View Modal -->
+              <!--
+              // Gene - Oct, 20, 2026: Promo Media Player in View Modal
               <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
                 <div v-if="viewFormData[col]" class="border rounded-3 p-2.5 bg-body-tertiary">
                   <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
@@ -2302,7 +2554,6 @@
                       Open Original <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
                     </a>
                   </div>
-
                   <div v-if="isYouTubeUrl(viewFormData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
                     <iframe
                       :src="getYouTubeEmbedUrl(viewFormData[col])"
@@ -2326,6 +2577,70 @@
                   </div>
                 </div>
                 <div v-else class="text-muted small fst-italic">No promo media configured</div>
+              </div>
+              -->
+              <!-- Gene - Oct, 20, 2026: Enhanced prominent headline display for Promotion Title in View Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_title'" class="w-100">
+                <div class="p-3 rounded-3 border bg-body-tertiary">
+                  <div class="text-xs text-uppercase fw-bold text-muted mb-1 d-inline-flex align-items-center gap-1.5">
+                    <i class="pi pi-bolt text-warning"></i> Campaign Headline
+                  </div>
+                  <div class="fs-5 fw-bold text-body">
+                    {{ viewFormData[col] || '—' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gene - Oct, 20, 2026: Enhanced supporting sub-headline display for Promotion Subtitle in View Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_subtitle'" class="w-100">
+                <div class="p-2.5 rounded-3 border bg-body-tertiary">
+                  <div class="text-xs text-uppercase fw-bold text-muted mb-1 d-inline-flex align-items-center gap-1.5">
+                    <i class="pi pi-align-left text-primary"></i> Supporting Sub-headline
+                  </div>
+                  <div class="fs-6 fw-medium text-secondary">
+                    {{ viewFormData[col] || '—' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gene - Oct, 20, 2026: Elevated 16:9 theater promo media display in View Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
+                <div v-if="viewFormData[col]" class="card border rounded-3 p-3 bg-body shadow-xs">
+                  <div class="d-flex align-items-center justify-content-between mb-2.5 pb-2 border-bottom">
+                    <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                      <i :class="isYouTubeUrl(viewFormData[col]) ? 'pi pi-youtube text-danger fs-6' : (isDirectVideoUrl(viewFormData[col]) ? 'pi pi-video text-info fs-6' : 'pi pi-image text-primary fs-6')"></i>
+                      {{ isYouTubeUrl(viewFormData[col]) ? 'YouTube Promo Video' : (isDirectVideoUrl(viewFormData[col]) ? 'Video Stream' : 'Promo Banner Image') }}
+                    </span>
+                    <a :href="viewFormData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                      Open Original Media <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                    </a>
+                  </div>
+
+                  <div v-if="isYouTubeUrl(viewFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                    <iframe
+                      :src="getYouTubeEmbedUrl(viewFormData[col])"
+                      title="YouTube video player"
+                      frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen
+                      class="w-100 h-100"
+                    ></iframe>
+                  </div>
+                  <div v-else-if="isDirectVideoUrl(viewFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                    <video :src="viewFormData[col]" controls class="w-100 h-100"></video>
+                  </div>
+                  <div v-else class="text-center p-2 rounded-3 bg-black">
+                    <img
+                      :src="viewFormData[col]"
+                      alt="Promo Image"
+                      class="img-fluid rounded border shadow-xs"
+                      style="max-height: 280px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+                <div v-else class="text-muted small fst-italic p-2 bg-body-tertiary rounded-3 border border-dashed text-center">
+                  <i class="pi pi-image me-1"></i> No promo media configured for this promotion
+                </div>
               </div>
 
               <!-- Textarea for Multiline Fields -->
@@ -2600,7 +2915,27 @@
                 }
               ]"
             >
+              <!--
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+                <button
+                  v-if="canPinField(col)"
+                  type="button"
+                  class="sfa-pin-btn"
+                  :class="{ 'is-pinned': isPinned(col) }"
+                  :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                  :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                  :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                  @click.prevent.stop="togglePin(col)"
+                ><i class="pi pi-thumbtack"></i></button>
+                <span v-if="isFieldRequired(col, 'edit')" class="text-danger ms-1" title="Required">*</span>
+                <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
+                <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                <span v-else-if="isFieldDisabledInEdit(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+              </label>
+              -->
+              <!-- Gene - Oct, 20, 2026: Suppress generic small label for promotion_media_url, promotion_title, and promotion_subtitle as they render self-contained prominent headers in Edit Dialog -->
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother' && getFieldType(col) !== 'promotion_media_url' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <button
                   v-if="canPinField(col)"
@@ -3428,10 +3763,10 @@
                 />
               </div>
 
-              <!-- Gene - Oct, 20, 2026: Dedicated Promo Media URL control for YouTube, video, and image web links in Edit Dialog -->
+              <!--
+              // Gene - Oct, 20, 2026: Dedicated Promo Media URL control for YouTube, video, and image web links in Edit Dialog
               <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
                 <div class="d-flex flex-column gap-2">
-                  <!-- Mode toggle pills -->
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                     <label class="form-label small fw-semibold text-secondary mb-0">
                       {{ formatLabel(col) }}
@@ -3458,8 +3793,6 @@
                       </button>
                     </div>
                   </div>
-
-                  <!-- Text input for URL -->
                   <div class="p-inputgroup flex-1">
                     <span class="p-inputgroup-addon bg-light border-end-0">
                       <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info' : 'pi pi-link text-secondary')"></i>
@@ -3481,8 +3814,6 @@
                       <i class="pi pi-times"></i>
                     </button>
                   </div>
-
-                  <!-- URL Character count warning for SQL 100-char limit -->
                   <div class="d-flex align-items-center justify-content-between text-xs px-1">
                     <span v-if="editFormData[col] && editFormData[col].length > 100" class="text-danger fw-semibold">
                       <i class="pi pi-exclamation-triangle me-1"></i> URL is {{ editFormData[col].length }} chars (max 100 chars in database)
@@ -3494,8 +3825,6 @@
                       {{ (editFormData[col] || '').length }}/100
                     </span>
                   </div>
-
-                  <!-- Live Media Preview Card -->
                   <div v-if="editFormData[col]" class="border rounded-3 p-2 bg-body-tertiary mt-1">
                     <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
                       <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
@@ -3506,7 +3835,6 @@
                         Test Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
                       </a>
                     </div>
-
                     <div v-if="isYouTubeUrl(editFormData[col])" class="ratio ratio-16x9 rounded overflow-hidden shadow-xs bg-black">
                       <iframe
                         :src="getYouTubeEmbedUrl(editFormData[col])"
@@ -3526,6 +3854,245 @@
                         alt="Promo Image"
                         class="img-fluid rounded border shadow-xs"
                         style="max-height: 180px; object-fit: contain;"
+                        @error="$event.target.style.display = 'none'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              -->
+              <!-- Gene - Oct, 20, 2026: Enhanced prominent headline input for Promotion Title in Edit Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_title'" class="w-100">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label :for="`edit-${col}`" class="form-label fw-bold text-body mb-0 d-inline-flex align-items-center gap-1.5" style="font-size: 0.95rem;">
+                    <i class="pi pi-bolt text-warning"></i>
+                    {{ formatLabel(col) }} (Main Headline)
+                    <span v-if="isFieldRequired(col, 'edit')" class="text-danger ms-0.5">*</span>
+                  </label>
+                  <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-0.5 text-xs fw-semibold">
+                    Primary Banner Headline
+                  </span>
+                </div>
+                <div class="position-relative">
+                  <InputText
+                    :id="`edit-${col}`"
+                    v-model="editFormData[col]"
+                    class="w-100 form-control rounded-3 shadow-none fw-bold text-body"
+                    style="font-size: 1.15rem; min-height: 48px; letter-spacing: -0.01em;"
+                    :disabled="isFieldDisabledInEdit(col)"
+                    placeholder="e.g. 50% OFF UNLIMITED FIBER BOOST - 100 MBPS AT ₱999"
+                  />
+                </div>
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                  Large, bold headline displayed prominently across website banners, customer dashboard promotions, and popups.
+                </small>
+              </div>
+
+              <!-- Gene - Oct, 20, 2026: Enhanced supporting sub-headline input for Promotion Subtitle in Edit Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_subtitle'" class="w-100">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <label :for="`edit-${col}`" class="form-label fw-semibold text-body mb-0 d-inline-flex align-items-center gap-1.5" style="font-size: 0.9rem;">
+                    <i class="pi pi-align-left text-primary"></i>
+                    {{ formatLabel(col) }} (Tagline / Hook)
+                    <span v-if="isFieldRequired(col, 'edit')" class="text-danger ms-0.5">*</span>
+                  </label>
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-0.5 text-xs fw-medium">
+                    Supporting Sub-headline
+                  </span>
+                </div>
+                <div class="position-relative">
+                  <InputText
+                    :id="`edit-${col}`"
+                    v-model="editFormData[col]"
+                    class="w-100 form-control rounded-3 shadow-none text-body fw-medium"
+                    style="font-size: 1rem; min-height: 42px;"
+                    :disabled="isFieldDisabledInEdit(col)"
+                    placeholder="e.g. Enjoy blazing fast speeds with free installation and WiFi 6 router included. Limited-time offer!"
+                  />
+                </div>
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                  Secondary promotional copy explaining the offer value, terms, and perks.
+                </small>
+              </div>
+
+              <!-- Gene - Oct, 20, 2026: Elevated Media Showcase control with YouTube, video, image upload dropzone helper, and 16:9 live preview in Edit Dialog -->
+              <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
+                <div class="card border rounded-3 p-3 bg-body shadow-xs">
+                  <!-- Header with Title, Mode Switcher & Actions -->
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center p-2" style="width: 36px; height: 36px;">
+                        <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                      </div>
+                      <div>
+                        <div class="fw-bold text-body" style="font-size: 0.95rem;">
+                          Promotion Media (YouTube Video or Hosted Banner Image)
+                          <span v-if="isFieldRequired(col, 'edit')" class="text-danger">*</span>
+                        </div>
+                        <div class="text-muted text-xs">
+                          Choose media format: YouTube video, direct video stream, or hosted image link
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium"
+                          :class="promoMediaMode.edit === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
+                          :disabled="isFieldDisabledInEdit(col)"
+                          @click="promoMediaMode.edit = 'video'"
+                        >
+                          <i class="pi pi-video me-1"></i> YouTube / Video URL
+                        </button>
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium"
+                          :class="promoMediaMode.edit === 'image' ? 'btn-primary' : 'btn-outline-secondary'"
+                          :disabled="isFieldDisabledInEdit(col)"
+                          @click="promoMediaMode.edit = 'image'"
+                        >
+                          <i class="pi pi-image me-1"></i> Image URL
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs"
+                        :disabled="isFieldDisabledInEdit(col)"
+                        title="Paste from clipboard"
+                        @click="pastePromoMediaFromClipboard('edit', col)"
+                      >
+                        <i class="pi pi-clipboard"></i> Paste
+                      </button>
+                      <button
+                        v-if="(editFormData[col] || promoLocalImagePreview.edit) && !isFieldDisabledInEdit(col)"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1 text-xs"
+                        title="Clear media input"
+                        @click="clearPromoMedia('edit', col)"
+                      >
+                        <i class="pi pi-times"></i> Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Text input for URL -->
+                  <div class="p-inputgroup flex-1">
+                    <span class="p-inputgroup-addon bg-body-tertiary border-end-0">
+                      <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger fs-6' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info fs-6' : (editFormData[col] ? 'pi pi-image text-primary fs-6' : 'pi pi-link text-secondary fs-6'))"></i>
+                    </span>
+                    <InputText
+                      :id="`edit-${col}`"
+                      v-model="editFormData[col]"
+                      class="form-control border-start-0"
+                      style="font-size: 0.95rem; min-height: 42px;"
+                      :disabled="isFieldDisabledInEdit(col)"
+                      :placeholder="promoMediaMode.edit === 'video' ? 'Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...) or .mp4' : 'Paste banner image URL (e.g. https://switchfiber.ph/assets/promo.jpg)'"
+                    />
+                    <button
+                      v-if="editFormData[col] && !isFieldDisabledInEdit(col)"
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      title="Clear URL"
+                      @click="clearPromoMedia('edit', col)"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+
+                  <!-- Validation & Character count bar -->
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 text-xs px-1 mt-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <span v-if="isYouTubeUrl(editFormData[col])" class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1">
+                        <i class="pi pi-check-circle me-1"></i>YouTube Video Detected (ID: <code>{{ extractYouTubeId(editFormData[col]) }}</code>)
+                      </span>
+                      <span v-else-if="isDirectVideoUrl(editFormData[col])" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1">
+                        <i class="pi pi-check-circle me-1"></i>Direct Video Stream (.mp4/.webm)
+                      </span>
+                      <span v-else-if="editFormData[col] && editFormData[col].startsWith('http')" class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1">
+                        <i class="pi pi-check-circle me-1"></i>Web Image Link
+                      </span>
+                      <template v-else-if="!editFormData[col] && !isFieldDisabledInEdit(col)">
+                        <span class="text-muted">Quick test links:</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-danger fw-semibold d-inline-flex align-items-center gap-1 text-xs" @click="applySamplePromoMedia('edit', col, 'youtube')">
+                          <i class="pi pi-youtube"></i> Try Sample YouTube
+                        </button>
+                        <span class="text-muted">·</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1 text-xs" @click="applySamplePromoMedia('edit', col, 'image')">
+                          <i class="pi pi-image"></i> Try Sample Banner
+                        </button>
+                      </template>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                      <span v-if="editFormData[col] && editFormData[col].length > 100" class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-2 py-0.5 fw-bold">
+                        <i class="pi pi-exclamation-triangle me-1"></i>{{ editFormData[col].length }}/100 (Exceeds database VARCHAR(100) limit)
+                      </span>
+                      <span v-else-if="editFormData[col]" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                        {{ editFormData[col].length }}/100 chars
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Dropzone file browse helper (shown when in Image mode and no URL is typed) -->
+                  <div v-if="promoMediaMode.edit === 'image' && !editFormData[col] && !isFieldDisabledInEdit(col)" class="mt-2.5">
+                    <label class="border border-dashed rounded-3 text-center p-3 cursor-pointer bg-body-tertiary mb-0 d-block w-100 hover-border-primary">
+                      <input type="file" accept="image/*" class="d-none" @change="onPromoLocalImageSelected('edit', $event)" />
+                      <div class="d-flex flex-column align-items-center justify-content-center gap-1 text-muted small">
+                        <i class="pi pi-cloud-upload text-primary fs-4"></i>
+                        <span class="fw-medium text-body">Click to browse a local image file for live visual preview</span>
+                        <span class="text-xs text-secondary">To save permanently, host image on your web server / CDN and paste the URL (max 100 chars).</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Live Media Preview Theater Container -->
+                  <div v-if="editFormData[col] || promoLocalImagePreview.edit" class="border rounded-3 p-3 bg-body-tertiary mt-2.5">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                        {{ isYouTubeUrl(editFormData[col]) ? 'Live YouTube Player Preview' : (isDirectVideoUrl(editFormData[col]) ? 'HTML5 Video Stream Player' : (promoLocalImagePreview.edit ? 'Local Image File Preview' : 'Image Banner Preview')) }}
+                      </span>
+                      <div class="d-flex align-items-center gap-2">
+                        <a v-if="editFormData[col] && editFormData[col].startsWith('http')" :href="editFormData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                          Test Original Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                        </a>
+                        <button v-if="!isFieldDisabledInEdit(col)" type="button" class="btn btn-link btn-sm p-0 text-danger text-decoration-none text-xs" @click="clearPromoMedia('edit', col)">
+                          <i class="pi pi-trash me-1"></i>Remove
+                        </button>
+                      </div>
+                    </div>
+
+                    <div v-if="isYouTubeUrl(editFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                      <iframe
+                        :src="getYouTubeEmbedUrl(editFormData[col])"
+                        title="YouTube video player"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                        class="w-100 h-100"
+                      ></iframe>
+                    </div>
+                    <div v-else-if="isDirectVideoUrl(editFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                      <video :src="editFormData[col]" controls class="w-100 h-100"></video>
+                    </div>
+                    <div v-else-if="promoLocalImagePreview.edit" class="text-center p-2 rounded-3 bg-black">
+                      <img
+                        :src="promoLocalImagePreview.edit"
+                        alt="Local Promo Preview"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 260px; object-fit: contain;"
+                      />
+                      <div class="text-xs text-warning-emphasis bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded-pill px-3 py-1 mt-2 d-inline-block">
+                        <i class="pi pi-info-circle me-1"></i>Local test preview only. Remember to upload this image to your server and enter the public URL before saving.
+                      </div>
+                    </div>
+                    <div v-else class="text-center p-2 rounded-3 bg-black">
+                      <img
+                        :src="editFormData[col]"
+                        alt="Promo Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 260px; object-fit: contain;"
                         @error="$event.target.style.display = 'none'"
                       />
                     </div>
@@ -4378,9 +4945,43 @@ const getColumnClass = (col) => {
     return 'col-12 col-md-6 col-lg-3'
   }
 
+  /*
   // Wide (3-column) forms keep every field on the same 1-column (1/3 track).
   // Image dropzones divide equally across 3 columns on tablet & desktop.
   if (isWideForm.value) {
+    if (type === 'image_upload') {
+      return 'col-12 col-md-4 col-lg-4'
+    }
+    // Single fields and textareas in wide forms take 1 column (1/3 width)
+    // so 3 fields tile seamlessly per row without awkward empty spaces or jagged breaks!
+    return 'col-12 col-md-6 col-lg-4'
+  }
+  */
+  // Gene - Oct, 20, 2026: Tailor column widths in wide forms; for Promotions, assign full width to media and spacious columns for Title, Subtitle, and descriptions
+  if (isWideForm.value) {
+    if (isPromotionEndpoint.value) {
+      if (type === 'promotion_media_url' || lower === 'imageurl' || lower === 'image_url' || lower === 'image') {
+        return 'col-12'
+      }
+      if (lower === 'title') {
+        return 'col-12'
+      }
+      if (lower === 'subtitle') {
+        return 'col-12'
+      }
+      if (lower === 'description' || lower === 'termsandconditions') {
+        return 'col-12'
+      }
+      if (lower === 'perks' || lower === 'requirements') {
+        return 'col-12 col-lg-6'
+      }
+      if (lower === 'ctatext' || lower === 'ctalink') {
+        return 'col-12 col-md-6'
+      }
+      if (lower === 'placement') {
+        return 'col-12'
+      }
+    }
     if (type === 'image_upload') {
       return 'col-12 col-md-4 col-lg-4'
     }
@@ -4778,6 +5379,101 @@ const getYouTubeThumbnail = (urlOrId) => {
 
 const promoMediaMode = ref({ create: 'video', edit: 'video' })
 
+// Gene - Oct, 20, 2026: Added local image preview tracker and interactive media helpers for Promo URL paste, sample presets, and file preview
+const promoLocalImagePreview = ref({ create: null, edit: null })
+
+const pastePromoMediaFromClipboard = async (scope, col) => {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+      const text = await navigator.clipboard.readText()
+      if (text && text.trim()) {
+        const val = text.trim()
+        if (scope === 'create') {
+          formData.value[col] = val
+        } else if (scope === 'edit') {
+          editFormData.value[col] = val
+        }
+        if (promoLocalImagePreview.value) {
+          promoLocalImagePreview.value[scope] = null
+        }
+        if (isVideoMediaUrl(val)) {
+          promoMediaMode.value[scope] = 'video'
+        } else {
+          promoMediaMode.value[scope] = 'image'
+        }
+        toast.add({
+          severity: 'info',
+          summary: 'Link Pasted',
+          detail: 'Media URL pasted from clipboard.',
+          life: 2500
+        })
+      }
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'Clipboard Access',
+        detail: 'Please paste the URL directly into the input field (Ctrl+V / Cmd+V).',
+        life: 3000
+      })
+    }
+  } catch (err) {
+    console.warn('Clipboard read error:', err)
+    toast.add({
+      severity: 'warn',
+      summary: 'Clipboard Access',
+      detail: 'Please paste the URL directly into the input field (Ctrl+V / Cmd+V).',
+      life: 3000
+    })
+  }
+}
+
+const applySamplePromoMedia = (scope, col, type) => {
+  const sampleUrl = type === 'youtube'
+    ? 'https://youtu.be/dQw4w9WgXcQ'
+    : 'https://picsum.photos/seed/switchfiberpromo/800/450'
+  if (scope === 'create') {
+    formData.value[col] = sampleUrl
+  } else if (scope === 'edit') {
+    editFormData.value[col] = sampleUrl
+  }
+  if (promoLocalImagePreview.value) {
+    promoLocalImagePreview.value[scope] = null
+  }
+  promoMediaMode.value[scope] = type === 'youtube' ? 'video' : 'image'
+  toast.add({
+    severity: 'success',
+    summary: type === 'youtube' ? 'YouTube Sample Loaded' : 'Banner Sample Loaded',
+    detail: 'Sample promo media preview loaded.',
+    life: 2500
+  })
+}
+
+const clearPromoMedia = (scope, col) => {
+  if (scope === 'create') {
+    formData.value[col] = ''
+  } else if (scope === 'edit') {
+    editFormData.value[col] = ''
+  }
+  if (promoLocalImagePreview.value) {
+    promoLocalImagePreview.value[scope] = null
+  }
+}
+
+const onPromoLocalImageSelected = (scope, event) => {
+  const file = event?.target?.files?.[0]
+  if (!file) return
+  if (promoLocalImagePreview.value) {
+    promoLocalImagePreview.value[scope] = URL.createObjectURL(file)
+  }
+  promoMediaMode.value[scope] = 'image'
+  toast.add({
+    severity: 'info',
+    summary: 'Local Image Preview',
+    detail: 'Previewing local image. For permanent client display, ensure the image is hosted and enter the public URL.',
+    life: 5000
+  })
+}
+
 function getFieldType(col) {
   if (!col) return 'text'
   const lower = col.toLowerCase().replace(/_/g, '')
@@ -4790,12 +5486,23 @@ function getFieldType(col) {
     if (lower === 'themecolor' || lower === 'theme_color') return 'promotion_themecolor_select'
   }
   */
+  /*
   // Gene - Oct, 20, 2026: Added promotion_media_url field type for Promotions.imageUrl to support YouTube, video, and image URL links without SQL truncation
   if (isPromotionEndpoint.value) {
     if (lower === 'placement') return 'promotion_placement_multiselect'
     if (lower === 'imagesize' || lower === 'image_size') return 'promotion_imagesize_select'
     if (lower === 'themecolor' || lower === 'theme_color') return 'promotion_themecolor_select'
     if (lower === 'imageurl' || lower === 'image_url' || lower === 'image') return 'promotion_media_url'
+  }
+  */
+  // Gene - Oct, 20, 2026: Added promotion_title, promotion_subtitle, and promotion_media_url field types for Promotions endpoint to provide prominent, large headline and tagline inputs
+  if (isPromotionEndpoint.value) {
+    if (lower === 'placement') return 'promotion_placement_multiselect'
+    if (lower === 'imagesize' || lower === 'image_size') return 'promotion_imagesize_select'
+    if (lower === 'themecolor' || lower === 'theme_color') return 'promotion_themecolor_select'
+    if (lower === 'imageurl' || lower === 'image_url' || lower === 'image') return 'promotion_media_url'
+    if (lower === 'title') return 'promotion_title'
+    if (lower === 'subtitle') return 'promotion_subtitle'
   }
 
   // Payments endpoint specific overrides:
@@ -7509,6 +8216,7 @@ const PAYMENT_FORM_LAYOUT = [
   }
 ]
 
+/*
 // Gene - Oct, 16, 2026: Added structured form layouts for Promotions, Inventory Category, Inventory Item, and Inventory Logs
 const PROMOTION_FORM_LAYOUT = [
   {
@@ -7540,6 +8248,53 @@ const PROMOTION_FORM_LAYOUT = [
       'ctaLink',
       'imageSize',
       'imageUrl'
+    ]
+  },
+  {
+    key: 'terms',
+    title: 'Description, Perks & Terms',
+    icon: 'pi pi-file-edit',
+    badgeClass: 'text-success',
+    columns: [
+      'description',
+      'perks',
+      'requirements',
+      'termsAndConditions'
+    ]
+  }
+]
+*/
+// Gene - Oct, 20, 2026: Restructured Promotions layout for maximum visual impact, placing Title and Subtitle headline fields first, and featuring Media Showcase prominently
+const PROMOTION_FORM_LAYOUT = [
+  {
+    key: 'campaign',
+    title: 'Campaign Headline & Overview',
+    icon: 'pi pi-megaphone',
+    badgeClass: 'text-primary',
+    columns: [
+      'title',
+      'subtitle',
+      'promoCode',
+      'discountTypeId',
+      'priority',
+      'startDate',
+      'endDate',
+      'isActive',
+      'placement'
+    ]
+  },
+  {
+    key: 'creative',
+    title: 'Media Showcase & Visual Branding',
+    icon: 'pi pi-palette',
+    badgeClass: 'text-info',
+    columns: [
+      'imageUrl',
+      'badgeText',
+      'themeColor',
+      'imageSize',
+      'ctaText',
+      'ctaLink'
     ]
   },
   {
@@ -10690,6 +11445,7 @@ const openCreateDialog = () => {
     }
   }
   */
+  /*
   // Gene - Oct, 20, 2026: Pre-fill sensible defaults and set default promoMediaMode to video for Promotions create dialog
   if (isPromotionEndpoint.value) {
     const priorityCol = formColumns.value.find(c => c.toLowerCase() === 'priority')
@@ -10698,6 +11454,20 @@ const openCreateDialog = () => {
     }
     if (promoMediaMode.value) {
       promoMediaMode.value.create = 'video'
+    }
+  }
+  */
+  // Gene - Oct, 20, 2026: Pre-fill sensible defaults, set default promoMediaMode to video, and reset local image preview for Promotions create dialog
+  if (isPromotionEndpoint.value) {
+    const priorityCol = formColumns.value.find(c => c.toLowerCase() === 'priority')
+    if (priorityCol && (formData.value[priorityCol] === '' || formData.value[priorityCol] === undefined)) {
+      formData.value[priorityCol] = 1
+    }
+    if (promoMediaMode.value) {
+      promoMediaMode.value.create = 'video'
+    }
+    if (promoLocalImagePreview.value) {
+      promoLocalImagePreview.value.create = null
     }
   }
 
@@ -11524,6 +12294,7 @@ const openEditDialog = async (record) => {
         editFormData.value[col] = []
       }
     }
+    /*
     if (getFieldType(col) === 'promotion_media_url') {
       const mediaVal = editFormData.value[col]
       if (mediaVal && isVideoMediaUrl(mediaVal)) {
@@ -11532,6 +12303,21 @@ const openEditDialog = async (record) => {
         promoMediaMode.value.edit = 'image'
       } else {
         promoMediaMode.value.edit = 'video'
+      }
+    }
+    */
+    // Gene - Oct, 20, 2026: Auto-detect promotion media mode and reset local image preview for edit modal
+    if (getFieldType(col) === 'promotion_media_url') {
+      const mediaVal = editFormData.value[col]
+      if (mediaVal && isVideoMediaUrl(mediaVal)) {
+        promoMediaMode.value.edit = 'video'
+      } else if (mediaVal) {
+        promoMediaMode.value.edit = 'image'
+      } else {
+        promoMediaMode.value.edit = 'video'
+      }
+      if (promoLocalImagePreview.value) {
+        promoLocalImagePreview.value.edit = null
       }
     }
     if (isReadOnlyField(col)) {

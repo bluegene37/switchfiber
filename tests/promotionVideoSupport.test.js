@@ -206,6 +206,67 @@ describe('Promotions YouTube & Video URL Support Suite', () => {
         'Create and update payloads must trim imageUrl string'
       )
     })
+
+    test('DynamicApiTable maps Promotions title and subtitle to promotion_title and promotion_subtitle', () => {
+      assert.ok(
+        dynamicApiTableSource.includes("if (lower === 'title') return 'promotion_title'"),
+        'getFieldType must return promotion_title for title'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes("if (lower === 'subtitle') return 'promotion_subtitle'"),
+        'getFieldType must return promotion_subtitle for subtitle'
+      )
+    })
+
+    test('DynamicApiTable renders prominent headline inputs for promotion_title and promotion_subtitle', () => {
+      assert.ok(
+        dynamicApiTableSource.includes("getFieldType(col) === 'promotion_title'"),
+        'Dialogs must have specialized branch for promotion_title'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes("getFieldType(col) === 'promotion_subtitle'"),
+        'Dialogs must have specialized branch for promotion_subtitle'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes("Primary Banner Headline"),
+        'Title must display Primary Banner Headline badge'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes("Supporting Sub-headline"),
+        'Subtitle must display Supporting Sub-headline badge'
+      )
+    })
+
+    test('DynamicApiTable assigns full width to promotion_media_url, title, and subtitle in wide form', () => {
+      assert.ok(
+        dynamicApiTableSource.includes("if (isPromotionEndpoint.value) {"),
+        'getColumnClass must have dedicated branch for isPromotionEndpoint'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes("if (lower === 'title') {\n        return 'col-12'"),
+        'Title must receive full col-12 width'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes("if (lower === 'subtitle') {\n        return 'col-12'"),
+        'Subtitle must receive full col-12 width'
+      )
+    })
+
+    test('DynamicApiTable provides clipboard paste, sample links, and local image preview for media URL', () => {
+      assert.ok(
+        dynamicApiTableSource.includes('pastePromoMediaFromClipboard'),
+        'DynamicApiTable must define pastePromoMediaFromClipboard'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes('applySamplePromoMedia'),
+        'DynamicApiTable must define applySamplePromoMedia'
+      )
+      assert.ok(
+        dynamicApiTableSource.includes('promoLocalImagePreview'),
+        'DynamicApiTable must define promoLocalImagePreview'
+      )
+    })
   })
 })
+
 

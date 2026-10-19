@@ -28,8 +28,18 @@ const vueFiles = (dir) =>
 
 // Not functions the component has to declare: JS built-ins, the template's own
 // globals, and CSS functions that show up inside :style bindings.
+// Gene - Oct, 20, 2026: Added URL standard Web API global to NOT_COMPONENT_FUNCTIONS to allow built-in URL constructor/references
+// const NOT_COMPONENT_FUNCTIONS = new Set([
+//   'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date',
+//   'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURIComponent',
+//   'decodeURIComponent', 'RegExp', 'Set', 'Map', 'console', 'window', 'document',
+//   'localStorage', 'sessionStorage',
+//   '$emit', '$event', '$slots', '$refs', '$attrs',
+//   'var', 'calc', 'url', 'rgb', 'rgba', 'hsl', 'hsla', 'translate', 'translateX',
+//   'translateY', 'scale', 'rotate', 'bezier', 'linear', 'blur', 'Maps', 'Info', 'A'
+// ])
 const NOT_COMPONENT_FUNCTIONS = new Set([
-  'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date',
+  'String', 'Number', 'Boolean', 'Array', 'Object', 'JSON', 'Math', 'Date', 'URL',
   'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURIComponent',
   'decodeURIComponent', 'RegExp', 'Set', 'Map', 'console', 'window', 'document',
   'localStorage', 'sessionStorage',
