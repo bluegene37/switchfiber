@@ -487,7 +487,17 @@
             </span>
             <span v-else class="text-muted">-</span>
           </div>
+          <!--
           <span v-else-if="getFieldType(col) === 'image_upload'">
+            <span v-if="slotProps.data[col]" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="openImagePreview(slotProps.data[col], formatLabel(col))">
+              <img :src="slotProps.data[col]" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
+              <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">View</span>
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
+          -->
+          <!-- Gene - Oct, 20, 2026: Render thumbnail and preview trigger for inventory_item_image alongside image_upload -->
+          <span v-else-if="getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image'">
             <span v-if="slotProps.data[col]" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="openImagePreview(slotProps.data[col], formatLabel(col))">
               <img :src="slotProps.data[col]" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
               <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">View</span>
@@ -1886,6 +1896,70 @@
                 </div>
               </div>
               -->
+              <!-- Gene - Oct, 20, 2026: Dedicated Inventory Item Image URL control with live preview and 255-char counter to prevent 500 SQL truncation errors -->
+              <div v-else-if="getFieldType(col) === 'inventory_item_image'" class="w-100">
+                <div class="d-flex flex-column gap-2">
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                    <label class="form-label small fw-semibold text-secondary mb-0">
+                      {{ formatLabel(col) }}
+                      <span v-if="isFieldRequired(col)" class="text-danger">*</span>
+                    </label>
+                  </div>
+                  <div class="p-inputgroup flex-1">
+                    <span class="p-inputgroup-addon bg-light border-end-0">
+                      <i class="pi pi-image text-primary"></i>
+                    </span>
+                    <InputText
+                      :id="col"
+                      v-model="formData[col]"
+                      :maxlength="255"
+                      class="form-control form-control-sm border-start-0"
+                      placeholder="https://example.com/item.png or /images/inventory/item.png"
+                    />
+                    <button
+                      v-if="formData[col]"
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      title="Clear Image URL"
+                      @click="formData[col] = ''"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between text-xs px-1">
+                    <span v-if="formData[col] && formData[col].length > 255" class="text-danger fw-semibold">
+                      <i class="pi pi-exclamation-triangle me-1"></i> URL is {{ formData[col].length }} chars (max 255 chars in database)
+                    </span>
+                    <span v-else class="text-muted">
+                      Direct URL to product image or catalog photo (max 255 chars)
+                    </span>
+                    <span class="font-monospace text-muted" :class="{ 'text-danger fw-bold': formData[col] && formData[col].length > 255 }">
+                      {{ (formData[col] || '').length }}/255
+                    </span>
+                  </div>
+                  <div v-if="formData[col]" class="border rounded-3 p-2 bg-body-tertiary mt-1">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i class="pi pi-image text-primary"></i>
+                        Image Preview
+                      </span>
+                      <a :href="formData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                        Test Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                      </a>
+                    </div>
+                    <div class="text-center p-1">
+                      <img
+                        :src="formData[col]"
+                        alt="Item Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 180px; object-fit: contain;"
+                        @error="(e) => e.target.style.display = 'none'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Gene - Oct, 20, 2026: Enhanced prominent headline input for Promotion Title in Create Dialog -->
               <div v-else-if="getFieldType(col) === 'promotion_title'" class="w-100">
                 <div class="d-flex align-items-center justify-content-between mb-1.5">
@@ -2740,8 +2814,19 @@
                 </div>
               </div>
 
-              <!-- Image Upload (Preview in View Modal) -->
+              <!--
+              // Gene - Oct 20, 2026: Old image_upload only check in View Modal
               <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
+                <ImageDropzone
+                  :modelValue="viewFormData[col]"
+                  :fieldId="`view-${col}`"
+                  :label="formatLabel(col)"
+                  disabled
+                />
+              </div>
+              -->
+              <!-- Gene - Oct 20, 2026: Render image preview in View Modal for both image_upload and inventory_item_image -->
+              <div v-else-if="getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image'" class="w-100">
                 <ImageDropzone
                   :modelValue="viewFormData[col]"
                   :fieldId="`view-${col}`"
@@ -4070,6 +4155,70 @@
                 </div>
               </div>
               -->
+              <!-- Gene - Oct, 20, 2026: Dedicated Inventory Item Image URL control in Edit modal with live preview and 255-char counter to prevent 500 SQL truncation errors -->
+              <div v-else-if="getFieldType(col) === 'inventory_item_image'" class="w-100">
+                <div class="d-flex flex-column gap-2">
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                    <label class="form-label small fw-semibold text-secondary mb-0">
+                      {{ formatLabel(col) }}
+                      <span v-if="isFieldRequired(col, 'edit')" class="text-danger">*</span>
+                    </label>
+                  </div>
+                  <div class="p-inputgroup flex-1">
+                    <span class="p-inputgroup-addon bg-light border-end-0">
+                      <i class="pi pi-image text-primary"></i>
+                    </span>
+                    <InputText
+                      :id="`edit-${col}`"
+                      v-model="editFormData[col]"
+                      :maxlength="255"
+                      class="form-control form-control-sm border-start-0"
+                      placeholder="https://example.com/item.png or /images/inventory/item.png"
+                    />
+                    <button
+                      v-if="editFormData[col]"
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      title="Clear Image URL"
+                      @click="editFormData[col] = ''"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between text-xs px-1">
+                    <span v-if="editFormData[col] && editFormData[col].length > 255" class="text-danger fw-semibold">
+                      <i class="pi pi-exclamation-triangle me-1"></i> URL is {{ editFormData[col].length }} chars (max 255 chars in database)
+                    </span>
+                    <span v-else class="text-muted">
+                      Direct URL to product image or catalog photo (max 255 chars)
+                    </span>
+                    <span class="font-monospace text-muted" :class="{ 'text-danger fw-bold': editFormData[col] && editFormData[col].length > 255 }">
+                      {{ (editFormData[col] || '').length }}/255
+                    </span>
+                  </div>
+                  <div v-if="editFormData[col]" class="border rounded-3 p-2 bg-body-tertiary mt-1">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i class="pi pi-image text-primary"></i>
+                        Image Preview
+                      </span>
+                      <a :href="editFormData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                        Test Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                      </a>
+                    </div>
+                    <div class="text-center p-1">
+                      <img
+                        :src="editFormData[col]"
+                        alt="Item Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 180px; object-fit: contain;"
+                        @error="(e) => e.target.style.display = 'none'"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Gene - Oct, 20, 2026: Enhanced prominent headline input for Promotion Title in Edit Dialog -->
               <div v-else-if="getFieldType(col) === 'promotion_title'" class="w-100">
                 <div class="d-flex align-items-center justify-content-between mb-1.5">
@@ -5942,6 +6091,13 @@ function getFieldType(col) {
     if (lower === 'subtitle') return 'promotion_subtitle'
   }
 
+  // Gene - Oct, 20, 2026: Added inventory_item_image field type for InventoryItem to provide an image URL input with live preview and counter, preventing 500 truncation errors from base64 uploads
+  if (isInventoryItemEndpoint.value) {
+    if (lower === 'image' || lower === 'imageurl' || lower === 'image_url') {
+      return 'inventory_item_image'
+    }
+  }
+
   // Payments endpoint specific overrides:
   // - Fiber Plan (stored in image, plan, or fiberplan) must link to Plan API as a dropdown
   // - Processed By (stored in remarks or processedby) is an input field, never a textarea
@@ -6249,6 +6405,7 @@ function getFieldType(col) {
   return 'text'
 }
 
+/*
 // Gene - Oct 20, 2026: Schema-based field length constraints to prevent SQL truncation errors and drive character counters
 function getFieldMaxLength(col) {
   if (!col) return undefined
@@ -6259,6 +6416,35 @@ function getFieldMaxLength(col) {
     if (lower === 'themecolor' || lower === 'imagesize') return 50
     if (lower === 'description' || lower === 'requirements' || lower === 'termsandconditions') return 200
     if (lower === 'imageurl' || lower === 'image') return 100
+  }
+  return undefined
+}
+*/
+// Gene - Oct 20, 2026: Schema-based field length constraints for Promotions, Inventory Items, Inventory Logs, and Inventory Categories to prevent SQL truncation errors and drive character counters
+function getFieldMaxLength(col) {
+  if (!col) return undefined
+  const lower = col.toLowerCase().replace(/_/g, '')
+  if (isPromotionEndpoint.value) {
+    if (lower === 'promocode') return 50
+    if (lower === 'title' || lower === 'subtitle' || lower === 'badgetext' || lower === 'ctatext' || lower === 'ctalink' || lower === 'perks') return 100
+    if (lower === 'themecolor' || lower === 'imagesize') return 50
+    if (lower === 'description' || lower === 'requirements' || lower === 'termsandconditions') return 200
+    if (lower === 'imageurl' || lower === 'image') return 100
+  }
+  if (isInventoryItemEndpoint.value) {
+    if (lower === 'itemid' || lower === 'name' || lower === 'supplier' || lower === 'useremail' || lower === 'category') return 100
+    if (lower === 'description') return 200
+    if (lower === 'image' || lower === 'imageurl') return 255
+  }
+  if (isInventoryLogEndpoint.value) {
+    if (lower === 'itemid') return 50
+    if (lower === 'status') return 20
+    if (lower === 'requestedby' || lower === 'requestedwith') return 100
+    if (lower === 'remarks') return 255
+  }
+  if (isInventoryCategoryEndpoint.value) {
+    if (lower === 'name') return 150
+    if (lower === 'description') return 255
   }
   return undefined
 }
@@ -12410,6 +12596,116 @@ const normalizePromoInputOnBlur = (scope, col) => {
   }
 }
 
+// Gene - Oct 20, 2026: Built robust Inventory Item payload normalizer to enforce exact SQL column length limits and prevent 500 String or binary data would be truncated errors
+const buildInventoryItemPayload = (payload, mode, loggedInUserId) => {
+  const normStr = (val, maxLen) => {
+    if (val === null || val === undefined) return null
+    const str = String(val).trim()
+    if (!str) return null
+    return str.length > maxLen ? str.slice(0, maxLen).trim() : str
+  }
+
+  // Handle image: sanitize base64 strings if any so it never truncates in VARCHAR(255)
+  let cleanImage = null
+  const rawImg = payload.image || payload.imageUrl || payload.image_url
+  if (rawImg !== null && rawImg !== undefined && String(rawImg).trim() !== '') {
+    const imgStr = String(rawImg).trim()
+    if (imgStr.startsWith('data:')) {
+      const fileName = selectedFilesByCol.value?.[mode]?.image?.name || 'inventory_item.png'
+      cleanImage = normStr(fileName, 255)
+    } else {
+      cleanImage = normStr(imgStr, 255)
+    }
+  }
+
+  // Quantity: ensure non-negative integer
+  let cleanQty = 0
+  if (payload.quantity !== undefined && payload.quantity !== null && payload.quantity !== '') {
+    const qNum = parseInt(payload.quantity, 10)
+    if (!isNaN(qNum)) cleanQty = Math.max(0, qNum)
+  }
+
+  const result = {
+    itemId: normStr(payload.itemId, 100),
+    name: normStr(payload.name, 100),
+    description: normStr(payload.description, 200),
+    supplier: normStr(payload.supplier, 100),
+    quantity: cleanQty,
+    image: cleanImage,
+    userEmail: normStr(payload.userEmail || authStore.user?.email || 'admin@switchfiber.com', 100),
+    category: normStr(payload.category, 100)
+  }
+
+  if (mode === 'edit' && editingRecordId.value) {
+    result.id = Number(editingRecordId.value) || editingRecordId.value
+  }
+
+  return result
+}
+
+// Gene - Oct 20, 2026: Built robust Inventory Logs payload normalizer to enforce exact SQL column length limits and prevent 500 String or binary data would be truncated errors
+const buildInventoryLogPayload = (payload, mode, loggedInUserId) => {
+  const normStr = (val, maxLen) => {
+    if (val === null || val === undefined) return null
+    const str = String(val).trim()
+    if (!str) return null
+    return str.length > maxLen ? str.slice(0, maxLen).trim() : str
+  }
+
+  const userDisplayName = authStore.user?.fname
+    ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim()
+    : (authStore.user?.name || authStore.user?.username || authStore.user?.email || 'Admin')
+
+  // Quantity: ensure positive integer (default 1)
+  let cleanQty = 1
+  if (payload.quantity !== undefined && payload.quantity !== null && payload.quantity !== '') {
+    const qNum = parseInt(payload.quantity, 10)
+    if (!isNaN(qNum) && qNum > 0) cleanQty = qNum
+  }
+
+  const result = {
+    itemId: normStr(payload.itemId, 50),
+    quantity: cleanQty,
+    requestedBy: normStr(payload.requestedBy || userDisplayName, 100),
+    requestedWith: normStr(payload.requestedWith, 100),
+    status: normStr(payload.status || 'Pending', 20),
+    remarks: normStr(payload.remarks, 255)
+  }
+
+  if (mode === 'create') {
+    result.createdDate = new Date().toISOString()
+  } else if (mode === 'edit') {
+    result.createdDate = editBaseSnapshot.value?.createdDate || new Date().toISOString()
+    if (editingRecordId.value) {
+      result.id = Number(editingRecordId.value) || editingRecordId.value
+    }
+  }
+
+  return result
+}
+
+// Gene - Oct 20, 2026: Built robust Inventory Category payload normalizer to enforce exact SQL column length limits and numeric modifiedBy to prevent 500/400 errors
+const buildInventoryCategoryPayload = (payload, mode, numericUserId) => {
+  const normStr = (val, maxLen) => {
+    if (val === null || val === undefined) return null
+    const str = String(val).trim()
+    if (!str) return null
+    return str.length > maxLen ? str.slice(0, maxLen).trim() : str
+  }
+
+  const result = {
+    name: normStr(payload.name, 150),
+    description: normStr(payload.description, 255),
+    modifiedBy: Number(numericUserId) || 1
+  }
+
+  if (mode === 'edit' && editingRecordId.value) {
+    result.id = Number(editingRecordId.value) || editingRecordId.value
+  }
+
+  return result
+}
+
 const saveData = async () => {
   saveError.value = null
 
@@ -12696,6 +12992,7 @@ const saveData = async () => {
         }
       }
       */
+      /*
       // Gene - Oct, 20, 2026: Normalize and cap all Promotions string & numeric fields using buildPromotionPayload to prevent 500 truncation errors
       if (isPromotionEndpoint.value) {
         finalPayload = buildPromotionPayload(finalPayload, 'create', loggedInUserId)
@@ -12703,6 +13000,17 @@ const saveData = async () => {
 
       if (isInventoryCategoryEndpoint.value) {
         finalPayload.modifiedBy = numericUserId
+      }
+      */
+      // Gene - Oct 20, 2026: Normalize, sanitize, and cap payloads for Promotions, Inventory Items, Inventory Logs, and Inventory Categories to prevent 500 truncation errors
+      if (isPromotionEndpoint.value) {
+        finalPayload = buildPromotionPayload(finalPayload, 'create', loggedInUserId)
+      } else if (isInventoryItemEndpoint.value) {
+        finalPayload = buildInventoryItemPayload(finalPayload, 'create', loggedInUserId)
+      } else if (isInventoryLogEndpoint.value) {
+        finalPayload = buildInventoryLogPayload(finalPayload, 'create', loggedInUserId)
+      } else if (isInventoryCategoryEndpoint.value) {
+        finalPayload = buildInventoryCategoryPayload(finalPayload, 'create', numericUserId)
       }
     }
 
@@ -13451,6 +13759,7 @@ const saveEdit = async () => {
         }
       }
       */
+      /*
       // Gene - Oct, 20, 2026: Normalize and cap all Promotions string & numeric fields using buildPromotionPayload to prevent 500 truncation errors
       if (isPromotionEndpoint.value) {
         finalPayload = buildPromotionPayload(finalPayload, 'edit', loggedInUserId)
@@ -13458,6 +13767,17 @@ const saveEdit = async () => {
 
       if (isInventoryCategoryEndpoint.value) {
         finalPayload.modifiedBy = numericUserId
+      }
+      */
+      // Gene - Oct 20, 2026: Normalize, sanitize, and cap payloads for Promotions, Inventory Items, Inventory Logs, and Inventory Categories to prevent 500 truncation errors
+      if (isPromotionEndpoint.value) {
+        finalPayload = buildPromotionPayload(finalPayload, 'edit', loggedInUserId)
+      } else if (isInventoryItemEndpoint.value) {
+        finalPayload = buildInventoryItemPayload(finalPayload, 'edit', loggedInUserId)
+      } else if (isInventoryLogEndpoint.value) {
+        finalPayload = buildInventoryLogPayload(finalPayload, 'edit', loggedInUserId)
+      } else if (isInventoryCategoryEndpoint.value) {
+        finalPayload = buildInventoryCategoryPayload(finalPayload, 'edit', numericUserId)
       }
 
       if (isPaymentEndpoint.value) {
