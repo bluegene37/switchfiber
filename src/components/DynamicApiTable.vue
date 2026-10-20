@@ -1996,7 +1996,8 @@
                     </div>
                   </div>
 
-                  <!-- Text input for URL -->
+                  <!--
+                  // Gene - Oct 20, 2026: Old media URL input group wrapped in .p-inputgroup which defaulted to block and caused clear button (X) to wrap to a new line
                   <div class="p-inputgroup flex-1">
                     <span class="p-inputgroup-addon bg-body-tertiary border-end-0">
                       <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger fs-6' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info fs-6' : (formData[col] ? 'pi pi-image text-primary fs-6' : 'pi pi-link text-secondary fs-6'))"></i>
@@ -2012,6 +2013,29 @@
                       v-if="formData[col]"
                       type="button"
                       class="btn btn-outline-secondary btn-sm"
+                      title="Clear URL"
+                      @click="clearPromoMedia('create', col)"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+                  -->
+                  <!-- Gene - Oct 20, 2026: Unified flex-nowrap input-group with input-group-text and inline clear button (X) for seamless single-row display -->
+                  <div class="input-group flex-nowrap w-100">
+                    <span class="input-group-text bg-body-tertiary border-end-0 d-flex align-items-center justify-content-center" style="min-width: 44px;">
+                      <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger fs-6' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info fs-6' : (formData[col] ? 'pi pi-image text-primary fs-6' : 'pi pi-link text-secondary fs-6'))"></i>
+                    </span>
+                    <InputText
+                      :id="col"
+                      v-model="formData[col]"
+                      class="form-control border-start-0 flex-grow-1"
+                      style="font-size: 0.95rem; min-height: 42px; min-width: 0;"
+                      :placeholder="promoMediaMode.create === 'video' ? 'Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...) or .mp4' : 'Paste banner image URL (e.g. https://switchfiber.ph/assets/promo.jpg)'"
+                    />
+                    <button
+                      v-if="formData[col]"
+                      type="button"
+                      class="btn btn-outline-secondary flex-shrink-0 d-flex align-items-center justify-content-center px-3"
                       title="Clear URL"
                       @click="clearPromoMedia('create', col)"
                     >
@@ -3976,7 +4000,8 @@
                     </div>
                   </div>
 
-                  <!-- Text input for URL -->
+                  <!--
+                  // Gene - Oct 20, 2026: Old media URL input group wrapped in .p-inputgroup which defaulted to block and caused clear button (X) to wrap to a new line in Edit Dialog
                   <div class="p-inputgroup flex-1">
                     <span class="p-inputgroup-addon bg-body-tertiary border-end-0">
                       <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger fs-6' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info fs-6' : (editFormData[col] ? 'pi pi-image text-primary fs-6' : 'pi pi-link text-secondary fs-6'))"></i>
@@ -3993,6 +4018,30 @@
                       v-if="editFormData[col] && !isFieldDisabledInEdit(col)"
                       type="button"
                       class="btn btn-outline-secondary btn-sm"
+                      title="Clear URL"
+                      @click="clearPromoMedia('edit', col)"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+                  -->
+                  <!-- Gene - Oct 20, 2026: Unified flex-nowrap input-group with input-group-text and inline clear button (X) for seamless single-row display in Edit Dialog -->
+                  <div class="input-group flex-nowrap w-100">
+                    <span class="input-group-text bg-body-tertiary border-end-0 d-flex align-items-center justify-content-center" style="min-width: 44px;">
+                      <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger fs-6' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info fs-6' : (editFormData[col] ? 'pi pi-image text-primary fs-6' : 'pi pi-link text-secondary fs-6'))"></i>
+                    </span>
+                    <InputText
+                      :id="`edit-${col}`"
+                      v-model="editFormData[col]"
+                      class="form-control border-start-0 flex-grow-1"
+                      style="font-size: 0.95rem; min-height: 42px; min-width: 0;"
+                      :disabled="isFieldDisabledInEdit(col)"
+                      :placeholder="promoMediaMode.edit === 'video' ? 'Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...) or .mp4' : 'Paste banner image URL (e.g. https://switchfiber.ph/assets/promo.jpg)'"
+                    />
+                    <button
+                      v-if="editFormData[col] && !isFieldDisabledInEdit(col)"
+                      type="button"
+                      class="btn btn-outline-secondary flex-shrink-0 d-flex align-items-center justify-content-center px-3"
                       title="Clear URL"
                       @click="clearPromoMedia('edit', col)"
                     >

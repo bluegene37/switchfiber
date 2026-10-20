@@ -65,3 +65,5 @@ scripts/full_beta_test_matrix.js
 # Gene - Oct 20, 2026: Ignore alpha test automation scripts
 scripts/execute_all_menu_crud.js
 scripts/alpha_*.js
+scripts/inspect_*.js
+scripts/verify_*.js
