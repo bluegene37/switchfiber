@@ -1953,7 +1953,7 @@
                           <span v-if="isFieldRequired(col)" class="text-danger">*</span>
                         </div>
                         <div class="text-muted text-xs">
-                          Choose media format: YouTube video, direct video stream, or hosted image link
+                          Choose media format: YouTube video, or image link
                         </div>
                       </div>
                     </div>
@@ -3954,7 +3954,7 @@
                           <span v-if="isFieldRequired(col, 'edit')" class="text-danger">*</span>
                         </div>
                         <div class="text-muted text-xs">
-                          Choose media format: YouTube video, direct video stream, or hosted image link
+                          Choose media format: YouTube video, direct video stream, or image link
                         </div>
                       </div>
                     </div>
