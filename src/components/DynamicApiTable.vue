@@ -1898,6 +1898,8 @@
                     Primary Banner Headline
                   </span>
                 </div>
+                <!--
+                // Gene - Oct 20, 2026: Old Title input without maxlength constraint or character counter
                 <div class="position-relative">
                   <InputText
                     :id="col"
@@ -1910,6 +1912,26 @@
                 <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
                   Large, bold headline displayed prominently across website banners, customer dashboard promotions, and popups.
                 </small>
+                -->
+                <!-- Gene - Oct 20, 2026: Constrained Title input with maxlength=100 and live character counter to prevent database truncation -->
+                <div class="position-relative">
+                  <InputText
+                    :id="col"
+                    v-model="formData[col]"
+                    :maxlength="100"
+                    class="w-100 form-control rounded-3 shadow-none fw-bold text-body"
+                    style="font-size: 1.15rem; min-height: 48px; letter-spacing: -0.01em;"
+                    placeholder="e.g. 50% OFF UNLIMITED FIBER BOOST - 100 MBPS AT ₱999"
+                  />
+                </div>
+                <div class="d-flex align-items-center justify-content-between text-xs text-muted mt-1">
+                  <small style="font-size: 0.75rem;">
+                    Large, bold headline displayed prominently across banners and popups.
+                  </small>
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (formData[col] || '').length }}/100
+                  </span>
+                </div>
               </div>
 
               <!-- Gene - Oct, 20, 2026: Enhanced supporting sub-headline input for Promotion Subtitle in Create Dialog -->
@@ -1924,6 +1946,8 @@
                     Supporting Sub-headline
                   </span>
                 </div>
+                <!--
+                // Gene - Oct 20, 2026: Old Subtitle input without maxlength constraint or character counter
                 <div class="position-relative">
                   <InputText
                     :id="col"
@@ -1936,12 +1960,33 @@
                 <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
                   Secondary promotional copy explaining the offer value, terms, and perks.
                 </small>
+                -->
+                <!-- Gene - Oct 20, 2026: Constrained Subtitle input with maxlength=100 and live character counter to prevent database truncation -->
+                <div class="position-relative">
+                  <InputText
+                    :id="col"
+                    v-model="formData[col]"
+                    :maxlength="100"
+                    class="w-100 form-control rounded-3 shadow-none text-body fw-medium"
+                    style="font-size: 1rem; min-height: 42px;"
+                    placeholder="e.g. Enjoy blazing fast speeds with free installation and WiFi 6 router included. Limited-time offer!"
+                  />
+                </div>
+                <div class="d-flex align-items-center justify-content-between text-xs text-muted mt-1">
+                  <small style="font-size: 0.75rem;">
+                    Secondary promotional copy explaining the offer value, terms, and perks.
+                  </small>
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (formData[col] || '').length }}/100
+                  </span>
+                </div>
               </div>
 
               <!-- Gene - Oct, 20, 2026: Elevated Media Showcase control with YouTube, video, image upload dropzone helper, and 16:9 live preview in Create Dialog -->
               <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
                 <div class="card border rounded-3 p-3 bg-body shadow-xs">
-                  <!-- Header with Title, Mode Switcher & Actions -->
+                  <!--
+                  // Gene - Oct 20, 2026: Old media header had flex-wrap and redundant Clear button that caused toolbar buttons to jump to the next row when entering a YouTube URL
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
                     <div class="d-flex align-items-center gap-2">
                       <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center p-2" style="width: 36px; height: 36px;">
@@ -1995,6 +2040,52 @@
                       </button>
                     </div>
                   </div>
+                  -->
+                  <!-- Gene - Oct 20, 2026: Single-row flex-nowrap header toolbar; guaranteed never to wrap or push buttons to a second row -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 mb-2 pb-2 border-bottom sfa-promo-media-header">
+                    <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
+                      <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center p-2 flex-shrink-0" style="width: 36px; height: 36px;">
+                        <i :class="isYouTubeUrl(formData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(formData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="fw-bold text-body text-truncate" style="font-size: 0.95rem;">
+                          Promotion Media
+                          <span v-if="isFieldRequired(col)" class="text-danger">*</span>
+                        </div>
+                        <div class="text-muted text-xs text-truncate">
+                          YouTube video, stream, or banner image URL
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-nowrap flex-shrink-0">
+                      <div class="btn-group btn-group-sm flex-nowrap" role="group">
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium text-nowrap"
+                          :class="promoMediaMode.create === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
+                          @click="promoMediaMode.create = 'video'"
+                        >
+                          <i class="pi pi-video me-1"></i> YouTube / Video URL
+                        </button>
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium text-nowrap"
+                          :class="promoMediaMode.create === 'image' ? 'btn-primary' : 'btn-outline-secondary'"
+                          @click="promoMediaMode.create = 'image'"
+                        >
+                          <i class="pi pi-image me-1"></i> Image URL
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs text-nowrap"
+                        title="Paste from clipboard"
+                        @click="pastePromoMediaFromClipboard('create', col)"
+                      >
+                        <i class="pi pi-clipboard"></i> Paste
+                      </button>
+                    </div>
+                  </div>
 
                   <!--
                   // Gene - Oct 20, 2026: Old media URL input group wrapped in .p-inputgroup which defaulted to block and caused clear button (X) to wrap to a new line
@@ -2028,6 +2119,8 @@
                     <InputText
                       :id="col"
                       v-model="formData[col]"
+                      :maxlength="100"
+                      @blur="normalizePromoInputOnBlur('create', col)"
                       class="form-control border-start-0 flex-grow-1"
                       style="font-size: 0.95rem; min-height: 42px; min-width: 0;"
                       :placeholder="promoMediaMode.create === 'video' ? 'Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...) or .mp4' : 'Paste banner image URL (e.g. https://switchfiber.ph/assets/promo.jpg)'"
@@ -2043,7 +2136,8 @@
                     </button>
                   </div>
 
-                  <!-- Validation & Character count bar -->
+                  <!--
+                  // Gene - Oct 20, 2026: Old media validation bar with flex-wrap that broke into multiple lines
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 text-xs px-1 mt-2">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                       <span v-if="isYouTubeUrl(formData[col])" class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1">
@@ -2073,6 +2167,40 @@
                       </span>
                       <span v-else-if="formData[col]" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
                         {{ formData[col].length }}/100 chars
+                      </span>
+                    </div>
+                  </div>
+                  -->
+                  <!-- Gene - Oct 20, 2026: Single-line flex-nowrap media status bar ensuring no button or badge pushes into the next row -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 text-xs px-1 mt-2 overflow-hidden">
+                    <div class="d-flex align-items-center gap-2 flex-nowrap text-nowrap min-w-0 overflow-hidden">
+                      <span v-if="isYouTubeUrl(formData[col])" class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>YouTube Video ({{ extractYouTubeId(formData[col]) }})
+                      </span>
+                      <span v-else-if="isDirectVideoUrl(formData[col])" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>Direct Video Stream
+                      </span>
+                      <span v-else-if="formData[col] && formData[col].startsWith('http')" class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>Web Image Link
+                      </span>
+                      <template v-else-if="!formData[col]">
+                        <span class="text-muted text-nowrap">Quick test:</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-danger fw-semibold d-inline-flex align-items-center gap-1 text-xs text-nowrap" @click="applySamplePromoMedia('create', col, 'youtube')">
+                          <i class="pi pi-youtube"></i> Sample YouTube
+                        </button>
+                        <span class="text-muted">·</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1 text-xs text-nowrap" @click="applySamplePromoMedia('create', col, 'image')">
+                          <i class="pi pi-image"></i> Sample Banner
+                        </button>
+                      </template>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap">
+                      <span v-if="formData[col] && formData[col].length > 100" class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-2 py-0.5 fw-bold">
+                        <i class="pi pi-exclamation-triangle me-1"></i>{{ formData[col].length }}/100
+                      </span>
+                      <span v-else-if="formData[col]" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                        {{ formData[col].length }}/100
                       </span>
                     </div>
                   </div>
@@ -2106,6 +2234,8 @@
                       </div>
                     </div>
 
+                    <!--
+                    // Gene - Oct 20, 2026: Old unconstrained 16:9 ratio player that expanded to full modal width and pushed lower fields off-screen
                     <div v-if="isYouTubeUrl(formData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
                       <iframe
                         :src="getYouTubeEmbedUrl(formData[col])"
@@ -2117,6 +2247,21 @@
                       ></iframe>
                     </div>
                     <div v-else-if="isDirectVideoUrl(formData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                      <video :src="formData[col]" controls class="w-100 h-100"></video>
+                    </div>
+                    -->
+                    <!-- Gene - Oct 20, 2026: Neatly framed 16:9 video container centered with max-width to keep modal compact and prevent field displacement -->
+                    <div v-if="isYouTubeUrl(formData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black mx-auto" style="max-width: 520px;">
+                      <iframe
+                        :src="getYouTubeEmbedUrl(formData[col])"
+                        title="YouTube video player"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                        class="w-100 h-100"
+                      ></iframe>
+                    </div>
+                    <div v-else-if="isDirectVideoUrl(formData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black mx-auto" style="max-width: 520px;">
                       <video :src="formData[col]" controls class="w-100 h-100"></video>
                     </div>
                     <div v-else-if="promoLocalImagePreview.create" class="text-center p-2 rounded-3 bg-black">
@@ -2243,7 +2388,8 @@
                 :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
               />
 
-              <!-- Textarea for Multiline Fields -->
+              <!--
+              // Gene - Oct 20, 2026: Old Textarea and InputText without schema maxlength or character counter
               <Textarea 
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="col" 
@@ -2255,7 +2401,6 @@
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
               />
 
-              <!-- InputText for Standard / Monospace Fields -->
               <InputText 
                 v-else 
                 :id="col" 
@@ -2270,6 +2415,46 @@
                 :readonly="isReadOnlyField(col)"
                 :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
               />
+              -->
+              <!-- Gene - Oct 20, 2026: Schema-constrained Textarea with maxlength and character counter -->
+              <Textarea 
+                v-else-if="getFieldType(col) === 'textarea'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :maxlength="getFieldMaxLength(col)"
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') }" 
+                :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
+              />
+              <div v-if="getFieldType(col) === 'textarea' && getFieldMaxLength(col)" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                  {{ (formData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                </span>
+              </div>
+
+              <!-- Gene - Oct 20, 2026: Schema-constrained InputText with maxlength and character counter -->
+              <InputText 
+                v-else 
+                :id="col" 
+                v-model="formData[col]" 
+                :maxlength="getFieldMaxLength(col)"
+                class="w-100 p-inputtext-sm" 
+                :class="{ 
+                  'bg-light text-muted': isReadOnlyField(col),
+                  'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                  'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                }" 
+                :disabled="isReadOnlyField(col)"
+                :readonly="isReadOnlyField(col)"
+                :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
+              />
+              <div v-if="getFieldMaxLength(col) && getFieldType(col) !== 'textarea' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'promotion_media_url'" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                  {{ (formData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                </span>
+              </div>
 
               <div
                 v-if="!isPinnedPlaceholder(sec, col) && hasFieldError('create', col)"
@@ -3897,6 +4082,8 @@
                     Primary Banner Headline
                   </span>
                 </div>
+                <!--
+                // Gene - Oct 20, 2026: Old Title input in Edit Dialog without maxlength constraint or character counter
                 <div class="position-relative">
                   <InputText
                     :id="`edit-${col}`"
@@ -3910,6 +4097,27 @@
                 <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
                   Large, bold headline displayed prominently across website banners, customer dashboard promotions, and popups.
                 </small>
+                -->
+                <!-- Gene - Oct 20, 2026: Constrained Title input in Edit Dialog with maxlength=100 and live character counter to prevent database truncation -->
+                <div class="position-relative">
+                  <InputText
+                    :id="`edit-${col}`"
+                    v-model="editFormData[col]"
+                    :maxlength="100"
+                    class="w-100 form-control rounded-3 shadow-none fw-bold text-body"
+                    style="font-size: 1.15rem; min-height: 48px; letter-spacing: -0.01em;"
+                    :disabled="isFieldDisabledInEdit(col)"
+                    placeholder="e.g. 50% OFF UNLIMITED FIBER BOOST - 100 MBPS AT ₱999"
+                  />
+                </div>
+                <div class="d-flex align-items-center justify-content-between text-xs text-muted mt-1">
+                  <small style="font-size: 0.75rem;">
+                    Large, bold headline displayed prominently across banners and popups.
+                  </small>
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (editFormData[col] || '').length }}/100
+                  </span>
+                </div>
               </div>
 
               <!-- Gene - Oct, 20, 2026: Enhanced supporting sub-headline input for Promotion Subtitle in Edit Dialog -->
@@ -3924,6 +4132,8 @@
                     Supporting Sub-headline
                   </span>
                 </div>
+                <!--
+                // Gene - Oct 20, 2026: Old Subtitle input in Edit Dialog without maxlength constraint or character counter
                 <div class="position-relative">
                   <InputText
                     :id="`edit-${col}`"
@@ -3937,12 +4147,34 @@
                 <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
                   Secondary promotional copy explaining the offer value, terms, and perks.
                 </small>
+                -->
+                <!-- Gene - Oct 20, 2026: Constrained Subtitle input in Edit Dialog with maxlength=100 and live character counter to prevent database truncation -->
+                <div class="position-relative">
+                  <InputText
+                    :id="`edit-${col}`"
+                    v-model="editFormData[col]"
+                    :maxlength="100"
+                    class="w-100 form-control rounded-3 shadow-none text-body fw-medium"
+                    style="font-size: 1rem; min-height: 42px;"
+                    :disabled="isFieldDisabledInEdit(col)"
+                    placeholder="e.g. Enjoy blazing fast speeds with free installation and WiFi 6 router included. Limited-time offer!"
+                  />
+                </div>
+                <div class="d-flex align-items-center justify-content-between text-xs text-muted mt-1">
+                  <small style="font-size: 0.75rem;">
+                    Secondary promotional copy explaining the offer value, terms, and perks.
+                  </small>
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (editFormData[col] || '').length }}/100
+                  </span>
+                </div>
               </div>
 
               <!-- Gene - Oct, 20, 2026: Elevated Media Showcase control with YouTube, video, image upload dropzone helper, and 16:9 live preview in Edit Dialog -->
               <div v-else-if="getFieldType(col) === 'promotion_media_url'" class="w-100">
                 <div class="card border rounded-3 p-3 bg-body shadow-xs">
-                  <!-- Header with Title, Mode Switcher & Actions -->
+                  <!--
+                  // Gene - Oct 20, 2026: Old media header in Edit Dialog had flex-wrap and redundant Clear button that caused toolbar buttons to jump to the next row when entering a YouTube URL
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
                     <div class="d-flex align-items-center gap-2">
                       <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center p-2" style="width: 36px; height: 36px;">
@@ -3999,6 +4231,55 @@
                       </button>
                     </div>
                   </div>
+                  -->
+                  <!-- Gene - Oct 20, 2026: Single-row flex-nowrap header toolbar; guaranteed never to wrap or push buttons to a second row in Edit Dialog -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 mb-2 pb-2 border-bottom sfa-promo-media-header">
+                    <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
+                      <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center p-2 flex-shrink-0" style="width: 36px; height: 36px;">
+                        <i :class="isYouTubeUrl(editFormData[col]) ? 'pi pi-youtube text-danger' : (isDirectVideoUrl(editFormData[col]) ? 'pi pi-video text-info' : 'pi pi-image text-primary')"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="fw-bold text-body text-truncate" style="font-size: 0.95rem;">
+                          Promotion Media
+                          <span v-if="isFieldRequired(col, 'edit')" class="text-danger">*</span>
+                        </div>
+                        <div class="text-muted text-xs text-truncate">
+                          YouTube video, stream, or banner image URL
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-nowrap flex-shrink-0">
+                      <div class="btn-group btn-group-sm flex-nowrap" role="group">
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium text-nowrap"
+                          :class="promoMediaMode.edit === 'video' ? 'btn-primary' : 'btn-outline-secondary'"
+                          :disabled="isFieldDisabledInEdit(col)"
+                          @click="promoMediaMode.edit = 'video'"
+                        >
+                          <i class="pi pi-video me-1"></i> YouTube / Video URL
+                        </button>
+                        <button
+                          type="button"
+                          class="btn py-1 px-2.5 text-xs fw-medium text-nowrap"
+                          :class="promoMediaMode.edit === 'image' ? 'btn-primary' : 'btn-outline-secondary'"
+                          :disabled="isFieldDisabledInEdit(col)"
+                          @click="promoMediaMode.edit = 'image'"
+                        >
+                          <i class="pi pi-image me-1"></i> Image URL
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs text-nowrap"
+                        :disabled="isFieldDisabledInEdit(col)"
+                        title="Paste from clipboard"
+                        @click="pastePromoMediaFromClipboard('edit', col)"
+                      >
+                        <i class="pi pi-clipboard"></i> Paste
+                      </button>
+                    </div>
+                  </div>
 
                   <!--
                   // Gene - Oct 20, 2026: Old media URL input group wrapped in .p-inputgroup which defaulted to block and caused clear button (X) to wrap to a new line in Edit Dialog
@@ -4033,6 +4314,8 @@
                     <InputText
                       :id="`edit-${col}`"
                       v-model="editFormData[col]"
+                      :maxlength="100"
+                      @blur="normalizePromoInputOnBlur('edit', col)"
                       class="form-control border-start-0 flex-grow-1"
                       style="font-size: 0.95rem; min-height: 42px; min-width: 0;"
                       :disabled="isFieldDisabledInEdit(col)"
@@ -4049,7 +4332,8 @@
                     </button>
                   </div>
 
-                  <!-- Validation & Character count bar -->
+                  <!--
+                  // Gene - Oct 20, 2026: Old media validation bar in Edit Dialog with flex-wrap that broke into multiple lines
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 text-xs px-1 mt-2">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                       <span v-if="isYouTubeUrl(editFormData[col])" class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1">
@@ -4079,6 +4363,40 @@
                       </span>
                       <span v-else-if="editFormData[col]" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
                         {{ editFormData[col].length }}/100 chars
+                      </span>
+                    </div>
+                  </div>
+                  -->
+                  <!-- Gene - Oct 20, 2026: Single-line flex-nowrap media status bar in Edit Dialog ensuring no button or badge pushes into the next row -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 text-xs px-1 mt-2 overflow-hidden">
+                    <div class="d-flex align-items-center gap-2 flex-nowrap text-nowrap min-w-0 overflow-hidden">
+                      <span v-if="isYouTubeUrl(editFormData[col])" class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>YouTube Video ({{ extractYouTubeId(editFormData[col]) }})
+                      </span>
+                      <span v-else-if="isDirectVideoUrl(editFormData[col])" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>Direct Video Stream
+                      </span>
+                      <span v-else-if="editFormData[col] && editFormData[col].startsWith('http')" class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>Web Image Link
+                      </span>
+                      <template v-else-if="!editFormData[col] && !isFieldDisabledInEdit(col)">
+                        <span class="text-muted text-nowrap">Quick test:</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-danger fw-semibold d-inline-flex align-items-center gap-1 text-xs text-nowrap" @click="applySamplePromoMedia('edit', col, 'youtube')">
+                          <i class="pi pi-youtube"></i> Sample YouTube
+                        </button>
+                        <span class="text-muted">·</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1 text-xs text-nowrap" @click="applySamplePromoMedia('edit', col, 'image')">
+                          <i class="pi pi-image"></i> Sample Banner
+                        </button>
+                      </template>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap">
+                      <span v-if="editFormData[col] && editFormData[col].length > 100" class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-2 py-0.5 fw-bold">
+                        <i class="pi pi-exclamation-triangle me-1"></i>{{ editFormData[col].length }}/100
+                      </span>
+                      <span v-else-if="editFormData[col]" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                        {{ editFormData[col].length }}/100
                       </span>
                     </div>
                   </div>
@@ -4112,6 +4430,8 @@
                       </div>
                     </div>
 
+                    <!--
+                    // Gene - Oct 20, 2026: Old unconstrained 16:9 ratio player that expanded to full modal width and pushed lower fields off-screen in Edit Dialog
                     <div v-if="isYouTubeUrl(editFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
                       <iframe
                         :src="getYouTubeEmbedUrl(editFormData[col])"
@@ -4123,6 +4443,21 @@
                       ></iframe>
                     </div>
                     <div v-else-if="isDirectVideoUrl(editFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black">
+                      <video :src="editFormData[col]" controls class="w-100 h-100"></video>
+                    </div>
+                    -->
+                    <!-- Gene - Oct 20, 2026: Neatly framed 16:9 video container centered with max-width to keep modal compact and prevent field displacement in Edit Dialog -->
+                    <div v-if="isYouTubeUrl(editFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black mx-auto" style="max-width: 520px;">
+                      <iframe
+                        :src="getYouTubeEmbedUrl(editFormData[col])"
+                        title="YouTube video player"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                        class="w-100 h-100"
+                      ></iframe>
+                    </div>
+                    <div v-else-if="isDirectVideoUrl(editFormData[col])" class="ratio ratio-16x9 rounded-3 overflow-hidden shadow-xs bg-black mx-auto" style="max-width: 520px;">
                       <video :src="editFormData[col]" controls class="w-100 h-100"></video>
                     </div>
                     <div v-else-if="promoLocalImagePreview.edit" class="text-center p-2 rounded-3 bg-black">
@@ -4229,7 +4564,8 @@
                 :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
               />
 
-              <!-- Textarea for Multiline Fields -->
+              <!--
+              // Gene - Oct 20, 2026: Old Textarea and InputText in Edit Dialog without schema maxlength or character counter
               <Textarea 
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="`edit-${col}`" 
@@ -4246,7 +4582,6 @@
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
               />
 
-              <!-- InputText for Standard / Monospace Fields -->
               <InputText 
                 v-else 
                 :id="`edit-${col}`" 
@@ -4261,6 +4596,51 @@
                 :readonly="isFieldDisabledInEdit(col)"
                 :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
               />
+              -->
+              <!-- Gene - Oct 20, 2026: Schema-constrained Textarea with maxlength and character counter in Edit Dialog -->
+              <Textarea 
+                v-else-if="getFieldType(col) === 'textarea'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :maxlength="getFieldMaxLength(col)"
+                :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
+                class="w-100 p-inputtext-sm" 
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
+                :class="{ 
+                  'bg-light text-muted': isFieldDisabledInEdit(col),
+                  'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') 
+                }" 
+                :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
+              />
+              <div v-if="getFieldType(col) === 'textarea' && getFieldMaxLength(col)" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                  {{ (editFormData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                </span>
+              </div>
+
+              <!-- Gene - Oct 20, 2026: Schema-constrained InputText with maxlength and character counter in Edit Dialog -->
+              <InputText 
+                v-else 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :maxlength="getFieldMaxLength(col)"
+                class="w-100 p-inputtext-sm" 
+                :class="{ 
+                  'bg-light text-muted': isFieldDisabledInEdit(col),
+                  'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                  'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                }" 
+                :disabled="isFieldDisabledInEdit(col)"
+                :readonly="isFieldDisabledInEdit(col)"
+                :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
+              />
+              <div v-if="getFieldMaxLength(col) && getFieldType(col) !== 'textarea' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'promotion_media_url'" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                  {{ (editFormData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                </span>
+              </div>
 
               <div
                 v-if="!isPinnedPlaceholder(sec, col) && hasFieldError('edit', col)"
@@ -5436,7 +5816,15 @@ const pastePromoMediaFromClipboard = async (scope, col) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
       const text = await navigator.clipboard.readText()
       if (text && text.trim()) {
-        const val = text.trim()
+        // Gene - Oct 20, 2026: Auto-canonicalize pasted YouTube link to https://youtu.be/ID (28 chars) if it contains long tracking params
+        // const val = text.trim()
+        let val = text.trim()
+        if (isYouTubeUrl(val)) {
+          const ytId = extractYouTubeId(val)
+          if (ytId && (val.length > 100 || val.includes('&') || val.includes('?'))) {
+            val = `https://youtu.be/${ytId}`
+          }
+        }
         if (scope === 'create') {
           formData.value[col] = val
         } else if (scope === 'edit') {
@@ -5859,6 +6247,20 @@ function getFieldType(col) {
     return 'textarea'
   }
   return 'text'
+}
+
+// Gene - Oct 20, 2026: Schema-based field length constraints to prevent SQL truncation errors and drive character counters
+function getFieldMaxLength(col) {
+  if (!col) return undefined
+  const lower = col.toLowerCase().replace(/_/g, '')
+  if (isPromotionEndpoint.value) {
+    if (lower === 'promocode') return 50
+    if (lower === 'title' || lower === 'subtitle' || lower === 'badgetext' || lower === 'ctatext' || lower === 'ctalink' || lower === 'perks') return 100
+    if (lower === 'themecolor' || lower === 'imagesize') return 50
+    if (lower === 'description' || lower === 'requirements' || lower === 'termsandconditions') return 200
+    if (lower === 'imageurl' || lower === 'image') return 100
+  }
+  return undefined
 }
 
 // Filter out redundant alias duplicate keys (e.g. preferred_Day if preferredDay exists, verified_By if verifiedBy exists, EF Core navigation objects, paired ID vs string fields)
@@ -11923,6 +12325,91 @@ const buildBillingPayload = (payload, mode, loggedInUserId) => {
   return result
 }
 
+// Gene - Oct 20, 2026: Built robust Promotions payload normalizer to enforce exact SQL column length limits and auto-canonicalize YouTube links to prevent 500 String or binary data would be truncated errors
+const buildPromotionPayload = (payload, mode, loggedInUserId) => {
+  const normStr = (val, maxLen) => {
+    if (val === null || val === undefined) return null
+    const str = String(val).trim()
+    if (!str) return null
+    return str.length > maxLen ? str.slice(0, maxLen).trim() : str
+  }
+
+  // Canonicalize and normalize media URL (YouTube or Web Link)
+  let cleanImageUrl = null
+  const rawImg = payload.imageUrl || payload.image || payload.image_url
+  if (rawImg !== null && rawImg !== undefined && String(rawImg).trim() !== '') {
+    let imgStr = String(rawImg).trim()
+    if (isYouTubeUrl(imgStr)) {
+      const ytId = extractYouTubeId(imgStr)
+      if (ytId && (imgStr.length > 100 || imgStr.includes('&') || imgStr.includes('?'))) {
+        imgStr = `https://youtu.be/${ytId}`
+      }
+    }
+    cleanImageUrl = normStr(imgStr, 100)
+  }
+
+  // Placement serialization
+  let cleanPlacement = null
+  if (Array.isArray(payload.placement)) {
+    cleanPlacement = normStr(payload.placement.filter(Boolean).join(','), 100)
+  } else if (payload.placement !== null && payload.placement !== undefined) {
+    cleanPlacement = normStr(payload.placement, 100)
+  }
+
+  // DiscountTypeId: Ensure positive integer or null
+  let cleanDiscountTypeId = null
+  if (payload.discountTypeId !== undefined && payload.discountTypeId !== null && payload.discountTypeId !== '' && payload.discountTypeId !== 0 && payload.discountTypeId !== '0') {
+    const dtNum = Number(payload.discountTypeId)
+    if (!isNaN(dtNum) && dtNum > 0) cleanDiscountTypeId = dtNum
+  }
+
+  // Priority
+  let cleanPriority = 1
+  if (payload.priority !== undefined && payload.priority !== null && payload.priority !== '') {
+    const priNum = Number(payload.priority)
+    if (!isNaN(priNum)) cleanPriority = priNum
+  }
+
+  const result = {
+    promoCode: normStr(payload.promoCode, 50),
+    title: normStr(payload.title, 100),
+    subtitle: normStr(payload.subtitle, 100),
+    description: normStr(payload.description, 200),
+    discountTypeId: cleanDiscountTypeId,
+    badgeText: normStr(payload.badgeText, 100),
+    themeColor: normStr(payload.themeColor || 'red', 50),
+    placement: cleanPlacement || 'home_banner,plans_page',
+    ctaText: normStr(payload.ctaText, 100),
+    ctaLink: normStr(payload.ctaLink, 100),
+    imageUrl: cleanImageUrl,
+    imageSize: normStr(payload.imageSize || 'medium', 50),
+    perks: normStr(payload.perks, 100),
+    requirements: normStr(payload.requirements, 200),
+    termsAndConditions: normStr(payload.termsAndConditions, 200),
+    priority: cleanPriority,
+    isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true
+  }
+
+  if (mode === 'edit' && editingRecordId.value) {
+    result.id = Number(editingRecordId.value) || editingRecordId.value
+  }
+
+  return result
+}
+
+// Gene - Oct 20, 2026: Auto-canonicalize long YouTube URLs on blur so extra query/tracking params are stripped down to https://youtu.be/ID (28 chars) well within the 100-char DB limit
+const normalizePromoInputOnBlur = (scope, col) => {
+  const target = scope === 'create' ? formData.value : editFormData.value
+  if (!target) return
+  const val = target[col]
+  if (val && typeof val === 'string' && isYouTubeUrl(val)) {
+    const ytId = extractYouTubeId(val)
+    if (ytId && (val.length > 100 || val.includes('&') || val.includes('?'))) {
+      target[col] = `https://youtu.be/${ytId}`
+    }
+  }
+}
+
 const saveData = async () => {
   saveError.value = null
 
@@ -12188,6 +12675,7 @@ const saveData = async () => {
         }
       }
       */
+      /*
       // Gene - Oct, 20, 2026: Normalize numeric fields, serialize placement array, and sanitize media imageUrl string for Promotions on create
       if (isPromotionEndpoint.value) {
         finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
@@ -12206,6 +12694,11 @@ const saveData = async () => {
         if (imgKey && typeof finalPayload[imgKey] === 'string') {
           finalPayload[imgKey] = finalPayload[imgKey].trim()
         }
+      }
+      */
+      // Gene - Oct, 20, 2026: Normalize and cap all Promotions string & numeric fields using buildPromotionPayload to prevent 500 truncation errors
+      if (isPromotionEndpoint.value) {
+        finalPayload = buildPromotionPayload(finalPayload, 'create', loggedInUserId)
       }
 
       if (isInventoryCategoryEndpoint.value) {
@@ -12937,6 +13430,7 @@ const saveEdit = async () => {
         }
       }
       */
+      /*
       // Gene - Oct, 20, 2026: Normalize numeric fields, serialize placement array, and sanitize media imageUrl string for Promotions on update
       if (isPromotionEndpoint.value) {
         finalPayload.priority = finalPayload.priority !== undefined && finalPayload.priority !== null && finalPayload.priority !== ''
@@ -12955,6 +13449,11 @@ const saveEdit = async () => {
         if (imgKey && typeof finalPayload[imgKey] === 'string') {
           finalPayload[imgKey] = finalPayload[imgKey].trim()
         }
+      }
+      */
+      // Gene - Oct, 20, 2026: Normalize and cap all Promotions string & numeric fields using buildPromotionPayload to prevent 500 truncation errors
+      if (isPromotionEndpoint.value) {
+        finalPayload = buildPromotionPayload(finalPayload, 'edit', loggedInUserId)
       }
 
       if (isInventoryCategoryEndpoint.value) {
@@ -14840,5 +15339,18 @@ defineExpose({
   background-color: var(--bs-primary-bg-subtle, #fef2f3) !important;
   border-color: var(--bs-primary-border-subtle, #fdcfd3) !important;
   color: var(--bs-primary, #e74c5a) !important;
+}
+
+/* Gene - Oct 20, 2026: Strict single-line header layout for Promotions media card to guarantee toolbar buttons never wrap */
+.sfa-promo-media-header {
+  flex-wrap: nowrap !important;
+}
+
+.sfa-promo-media-header .btn-group {
+  flex-wrap: nowrap !important;
+}
+
+.sfa-promo-media-header .btn {
+  white-space: nowrap !important;
 }
 </style>
