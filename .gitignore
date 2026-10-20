@@ -61,4 +61,7 @@ scripts/capture_*.js
 scripts/generate_*_pdf.js
 scripts/run_*.js
 scripts/full_beta_test_matrix.js
+# scripts/execute_all_menu_crud.js
+# Gene - Oct 20, 2026: Ignore alpha test automation scripts
 scripts/execute_all_menu_crud.js
+scripts/alpha_*.js

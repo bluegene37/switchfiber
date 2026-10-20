@@ -1,5 +1,7 @@
 // Gene - Oct, 16, 2026: Created InventoryItem REST API service for /api/InventoryItem CRUD operations
-import apiClient from './api'
+// import apiClient from './api'
+// Gene - Oct, 20, 2026: Added explicit .js extension for Node.js native ESM test compatibility
+import apiClient from './api.js'
 
 export const InventoryItemService = {
   getInventoryItems(params) {

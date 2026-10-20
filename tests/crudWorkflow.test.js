@@ -15,11 +15,21 @@ describe('CRUD Workflow & REST API Compliance Suite (TC-CRUD)', () => {
   const dynamicTableSrc = fs.readFileSync(dynamicTablePath, 'utf8')
 
   test('FileMaintenance registers all core CRUD routes with valid endpoints and descriptions', () => {
+    /*
     const expectedRoutes = [
       '/lcp', '/lcnap', '/lcnap_port', '/nap', '/port', '/vlan',
       '/router', '/plan', '/discount-types', '/discounts', '/user',
       '/menu', '/access_level', '/access_level_menu', '/job_order',
       '/invoice', '/billing', '/disconnection', '/service-orders'
+    ]
+    */
+    // Gene - Oct 20, 2026: Included new File Maintenance CRUD routes (/promo, /promotions, /inventory-category, /inventory-item, /inventory-logs)
+    const expectedRoutes = [
+      '/lcp', '/lcnap', '/lcnap_port', '/nap', '/port', '/vlan',
+      '/router', '/plan', '/discount-types', '/discounts', '/user',
+      '/menu', '/access_level', '/access_level_menu', '/job_order',
+      '/invoice', '/billing', '/disconnection', '/service-orders',
+      '/promo', '/promotions', '/inventory-category', '/inventory-item', '/inventory-logs'
     ]
 
     for (const route of expectedRoutes) {
@@ -28,11 +38,21 @@ describe('CRUD Workflow & REST API Compliance Suite (TC-CRUD)', () => {
   })
 
   test('All registered FileMaintenance endpoints have column fallbacks in EndpointColumns', () => {
+    /*
     const requiredEndpoints = [
       'Lcps', 'Lcpnaps', 'Lcpnapports', 'Naps', 'Ports', 'Vlans',
       'Routers', 'Plans', 'DiscountTypes', 'Discounts', 'Users',
       'Menus', 'AccessLevel', 'AccessLevelMenu', 'JobOrders',
       'Invoices', 'BillingDetails', 'ServiceOrders', 'Applications'
+    ]
+    */
+    // Gene - Oct 20, 2026: Included new File Maintenance CRUD endpoints (Promotions, InventoryCategory, InventoryItem, InventoryLogs)
+    const requiredEndpoints = [
+      'Lcps', 'Lcpnaps', 'Lcpnapports', 'Naps', 'Ports', 'Vlans',
+      'Routers', 'Plans', 'DiscountTypes', 'Discounts', 'Users',
+      'Menus', 'AccessLevel', 'AccessLevelMenu', 'JobOrders',
+      'Invoices', 'BillingDetails', 'ServiceOrders', 'Applications',
+      'Promotions', 'InventoryCategory', 'InventoryItem', 'InventoryLogs'
     ]
 
     for (const ep of requiredEndpoints) {

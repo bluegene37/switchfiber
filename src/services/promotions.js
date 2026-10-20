@@ -1,5 +1,7 @@
 // Gene - Oct, 16, 2026: Created Promotions REST API service for /api/Promotions CRUD operations
-import apiClient from './api'
+// import apiClient from './api'
+// Gene - Oct, 20, 2026: Added explicit .js extension for Node.js native ESM test compatibility
+import apiClient from './api.js'
 
 export const PromotionService = {
   getPromotions(params) {

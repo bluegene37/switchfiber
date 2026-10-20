@@ -8311,6 +8311,7 @@ const PROMOTION_FORM_LAYOUT = [
   }
 ]
 
+/*
 const INVENTORY_CATEGORY_FORM_LAYOUT = [
   {
     key: 'category',
@@ -8318,6 +8319,17 @@ const INVENTORY_CATEGORY_FORM_LAYOUT = [
     icon: 'pi pi-tags',
     badgeClass: 'text-primary',
     columns: ['name']
+  }
+]
+*/
+// Gene - Oct 20, 2026: Include description in Inventory Category form layout so all category attributes display cohesively in one section
+const INVENTORY_CATEGORY_FORM_LAYOUT = [
+  {
+    key: 'category',
+    title: 'Inventory Category Information',
+    icon: 'pi pi-tags',
+    badgeClass: 'text-primary',
+    columns: ['name', 'description']
   }
 ]
 
@@ -12951,9 +12963,17 @@ const confirmDelete = (record) => {
  * Compared against names normalized to lowercase with separators stripped, so
  * `account_no`, `accountNo` and `AccountNO` all match the same entry.
  */
+/*
 const IDENTITY_COLUMNS = [
   'fullname', 'name', 'firstname', 'fname', 'lastname', 'lname', 'username',
   'accountno', 'accountnumber', 'emailaddress', 'email',
+  'contactnumber', 'mobilenumber', 'description', 'installationaddress', 'address'
+]
+*/
+// Gene - Oct 20, 2026: Added title, promocode, itemid, requestedby, and status to IDENTITY_COLUMNS for clear delete modal identification across Promotions and Inventory tables
+const IDENTITY_COLUMNS = [
+  'fullname', 'name', 'title', 'promocode', 'itemid', 'firstname', 'fname', 'lastname', 'lname', 'username',
+  'accountno', 'accountnumber', 'emailaddress', 'email', 'requestedby', 'status',
   'contactnumber', 'mobilenumber', 'description', 'installationaddress', 'address'
 ]
 
