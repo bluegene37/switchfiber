@@ -1058,8 +1058,27 @@
                 <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
               -->
-              <!-- Gene - Oct, 20, 2026: Suppress generic small label for promotion_media_url, promotion_title, and promotion_subtitle as they render self-contained prominent headers in Create Dialog -->
+              <!--
+              // Gene - Oct, 20, 2026: Suppress generic small label for promotion_media_url, promotion_title, and promotion_subtitle as they render self-contained prominent headers in Create Dialog
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother' && getFieldType(col) !== 'promotion_media_url' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle'" :for="col" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+                <button
+                  v-if="canPinField(col)"
+                  type="button"
+                  class="sfa-pin-btn"
+                  :class="{ 'is-pinned': isPinned(col) }"
+                  :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                  :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                  :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                  @click.prevent.stop="togglePin(col)"
+                ><i class="pi pi-thumbtack"></i></button>
+                <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
+                <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
+                <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+              </label>
+              -->
+              <!-- Gene - Oct 21, 2026: Suppress generic small label for inventory_item_image in Create Dialog as it renders a self-contained card header -->
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother' && getFieldType(col) !== 'promotion_media_url' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'inventory_item_image'" :for="col" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <button
                   v-if="canPinField(col)"
@@ -1896,7 +1915,8 @@
                 </div>
               </div>
               -->
-              <!-- Gene - Oct, 20, 2026: Dedicated Inventory Item Image URL control with live preview and 255-char counter to prevent 500 SQL truncation errors -->
+              <!--
+              // Gene - Oct, 20, 2026: Dedicated Inventory Item Image URL control with live preview and 255-char counter to prevent 500 SQL truncation errors
               <div v-else-if="getFieldType(col) === 'inventory_item_image'" class="w-100">
                 <div class="d-flex flex-column gap-2">
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
@@ -1955,6 +1975,160 @@
                         style="max-height: 180px; object-fit: contain;"
                         @error="(e) => e.target.style.display = 'none'"
                       />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              -->
+              <!-- Gene - Oct 21, 2026: Enhanced Inventory Item Image Showcase card with single-row flex-nowrap input group, local file preview, clipboard paste, sample photo, error fallback, and full col-12 alignment -->
+              <div v-else-if="getFieldType(col) === 'inventory_item_image'" class="w-100">
+                <div class="card border rounded-3 p-3 bg-body shadow-xs sfa-inventory-image-card">
+                  <!-- Header Toolbar -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 mb-2 pb-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
+                      <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center p-2 flex-shrink-0" style="width: 36px; height: 36px;">
+                        <i class="pi pi-image text-primary"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="fw-bold text-body text-truncate" style="font-size: 0.95rem;">
+                          {{ formatLabel(col) }} / Catalog Photo
+                          <span v-if="isFieldRequired(col)" class="text-danger">*</span>
+                        </div>
+                        <div class="text-muted text-xs text-truncate">
+                          Public URL or catalog photo link (max 255 chars)
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-nowrap flex-shrink-0">
+                      <button
+                        v-if="canPinField(col)"
+                        type="button"
+                        class="sfa-pin-btn"
+                        :class="{ 'is-pinned': isPinned(col) }"
+                        :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                        :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                        :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                        @click.prevent.stop="togglePin(col)"
+                      ><i class="pi pi-thumbtack"></i></button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs text-nowrap"
+                        title="Paste from clipboard"
+                        @click="pasteInventoryImageFromClipboard('create', col)"
+                      >
+                        <i class="pi pi-clipboard"></i> Paste
+                      </button>
+                      <button
+                        v-if="formData[col] || inventoryLocalImagePreview.create"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1 text-xs text-nowrap"
+                        title="Clear image"
+                        @click="clearInventoryImage('create', col)"
+                      >
+                        <i class="pi pi-times"></i> Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Single-Row Flex Input Group -->
+                  <div class="input-group flex-nowrap w-100">
+                    <span class="input-group-text bg-body-tertiary border-end-0 d-flex align-items-center justify-content-center" style="min-width: 44px;">
+                      <i class="pi pi-image text-primary fs-6"></i>
+                    </span>
+                    <InputText
+                      :id="col"
+                      v-model="formData[col]"
+                      :maxlength="255"
+                      class="form-control border-start-0 flex-grow-1"
+                      style="font-size: 0.95rem; min-height: 42px; min-width: 0;"
+                      placeholder="Paste image URL (e.g. https://example.com/item.png or /images/inventory/item.png)"
+                    />
+                    <button
+                      v-if="formData[col]"
+                      type="button"
+                      class="btn btn-outline-secondary flex-shrink-0 d-flex align-items-center justify-content-center px-3"
+                      title="Clear URL"
+                      @click="clearInventoryImage('create', col)"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+
+                  <!-- Status Bar & Sample Link -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 text-xs px-1 mt-2 overflow-hidden">
+                    <div class="d-flex align-items-center gap-2 flex-nowrap text-nowrap min-w-0 overflow-hidden">
+                      <span v-if="formData[col] && formData[col].startsWith('http')" class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>Web Image Link
+                      </span>
+                      <span v-else-if="formData[col]" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-link me-1"></i>Local / Relative Path
+                      </span>
+                      <template v-else>
+                        <span class="text-muted text-nowrap">Quick sample:</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1 text-xs text-nowrap" @click="applySampleInventoryImage('create', col)">
+                          <i class="pi pi-image"></i> Sample Item Photo
+                        </button>
+                      </template>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap">
+                      <span v-if="formData[col] && formData[col].length > 255" class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-2 py-0.5 fw-bold">
+                        <i class="pi pi-exclamation-triangle me-1"></i>{{ formData[col].length }}/255
+                      </span>
+                      <span v-else class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                        {{ (formData[col] || '').length }}/255
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Dropzone file browse helper (shown when no URL is entered) -->
+                  <div v-if="!formData[col] && !inventoryLocalImagePreview.create" class="mt-2.5">
+                    <label class="border border-dashed rounded-3 text-center p-3 cursor-pointer bg-body-tertiary mb-0 d-block w-100 hover-border-primary">
+                      <input type="file" accept="image/*" class="d-none" @change="onInventoryLocalImageSelected('create', $event, col)" />
+                      <div class="d-flex flex-column align-items-center justify-content-center gap-1 text-muted small">
+                        <i class="pi pi-cloud-upload text-primary fs-4"></i>
+                        <span class="fw-medium text-body">Click to browse a local image file for live visual preview</span>
+                        <span class="text-xs text-secondary">To store permanently, host the image on your web server / CDN and paste the URL above (max 255 chars).</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Live Image Preview Container -->
+                  <div v-if="formData[col] || inventoryLocalImagePreview.create" class="border rounded-3 p-3 bg-body-tertiary mt-2.5">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i class="pi pi-image text-primary"></i>
+                        {{ inventoryLocalImagePreview.create ? 'Local Image File Preview' : 'Item Image Preview' }}
+                      </span>
+                      <div class="d-flex align-items-center gap-2">
+                        <a v-if="formData[col] && formData[col].startsWith('http')" :href="formData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                          Test Original Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                        </a>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-danger text-decoration-none text-xs" @click="clearInventoryImage('create', col)">
+                          <i class="pi pi-trash me-1"></i>Remove
+                        </button>
+                      </div>
+                    </div>
+                    <div class="text-center p-2 rounded-3 bg-body d-flex align-items-center justify-content-center" style="min-height: 140px;">
+                      <img
+                        v-if="formData[col]"
+                        :src="formData[col]"
+                        alt="Item Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 200px; max-width: 100%; object-fit: contain;"
+                        @error="inventoryImageError.create = true"
+                        @load="inventoryImageError.create = false"
+                      />
+                      <img
+                        v-else-if="inventoryLocalImagePreview.create"
+                        :src="inventoryLocalImagePreview.create"
+                        alt="Local Item Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 200px; max-width: 100%; object-fit: contain;"
+                      />
+                    </div>
+                    <div v-if="formData[col] && inventoryImageError.create" class="alert alert-warning py-1.5 px-2.5 small mb-0 mt-2 d-flex align-items-center gap-1.5">
+                      <i class="pi pi-exclamation-triangle flex-shrink-0"></i>
+                      <span>Unable to load image from this URL. Verify that the link is valid and publicly accessible.</span>
                     </div>
                   </div>
                 </div>
@@ -3269,8 +3443,28 @@
                 <span v-else-if="isFieldDisabledInEdit(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
               -->
-              <!-- Gene - Oct, 20, 2026: Suppress generic small label for promotion_media_url, promotion_title, and promotion_subtitle as they render self-contained prominent headers in Edit Dialog -->
+              <!--
+              // Gene - Oct, 20, 2026: Suppress generic small label for promotion_media_url, promotion_title, and promotion_subtitle as they render self-contained prominent headers in Edit Dialog
               <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother' && getFieldType(col) !== 'promotion_media_url' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
+                {{ formatLabel(col) }}
+                <button
+                  v-if="canPinField(col)"
+                  type="button"
+                  class="sfa-pin-btn"
+                  :class="{ 'is-pinned': isPinned(col) }"
+                  :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                  :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                  :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                  @click.prevent.stop="togglePin(col)"
+                ><i class="pi pi-thumbtack"></i></button>
+                <span v-if="isFieldRequired(col, 'edit')" class="text-danger ms-1" title="Required">*</span>
+                <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
+                <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                <span v-else-if="isFieldDisabledInEdit(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+              </label>
+              -->
+              <!-- Gene - Oct 21, 2026: Suppress generic small label for inventory_item_image in Edit Dialog as it renders a self-contained card header -->
+              <label v-if="normalizeColKey(col) !== 'barangay1' && normalizeColKey(col) !== 'visitwithother' && getFieldType(col) !== 'promotion_media_url' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'inventory_item_image'" :for="`edit-${col}`" class="form-label fw-medium text-body small mb-1">
                 {{ formatLabel(col) }}
                 <button
                   v-if="canPinField(col)"
@@ -4196,7 +4390,8 @@
                 </div>
               </div>
               -->
-              <!-- Gene - Oct, 20, 2026: Dedicated Inventory Item Image URL control in Edit modal with live preview and 255-char counter to prevent 500 SQL truncation errors -->
+              <!--
+              // Gene - Oct, 20, 2026: Dedicated Inventory Item Image URL control in Edit modal with live preview and 255-char counter to prevent 500 SQL truncation errors
               <div v-else-if="getFieldType(col) === 'inventory_item_image'" class="w-100">
                 <div class="d-flex flex-column gap-2">
                   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
@@ -4255,6 +4450,162 @@
                         style="max-height: 180px; object-fit: contain;"
                         @error="(e) => e.target.style.display = 'none'"
                       />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              -->
+              <!-- Gene - Oct 21, 2026: Enhanced Inventory Item Image Showcase card in Edit Dialog with single-row flex-nowrap input group, local file preview, clipboard paste, sample photo, error fallback, and full col-12 alignment -->
+              <div v-else-if="getFieldType(col) === 'inventory_item_image'" class="w-100">
+                <div class="card border rounded-3 p-3 bg-body shadow-xs sfa-inventory-image-card">
+                  <!-- Header Toolbar -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 mb-2 pb-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
+                      <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center p-2 flex-shrink-0" style="width: 36px; height: 36px;">
+                        <i class="pi pi-image text-primary"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="fw-bold text-body text-truncate" style="font-size: 0.95rem;">
+                          {{ formatLabel(col) }} / Catalog Photo
+                          <span v-if="isFieldRequired(col, 'edit')" class="text-danger">*</span>
+                        </div>
+                        <div class="text-muted text-xs text-truncate">
+                          Public URL or catalog photo link (max 255 chars)
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5 flex-nowrap flex-shrink-0">
+                      <button
+                        v-if="canPinField(col)"
+                        type="button"
+                        class="sfa-pin-btn"
+                        :class="{ 'is-pinned': isPinned(col) }"
+                        :title="isPinned(col) ? 'Unpin from Quick Fields' : 'Pin to Quick Fields'"
+                        :aria-label="isPinned(col) ? `Unpin ${formatLabel(col)} from Quick Fields` : `Pin ${formatLabel(col)} to Quick Fields`"
+                        :aria-pressed="isPinned(col) ? 'true' : 'false'"
+                        @click.prevent.stop="togglePin(col)"
+                      ><i class="pi pi-thumbtack"></i></button>
+                      <button
+                        v-if="!isFieldDisabledInEdit(col)"
+                        type="button"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs text-nowrap"
+                        title="Paste from clipboard"
+                        @click="pasteInventoryImageFromClipboard('edit', col)"
+                      >
+                        <i class="pi pi-clipboard"></i> Paste
+                      </button>
+                      <button
+                        v-if="(editFormData[col] || inventoryLocalImagePreview.edit) && !isFieldDisabledInEdit(col)"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1 text-xs text-nowrap"
+                        title="Clear image"
+                        @click="clearInventoryImage('edit', col)"
+                      >
+                        <i class="pi pi-times"></i> Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Single-Row Flex Input Group -->
+                  <div class="input-group flex-nowrap w-100">
+                    <span class="input-group-text bg-body-tertiary border-end-0 d-flex align-items-center justify-content-center" style="min-width: 44px;">
+                      <i class="pi pi-image text-primary fs-6"></i>
+                    </span>
+                    <InputText
+                      :id="`edit-${col}`"
+                      v-model="editFormData[col]"
+                      :maxlength="255"
+                      :disabled="isFieldDisabledInEdit(col)"
+                      class="form-control border-start-0 flex-grow-1"
+                      style="font-size: 0.95rem; min-height: 42px; min-width: 0;"
+                      placeholder="Paste image URL (e.g. https://example.com/item.png or /images/inventory/item.png)"
+                    />
+                    <button
+                      v-if="editFormData[col] && !isFieldDisabledInEdit(col)"
+                      type="button"
+                      class="btn btn-outline-secondary flex-shrink-0 d-flex align-items-center justify-content-center px-3"
+                      title="Clear URL"
+                      @click="clearInventoryImage('edit', col)"
+                    >
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+
+                  <!-- Status Bar & Sample Link -->
+                  <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 text-xs px-1 mt-2 overflow-hidden">
+                    <div class="d-flex align-items-center gap-2 flex-nowrap text-nowrap min-w-0 overflow-hidden">
+                      <span v-if="editFormData[col] && editFormData[col].startsWith('http')" class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-check-circle me-1"></i>Web Image Link
+                      </span>
+                      <span v-else-if="editFormData[col]" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1 text-nowrap text-truncate">
+                        <i class="pi pi-link me-1"></i>Local / Relative Path
+                      </span>
+                      <template v-else-if="!isFieldDisabledInEdit(col)">
+                        <span class="text-muted text-nowrap">Quick sample:</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1 text-xs text-nowrap" @click="applySampleInventoryImage('edit', col)">
+                          <i class="pi pi-image"></i> Sample Item Photo
+                        </button>
+                      </template>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap">
+                      <span v-if="editFormData[col] && editFormData[col].length > 255" class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-2 py-0.5 fw-bold">
+                        <i class="pi pi-exclamation-triangle me-1"></i>{{ editFormData[col].length }}/255
+                      </span>
+                      <span v-else class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                        {{ (editFormData[col] || '').length }}/255
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Dropzone file browse helper (shown when no URL is entered) -->
+                  <div v-if="!editFormData[col] && !inventoryLocalImagePreview.edit && !isFieldDisabledInEdit(col)" class="mt-2.5">
+                    <label class="border border-dashed rounded-3 text-center p-3 cursor-pointer bg-body-tertiary mb-0 d-block w-100 hover-border-primary">
+                      <input type="file" accept="image/*" class="d-none" @change="onInventoryLocalImageSelected('edit', $event, col)" />
+                      <div class="d-flex flex-column align-items-center justify-content-center gap-1 text-muted small">
+                        <i class="pi pi-cloud-upload text-primary fs-4"></i>
+                        <span class="fw-medium text-body">Click to browse a local image file for live visual preview</span>
+                        <span class="text-xs text-secondary">To store permanently, host the image on your web server / CDN and paste the URL above (max 255 chars).</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Live Image Preview Container -->
+                  <div v-if="editFormData[col] || inventoryLocalImagePreview.edit" class="border rounded-3 p-3 bg-body-tertiary mt-2.5">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                      <span class="text-xs fw-bold text-secondary text-uppercase d-inline-flex align-items-center gap-1.5">
+                        <i class="pi pi-image text-primary"></i>
+                        {{ inventoryLocalImagePreview.edit ? 'Local Image File Preview' : 'Item Image Preview' }}
+                      </span>
+                      <div class="d-flex align-items-center gap-2">
+                        <a v-if="editFormData[col] && editFormData[col].startsWith('http')" :href="editFormData[col]" target="_blank" rel="noopener" class="text-xs text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                          Test Original Link <i class="pi pi-external-link" style="font-size: 0.65rem;"></i>
+                        </a>
+                        <button v-if="!isFieldDisabledInEdit(col)" type="button" class="btn btn-link btn-sm p-0 text-danger text-decoration-none text-xs" @click="clearInventoryImage('edit', col)">
+                          <i class="pi pi-trash me-1"></i>Remove
+                        </button>
+                      </div>
+                    </div>
+                    <div class="text-center p-2 rounded-3 bg-body d-flex align-items-center justify-content-center" style="min-height: 140px;">
+                      <img
+                        v-if="editFormData[col]"
+                        :src="editFormData[col]"
+                        alt="Item Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 200px; max-width: 100%; object-fit: contain;"
+                        @error="inventoryImageError.edit = true"
+                        @load="inventoryImageError.edit = false"
+                      />
+                      <img
+                        v-else-if="inventoryLocalImagePreview.edit"
+                        :src="inventoryLocalImagePreview.edit"
+                        alt="Local Item Image"
+                        class="img-fluid rounded border shadow-xs"
+                        style="max-height: 200px; max-width: 100%; object-fit: contain;"
+                      />
+                    </div>
+                    <div v-if="editFormData[col] && inventoryImageError.edit" class="alert alert-warning py-1.5 px-2.5 small mb-0 mt-2 d-flex align-items-center gap-1.5">
+                      <i class="pi pi-exclamation-triangle flex-shrink-0"></i>
+                      <span>Unable to load image from this URL. Verify that the link is valid and publicly accessible.</span>
                     </div>
                   </div>
                 </div>
@@ -5693,6 +6044,7 @@ const getColumnClass = (col) => {
         return 'col-6 col-md-6 col-lg-2'
       }
     }
+    /*
     if (type === 'image_upload') {
       return 'col-12 col-md-4 col-lg-4'
     }
@@ -5706,6 +6058,24 @@ const getColumnClass = (col) => {
     return 'col-12'
   }
   return (type === 'textarea') ? 'col-12' : 'col-12 col-md-6'
+  */
+  // Gene - Oct 21, 2026: Assign full col-12 width to inventory_item_image across standard and wide forms so item photo cards span the full row uniformly beneath description
+  if (isInventoryItemEndpoint.value && (type === 'inventory_item_image' || lower === 'image' || lower === 'imageurl' || lower === 'image_url')) {
+    return 'col-12'
+  }
+  if (type === 'image_upload') {
+    return 'col-12 col-md-4 col-lg-4'
+  }
+  // Single fields and textareas in wide forms take 1 column (1/3 width)
+  // so 3 fields tile seamlessly per row without awkward empty spaces or jagged breaks!
+  return 'col-12 col-md-6 col-lg-4'
+}
+
+// Standard 2-column forms:
+if (type === 'image_upload' || type === 'inventory_item_image' || (isInventoryItemEndpoint.value && (lower === 'image' || lower === 'imageurl' || lower === 'image_url'))) {
+  return 'col-12'
+}
+return (type === 'textarea') ? 'col-12' : 'col-12 col-md-6'
 }
 
 const data = ref([])
@@ -6189,6 +6559,105 @@ const onPromoLocalImageSelected = (scope, event) => {
     severity: 'info',
     summary: 'Local Image Preview',
     detail: 'Previewing local image. For permanent client display, ensure the image is hosted and enter the public URL.',
+    life: 5000
+  })
+}
+
+// Gene - Oct 21, 2026: Added local image preview tracker and interactive helpers for Inventory Item image URL, clipboard paste, sample preset, and file selection
+const inventoryLocalImagePreview = ref({ create: null, edit: null })
+const inventoryImageError = ref({ create: false, edit: false })
+
+const pasteInventoryImageFromClipboard = async (scope, col) => {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+      const text = await navigator.clipboard.readText()
+      if (text && text.trim()) {
+        const val = text.trim()
+        if (scope === 'create') {
+          formData.value[col] = val
+        } else if (scope === 'edit') {
+          editFormData.value[col] = val
+        }
+        if (inventoryLocalImagePreview.value) {
+          inventoryLocalImagePreview.value[scope] = null
+        }
+        if (inventoryImageError.value) {
+          inventoryImageError.value[scope] = false
+        }
+        toast.add({
+          severity: 'info',
+          summary: 'Link Pasted',
+          detail: 'Image URL pasted from clipboard.',
+          life: 2500
+        })
+      }
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'Clipboard Access',
+        detail: 'Please paste the image URL directly into the input field (Ctrl+V / Cmd+V).',
+        life: 3000
+      })
+    }
+  } catch (err) {
+    console.warn('Clipboard read error:', err)
+    toast.add({
+      severity: 'warn',
+      summary: 'Clipboard Access',
+      detail: 'Please paste the image URL directly into the input field (Ctrl+V / Cmd+V).',
+      life: 3000
+    })
+  }
+}
+
+const applySampleInventoryImage = (scope, col) => {
+  const sampleUrl = 'https://picsum.photos/id/237/400/300'
+  if (scope === 'create') {
+    formData.value[col] = sampleUrl
+  } else if (scope === 'edit') {
+    editFormData.value[col] = sampleUrl
+  }
+  if (inventoryLocalImagePreview.value) {
+    inventoryLocalImagePreview.value[scope] = null
+  }
+  if (inventoryImageError.value) {
+    inventoryImageError.value[scope] = false
+  }
+  toast.add({
+    severity: 'success',
+    summary: 'Sample Image Loaded',
+    detail: 'Sample hardware item image preview loaded.',
+    life: 2500
+  })
+}
+
+const clearInventoryImage = (scope, col) => {
+  if (scope === 'create') {
+    formData.value[col] = ''
+  } else if (scope === 'edit') {
+    editFormData.value[col] = ''
+  }
+  if (inventoryLocalImagePreview.value) {
+    inventoryLocalImagePreview.value[scope] = null
+  }
+  if (inventoryImageError.value) {
+    inventoryImageError.value[scope] = false
+  }
+}
+
+const onInventoryLocalImageSelected = (scope, event, col) => {
+  const file = event?.target?.files?.[0]
+  if (!file) return
+  if (inventoryLocalImagePreview.value) {
+    inventoryLocalImagePreview.value[scope] = URL.createObjectURL(file)
+  }
+  if (inventoryImageError.value) {
+    inventoryImageError.value[scope] = false
+  }
+  toast.add({
+    severity: 'info',
+    summary: 'Local Image Preview',
+    detail: 'Previewing local image file. To persist permanently, ensure the image is hosted and enter the public URL.',
     life: 5000
   })
 }
@@ -12262,6 +12731,13 @@ const openCreateDialog = () => {
     if (uEmailCol && !formData.value[uEmailCol]) {
       formData.value[uEmailCol] = authStore.user?.email || 'admin@switchfiber.com'
     }
+    // Gene - Oct 21, 2026: Reset local image preview and error flags on create dialog open
+    if (inventoryLocalImagePreview.value) {
+      inventoryLocalImagePreview.value.create = null
+    }
+    if (inventoryImageError.value) {
+      inventoryImageError.value.create = false
+    }
   }
 
   if (isInventoryLogEndpoint.value) {
@@ -13313,6 +13789,15 @@ const openEditDialog = async (record) => {
       }
       if (promoLocalImagePreview.value) {
         promoLocalImagePreview.value.edit = null
+      }
+    }
+    // Gene - Oct 21, 2026: Reset local image preview and error flags on edit dialog open for Inventory Item
+    if (isInventoryItemEndpoint.value && getFieldType(col) === 'inventory_item_image') {
+      if (inventoryLocalImagePreview.value) {
+        inventoryLocalImagePreview.value.edit = null
+      }
+      if (inventoryImageError.value) {
+        inventoryImageError.value.edit = false
       }
     }
     if (isReadOnlyField(col)) {
