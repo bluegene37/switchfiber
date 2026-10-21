@@ -2490,7 +2490,8 @@
                 :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
               />
               -->
-              <!-- Gene - Oct 20, 2026: Schema-constrained Textarea with maxlength and character counter -->
+              <!--
+              // Gene - Oct 20, 2026: Schema-constrained Textarea with maxlength and character counter
               <Textarea 
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="col" 
@@ -2508,7 +2509,6 @@
                 </span>
               </div>
 
-              <!-- Gene - Oct 20, 2026: Schema-constrained InputText with maxlength and character counter -->
               <InputText 
                 v-else 
                 :id="col" 
@@ -2529,6 +2529,47 @@
                   {{ (formData[col] || '').length }}/{{ getFieldMaxLength(col) }}
                 </span>
               </div>
+              -->
+              <!-- Gene - Oct 21, 2026: Enclosed Textarea + counter in template v-else-if and InputText + counter in template v-else to restore unbroken v-if chain and eliminate extra duplicate inputs in Create Dialog -->
+              <template v-else-if="getFieldType(col) === 'textarea'">
+                <Textarea 
+                  :id="col" 
+                  v-model="formData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') }" 
+                  :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
+                  :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
+                />
+                <div v-if="getFieldMaxLength(col)" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (formData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                  </span>
+                </div>
+              </template>
+
+              <template v-else>
+                <InputText 
+                  :id="col" 
+                  v-model="formData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 
+                    'bg-light text-muted': isReadOnlyField(col),
+                    'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                    'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                  }" 
+                  :disabled="isReadOnlyField(col)"
+                  :readonly="isReadOnlyField(col)"
+                  :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
+                />
+                <div v-if="getFieldMaxLength(col) && getFieldType(col) !== 'textarea' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'promotion_media_url'" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (formData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                  </span>
+                </div>
+              </template>
 
               <div
                 v-if="!isPinnedPlaceholder(sec, col) && hasFieldError('create', col)"
@@ -4746,7 +4787,8 @@
                 :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
               />
               -->
-              <!-- Gene - Oct 20, 2026: Schema-constrained Textarea with maxlength and character counter in Edit Dialog -->
+              <!--
+              // Gene - Oct 20, 2026: Schema-constrained Textarea with maxlength and character counter in Edit Dialog
               <Textarea 
                 v-else-if="getFieldType(col) === 'textarea'" 
                 :id="`edit-${col}`" 
@@ -4769,7 +4811,6 @@
                 </span>
               </div>
 
-              <!-- Gene - Oct 20, 2026: Schema-constrained InputText with maxlength and character counter in Edit Dialog -->
               <InputText 
                 v-else 
                 :id="`edit-${col}`" 
@@ -4790,6 +4831,52 @@
                   {{ (editFormData[col] || '').length }}/{{ getFieldMaxLength(col) }}
                 </span>
               </div>
+              -->
+              <!-- Gene - Oct 21, 2026: Enclosed Textarea + counter in template v-else-if and InputText + counter in template v-else to restore unbroken v-if chain and eliminate extra duplicate inputs in Edit Dialog -->
+              <template v-else-if="getFieldType(col) === 'textarea'">
+                <Textarea 
+                  :id="`edit-${col}`" 
+                  v-model="editFormData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
+                  class="w-100 p-inputtext-sm" 
+                  :disabled="isFieldDisabledInEdit(col)"
+                  :readonly="isFieldDisabledInEdit(col)"
+                  :class="{ 
+                    'bg-light text-muted': isFieldDisabledInEdit(col),
+                    'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') 
+                  }" 
+                  :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
+                  :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
+                />
+                <div v-if="getFieldMaxLength(col)" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (editFormData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                  </span>
+                </div>
+              </template>
+
+              <template v-else>
+                <InputText 
+                  :id="`edit-${col}`" 
+                  v-model="editFormData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 
+                    'bg-light text-muted': isFieldDisabledInEdit(col),
+                    'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                    'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                  }" 
+                  :disabled="isFieldDisabledInEdit(col)"
+                  :readonly="isFieldDisabledInEdit(col)"
+                  :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
+                />
+                <div v-if="getFieldMaxLength(col) && getFieldType(col) !== 'textarea' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'promotion_media_url'" class="d-flex justify-content-end text-xs text-muted mt-0.5">
+                  <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
+                    {{ (editFormData[col] || '').length }}/{{ getFieldMaxLength(col) }}
+                  </span>
+                </div>
+              </template>
 
               <div
                 v-if="!isPinnedPlaceholder(sec, col) && hasFieldError('edit', col)"
@@ -5535,6 +5622,7 @@ const getColumnClass = (col) => {
     return 'col-12 col-md-6 col-lg-4'
   }
   */
+  /*
   // Gene - Oct, 20, 2026: Tailor column widths in wide forms; for Promotions, assign full width to media and spacious columns for Title, Subtitle, and descriptions
   if (isWideForm.value) {
     if (isPromotionEndpoint.value) {
@@ -5558,6 +5646,51 @@ const getColumnClass = (col) => {
       }
       if (lower === 'placement') {
         return 'col-12'
+      }
+    }
+    if (type === 'image_upload') {
+      return 'col-12 col-md-4 col-lg-4'
+    }
+    // Single fields and textareas in wide forms take 1 column (1/3 width)
+    // so 3 fields tile seamlessly per row without awkward empty spaces or jagged breaks!
+    return 'col-12 col-md-6 col-lg-4'
+  }
+  */
+  // Gene - Oct 21, 2026: Tailor Promotions column widths for crisp grid alignment; PromoCode (4 cols) + DiscountType (4 cols) + Priority (2 cols) + Status (2 cols) on desktop
+  if (isWideForm.value) {
+    if (isPromotionEndpoint.value) {
+      if (type === 'promotion_media_url' || lower === 'imageurl' || lower === 'image_url' || lower === 'image') {
+        return 'col-12'
+      }
+      if (lower === 'title') {
+        return 'col-12'
+      }
+      if (lower === 'subtitle') {
+        return 'col-12'
+      }
+      if (lower === 'description' || lower === 'termsandconditions') {
+        return 'col-12'
+      }
+      if (lower === 'perks' || lower === 'requirements') {
+        return 'col-12 col-lg-6'
+      }
+      if (lower === 'ctatext' || lower === 'ctalink') {
+        return 'col-12 col-md-6'
+      }
+      if (lower === 'placement') {
+        return 'col-12'
+      }
+      if (lower === 'promocode' || lower === 'promo_code') {
+        return 'col-12 col-md-6 col-lg-4'
+      }
+      if (lower === 'discounttypeid' || lower === 'discounttype_id') {
+        return 'col-12 col-md-6 col-lg-4'
+      }
+      if (lower === 'priority') {
+        return 'col-6 col-md-6 col-lg-2'
+      }
+      if (lower === 'isactive' || lower === 'active') {
+        return 'col-6 col-md-6 col-lg-2'
       }
     }
     if (type === 'image_upload') {
