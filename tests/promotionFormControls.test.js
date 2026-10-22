@@ -4,6 +4,9 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+// Gene - Oct, 22, 2026: Imported resolveRequiredFields and EndpointColumns for mandatory fields verification
+import { resolveRequiredFields } from '../src/models/requiredFields.js'
+import { EndpointColumns } from '../src/models/columns.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const dynamicApiTableSource = fs.readFileSync(
@@ -163,6 +166,41 @@ describe('Promotions Form Controls Suite', () => {
       dynamicApiTableSource.includes('color: var(--bs-primary-active, #c02e3c) !important'),
       'DynamicApiTable must style primary badge text with high-contrast red'
     )
+  })
+
+  // Gene - Oct, 22, 2026: Verify that priority column name and field label is formatted as Display Order for Promo / Promotions
+  test('formatLabel maps priority to Display Order for Promotions endpoint', () => {
+    assert.ok(
+      dynamicApiTableSource.includes("isPromotionEndpoint.value && normalizeColKey(col) === 'priority'"),
+      'formatLabel must check isPromotionEndpoint and normalizeColKey for priority'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes("return 'Display Order'"),
+      'formatLabel must return Display Order for Promotions priority'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes("displayorder: 'Display Order'"),
+      'customOverrides must include displayorder: Display Order'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes("if (isPromotionEndpoint.value && key === 'priority') return ['Priority', 'Display Order', 'Order']"),
+      'fieldSearchAliases must include Priority, Display Order, and Order for Promotions priority'
+    )
+  })
+
+  // Gene - Oct, 22, 2026: Verify that discountTypeId is mandatory for Promo / Promotions forms
+  test('resolveRequiredFields enforces discountTypeId as mandatory for Promotions and promo', () => {
+    const promoCols = EndpointColumns.Promotions
+    const requiredForPromotions = resolveRequiredFields('Promotions', promoCols)
+    const requiredForPromo = resolveRequiredFields('promo', promoCols)
+
+    assert.ok(requiredForPromotions.includes('discountTypeId'), 'discountTypeId must be required for Promotions')
+    assert.ok(requiredForPromotions.includes('promoCode'), 'promoCode must be required for Promotions')
+    assert.ok(requiredForPromotions.includes('title'), 'title must be required for Promotions')
+
+    assert.ok(requiredForPromo.includes('discountTypeId'), 'discountTypeId must be required for promo')
+    assert.ok(requiredForPromo.includes('promoCode'), 'promoCode must be required for promo')
+    assert.ok(requiredForPromo.includes('title'), 'title must be required for promo')
   })
 })
 

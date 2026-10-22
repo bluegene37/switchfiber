@@ -6136,6 +6136,11 @@ function formatLabel(col) {
     return 'Discount Type'
   }
 
+  // Gene - Oct, 22, 2026: In Promo / Promotions, change the column name and field label of Priority to Display Order
+  if (isPromotionEndpoint.value && normalizeColKey(col) === 'priority') {
+    return 'Display Order'
+  }
+
   if (isPaymentEndpoint.value) {
     const k = normalizeColKey(col)
     if (k === 'transactionid') return 'Account #'
@@ -6285,7 +6290,12 @@ function formatLabel(col) {
     imageurl: 'Banner Image',
     imagesize: 'Image Size',
     itemid: 'Item Code / ID',
+    /*
     requestedwith: 'Requested With'
+    */
+    // Gene - Oct, 22, 2026: Added displayorder to customOverrides for Display Order field formatting
+    requestedwith: 'Requested With',
+    displayorder: 'Display Order'
   }
   const normKey = col.toLowerCase().replace(/_/g, '')
   if (customOverrides[normKey]) {
@@ -9777,10 +9787,20 @@ const fieldSearch = ref({ create: '', edit: '', view: '' })
 
 // Combined slots: the Barangay 1 wrapper also hosts Barangay 2, and the
 // Visit With (Other) wrapper hosts User Email, so both names must find the slot.
+/*
 const fieldSearchAliases = (col) => {
   const key = normalizeColKey(col)
   if (key === 'barangay1') return ['Barangay 1', 'Barangay 2']
   if (key === 'visitwithother') return ['Visit With (Other)', 'User Email', 'userEmail']
+  return []
+}
+*/
+// Gene - Oct, 22, 2026: Added Priority and Display Order search aliases for Promotions priority field
+const fieldSearchAliases = (col) => {
+  const key = normalizeColKey(col)
+  if (key === 'barangay1') return ['Barangay 1', 'Barangay 2']
+  if (key === 'visitwithother') return ['Visit With (Other)', 'User Email', 'userEmail']
+  if (isPromotionEndpoint.value && key === 'priority') return ['Priority', 'Display Order', 'Order']
   return []
 }
 

@@ -116,9 +116,18 @@ describe('Alpha Test Suite: 4 New Menus CRUD Lifecycle (Promotions, Inventory Ca
 
     test('requiredFields.js enforces mandatory fields and excludes system audit fields', () => {
       // Promotions
+      /*
       const promoReq = resolveRequiredFields('Promotions', EndpointColumns.Promotions)
       assert.ok(promoReq.includes('promoCode'), 'promoCode must be required for Promotions')
       assert.ok(promoReq.includes('title'), 'title must be required for Promotions')
+      assert.ok(!promoReq.includes('id'), 'System id must not be required')
+      assert.ok(!promoReq.includes('createdDate'), 'createdDate must not be required')
+      */
+      // Gene - Oct, 22, 2026: Verified discountTypeId is mandatory for Promotions alongside promoCode and title
+      const promoReq = resolveRequiredFields('Promotions', EndpointColumns.Promotions)
+      assert.ok(promoReq.includes('promoCode'), 'promoCode must be required for Promotions')
+      assert.ok(promoReq.includes('title'), 'title must be required for Promotions')
+      assert.ok(promoReq.includes('discountTypeId'), 'discountTypeId must be required for Promotions')
       assert.ok(!promoReq.includes('id'), 'System id must not be required')
       assert.ok(!promoReq.includes('createdDate'), 'createdDate must not be required')
 
