@@ -2010,6 +2010,7 @@
                         :aria-pressed="isPinned(col) ? 'true' : 'false'"
                         @click.prevent.stop="togglePin(col)"
                       ><i class="pi pi-thumbtack"></i></button>
+                      <!--
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs text-nowrap"
@@ -2018,6 +2019,8 @@
                       >
                         <i class="pi pi-clipboard"></i> Paste
                       </button>
+                      -->
+                      <!-- Gene - Oct, 22, 2026: Removed Paste button in Inventory Item Record Create Dialog -->
                       <button
                         v-if="formData[col] || inventoryLocalImagePreview.create"
                         type="button"
@@ -2324,6 +2327,7 @@
                           <i class="pi pi-image me-1"></i> Image URL
                         </button>
                       </div>
+                      <!--
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs text-nowrap"
@@ -2332,6 +2336,8 @@
                       >
                         <i class="pi pi-clipboard"></i> Paste
                       </button>
+                      -->
+                      <!-- Gene - Oct, 22, 2026: Removed Paste button in Promo Create Dialog -->
                     </div>
                   </div>
 
@@ -4485,6 +4491,7 @@
                         :aria-pressed="isPinned(col) ? 'true' : 'false'"
                         @click.prevent.stop="togglePin(col)"
                       ><i class="pi pi-thumbtack"></i></button>
+                      <!--
                       <button
                         v-if="!isFieldDisabledInEdit(col)"
                         type="button"
@@ -4494,6 +4501,8 @@
                       >
                         <i class="pi pi-clipboard"></i> Paste
                       </button>
+                      -->
+                      <!-- Gene - Oct, 22, 2026: Removed Paste button in Inventory Item Record Edit Dialog -->
                       <button
                         v-if="(editFormData[col] || inventoryLocalImagePreview.edit) && !isFieldDisabledInEdit(col)"
                         type="button"
@@ -4810,6 +4819,7 @@
                           <i class="pi pi-image me-1"></i> Image URL
                         </button>
                       </div>
+                      <!--
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 text-xs text-nowrap"
@@ -4819,6 +4829,8 @@
                       >
                         <i class="pi pi-clipboard"></i> Paste
                       </button>
+                      -->
+                      <!-- Gene - Oct, 22, 2026: Removed Paste button in Promo Edit Dialog -->
                     </div>
                   </div>
 

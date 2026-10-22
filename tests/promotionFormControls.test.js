@@ -202,5 +202,25 @@ describe('Promotions Form Controls Suite', () => {
     assert.ok(requiredForPromo.includes('promoCode'), 'promoCode must be required for promo')
     assert.ok(requiredForPromo.includes('title'), 'title must be required for promo')
   })
+
+  // Gene - Oct, 22, 2026: Verify that the Paste button is removed from Promo and Inventory Item Record Create and Edit dialogs
+  test('DynamicApiTable removes the Paste button from Promo and Inventory Item dialogs', () => {
+    assert.ok(
+      dynamicApiTableSource.includes('<!-- Gene - Oct, 22, 2026: Removed Paste button in Promo Create Dialog -->'),
+      'Promo Create Dialog must have Paste button removed'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes('<!-- Gene - Oct, 22, 2026: Removed Paste button in Promo Edit Dialog -->'),
+      'Promo Edit Dialog must have Paste button removed'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes('<!-- Gene - Oct, 22, 2026: Removed Paste button in Inventory Item Record Create Dialog -->'),
+      'Inventory Item Record Create Dialog must have Paste button removed'
+    )
+    assert.ok(
+      dynamicApiTableSource.includes('<!-- Gene - Oct, 22, 2026: Removed Paste button in Inventory Item Record Edit Dialog -->'),
+      'Inventory Item Record Edit Dialog must have Paste button removed'
+    )
+  })
 })
 
