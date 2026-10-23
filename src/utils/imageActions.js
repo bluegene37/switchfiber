@@ -2,6 +2,31 @@
 // cards and dialogs). Stored images arrive either as remote URLs or as base64
 // data URIs, and both must support "open bigger" and "download".
 
+// Gene - Oct 23, 2026: Convert Google Drive URLs and API FileContentResult objects to browser-renderable image URLs
+export const getDirectImageUrl = (val) => {
+  if (!val || typeof val !== 'string') return ''
+  const trimmed = val.trim()
+  if (trimmed.startsWith('data:image/') || trimmed.startsWith('blob:')) return trimmed
+
+  // Check if value is a Google Drive open / file view URL
+  const gdriveMatch = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/i)
+  if (gdriveMatch && gdriveMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${gdriveMatch[1]}`
+  }
+
+  return trimmed
+}
+
+export const fileResultToDataUrl = (fileResult) => {
+  if (!fileResult) return null
+  if (typeof fileResult === 'string') return getDirectImageUrl(fileResult)
+  if (typeof fileResult === 'object' && fileResult.fileContents) {
+    const mime = fileResult.contentType || 'image/jpeg'
+    return `data:${mime};base64,${fileResult.fileContents}`
+  }
+  return null
+}
+
 const extensionOf = (url) => {
   if (typeof url !== 'string' || !url) return 'png'
   if (url.startsWith('data:')) {

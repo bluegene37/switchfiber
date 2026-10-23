@@ -655,6 +655,7 @@ const siteIcon = (site, selected = false) => L.divIcon({
 // ---------------------------------------------------------------------------
 const normalizeName = (name) => String(name || '').trim().toLowerCase().replace(/\s+/g, ' ')
 
+/*
 const buildPhotos = (row) => {
   const entries = [
     { label: 'Enclosure', path: row.image },
@@ -668,6 +669,21 @@ const buildPhotos = (row) => {
       // Only absolute URLs are renderable; bare storage paths (SharePoint-style
       // attachment references) are shown as labeled references instead of
       // broken <img> tags.
+      url: /^(https?:\/\/|data:)/i.test(String(e.path).trim()) ? String(e.path).trim() : null
+    }))
+}
+*/
+// Gene - Oct 23, 2026: Safely extract photo paths and labels from row.image/image2/readingImage supporting objects and server strings
+const buildPhotos = (row) => {
+  const entries = [
+    { label: 'Enclosure', path: (typeof row.image === 'object' && row.image ? (row.image.fileName || 'enclosure.jpg') : row.image) },
+    { label: 'Enclosure 2', path: (typeof row.image2 === 'object' && row.image2 ? (row.image2.fileName || 'enclosure2.jpg') : row.image2) },
+    { label: 'Reading', path: (typeof row.readingImage === 'object' && row.readingImage ? (row.readingImage.fileName || 'reading.jpg') : row.readingImage) }
+  ]
+  return entries
+    .filter(e => e.path && typeof e.path === 'string' && e.path.trim())
+    .map(e => ({
+      ...e,
       url: /^(https?:\/\/|data:)/i.test(String(e.path).trim()) ? String(e.path).trim() : null
     }))
 }
@@ -857,6 +873,7 @@ const scrollListToSelection = (site) => {
   })
 }
 
+/*
 const selectSite = (site, { fly = false } = {}) => {
   selectedSite.value = site
   copied.value = false
@@ -864,6 +881,54 @@ const selectSite = (site, { fly = false } = {}) => {
   scrollListToSelection(site)
   if (fly) focusSite(site)
   else if (map) map.panTo([site.lat, site.lng])
+}
+*/
+// Gene - Oct 23, 2026: Fetch real site photos from GET /api/LCPNapLocations/{id}/GetLCPNAPLocationImages when a site is selected
+const selectSite = (site, { fly = false } = {}) => {
+  selectedSite.value = site
+  copied.value = false
+  refreshMarkerIcons()
+  scrollListToSelection(site)
+  if (fly) focusSite(site)
+  else if (map) map.panTo([site.lat, site.lng])
+
+  if (site && site.id) {
+    LcpNapLocationService.getLcpNapLocationImages(site.id).then(res => {
+      if (res && res.data) {
+        const imgs = res.data
+        const updatedPhotos = []
+        if (imgs.image && imgs.image.fileContents) {
+          updatedPhotos.push({
+            label: 'Enclosure',
+            path: imgs.image.fileDownloadName || 'enclosure.jpg',
+            url: `data:${imgs.image.contentType || 'image/jpeg'};base64,${imgs.image.fileContents}`
+          })
+        }
+        if (imgs.image2 && imgs.image2.fileContents) {
+          updatedPhotos.push({
+            label: 'Enclosure 2',
+            path: imgs.image2.fileDownloadName || 'enclosure2.jpg',
+            url: `data:${imgs.image2.contentType || 'image/jpeg'};base64,${imgs.image2.fileContents}`
+          })
+        }
+        if (imgs.readingImage && imgs.readingImage.fileContents) {
+          updatedPhotos.push({
+            label: 'Reading',
+            path: imgs.readingImage.fileDownloadName || 'reading.jpg',
+            url: `data:${imgs.readingImage.contentType || 'image/jpeg'};base64,${imgs.readingImage.fileContents}`
+          })
+        }
+        if (updatedPhotos.length > 0) {
+          site.photos = updatedPhotos
+          if (selectedSite.value && selectedSite.value.id === site.id) {
+            selectedSite.value.photos = updatedPhotos
+          }
+        }
+      }
+    }).catch((err) => {
+      console.log(`[LcpNapMap] No uploaded photos found for site #${site.id}:`, err)
+    })
+  }
 }
 
 const clearSelection = () => {

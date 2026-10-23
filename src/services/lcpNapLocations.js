@@ -1,11 +1,47 @@
 import apiClient from './api.js'
 
+/*
 export const LcpNapLocationService = {
   getLocations() {
     return apiClient.get('/LCPNapLocations')
   },
   getLocationById(id) {
     return apiClient.get(`/LCPNapLocations/${id}`)
+  },
+  createLocation(data) {
+    return apiClient.post('/LCPNapLocations', data)
+  },
+  updateLocation(id, data) {
+    return apiClient.put(`/LCPNapLocations/${id}`, data)
+  },
+  deleteLocation(id) {
+    return apiClient.delete(`/LCPNapLocations/${id}`)
+  },
+  // A location row stores its LCP and NAP as display names ("LCP 031",
+  // "NAP 001"). These fetch the master records so the map can link each
+  // location to its Lcps / Naps row id — the key that create, update, and
+  // edit flows will write back against.
+  getLcps() {
+    return apiClient.get('/Lcps')
+  },
+  getNaps() {
+    return apiClient.get('/Naps')
+  }
+}
+*/
+// Gene - Oct 23, 2026: Added getLcpNapLocationImages(id) and getReadingImage(id) for LCP NAP image fetching
+export const LcpNapLocationService = {
+  getLocations() {
+    return apiClient.get('/LCPNapLocations')
+  },
+  getLocationById(id) {
+    return apiClient.get(`/LCPNapLocations/${id}`)
+  },
+  getLcpNapLocationImages(id) {
+    return apiClient.get(`/LCPNapLocations/${id}/GetLCPNAPLocationImages`)
+  },
+  getReadingImage(id) {
+    return apiClient.get(`/LCPNapLocations/${id}/GetReadingImage`, { responseType: 'blob' })
   },
   createLocation(data) {
     return apiClient.post('/LCPNapLocations', data)

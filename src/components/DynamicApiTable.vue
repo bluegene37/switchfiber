@@ -496,10 +496,23 @@
             <span v-else class="text-muted">-</span>
           </span>
           -->
-          <!-- Gene - Oct, 20, 2026: Render thumbnail and preview trigger for inventory_item_image alongside image_upload -->
+          <!--
+          // Gene - Oct, 20, 2026: Render thumbnail and preview trigger for inventory_item_image alongside image_upload
           <span v-else-if="getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image'">
             <span v-if="slotProps.data[col]" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="openImagePreview(slotProps.data[col], formatLabel(col))">
               <img :src="slotProps.data[col]" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
+              <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">View</span>
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
+          -->
+          <!-- Gene - Oct 23, 2026: Enhanced table cell rendering for image_upload supporting Google Drive links, API FileContentResult, and on-demand server fetching -->
+          <span v-else-if="getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image'">
+            <span v-if="hasImageValue(slotProps.data, col)" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="handleTableImageClick(slotProps.data, col)">
+              <img v-if="getTableCellImageUrl(slotProps.data, col)" :src="getTableCellImageUrl(slotProps.data, col)" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
+              <span v-else class="rounded border bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px;">
+                <i class="pi pi-image text-primary" style="font-size: 0.85rem;"></i>
+              </span>
               <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">View</span>
             </span>
             <span v-else class="text-muted">-</span>
@@ -5487,7 +5500,11 @@ import CoordinatePicker from './CoordinatePicker.vue'
 import ExifPanel from './ExifPanel.vue'
 import { parseCoordinates } from '../services/lcpNapLocations'
 import { reverseGeocode, geocodeAddress, buildAddressQueries } from '../services/geocoding'
-import { downloadImage, openImageInNewTab } from '../utils/imageActions'
+// import { downloadImage, openImageInNewTab } from '../utils/imageActions'
+// Gene - Oct 23, 2026: Import ApplicationService, LcpNapLocationService, and image conversion helpers
+import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl } from '../utils/imageActions'
+import { ApplicationService } from '../services/applications'
+import { LcpNapLocationService } from '../services/lcpNapLocations'
 import {
   resolveMenuCodesFromName,
   isSuperAdminName,
@@ -6104,6 +6121,7 @@ const lastFetchedParams = ref(null)
 const error = ref(null)
 const dt = ref()
 
+/*
 const tableImagePreviewVisible = ref(false)
 const tableImagePreviewUrl = ref('')
 const tableImagePreviewTitle = ref('')
@@ -6114,6 +6132,122 @@ const openImagePreview = (url, title = 'Image Preview') => {
   tableImagePreviewTitle.value = title
   tableImageExifVisible.value = false
   tableImagePreviewVisible.value = true
+}
+*/
+// Gene - Oct 23, 2026: Enhanced table image preview, on-demand image fetcher, and Google Drive URL converter
+const tableImagePreviewVisible = ref(false)
+const tableImagePreviewUrl = ref('')
+const tableImagePreviewTitle = ref('')
+const tableImageExifVisible = ref(false)
+const isFetchingImageOnDemand = ref(false)
+
+const openImagePreview = (url, title = 'Image Preview') => {
+  const direct = getDirectImageUrl(url)
+  tableImagePreviewUrl.value = direct || url
+  tableImagePreviewTitle.value = title
+  tableImageExifVisible.value = false
+  tableImagePreviewVisible.value = true
+}
+
+const getTableCellImageUrl = (row, col) => {
+  const val = row[col]
+  if (!val) return ''
+  if (typeof val === 'string') {
+    if (val.includes('drive.google.com') || val.includes('lh3.googleusercontent.com')) {
+      return getDirectImageUrl(val)
+    }
+    if (val.startsWith('data:image/') || val.startsWith('blob:') || val.startsWith('http://') || val.startsWith('https://')) {
+      return val
+    }
+  }
+  return ''
+}
+
+const hasImageValue = (row, col) => {
+  const val = row[col]
+  if (!val) return false
+  if (typeof val === 'string' && val.trim().length > 0) return true
+  if (typeof val === 'object' && val !== null) return true
+  return false
+}
+
+const handleTableImageClick = async (row, col) => {
+  const val = row[col]
+  const title = formatLabel(col)
+
+  if (typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('blob:') || val.startsWith('http://') || val.startsWith('https://'))) {
+    openImagePreview(val, title)
+    return
+  }
+
+  if (typeof val === 'string' && val.includes('drive.google.com')) {
+    openImagePreview(getDirectImageUrl(val), title)
+    return
+  }
+
+  // Applications endpoint: fetch binary image from GET /api/Applications/{id}/GetApplicationImages
+  if (isApplicationEndpoint.value) {
+    const lookupId = row.applicationid || row.id
+    if (lookupId) {
+      isFetchingImageOnDemand.value = true
+      try {
+        const res = await ApplicationService.getApplicationImages(lookupId)
+        if (res && res.data) {
+          const normCol = normalizeColKey(col)
+          const fileKeyMap = {
+            governmentvalidid: 'governmentValidIdFile',
+            secondgovernmentvalidid: 'secondGovernmentValidIdFile',
+            housefrontpicture: 'houseFrontPictureFile',
+            documentpicture: 'documentPictureFile',
+            pictureofstatementbillingfromotherprovider: 'pictureOfStatementBillingFromOtherProviderFile',
+            pictureofstatmentbillingfromotherprovider: 'pictureOfStatementBillingFromOtherProviderFile',
+            proofofbilling: 'proofOfBillingFile',
+            landmark: 'landmarkFile',
+            secondnearestlandmark: 'secondNearestLandmarkFile'
+          }
+          const fileKey = fileKeyMap[normCol]
+          const fileObj = fileKey ? res.data[fileKey] : null
+          const dataUrl = fileResultToDataUrl(fileObj)
+          if (dataUrl) {
+            openImagePreview(dataUrl, title)
+            return
+          }
+        }
+      } catch (err) {
+        console.warn('[handleTableImageClick] Could not fetch application image:', err)
+      } finally {
+        isFetchingImageOnDemand.value = false
+      }
+    }
+  }
+
+  // LCP NAP endpoint: fetch binary image from GET /api/LCPNapLocations/{id}/GetLCPNAPLocationImages
+  if (isLcpNapEndpoint.value && row.id) {
+    isFetchingImageOnDemand.value = true
+    try {
+      const res = await LcpNapLocationService.getLcpNapLocationImages(row.id)
+      if (res && res.data) {
+        const normCol = normalizeColKey(col)
+        let fileObj = null
+        if (normCol === 'image') fileObj = res.data.image
+        else if (normCol === 'image2') fileObj = res.data.image2
+        else if (normCol === 'readingimage') fileObj = res.data.readingImage
+        const dataUrl = fileResultToDataUrl(fileObj)
+        if (dataUrl) {
+          openImagePreview(dataUrl, title)
+          return
+        }
+      }
+    } catch (err) {
+      console.warn('[handleTableImageClick] Could not fetch LCP NAP image:', err)
+    } finally {
+      isFetchingImageOnDemand.value = false
+    }
+  }
+
+  if (typeof val === 'string' && val.trim()) {
+    openImagePreview(val, title)
+  }
 }
 
 // Format camelCase and underscore properties into human-readable Title Case
@@ -13698,19 +13832,79 @@ const getRecordId = (record) => {
   return firstVal !== undefined && firstVal !== null ? firstVal : null
 }
 
+// Gene - Oct 23, 2026: Fetch binary images from GET /api/Applications/{id}/GetApplicationImages or GET /api/LCPNapLocations/{id}/GetLCPNAPLocationImages for View and Edit modals
+const fetchAndAttachImagesForDialog = async (scope, record) => {
+  const targetForm = scope === 'view' ? viewFormData : editFormData
+  if (!record || !targetForm.value) return
+
+  if (isApplicationEndpoint.value) {
+    const lookupId = record.applicationid || record.id
+    if (lookupId) {
+      try {
+        const res = await ApplicationService.getApplicationImages(lookupId)
+        if (res && res.data) {
+          const imgData = res.data
+          const mapping = {
+            governmentvalidid: imgData.governmentValidIdFile,
+            secondgovernmentvalidid: imgData.secondGovernmentValidIdFile,
+            housefrontpicture: imgData.houseFrontPictureFile,
+            documentpicture: imgData.documentPictureFile,
+            pictureofstatementbillingfromotherprovider: imgData.pictureOfStatementBillingFromOtherProviderFile,
+            pictureofstatmentbillingfromotherprovider: imgData.pictureOfStatementBillingFromOtherProviderFile,
+            proofofbilling: imgData.proofOfBillingFile,
+            landmark: imgData.landmarkFile,
+            secondnearestlandmark: imgData.secondNearestLandmarkFile
+          }
+          Object.entries(mapping).forEach(([normCol, fileObj]) => {
+            const dataUrl = fileResultToDataUrl(fileObj)
+            if (dataUrl) {
+              const actualKey = Object.keys(targetForm.value).find(k => normalizeColKey(k) === normCol) || normCol
+              targetForm.value[actualKey] = dataUrl
+            }
+          })
+        }
+      } catch (err) {
+        console.log(`[DynamicApiTable] No uploaded images found via GetApplicationImages for ${lookupId}`)
+      }
+    }
+    // Also resolve any existing Google Drive links
+    Object.keys(targetForm.value).forEach(k => {
+      const v = targetForm.value[k]
+      if (typeof v === 'string' && (v.includes('drive.google.com') || v.includes('lh3.googleusercontent.com'))) {
+        targetForm.value[k] = getDirectImageUrl(v)
+      }
+    })
+  } else if (isLcpNapEndpoint.value && record.id) {
+    try {
+      const res = await LcpNapLocationService.getLcpNapLocationImages(record.id)
+      if (res && res.data) {
+        const imgData = res.data
+        if (imgData.image) {
+          const u = fileResultToDataUrl(imgData.image)
+          if (u) targetForm.value.image = u
+        }
+        if (imgData.image2) {
+          const u = fileResultToDataUrl(imgData.image2)
+          if (u) targetForm.value.image2 = u
+        }
+        if (imgData.readingImage) {
+          const u = fileResultToDataUrl(imgData.readingImage)
+          if (u) targetForm.value.readingImage = u
+        }
+      }
+    } catch (err) {
+      console.log(`[DynamicApiTable] No uploaded images found via GetLCPNAPLocationImages for location #${record.id}`)
+    }
+  }
+}
+
+/*
 const openViewDialog = (record) => {
   clearFieldSearch('view')
   fetchFormLookups()
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   viewingRecordId.value = getRecordId(normRecord) || ''
   viewFormData.value = { ...normRecord }
-  /*
-  if (isMenuEndpoint.value && viewFormData.value) {
-    const disp = getMenuDisplayName(viewFormData.value)
-    if (disp) viewFormData.value.name = disp
-  }
-  */
-  // Gene - Oct 13, 2026: Format display name with code for both Menus and Access Levels in View dialog
   if (isMenuEndpoint.value && viewFormData.value) {
     const disp = getMenuDisplayName(viewFormData.value)
     if (disp) viewFormData.value.name = disp
@@ -13724,13 +13918,35 @@ const openViewDialog = (record) => {
     userStore.fetchUsers().catch(() => {})
   }
 }
+*/
+// Gene - Oct 23, 2026: Fetch application and LCP NAP binary images on openViewDialog
+const openViewDialog = (record) => {
+  clearFieldSearch('view')
+  fetchFormLookups()
+  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  viewingRecordId.value = getRecordId(normRecord) || ''
+  viewFormData.value = { ...normRecord }
+  if (isMenuEndpoint.value && viewFormData.value) {
+    const disp = getMenuDisplayName(viewFormData.value)
+    if (disp) viewFormData.value.name = disp
+  } else if (isAccessLevelEndpoint.value && viewFormData.value) {
+    const disp = getAccessLevelDisplayName(viewFormData.value)
+    if (disp) viewFormData.value.name = disp
+  }
+  autoLocateOnOpen('view')
+  fetchAndAttachImagesForDialog('view', normRecord)
+  displayViewDialog.value = true
+  if ((!usersList.value || usersList.value.length === 0) && (!userStore.users || userStore.users.length === 0)) {
+    userStore.fetchUsers().catch(() => {})
+  }
+}
 
+/*
 const openEditDialog = async (record) => {
   clearFieldSearch('edit')
   resetTouchedAddressBlockers('edit')
   fieldErrors.value.edit = {}
   photoExifByCol.value.edit = {}
-  // Gene - Oct 11, 2026: Reset selected files and image removal flags when opening edit dialog
   selectedFilesByCol.value.edit = {}
   removedImagesByCol.value.edit = {}
   editError.value = null
@@ -13738,13 +13954,6 @@ const openEditDialog = async (record) => {
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   editingRecordId.value = getRecordId(normRecord)
   editFormData.value = { ...normRecord }
-  /*
-  if (isMenuEndpoint.value && editFormData.value) {
-    const disp = getMenuDisplayName(editFormData.value)
-    if (disp) editFormData.value.name = disp
-  }
-  */
-  // Gene - Oct 13, 2026: Format display name with code for both Menus and Access Levels in Edit dialog
   if (isMenuEndpoint.value && editFormData.value) {
     const disp = getMenuDisplayName(editFormData.value)
     if (disp) editFormData.value.name = disp
@@ -13753,6 +13962,29 @@ const openEditDialog = async (record) => {
     if (disp) editFormData.value.name = disp
   }
   autoLocateOnOpen('edit')
+*/
+// Gene - Oct 23, 2026: Fetch application and LCP NAP binary images on openEditDialog
+const openEditDialog = async (record) => {
+  clearFieldSearch('edit')
+  resetTouchedAddressBlockers('edit')
+  fieldErrors.value.edit = {}
+  photoExifByCol.value.edit = {}
+  selectedFilesByCol.value.edit = {}
+  removedImagesByCol.value.edit = {}
+  editError.value = null
+  showPasswordState.value = {}
+  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  editingRecordId.value = getRecordId(normRecord)
+  editFormData.value = { ...normRecord }
+  if (isMenuEndpoint.value && editFormData.value) {
+    const disp = getMenuDisplayName(editFormData.value)
+    if (disp) editFormData.value.name = disp
+  } else if (isAccessLevelEndpoint.value && editFormData.value) {
+    const disp = getAccessLevelDisplayName(editFormData.value)
+    if (disp) editFormData.value.name = disp
+  }
+  autoLocateOnOpen('edit')
+  fetchAndAttachImagesForDialog('edit', normRecord)
 
   // Normalize phone numbers on load so any phone number in the database missing leading 0 displays with 0
   formColumns.value.forEach(col => {

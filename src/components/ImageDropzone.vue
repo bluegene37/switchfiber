@@ -3,8 +3,17 @@
     <!-- Existing/Current Image Preview -->
     <div v-if="modelValue" class="dropzone-preview-card border rounded p-2 d-flex align-items-center justify-content-between sfa-tracker-image-dropzone-preview">
       <div class="d-flex align-items-center gap-3 overflow-hidden">
+        <!--
         <div class="preview-thumbnail-container" @click="showFullPreview = true">
           <img :src="modelValue" alt="Uploaded Image" class="preview-thumbnail rounded" />
+          <div class="preview-zoom-overlay">
+            <i class="pi pi-eye text-white"></i>
+          </div>
+        </div>
+        -->
+        <!-- Gene - Oct 23, 2026: Use previewSrc computed property to resolve Google Drive links and safely render images -->
+        <div class="preview-thumbnail-container" @click="showFullPreview = true">
+          <img :src="previewSrc" alt="Uploaded Image" class="preview-thumbnail rounded" />
           <div class="preview-zoom-overlay">
             <i class="pi pi-eye text-white"></i>
           </div>
@@ -16,8 +25,15 @@
               <span class="font-monospace">{{ originalSize }}<template v-if="compressedSize"> → {{ compressedSize }}</template></span>
               <span v-if="compressedSize" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill fw-semibold" style="font-size: 0.65rem;">Compressed</span>
             </template>
+            <!--
             <template v-else>
               <span>{{ isBase64(modelValue) ? 'Base64 Image' : (modelValue.startsWith('http') ? 'Remote URL' : 'Uploaded File') }}</span>
+              <span v-if="storedSizeLabel" class="font-monospace">· {{ storedSizeLabel }}</span>
+            </template>
+            -->
+            <!-- Gene - Oct 23, 2026: Safe check for string before startsWith('http') and Google Drive indicator -->
+            <template v-else>
+              <span>{{ isBase64(modelValue) ? 'Base64 Image' : (isGoogleDrive(modelValue) ? 'Google Drive Link' : ((typeof modelValue === 'string' && modelValue.startsWith('http')) ? 'Remote URL' : 'Uploaded File')) }}</span>
               <span v-if="storedSizeLabel" class="font-monospace">· {{ storedSizeLabel }}</span>
             </template>
           </small>
@@ -108,6 +124,7 @@
       :closable="true"
     >
       <div class="text-center p-2">
+        <!--
         <img
           :src="modelValue"
           alt="Full Image Preview"
@@ -115,6 +132,15 @@
           style="max-height: 70vh; object-fit: contain;"
         />
         <ExifPanel v-if="showExifInfo" :src="modelValue" />
+        -->
+        <!-- Gene - Oct 23, 2026: Use previewSrc for full image preview to support Google Drive links and base64 URLs safely -->
+        <img
+          :src="previewSrc"
+          alt="Full Image Preview"
+          class="img-fluid rounded shadow-sm"
+          style="max-height: 70vh; object-fit: contain;"
+        />
+        <ExifPanel v-if="showExifInfo" :src="previewSrc" />
       </div>
       <template #footer>
         <div class="d-flex justify-content-end gap-2 flex-wrap">
@@ -162,7 +188,9 @@ import 'dropzone/dist/dropzone.css'
 import Dialog from 'primevue/dialog'
 import exifr from 'exifr'
 import ExifPanel from './ExifPanel.vue'
-import { downloadImage, openImageInNewTab } from '../utils/imageActions'
+// import { downloadImage, openImageInNewTab } from '../utils/imageActions'
+// Gene - Oct 23, 2026: Import getDirectImageUrl to resolve Google Drive links into direct images
+import { downloadImage, openImageInNewTab, getDirectImageUrl } from '../utils/imageActions'
 
 // Disable dropzone auto discovery
 Dropzone.autoDiscover = false
@@ -219,6 +247,20 @@ watch(showFullPreview, (open) => {
 const isBase64 = (str) => {
   return typeof str === 'string' && (str.startsWith('data:image/') || str.length > 500)
 }
+
+// Gene - Oct 23, 2026: Helper to check if modelValue is a Google Drive URL
+const isGoogleDrive = (str) => {
+  return typeof str === 'string' && (str.includes('drive.google.com') || str.includes('lh3.googleusercontent.com'))
+}
+
+// Gene - Oct 23, 2026: Computed renderable image source resolving Google Drive IDs and base64 URLs
+const previewSrc = computed(() => {
+  if (!props.modelValue) return ''
+  if (typeof props.modelValue === 'string') {
+    return getDirectImageUrl(props.modelValue)
+  }
+  return ''
+})
 
 // Compression tuning, mirrored from the user website's DropzoneUploader so
 // admin-entered applications carry the same payload sizes as online ones.
