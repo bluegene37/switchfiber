@@ -547,8 +547,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { LcpNapLocationService, parseCoordinates } from '../services/lcpNapLocations'
 import { useTheme } from '../composables/useTheme'
 import ExifPanel from '../components/ExifPanel.vue'
-// Gene - Oct 23, 2026: Import image actions for LcpNapMap photo handling
-import { openImageInNewTab, downloadImage, unwrapApiPayload, fileResultToDataUrl, getDirectImageUrl } from '../utils/imageActions'
+// Gene - Oct 23, 2026: Import image actions for LcpNapMap photo handling including blobToDataUrl
+import { openImageInNewTab, downloadImage, unwrapApiPayload, fileResultToDataUrl, getDirectImageUrl, blobToDataUrl } from '../utils/imageActions'
 
 const { isDark } = useTheme()
 
@@ -977,6 +977,7 @@ const selectSite = (site, { fly = false } = {}) => {
 // Gene - Oct 23, 2026: Unwrap API response with unwrapApiPayload, use fileResultToDataUrl, and cache loaded site photos to avoid redundant network requests
 const isFetchingSitePhotos = ref(false)
 
+/*
 const selectSite = (site, { fly = false } = {}) => {
   selectedSite.value = site
   copied.value = false
@@ -1025,6 +1026,101 @@ const selectSite = (site, { fly = false } = {}) => {
       }
     }).catch((err) => {
       console.log(`[LcpNapMap] No uploaded photos found for site #${site.id}:`, err)
+    }).finally(() => {
+      isFetchingSitePhotos.value = false
+    })
+  }
+}
+*/
+// Gene - Oct 23, 2026: Fetch LCP NAP photos using both GetLCPNAPLocationImages and GetReadingImage endpoints with fallback support
+const selectSite = (site, { fly = false } = {}) => {
+  selectedSite.value = site
+  copied.value = false
+  refreshMarkerIcons()
+  scrollListToSelection(site)
+  if (fly) focusSite(site)
+  else if (map) map.panTo([site.lat, site.lng])
+
+  if (site && site.id && !site._photosLoaded) {
+    isFetchingSitePhotos.value = true
+    LcpNapLocationService.getLcpNapLocationImages(site.id).then(async res => {
+      const imgs = unwrapApiPayload(res)
+      const updatedPhotos = []
+      if (imgs && typeof imgs === 'object') {
+        const enc1Url = fileResultToDataUrl(imgs.image)
+        if (enc1Url) {
+          updatedPhotos.push({
+            label: 'Enclosure',
+            path: imgs.image?.fileDownloadName || 'enclosure.jpg',
+            url: enc1Url
+          })
+        }
+        const enc2Url = fileResultToDataUrl(imgs.image2)
+        if (enc2Url) {
+          updatedPhotos.push({
+            label: 'Enclosure 2',
+            path: imgs.image2?.fileDownloadName || 'enclosure2.jpg',
+            url: enc2Url
+          })
+        }
+        let readingUrl = fileResultToDataUrl(imgs.readingImage)
+        if (!readingUrl) {
+          try {
+            const readingBlobRes = await LcpNapLocationService.getReadingImage(site.id)
+            if (readingBlobRes && readingBlobRes.data) {
+              readingUrl = await blobToDataUrl(readingBlobRes.data)
+            }
+          } catch (_) {}
+        }
+        if (readingUrl) {
+          updatedPhotos.push({
+            label: 'Reading',
+            path: imgs.readingImage?.fileDownloadName || 'reading.jpg',
+            url: readingUrl
+          })
+        }
+      } else {
+        try {
+          const readingBlobRes = await LcpNapLocationService.getReadingImage(site.id)
+          if (readingBlobRes && readingBlobRes.data) {
+            const readingUrl = await blobToDataUrl(readingBlobRes.data)
+            if (readingUrl) {
+              updatedPhotos.push({
+                label: 'Reading',
+                path: 'reading.jpg',
+                url: readingUrl
+              })
+            }
+          }
+        } catch (_) {}
+      }
+      if (updatedPhotos.length > 0) {
+        site.photos = updatedPhotos
+        site._photosLoaded = true
+        if (selectedSite.value && selectedSite.value.id === site.id) {
+          selectedSite.value.photos = updatedPhotos
+        }
+      }
+    }).catch(async (err) => {
+      console.log(`[LcpNapMap] GetLCPNAPLocationImages error for site #${site.id}:`, err)
+      try {
+        const readingBlobRes = await LcpNapLocationService.getReadingImage(site.id)
+        if (readingBlobRes && readingBlobRes.data) {
+          const readingUrl = await blobToDataUrl(readingBlobRes.data)
+          if (readingUrl) {
+            const updatedPhotos = [{
+              label: 'Reading',
+              path: 'reading.jpg',
+              url: readingUrl
+            }]
+            site.photos = updatedPhotos
+            site._photosLoaded = true
+            if (selectedSite.value && selectedSite.value.id === site.id) {
+              selectedSite.value.photos = updatedPhotos
+            }
+          }
+        }
+      } catch (_) {}
     }).finally(() => {
       isFetchingSitePhotos.value = false
     })

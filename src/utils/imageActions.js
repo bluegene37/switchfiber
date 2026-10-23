@@ -69,6 +69,29 @@ export const fileResultToDataUrl = (fileResult) => {
   return null
 }
 
+// Gene - Oct 23, 2026: Convert binary Blob or response stream to base64 Data URL across browser and Node environments
+export const blobToDataUrl = async (blob) => {
+  if (!blob) return null
+  if (typeof blob === 'string') return blob
+  if (typeof FileReader !== 'undefined' && blob instanceof Blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  }
+  if (blob && typeof blob.arrayBuffer === 'function') {
+    const buffer = await blob.arrayBuffer()
+    const base64 = typeof Buffer !== 'undefined'
+      ? Buffer.from(buffer).toString('base64')
+      : btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    const type = blob.type || 'image/jpeg'
+    return `data:${type};base64,${base64}`
+  }
+  return null
+}
+
 const extensionOf = (url) => {
   if (typeof url !== 'string' || !url) return 'png'
   if (url.startsWith('data:')) {

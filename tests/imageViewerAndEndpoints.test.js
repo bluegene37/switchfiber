@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 /*
 import { getDirectImageUrl, fileResultToDataUrl } from '../src/utils/imageActions.js'
 */
-// Gene - Oct 23, 2026: Import unwrapApiPayload, dataUriToBlob, and isRenderableImageUrl in integration tests
-import { getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl } from '../src/utils/imageActions.js'
+// Gene - Oct 23, 2026: Import unwrapApiPayload, dataUriToBlob, isRenderableImageUrl, and blobToDataUrl in integration tests
+import { getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl, blobToDataUrl } from '../src/utils/imageActions.js'
 import { ApplicationService } from '../src/services/applications.js'
 import { LcpNapLocationService } from '../src/services/lcpNapLocations.js'
 
@@ -163,5 +163,85 @@ describe('Image Viewer & Endpoints Integration Suite', () => {
     }
     attachAfterRemoval('image', 'Image', 'image.jpg')
     assert.equal(attachedAfterRemoval.length, 0)
+  })
+
+  // Gene - Oct 23, 2026: Tests for blobToDataUrl, GetReadingImage binary Blob conversion, and LCP NAP fallback resolution
+  test('blobToDataUrl converts binary Blobs to base64 Data URLs', async () => {
+    const rawData = 'binary-reading-photo-bytes'
+    const blob = new Blob([rawData], { type: 'image/jpeg' })
+    const dataUrl = await blobToDataUrl(blob)
+    assert.ok(typeof dataUrl === 'string')
+    assert.ok(dataUrl.startsWith('data:image/jpeg;base64,'))
+
+    // Null and edge cases
+    assert.equal(await blobToDataUrl(null), null)
+    assert.equal(await blobToDataUrl(undefined), null)
+    assert.equal(await blobToDataUrl('data:image/png;base64,already-data-url'), 'data:image/png;base64,already-data-url')
+  })
+
+  test('LCP NAP dual-endpoint workflow resolves reading image from GetReadingImage when GetLCPNAPLocationImages readingImage is missing', async () => {
+    // Simulated LCP NAP response without readingImage
+    const lcpImagesRes = {
+      image: { fileContents: 'enclosure1base64', contentType: 'image/jpeg' },
+      image2: { fileContents: 'enclosure2base64', contentType: 'image/jpeg' },
+      readingImage: null
+    }
+
+    const targetForm = {
+      image: '',
+      image2: '',
+      readingImage: ''
+    }
+
+    // Step 1: Map GetLCPNAPLocationImages
+    if (lcpImagesRes.image) targetForm.image = fileResultToDataUrl(lcpImagesRes.image)
+    if (lcpImagesRes.image2) targetForm.image2 = fileResultToDataUrl(lcpImagesRes.image2)
+    if (lcpImagesRes.readingImage) targetForm.readingImage = fileResultToDataUrl(lcpImagesRes.readingImage)
+
+    assert.equal(targetForm.image, 'data:image/jpeg;base64,enclosure1base64')
+    assert.equal(targetForm.image2, 'data:image/jpeg;base64,enclosure2base64')
+    assert.equal(targetForm.readingImage, '')
+
+    // Step 2: Fallback to GetReadingImage endpoint
+    const readingBlob = new Blob(['sample-reading-image-stream'], { type: 'image/jpeg' })
+    const fallbackReadingUrl = await blobToDataUrl(readingBlob)
+    targetForm.readingImage = fallbackReadingUrl
+
+    assert.ok(targetForm.readingImage.startsWith('data:image/jpeg;base64,'))
+    assert.ok(isRenderableImageUrl(targetForm.readingImage))
+  })
+
+  test('LCP NAP map photo resolution loads all 3 photos using GetLCPNAPLocationImages and GetReadingImage', async () => {
+    const site = { id: 1, name: 'LCP 031 NAP 001', photos: [] }
+
+    // Simulated API response where GetLCPNAPLocationImages provides enclosure photos
+    const apiPhotos = {
+      image: { fileContents: 'photo1', contentType: 'image/jpeg', fileDownloadName: 'enc1.jpg' },
+      image2: { fileContents: 'photo2', contentType: 'image/jpeg', fileDownloadName: 'enc2.jpg' },
+      readingImage: null
+    }
+
+    const updatedPhotos = []
+    const enc1Url = fileResultToDataUrl(apiPhotos.image)
+    if (enc1Url) updatedPhotos.push({ label: 'Enclosure', path: apiPhotos.image.fileDownloadName, url: enc1Url })
+
+    const enc2Url = fileResultToDataUrl(apiPhotos.image2)
+    if (enc2Url) updatedPhotos.push({ label: 'Enclosure 2', path: apiPhotos.image2.fileDownloadName, url: enc2Url })
+
+    let readingUrl = fileResultToDataUrl(apiPhotos.readingImage)
+    if (!readingUrl) {
+      const blob = new Blob(['reading-stream'], { type: 'image/jpeg' })
+      readingUrl = await blobToDataUrl(blob)
+    }
+    if (readingUrl) {
+      updatedPhotos.push({ label: 'Reading', path: 'reading.jpg', url: readingUrl })
+    }
+
+    site.photos = updatedPhotos
+    assert.equal(site.photos.length, 3)
+    assert.equal(site.photos[0].label, 'Enclosure')
+    assert.equal(site.photos[1].label, 'Enclosure 2')
+    assert.equal(site.photos[2].label, 'Reading')
+    assert.ok(site.photos[2].url.startsWith('data:image/jpeg;base64,'))
   })
 })

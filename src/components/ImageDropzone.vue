@@ -219,8 +219,9 @@ import Dialog from 'primevue/dialog'
 import exifr from 'exifr'
 import ExifPanel from './ExifPanel.vue'
 // import { downloadImage, openImageInNewTab } from '../utils/imageActions'
-// Gene - Oct 23, 2026: Import getDirectImageUrl to resolve Google Drive links into direct images
-import { downloadImage, openImageInNewTab, getDirectImageUrl } from '../utils/imageActions'
+// import { downloadImage, openImageInNewTab, getDirectImageUrl } from '../utils/imageActions'
+// Gene - Oct 23, 2026: Import fileResultToDataUrl to render FileContentResult objects in previewSrc
+import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl } from '../utils/imageActions'
 
 // Disable dropzone auto discovery
 Dropzone.autoDiscover = false
@@ -320,11 +321,24 @@ const isGoogleDrive = (str) => {
   return typeof str === 'string' && (str.includes('drive.google.com') || str.includes('lh3.googleusercontent.com'))
 }
 
+/*
 // Gene - Oct 23, 2026: Computed renderable image source resolving Google Drive IDs and base64 URLs
 const previewSrc = computed(() => {
   if (!props.modelValue) return ''
   if (typeof props.modelValue === 'string') {
     return getDirectImageUrl(props.modelValue)
+  }
+  return ''
+})
+*/
+// Gene - Oct 23, 2026: Computed renderable image source resolving Google Drive IDs, base64 URLs, and FileContentResult objects
+const previewSrc = computed(() => {
+  if (!props.modelValue) return ''
+  if (typeof props.modelValue === 'string') {
+    return getDirectImageUrl(props.modelValue)
+  }
+  if (typeof props.modelValue === 'object') {
+    return fileResultToDataUrl(props.modelValue) || ''
   }
   return ''
 })

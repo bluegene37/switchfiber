@@ -5604,8 +5604,12 @@ import { reverseGeocode, geocodeAddress, buildAddressQueries } from '../services
 // Gene - Oct 23, 2026: Import ApplicationService, LcpNapLocationService, and image conversion helpers
 import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl } from '../utils/imageActions'
 */
+/*
 // Gene - Oct 23, 2026: Import unwrapApiPayload, dataUriToBlob, and isRenderableImageUrl for image viewer and LCP NAP update preservation
 import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl } from '../utils/imageActions'
+*/
+// Gene - Oct 23, 2026: Import blobToDataUrl to handle binary Blob streams from GetReadingImage endpoint
+import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl, blobToDataUrl } from '../utils/imageActions'
 import { ApplicationService } from '../services/applications'
 import { LcpNapLocationService } from '../services/lcpNapLocations'
 import {
@@ -6378,6 +6382,7 @@ const openImagePreview = (url, title = 'Image Preview') => {
   tableImagePreviewVisible.value = true
 }
 
+/*
 const getTableCellImageUrl = (row, col) => {
   const val = row[col]
   if (!val) return ''
@@ -6387,6 +6392,60 @@ const getTableCellImageUrl = (row, col) => {
     }
     if (isRenderableImageUrl(val)) {
       return val
+    }
+  }
+  return ''
+}
+*/
+// Gene - Oct 23, 2026: Enhanced getTableCellImageUrl to check recordImagesCache and FileContentResult objects for instant thumbnail display
+const getTableCellImageUrl = (row, col) => {
+  const val = row[col]
+  if (typeof val === 'string') {
+    if (val.includes('drive.google.com') || val.includes('lh3.googleusercontent.com')) {
+      return getDirectImageUrl(val)
+    }
+    if (isRenderableImageUrl(val)) {
+      return val
+    }
+  }
+  if (typeof val === 'object' && val !== null) {
+    const directFromObj = fileResultToDataUrl(val)
+    if (directFromObj) return directFromObj
+  }
+  const rowId = row?.applicationid || row?.id
+  if (rowId) {
+    if (isLcpNapEndpoint.value) {
+      const cached = recordImagesCache.get(`lcp:${rowId}`)
+      if (cached) {
+        const normCol = normalizeColKey(col)
+        let fileObj = null
+        if (normCol === 'image') fileObj = cached.image
+        else if (normCol === 'image2') fileObj = cached.image2
+        else if (normCol === 'readingimage') fileObj = cached.readingImage
+        if (typeof fileObj === 'string' && isRenderableImageUrl(fileObj)) return fileObj
+        const u = fileResultToDataUrl(fileObj)
+        if (u) return u
+      }
+    } else if (isApplicationEndpoint.value) {
+      const cached = recordImagesCache.get(`app:${rowId}`)
+      if (cached) {
+        const normCol = normalizeColKey(col)
+        const fileKeyMap = {
+          governmentvalidid: 'governmentValidIdFile',
+          secondgovernmentvalidid: 'secondGovernmentValidIdFile',
+          housefrontpicture: 'houseFrontPictureFile',
+          documentpicture: 'documentPictureFile',
+          pictureofstatementbillingfromotherprovider: 'pictureOfStatementBillingFromOtherProviderFile',
+          pictureofstatmentbillingfromotherprovider: 'pictureOfStatementBillingFromOtherProviderFile',
+          proofofbilling: 'proofOfBillingFile',
+          landmark: 'landmarkFile',
+          secondnearestlandmark: 'secondNearestLandmarkFile'
+        }
+        const fileKey = fileKeyMap[normCol]
+        const fileObj = fileKey ? cached[fileKey] : null
+        const u = fileResultToDataUrl(fileObj)
+        if (u) return u
+      }
     }
   }
   return ''
@@ -6457,6 +6516,7 @@ const handleTableImageClick = async (row, col) => {
     }
   }
 
+  /*
   // LCP NAP endpoint: fetch binary image from GET /api/LCPNapLocations/{id}/GetLCPNAPLocationImages
   if (isLcpNapEndpoint.value && row?.id) {
     fetchingCellKey.value = cellKey
@@ -6478,6 +6538,84 @@ const handleTableImageClick = async (row, col) => {
         if (dataUrl) {
           openImagePreview(dataUrl, title)
           return
+        }
+      }
+    } catch (err) {
+      console.warn('[handleTableImageClick] Could not fetch LCP NAP image:', err)
+    } finally {
+      if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
+      isFetchingImageOnDemand.value = false
+    }
+  }
+  */
+  // Gene - Oct 23, 2026: Fetch LCP NAP photos using both GetLCPNAPLocationImages and GetReadingImage with on-demand fallback and caching
+  if (isLcpNapEndpoint.value && row?.id) {
+    fetchingCellKey.value = cellKey
+    isFetchingImageOnDemand.value = true
+    try {
+      const normCol = normalizeColKey(col)
+      let imgData = recordImagesCache.get(`lcp:${row.id}`)
+
+      if (normCol === 'readingimage') {
+        let readingUrl = imgData ? (typeof imgData.readingImage === 'string' && isRenderableImageUrl(imgData.readingImage) ? imgData.readingImage : fileResultToDataUrl(imgData.readingImage)) : null
+
+        // 1. Try dedicated GetReadingImage endpoint first if not yet cached
+        if (!readingUrl) {
+          try {
+            const rawReading = await LcpNapLocationService.getReadingImage(row.id)
+            if (rawReading && rawReading.data) {
+              readingUrl = await blobToDataUrl(rawReading.data)
+              if (readingUrl) {
+                if (!imgData) {
+                  imgData = {}
+                  recordImagesCache.set(`lcp:${row.id}`, imgData)
+                }
+                imgData.readingImage = readingUrl
+              }
+            }
+          } catch (rErr) {
+            console.log(`[handleTableImageClick] GetReadingImage 404 or error for #${row.id}, falling back to GetLCPNAPLocationImages`)
+          }
+        }
+
+        // 2. If still not obtained, fall back to GetLCPNAPLocationImages
+        if (!readingUrl) {
+          if (!imgData || !imgData.readingImage) {
+            const rawRes = await LcpNapLocationService.getLcpNapLocationImages(row.id)
+            const unwrapped = unwrapApiPayload(rawRes)
+            if (unwrapped) {
+              imgData = { ...imgData, ...unwrapped }
+              recordImagesCache.set(`lcp:${row.id}`, imgData)
+            }
+          }
+          if (imgData && imgData.readingImage) {
+            readingUrl = fileResultToDataUrl(imgData.readingImage)
+          }
+        }
+
+        if (readingUrl) {
+          openImagePreview(readingUrl, title)
+          return
+        }
+      } else {
+        // Enclosure photos: image, image2
+        if (!imgData || (!imgData.image && !imgData.image2)) {
+          const rawRes = await LcpNapLocationService.getLcpNapLocationImages(row.id)
+          const unwrapped = unwrapApiPayload(rawRes)
+          if (unwrapped) {
+            imgData = { ...imgData, ...unwrapped }
+            recordImagesCache.set(`lcp:${row.id}`, imgData)
+          }
+        }
+        if (imgData) {
+          let fileObj = null
+          if (normCol === 'image') fileObj = imgData.image
+          else if (normCol === 'image2') fileObj = imgData.image2
+          const dataUrl = fileResultToDataUrl(fileObj)
+          if (dataUrl) {
+            openImagePreview(dataUrl, title)
+            return
+          }
         }
       }
     } catch (err) {
@@ -14298,6 +14436,7 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
             targetForm.value[k] = getDirectImageUrl(v)
           }
         })
+/*
       } else if (isLcpNapEndpoint.value && record.id) {
         let imgData = recordImagesCache.get(`lcp:${record.id}`)
         if (!imgData) {
@@ -14320,6 +14459,61 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
               if (targetForm.value.readingImage !== undefined) targetForm.value.readingImage = u
               if (targetForm.value.readingimage !== undefined) targetForm.value.readingimage = u
             }
+          }
+        }
+      }
+*/
+      // Gene - Oct 23, 2026: Fetch LCP NAP photos using both GetLCPNAPLocationImages and GetReadingImage endpoints with fallback support
+      } else if (isLcpNapEndpoint.value && record.id) {
+        let imgData = recordImagesCache.get(`lcp:${record.id}`)
+        if (!imgData) {
+          try {
+            const rawRes = await LcpNapLocationService.getLcpNapLocationImages(record.id)
+            imgData = unwrapApiPayload(rawRes)
+            if (imgData) recordImagesCache.set(`lcp:${record.id}`, imgData)
+          } catch (lcpErr) {
+            console.warn(`[DynamicApiTable] GetLCPNAPLocationImages error for #${record.id}:`, lcpErr)
+          }
+        }
+        if (imgData) {
+          if (imgData.image && targetForm.value.image !== undefined) {
+            const u = fileResultToDataUrl(imgData.image)
+            if (u) targetForm.value.image = u
+          }
+          if (imgData.image2 && targetForm.value.image2 !== undefined) {
+            const u = fileResultToDataUrl(imgData.image2)
+            if (u) targetForm.value.image2 = u
+          }
+          if (imgData.readingImage && (targetForm.value.readingImage !== undefined || targetForm.value.readingimage !== undefined)) {
+            const u = typeof imgData.readingImage === 'string' && isRenderableImageUrl(imgData.readingImage)
+              ? imgData.readingImage
+              : fileResultToDataUrl(imgData.readingImage)
+            if (u) {
+              if (targetForm.value.readingImage !== undefined) targetForm.value.readingImage = u
+              if (targetForm.value.readingimage !== undefined) targetForm.value.readingimage = u
+            }
+          }
+        }
+
+        // If readingImage was not found or is not yet a renderable image in targetForm, fetch from GetReadingImage endpoint
+        const currentReading = targetForm.value.readingImage || targetForm.value.readingimage
+        if (!currentReading || !isRenderableImageUrl(currentReading)) {
+          try {
+            const readingBlobRes = await LcpNapLocationService.getReadingImage(record.id)
+            if (readingBlobRes && readingBlobRes.data) {
+              const readingUrl = await blobToDataUrl(readingBlobRes.data)
+              if (readingUrl) {
+                if (targetForm.value.readingImage !== undefined) targetForm.value.readingImage = readingUrl
+                if (targetForm.value.readingimage !== undefined) targetForm.value.readingimage = readingUrl
+                if (!imgData) {
+                  imgData = {}
+                  recordImagesCache.set(`lcp:${record.id}`, imgData)
+                }
+                imgData.readingImage = readingUrl
+              }
+            }
+          } catch (rErr) {
+            // Expected 404 when location record has no reading image uploaded
           }
         }
       }
