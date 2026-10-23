@@ -506,14 +506,19 @@
             <span v-else class="text-muted">-</span>
           </span>
           -->
-          <!-- Gene - Oct 23, 2026: Enhanced table cell rendering for image_upload supporting Google Drive links, API FileContentResult, and on-demand server fetching -->
+          <!-- Gene - Oct 23, 2026: Enhanced table cell rendering for image_upload supporting Google Drive links, API FileContentResult, on-demand server fetching, and spinner feedback -->
           <span v-else-if="getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image'">
             <span v-if="hasImageValue(slotProps.data, col)" class="d-inline-flex align-items-center gap-1.5 cursor-pointer" @click.stop="handleTableImageClick(slotProps.data, col)">
-              <img v-if="getTableCellImageUrl(slotProps.data, col)" :src="getTableCellImageUrl(slotProps.data, col)" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
+              <span v-if="isFetchingCellImage(slotProps.data, col)" class="rounded border bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px;">
+                <i class="pi pi-spin pi-spinner text-primary" style="font-size: 0.85rem;"></i>
+              </span>
+              <img v-else-if="getTableCellImageUrl(slotProps.data, col)" :src="getTableCellImageUrl(slotProps.data, col)" alt="Thumbnail" class="rounded border" style="width: 28px; height: 28px; object-fit: cover;" />
               <span v-else class="rounded border bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px;">
                 <i class="pi pi-image text-primary" style="font-size: 0.85rem;"></i>
               </span>
-              <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">View</span>
+              <span class="small text-primary text-decoration-underline" style="font-size: 0.78rem;">
+                {{ isFetchingCellImage(slotProps.data, col) ? 'Loading...' : 'View' }}
+              </span>
             </span>
             <span v-else class="text-muted">-</span>
           </span>
@@ -3059,12 +3064,24 @@
                 />
               </div>
               -->
-              <!-- Gene - Oct 20, 2026: Render image preview in View Modal for both image_upload and inventory_item_image -->
+              <!--
+              // Gene - Oct 20, 2026: Render image preview in View Modal for both image_upload and inventory_item_image
               <div v-else-if="getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image'" class="w-100">
                 <ImageDropzone
                   :modelValue="viewFormData[col]"
                   :fieldId="`view-${col}`"
                   :label="formatLabel(col)"
+                  disabled
+                />
+              </div>
+              -->
+              <!-- Gene - Oct 23, 2026: Bind loading state to ImageDropzone in View Modal -->
+              <div v-else-if="getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image'" class="w-100">
+                <ImageDropzone
+                  :modelValue="viewFormData[col]"
+                  :fieldId="`view-${col}`"
+                  :label="formatLabel(col)"
+                  :loading="isFetchingDialogImages.view"
                   disabled
                 />
               </div>
@@ -4298,13 +4315,27 @@
                   @exif="onPhotoExif('edit', col, $event)"
                 />
                 -->
-                <!-- Gene - Oct 11, 2026: Wire up file-selected and file-removed on ImageDropzone for multipart upload -->
+                <!--
+                // Gene - Oct 11, 2026: Wire up file-selected and file-removed on ImageDropzone for multipart upload
                 <ImageDropzone
                   v-model="editFormData[col]"
                   :fieldId="`edit-${col}`"
                   :label="formatLabel(col)"
                   :required="isFieldRequired(col, 'edit')"
                   :disabled="isFieldDisabledInEdit(col)"
+                  @exif="onPhotoExif('edit', col, $event)"
+                  @file-selected="onFileSelected('edit', col, $event)"
+                  @file-removed="onFileRemoved('edit', col)"
+                />
+                -->
+                <!-- Gene - Oct 23, 2026: Bind loading state to ImageDropzone in Edit Modal -->
+                <ImageDropzone
+                  v-model="editFormData[col]"
+                  :fieldId="`edit-${col}`"
+                  :label="formatLabel(col)"
+                  :required="isFieldRequired(col, 'edit')"
+                  :disabled="isFieldDisabledInEdit(col)"
+                  :loading="isFetchingDialogImages.edit"
                   @exif="onPhotoExif('edit', col, $event)"
                   @file-selected="onFileSelected('edit', col, $event)"
                   @file-removed="onFileRemoved('edit', col)"
@@ -5487,7 +5518,11 @@
 </template>
 
 <script setup>
+/*
 import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick, useId } from 'vue'
+*/
+// Gene - Oct 23, 2026: Import reactive from vue for isFetchingDialogImages state
+import { ref, reactive, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick, useId } from 'vue'
 import { useRoute } from 'vue-router'
 import { CrudService } from '../services/crud'
 import { RadiusUserService } from '../services/radiusUsers'
@@ -5501,8 +5536,12 @@ import ExifPanel from './ExifPanel.vue'
 import { parseCoordinates } from '../services/lcpNapLocations'
 import { reverseGeocode, geocodeAddress, buildAddressQueries } from '../services/geocoding'
 // import { downloadImage, openImageInNewTab } from '../utils/imageActions'
+/*
 // Gene - Oct 23, 2026: Import ApplicationService, LcpNapLocationService, and image conversion helpers
 import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl } from '../utils/imageActions'
+*/
+// Gene - Oct 23, 2026: Import unwrapApiPayload, dataUriToBlob, and isRenderableImageUrl for image viewer and LCP NAP update preservation
+import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl } from '../utils/imageActions'
 import { ApplicationService } from '../services/applications'
 import { LcpNapLocationService } from '../services/lcpNapLocations'
 import {
@@ -6134,6 +6173,7 @@ const openImagePreview = (url, title = 'Image Preview') => {
   tableImagePreviewVisible.value = true
 }
 */
+/*
 // Gene - Oct 23, 2026: Enhanced table image preview, on-demand image fetcher, and Google Drive URL converter
 const tableImagePreviewVisible = ref(false)
 const tableImagePreviewUrl = ref('')
@@ -6246,6 +6286,145 @@ const handleTableImageClick = async (row, col) => {
   }
 
   if (typeof val === 'string' && val.trim()) {
+    openImagePreview(val, title)
+  }
+}
+*/
+// Gene - Oct 23, 2026: Enhanced table image preview, on-demand caching with recordImagesCache, unwrapApiPayload, cell loading indicator, and dialog loading state
+const tableImagePreviewVisible = ref(false)
+const tableImagePreviewUrl = ref('')
+const tableImagePreviewTitle = ref('')
+const tableImageExifVisible = ref(false)
+const isFetchingImageOnDemand = ref(false)
+const fetchingCellKey = ref('')
+const recordImagesCache = new Map()
+const isFetchingDialogImages = reactive({ view: false, edit: false })
+const pendingDialogImageFetch = { view: null, edit: null }
+
+const isFetchingCellImage = (row, col) => {
+  const rowId = row?.applicationid || row?.id || ''
+  return fetchingCellKey.value === `${rowId}:${col}`
+}
+
+const openImagePreview = (url, title = 'Image Preview') => {
+  const direct = getDirectImageUrl(url)
+  tableImagePreviewUrl.value = direct || url
+  tableImagePreviewTitle.value = title
+  tableImageExifVisible.value = false
+  tableImagePreviewVisible.value = true
+}
+
+const getTableCellImageUrl = (row, col) => {
+  const val = row[col]
+  if (!val) return ''
+  if (typeof val === 'string') {
+    if (val.includes('drive.google.com') || val.includes('lh3.googleusercontent.com')) {
+      return getDirectImageUrl(val)
+    }
+    if (isRenderableImageUrl(val)) {
+      return val
+    }
+  }
+  return ''
+}
+
+const hasImageValue = (row, col) => {
+  const val = row[col]
+  if (!val) return false
+  if (typeof val === 'string' && val.trim().length > 0) return true
+  if (typeof val === 'object' && val !== null) return true
+  return false
+}
+
+const handleTableImageClick = async (row, col) => {
+  const val = row[col]
+  const title = formatLabel(col)
+
+  if (typeof val === 'string' && isRenderableImageUrl(val)) {
+    openImagePreview(val, title)
+    return
+  }
+
+  if (typeof val === 'string' && (val.includes('drive.google.com') || val.includes('lh3.googleusercontent.com'))) {
+    openImagePreview(getDirectImageUrl(val), title)
+    return
+  }
+
+  const rowId = row?.applicationid || row?.id
+  const cellKey = `${rowId}:${col}`
+
+  // Applications endpoint: fetch binary image from GET /api/Applications/{id}/GetApplicationImages
+  if (isApplicationEndpoint.value && rowId) {
+    fetchingCellKey.value = cellKey
+    isFetchingImageOnDemand.value = true
+    try {
+      let imgData = recordImagesCache.get(`app:${rowId}`)
+      if (!imgData) {
+        const rawRes = await ApplicationService.getApplicationImages(rowId)
+        imgData = unwrapApiPayload(rawRes)
+        if (imgData) recordImagesCache.set(`app:${rowId}`, imgData)
+      }
+      if (imgData) {
+        const normCol = normalizeColKey(col)
+        const fileKeyMap = {
+          governmentvalidid: 'governmentValidIdFile',
+          secondgovernmentvalidid: 'secondGovernmentValidIdFile',
+          housefrontpicture: 'houseFrontPictureFile',
+          documentpicture: 'documentPictureFile',
+          pictureofstatementbillingfromotherprovider: 'pictureOfStatementBillingFromOtherProviderFile',
+          pictureofstatmentbillingfromotherprovider: 'pictureOfStatementBillingFromOtherProviderFile',
+          proofofbilling: 'proofOfBillingFile',
+          landmark: 'landmarkFile',
+          secondnearestlandmark: 'secondNearestLandmarkFile'
+        }
+        const fileKey = fileKeyMap[normCol]
+        const fileObj = fileKey ? imgData[fileKey] : null
+        const dataUrl = fileResultToDataUrl(fileObj)
+        if (dataUrl) {
+          openImagePreview(dataUrl, title)
+          return
+        }
+      }
+    } catch (err) {
+      console.warn('[handleTableImageClick] Could not fetch application image:', err)
+    } finally {
+      if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
+      isFetchingImageOnDemand.value = false
+    }
+  }
+
+  // LCP NAP endpoint: fetch binary image from GET /api/LCPNapLocations/{id}/GetLCPNAPLocationImages
+  if (isLcpNapEndpoint.value && row?.id) {
+    fetchingCellKey.value = cellKey
+    isFetchingImageOnDemand.value = true
+    try {
+      let imgData = recordImagesCache.get(`lcp:${row.id}`)
+      if (!imgData) {
+        const rawRes = await LcpNapLocationService.getLcpNapLocationImages(row.id)
+        imgData = unwrapApiPayload(rawRes)
+        if (imgData) recordImagesCache.set(`lcp:${row.id}`, imgData)
+      }
+      if (imgData) {
+        const normCol = normalizeColKey(col)
+        let fileObj = null
+        if (normCol === 'image') fileObj = imgData.image
+        else if (normCol === 'image2') fileObj = imgData.image2
+        else if (normCol === 'readingimage') fileObj = imgData.readingImage
+        const dataUrl = fileResultToDataUrl(fileObj)
+        if (dataUrl) {
+          openImagePreview(dataUrl, title)
+          return
+        }
+      }
+    } catch (err) {
+      console.warn('[handleTableImageClick] Could not fetch LCP NAP image:', err)
+    } finally {
+      if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
+      isFetchingImageOnDemand.value = false
+    }
+  }
+
+  if (typeof val === 'string' && val.trim() && isRenderableImageUrl(val)) {
     openImagePreview(val, title)
   }
 }
@@ -7212,10 +7391,19 @@ function deduplicateColumns(colList) {
   if (!Array.isArray(colList)) return []
   const normalizedSet = new Set()
   const result = []
+  /*
   const aliasMap = {
     'preferred_day': 'preferredday',
     'verified_by': 'verifiedby',
     'applicationidvalue': 'applicationid'
+  }
+  */
+  // Gene - Oct 23, 2026: Add pictureofstatmentbillingfromotherprovider alias mapping to prevent duplicate dropzones
+  const aliasMap = {
+    'preferred_day': 'preferredday',
+    'verified_by': 'verifiedby',
+    'applicationidvalue': 'applicationid',
+    'pictureofstatmentbillingfromotherprovider': 'pictureofstatementbillingfromotherprovider'
   }
 
   const lowerCols = colList.map(c => c.toLowerCase())
@@ -13832,6 +14020,7 @@ const getRecordId = (record) => {
   return firstVal !== undefined && firstVal !== null ? firstVal : null
 }
 
+/*
 // Gene - Oct 23, 2026: Fetch binary images from GET /api/Applications/{id}/GetApplicationImages or GET /api/LCPNapLocations/{id}/GetLCPNAPLocationImages for View and Edit modals
 const fetchAndAttachImagesForDialog = async (scope, record) => {
   const targetForm = scope === 'view' ? viewFormData : editFormData
@@ -13898,28 +14087,6 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
   }
 }
 
-/*
-const openViewDialog = (record) => {
-  clearFieldSearch('view')
-  fetchFormLookups()
-  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
-  viewingRecordId.value = getRecordId(normRecord) || ''
-  viewFormData.value = { ...normRecord }
-  if (isMenuEndpoint.value && viewFormData.value) {
-    const disp = getMenuDisplayName(viewFormData.value)
-    if (disp) viewFormData.value.name = disp
-  } else if (isAccessLevelEndpoint.value && viewFormData.value) {
-    const disp = getAccessLevelDisplayName(viewFormData.value)
-    if (disp) viewFormData.value.name = disp
-  }
-  autoLocateOnOpen('view')
-  displayViewDialog.value = true
-  if ((!usersList.value || usersList.value.length === 0) && (!userStore.users || userStore.users.length === 0)) {
-    userStore.fetchUsers().catch(() => {})
-  }
-}
-*/
-// Gene - Oct 23, 2026: Fetch application and LCP NAP binary images on openViewDialog
 const openViewDialog = (record) => {
   clearFieldSearch('view')
   fetchFormLookups()
@@ -13941,29 +14108,6 @@ const openViewDialog = (record) => {
   }
 }
 
-/*
-const openEditDialog = async (record) => {
-  clearFieldSearch('edit')
-  resetTouchedAddressBlockers('edit')
-  fieldErrors.value.edit = {}
-  photoExifByCol.value.edit = {}
-  selectedFilesByCol.value.edit = {}
-  removedImagesByCol.value.edit = {}
-  editError.value = null
-  showPasswordState.value = {}
-  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
-  editingRecordId.value = getRecordId(normRecord)
-  editFormData.value = { ...normRecord }
-  if (isMenuEndpoint.value && editFormData.value) {
-    const disp = getMenuDisplayName(editFormData.value)
-    if (disp) editFormData.value.name = disp
-  } else if (isAccessLevelEndpoint.value && editFormData.value) {
-    const disp = getAccessLevelDisplayName(editFormData.value)
-    if (disp) editFormData.value.name = disp
-  }
-  autoLocateOnOpen('edit')
-*/
-// Gene - Oct 23, 2026: Fetch application and LCP NAP binary images on openEditDialog
 const openEditDialog = async (record) => {
   clearFieldSearch('edit')
   resetTouchedAddressBlockers('edit')
@@ -13985,6 +14129,132 @@ const openEditDialog = async (record) => {
   }
   autoLocateOnOpen('edit')
   fetchAndAttachImagesForDialog('edit', normRecord)
+*/
+// Gene - Oct 23, 2026: Cached, unwrapped, loading-tracked dialog image attachment preventing duplicate keys
+const fetchAndAttachImagesForDialog = async (scope, record) => {
+  const targetForm = scope === 'view' ? viewFormData : editFormData
+  if (!record || !targetForm.value) return
+
+  isFetchingDialogImages[scope] = true
+  const fetchPromise = (async () => {
+    try {
+      if (isApplicationEndpoint.value) {
+        const lookupId = record.applicationid || record.id
+        if (lookupId) {
+          let imgData = recordImagesCache.get(`app:${lookupId}`)
+          if (!imgData) {
+            const rawRes = await ApplicationService.getApplicationImages(lookupId)
+            imgData = unwrapApiPayload(rawRes)
+            if (imgData) recordImagesCache.set(`app:${lookupId}`, imgData)
+          }
+          if (imgData) {
+            const mapping = {
+              governmentvalidid: imgData.governmentValidIdFile,
+              secondgovernmentvalidid: imgData.secondGovernmentValidIdFile,
+              housefrontpicture: imgData.houseFrontPictureFile,
+              documentpicture: imgData.documentPictureFile,
+              pictureofstatementbillingfromotherprovider: imgData.pictureOfStatementBillingFromOtherProviderFile,
+              pictureofstatmentbillingfromotherprovider: imgData.pictureOfStatementBillingFromOtherProviderFile,
+              proofofbilling: imgData.proofOfBillingFile,
+              landmark: imgData.landmarkFile,
+              secondnearestlandmark: imgData.secondNearestLandmarkFile
+            }
+            Object.entries(mapping).forEach(([normCol, fileObj]) => {
+              const dataUrl = fileResultToDataUrl(fileObj)
+              if (dataUrl) {
+                const actualKey = Object.keys(targetForm.value).find(k => normalizeColKey(k) === normCol && (getFieldType(k) === 'image_upload' || getFieldType(k) === 'inventory_item_image'))
+                if (actualKey) {
+                  targetForm.value[actualKey] = dataUrl
+                }
+              }
+            })
+          }
+        }
+        // Also resolve any existing Google Drive links
+        Object.keys(targetForm.value).forEach(k => {
+          const v = targetForm.value[k]
+          if (typeof v === 'string' && (v.includes('drive.google.com') || v.includes('lh3.googleusercontent.com'))) {
+            targetForm.value[k] = getDirectImageUrl(v)
+          }
+        })
+      } else if (isLcpNapEndpoint.value && record.id) {
+        let imgData = recordImagesCache.get(`lcp:${record.id}`)
+        if (!imgData) {
+          const rawRes = await LcpNapLocationService.getLcpNapLocationImages(record.id)
+          imgData = unwrapApiPayload(rawRes)
+          if (imgData) recordImagesCache.set(`lcp:${record.id}`, imgData)
+        }
+        if (imgData) {
+          if (imgData.image && targetForm.value.image !== undefined) {
+            const u = fileResultToDataUrl(imgData.image)
+            if (u) targetForm.value.image = u
+          }
+          if (imgData.image2 && targetForm.value.image2 !== undefined) {
+            const u = fileResultToDataUrl(imgData.image2)
+            if (u) targetForm.value.image2 = u
+          }
+          if (imgData.readingImage && (targetForm.value.readingImage !== undefined || targetForm.value.readingimage !== undefined)) {
+            const u = fileResultToDataUrl(imgData.readingImage)
+            if (u) {
+              if (targetForm.value.readingImage !== undefined) targetForm.value.readingImage = u
+              if (targetForm.value.readingimage !== undefined) targetForm.value.readingimage = u
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`[DynamicApiTable] Image fetch error for ${scope}:`, err)
+    } finally {
+      isFetchingDialogImages[scope] = false
+    }
+  })()
+
+  pendingDialogImageFetch[scope] = fetchPromise
+  return fetchPromise
+}
+
+const openViewDialog = (record) => {
+  clearFieldSearch('view')
+  fetchFormLookups()
+  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  viewingRecordId.value = getRecordId(normRecord) || ''
+  viewFormData.value = { ...normRecord }
+  if (isMenuEndpoint.value && viewFormData.value) {
+    const disp = getMenuDisplayName(viewFormData.value)
+    if (disp) viewFormData.value.name = disp
+  } else if (isAccessLevelEndpoint.value && viewFormData.value) {
+    const disp = getAccessLevelDisplayName(viewFormData.value)
+    if (disp) viewFormData.value.name = disp
+  }
+  autoLocateOnOpen('view')
+  pendingDialogImageFetch.view = fetchAndAttachImagesForDialog('view', normRecord)
+  displayViewDialog.value = true
+  if ((!usersList.value || usersList.value.length === 0) && (!userStore.users || userStore.users.length === 0)) {
+    userStore.fetchUsers().catch(() => {})
+  }
+}
+
+const openEditDialog = async (record) => {
+  clearFieldSearch('edit')
+  resetTouchedAddressBlockers('edit')
+  fieldErrors.value.edit = {}
+  photoExifByCol.value.edit = {}
+  selectedFilesByCol.value.edit = {}
+  removedImagesByCol.value.edit = {}
+  editError.value = null
+  showPasswordState.value = {}
+  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  editingRecordId.value = getRecordId(normRecord)
+  editFormData.value = { ...normRecord }
+  if (isMenuEndpoint.value && editFormData.value) {
+    const disp = getMenuDisplayName(editFormData.value)
+    if (disp) editFormData.value.name = disp
+  } else if (isAccessLevelEndpoint.value && editFormData.value) {
+    const disp = getAccessLevelDisplayName(editFormData.value)
+    if (disp) editFormData.value.name = disp
+  }
+  autoLocateOnOpen('edit')
+  pendingDialogImageFetch.edit = fetchAndAttachImagesForDialog('edit', normRecord)
 
   // Normalize phone numbers on load so any phone number in the database missing leading 0 displays with 0
   formColumns.value.forEach(col => {
@@ -14304,12 +14574,23 @@ const detectEditConflict = async () => {
   if (!current || typeof current !== 'object') return null
 
   // Unwrap response if server returned { data: ... }
+  /*
   const unwrappedCurrent = (current && current.data && typeof current.data === 'object' && !Array.isArray(current.data)) ? current.data : current
 
   // Compare only what this form can write, so unrelated server-side bookkeeping
   // (audit stamps, computed columns, normalized phone leading zeros) does not raise a false conflict.
   const changed = formColumns.value.filter(col => {
     if (getFieldType(col) === 'password' || isAuditField(col)) return false
+    const before = normalizeCompareValue(col, base[col])
+    const now = normalizeCompareValue(col, unwrappedCurrent[col])
+    return before !== now
+  })
+  */
+  // Gene - Oct 23, 2026: Ignore image fields and unwrap API payloads in detectEditConflict to prevent false edit conflict alerts
+  const unwrappedCurrent = unwrapApiPayload(current)
+  const changed = formColumns.value.filter(col => {
+    if (getFieldType(col) === 'password' || isAuditField(col)) return false
+    if (getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image') return false
     const before = normalizeCompareValue(col, base[col])
     const now = normalizeCompareValue(col, unwrappedCurrent[col])
     return before !== now
@@ -14485,6 +14766,7 @@ const saveEdit = async () => {
         }
       })
       finalPayload = form
+    /*
     } else if (isLcpNapEndpoint.value) {
       // Gene - Oct 11, 2026: Switched LCP NAP update to FormData (multipart/form-data) to support real binary image uploads
       const form = new FormData()
@@ -14511,6 +14793,57 @@ const saveEdit = async () => {
       if (files['readingimage'] && (files['readingimage'] instanceof Blob || files['readingimage'] instanceof File)) {
         form.append('ReadingImage', files['readingimage'], files['readingimage'].name || 'readingImage.jpg')
       }
+      finalPayload = form
+    */
+    // Gene - Oct 23, 2026: Preserve existing LCP NAP images on update by converting data URIs to Blobs if not removed or replaced
+    } else if (isLcpNapEndpoint.value) {
+      if (pendingDialogImageFetch.edit) {
+        try { await pendingDialogImageFetch.edit } catch (_) {}
+      }
+      const form = new FormData()
+      if (payload.lcpnap) form.append('LCPNAP', String(payload.lcpnap))
+      if (payload.lcp) form.append('LCP', String(payload.lcp))
+      if (payload.nap) form.append('NAP', String(payload.nap))
+      if (payload.portTotal !== undefined && payload.portTotal !== null && payload.portTotal !== '') form.append('PortTotal', String(payload.portTotal))
+      if (payload.coordinates) form.append('Coordinates', String(payload.coordinates))
+      if (payload.street) form.append('Street', String(payload.street))
+      if (payload.barangay) form.append('Barangay', String(payload.barangay))
+      if (payload.city) form.append('City', String(payload.city))
+      if (payload.region) form.append('Region', String(payload.region))
+      form.append('ModifiedBy', loggedInUserId)
+      form.append('ModifiedDate', nowIso)
+      form.append('UserEmail', capStr(payload.userEmail || currentUserEmail, 100))
+
+      const files = selectedFilesByCol.value.edit || {}
+      const removed = removedImagesByCol.value.edit || {}
+
+      const attachLcpPhoto = (colKey, formField, fallbackFileName) => {
+        const newlySelected = files[colKey]
+        if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+          form.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+          return
+        }
+        if (removed[colKey]) {
+          return // User explicitly removed it
+        }
+        const existingDataUrl = editFormData.value ? (
+          editFormData.value[colKey] ||
+          editFormData.value[formField] ||
+          editFormData.value[formField.charAt(0).toLowerCase() + formField.slice(1)] ||
+          editFormData.value[formField.toLowerCase()] ||
+          editFormData.value[Object.keys(editFormData.value).find(k => k.toLowerCase() === colKey.toLowerCase())]
+        ) : null
+        if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+          const blob = dataUriToBlob(existingDataUrl)
+          if (blob) {
+            form.append(formField, blob, fallbackFileName)
+          }
+        }
+      }
+
+      attachLcpPhoto('image', 'Image', 'image.jpg')
+      attachLcpPhoto('image2', 'Image2', 'image2.jpg')
+      attachLcpPhoto('readingimage', 'ReadingImage', 'readingImage.jpg')
       finalPayload = form
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
@@ -14939,7 +15272,12 @@ const fetchData = async ({ silent = false } = {}) => {
       })
     }
 
+    /*
     data.value = unwrappedData || []
+    */
+    // Gene - Oct 23, 2026: Set unwrapped data and clear stale image cache
+    data.value = unwrappedData || []
+    recordImagesCache.clear()
     // The dataset is now confirmed: an empty table from here on really is empty
     hasFetched.value = true
     lastFetchedParams.value = { ...serverParams }

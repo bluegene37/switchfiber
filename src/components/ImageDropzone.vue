@@ -1,17 +1,9 @@
 <template>
   <div class="image-dropzone-wrapper sfa-tracker-image-dropzone">
     <!-- Existing/Current Image Preview -->
+    <!--
     <div v-if="modelValue" class="dropzone-preview-card border rounded p-2 d-flex align-items-center justify-content-between sfa-tracker-image-dropzone-preview">
       <div class="d-flex align-items-center gap-3 overflow-hidden">
-        <!--
-        <div class="preview-thumbnail-container" @click="showFullPreview = true">
-          <img :src="modelValue" alt="Uploaded Image" class="preview-thumbnail rounded" />
-          <div class="preview-zoom-overlay">
-            <i class="pi pi-eye text-white"></i>
-          </div>
-        </div>
-        -->
-        <!-- Gene - Oct 23, 2026: Use previewSrc computed property to resolve Google Drive links and safely render images -->
         <div class="preview-thumbnail-container" @click="showFullPreview = true">
           <img :src="previewSrc" alt="Uploaded Image" class="preview-thumbnail rounded" />
           <div class="preview-zoom-overlay">
@@ -25,15 +17,51 @@
               <span class="font-monospace">{{ originalSize }}<template v-if="compressedSize"> → {{ compressedSize }}</template></span>
               <span v-if="compressedSize" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill fw-semibold" style="font-size: 0.65rem;">Compressed</span>
             </template>
-            <!--
-            <template v-else>
-              <span>{{ isBase64(modelValue) ? 'Base64 Image' : (modelValue.startsWith('http') ? 'Remote URL' : 'Uploaded File') }}</span>
-              <span v-if="storedSizeLabel" class="font-monospace">· {{ storedSizeLabel }}</span>
-            </template>
-            -->
-            <!-- Gene - Oct 23, 2026: Safe check for string before startsWith('http') and Google Drive indicator -->
             <template v-else>
               <span>{{ isBase64(modelValue) ? 'Base64 Image' : (isGoogleDrive(modelValue) ? 'Google Drive Link' : ((typeof modelValue === 'string' && modelValue.startsWith('http')) ? 'Remote URL' : 'Uploaded File')) }}</span>
+              <span v-if="storedSizeLabel" class="font-monospace">· {{ storedSizeLabel }}</span>
+            </template>
+          </small>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-1 flex-shrink-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="showFullPreview = true"><i class="pi pi-eye"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="downloadImage(modelValue, label)"><i class="pi pi-download"></i></button>
+        <button v-if="!disabled" type="button" class="btn btn-sm btn-outline-danger" @click="removeImage"><i class="pi pi-trash"></i></button>
+      </div>
+    </div>
+    -->
+    <!-- Gene - Oct 23, 2026: Enhanced ImageDropzone preview card with loading state, safe previewSrc binding, and support for metadata objects & Google Drive -->
+    <div v-if="hasStoredImage" class="dropzone-preview-card border rounded p-2 d-flex align-items-center justify-content-between sfa-tracker-image-dropzone-preview">
+      <div class="d-flex align-items-center gap-3 overflow-hidden">
+        <!-- Thumbnail container: spinner when loading, image if previewSrc is ready, icon fallback if unrenderable server path -->
+        <div v-if="loading && !previewSrc" class="preview-thumbnail-container d-flex align-items-center justify-content-center bg-body-tertiary">
+          <i class="pi pi-spin pi-spinner text-primary" style="font-size: 1.1rem;"></i>
+        </div>
+        <div v-else-if="previewSrc" class="preview-thumbnail-container" @click="showFullPreview = true">
+          <img :src="previewSrc" alt="Uploaded Image" class="preview-thumbnail rounded" />
+          <div class="preview-zoom-overlay">
+            <i class="pi pi-eye text-white"></i>
+          </div>
+        </div>
+        <div v-else class="preview-thumbnail-container d-flex align-items-center justify-content-center bg-body-tertiary text-secondary">
+          <i class="pi pi-image text-muted" style="font-size: 1.1rem;"></i>
+        </div>
+
+        <div class="text-truncate">
+          <div class="fw-semibold small text-truncate">{{ label || 'Image' }}</div>
+          <small class="text-muted d-flex align-items-center gap-1 flex-wrap" style="font-size: 0.75rem;">
+            <template v-if="loading && !previewSrc">
+              <span class="text-primary d-inline-flex align-items-center gap-1">
+                <i class="pi pi-spin pi-spinner" style="font-size: 0.65rem;"></i> Loading from server...
+              </span>
+            </template>
+            <template v-else-if="originalSize">
+              <span class="font-monospace">{{ originalSize }}<template v-if="compressedSize"> → {{ compressedSize }}</template></span>
+              <span v-if="compressedSize" class="badge bg-info-subtle text-info border border-info border-opacity-25 rounded-pill fw-semibold" style="font-size: 0.65rem;">Compressed</span>
+            </template>
+            <template v-else>
+              <span>{{ isBase64(modelValue) ? 'Base64 Image' : (isGoogleDrive(modelValue) ? 'Google Drive Link' : ((typeof modelValue === 'string' && modelValue.startsWith('http')) ? 'Remote URL' : (displayFileName || 'Uploaded File'))) }}</span>
               <span v-if="storedSizeLabel" class="font-monospace">· {{ storedSizeLabel }}</span>
             </template>
           </small>
@@ -51,6 +79,7 @@
       </div>
       <div class="d-flex align-items-center gap-1 flex-shrink-0">
         <button
+          v-if="previewSrc"
           type="button"
           class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-1"
           style="width: 32px; height: 32px;"
@@ -60,11 +89,12 @@
           <i class="pi pi-eye" style="font-size: 0.85rem;"></i>
         </button>
         <button
+          v-if="previewSrc"
           type="button"
           class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-1"
           style="width: 32px; height: 32px;"
           title="Download Image"
-          @click="downloadImage(modelValue, label)"
+          @click="downloadImage(previewSrc, label)"
         >
           <i class="pi pi-download" style="font-size: 0.85rem;"></i>
         </button>
@@ -83,7 +113,7 @@
 
     <!-- Dropzone Area (shown when no image is selected) -->
     <div
-      v-show="!modelValue"
+      v-show="!hasStoredImage"
       :id="dropzoneElementId"
       ref="dropzoneElement"
       class="dropzone-box border border-dashed rounded text-center p-3"
@@ -145,7 +175,7 @@
       <template #footer>
         <div class="d-flex justify-content-end gap-2 flex-wrap">
           <button
-            v-if="modelValue"
+            v-if="hasStoredImage"
             type="button"
             class="btn btn-sm d-flex align-items-center gap-1"
             :class="showExifInfo ? 'btn-secondary' : 'btn-outline-secondary'"
@@ -155,19 +185,19 @@
             <span>EXIF Info</span>
           </button>
           <button
-            v-if="modelValue"
+            v-if="previewSrc"
             type="button"
             class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-            @click="downloadImage(modelValue, label)"
+            @click="downloadImage(previewSrc, label)"
           >
             <i class="pi pi-download"></i>
             <span>Download</span>
           </button>
           <button
-            v-if="modelValue"
+            v-if="previewSrc"
             type="button"
             class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-            @click="openImageInNewTab(modelValue)"
+            @click="openImageInNewTab(previewSrc)"
           >
             <i class="pi pi-external-link"></i>
             <span>Open in New Tab</span>
@@ -195,10 +225,47 @@ import { downloadImage, openImageInNewTab, getDirectImageUrl } from '../utils/im
 // Disable dropzone auto discovery
 Dropzone.autoDiscover = false
 
+/*
 const props = defineProps({
   modelValue: {
     type: String,
     default: ''
+  },
+  fieldId: {
+    type: String,
+    default: () => `dz-${Math.random().toString(36).substring(2, 9)}`
+  },
+  label: {
+    type: String,
+    default: ''
+  },
+  required: {
+    type: Boolean,
+    default: false
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  },
+  maxFilesize: {
+    type: Number,
+    default: 5 // in MB
+  },
+  acceptedFiles: {
+    type: String,
+    default: 'image/jpeg,image/png,image/webp,image/gif,image/bmp'
+  }
+})
+*/
+// Gene - Oct 23, 2026: Support [String, Object] for modelValue to avoid Vue prop warnings on LCPNapLocations objects, and add loading prop
+const props = defineProps({
+  modelValue: {
+    type: [String, Object],
+    default: ''
+  },
+  loading: {
+    type: Boolean,
+    default: false
   },
   fieldId: {
     type: String,
@@ -258,6 +325,32 @@ const previewSrc = computed(() => {
   if (!props.modelValue) return ''
   if (typeof props.modelValue === 'string') {
     return getDirectImageUrl(props.modelValue)
+  }
+  return ''
+})
+
+// Gene - Oct 23, 2026: Determine whether a stored reference exists (file path, object, or data URL)
+const hasStoredImage = computed(() => {
+  if (!props.modelValue) return false
+  if (typeof props.modelValue === 'string') {
+    const t = props.modelValue.trim()
+    return t !== '' && t.toLowerCase() !== 'none' && t.toLowerCase() !== 'n/a'
+  }
+  if (typeof props.modelValue === 'object' && props.modelValue !== null) {
+    return true
+  }
+  return false
+})
+
+const displayFileName = computed(() => {
+  if (typeof props.modelValue === 'object' && props.modelValue) {
+    return props.modelValue.fileName || props.modelValue.name || ''
+  }
+  if (typeof props.modelValue === 'string') {
+    if (props.modelValue.includes('\\') || props.modelValue.includes('/')) {
+      return props.modelValue.split(/[\\/]/).pop() || props.modelValue
+    }
+    return props.modelValue
   }
   return ''
 })

@@ -497,6 +497,7 @@
               <span>{{ showExif ? 'Hide Camera & GPS Info' : 'Inspect Camera & GPS Info (EXIF)' }}</span>
               <i :class="showExif ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" style="font-size: 0.65rem;"></i>
             </button>
+            <!--
             <a
               :href="activePreviewPhoto.url"
               target="_blank"
@@ -506,6 +507,26 @@
               <span>Full Resolution</span>
               <i class="pi pi-external-link" style="font-size: 0.7rem;"></i>
             </a>
+            -->
+            <!-- Gene - Oct 23, 2026: Safe tab opening and download buttons using openImageInNewTab and downloadImage supporting base64 data URIs -->
+            <div class="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 py-0.5 px-2"
+                @click="downloadImage(activePreviewPhoto.url, activePreviewPhoto.label)"
+              >
+                <i class="pi pi-download" style="font-size: 0.7rem;"></i>
+                <span>Download</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-link text-decoration-none p-0 text-primary d-inline-flex align-items-center gap-1"
+                @click="openImageInNewTab(activePreviewPhoto.url)"
+              >
+                <span>Full Resolution</span>
+                <i class="pi pi-external-link" style="font-size: 0.7rem;"></i>
+              </button>
+            </div>
           </div>
           <ExifPanel v-if="showExif" :src="activePreviewPhoto.url" />
         </div>
@@ -526,6 +547,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { LcpNapLocationService, parseCoordinates } from '../services/lcpNapLocations'
 import { useTheme } from '../composables/useTheme'
 import ExifPanel from '../components/ExifPanel.vue'
+// Gene - Oct 23, 2026: Import image actions for LcpNapMap photo handling
+import { openImageInNewTab, downloadImage, unwrapApiPayload, fileResultToDataUrl, getDirectImageUrl } from '../utils/imageActions'
 
 const { isDark } = useTheme()
 
@@ -673,6 +696,7 @@ const buildPhotos = (row) => {
     }))
 }
 */
+/*
 // Gene - Oct 23, 2026: Safely extract photo paths and labels from row.image/image2/readingImage supporting objects and server strings
 const buildPhotos = (row) => {
   const entries = [
@@ -686,6 +710,24 @@ const buildPhotos = (row) => {
       ...e,
       url: /^(https?:\/\/|data:)/i.test(String(e.path).trim()) ? String(e.path).trim() : null
     }))
+}
+*/
+// Gene - Oct 23, 2026: Enhanced buildPhotos to resolve Google Drive URLs via getDirectImageUrl and safely handle image metadata objects
+const buildPhotos = (row) => {
+  const entries = [
+    { label: 'Enclosure', path: (typeof row.image === 'object' && row.image ? (row.image.fileName || 'enclosure.jpg') : row.image) },
+    { label: 'Enclosure 2', path: (typeof row.image2 === 'object' && row.image2 ? (row.image2.fileName || 'enclosure2.jpg') : row.image2) },
+    { label: 'Reading', path: (typeof row.readingImage === 'object' && row.readingImage ? (row.readingImage.fileName || 'reading.jpg') : row.readingImage) }
+  ]
+  return entries
+    .filter(e => e.path && typeof e.path === 'string' && e.path.trim())
+    .map(e => {
+      const direct = getDirectImageUrl(e.path)
+      return {
+        ...e,
+        url: direct || (/^(https?:\/\/|data:)/i.test(String(e.path).trim()) ? String(e.path).trim() : null)
+      }
+    })
 }
 
 const loadData = async () => {
@@ -883,6 +925,7 @@ const selectSite = (site, { fly = false } = {}) => {
   else if (map) map.panTo([site.lat, site.lng])
 }
 */
+/*
 // Gene - Oct 23, 2026: Fetch real site photos from GET /api/LCPNapLocations/{id}/GetLCPNAPLocationImages when a site is selected
 const selectSite = (site, { fly = false } = {}) => {
   selectedSite.value = site
@@ -927,6 +970,63 @@ const selectSite = (site, { fly = false } = {}) => {
       }
     }).catch((err) => {
       console.log(`[LcpNapMap] No uploaded photos found for site #${site.id}:`, err)
+    })
+  }
+}
+*/
+// Gene - Oct 23, 2026: Unwrap API response with unwrapApiPayload, use fileResultToDataUrl, and cache loaded site photos to avoid redundant network requests
+const isFetchingSitePhotos = ref(false)
+
+const selectSite = (site, { fly = false } = {}) => {
+  selectedSite.value = site
+  copied.value = false
+  refreshMarkerIcons()
+  scrollListToSelection(site)
+  if (fly) focusSite(site)
+  else if (map) map.panTo([site.lat, site.lng])
+
+  if (site && site.id && !site._photosLoaded) {
+    isFetchingSitePhotos.value = true
+    LcpNapLocationService.getLcpNapLocationImages(site.id).then(res => {
+      const imgs = unwrapApiPayload(res)
+      if (imgs && typeof imgs === 'object') {
+        const updatedPhotos = []
+        const enc1Url = fileResultToDataUrl(imgs.image)
+        if (enc1Url) {
+          updatedPhotos.push({
+            label: 'Enclosure',
+            path: imgs.image?.fileDownloadName || 'enclosure.jpg',
+            url: enc1Url
+          })
+        }
+        const enc2Url = fileResultToDataUrl(imgs.image2)
+        if (enc2Url) {
+          updatedPhotos.push({
+            label: 'Enclosure 2',
+            path: imgs.image2?.fileDownloadName || 'enclosure2.jpg',
+            url: enc2Url
+          })
+        }
+        const readingUrl = fileResultToDataUrl(imgs.readingImage)
+        if (readingUrl) {
+          updatedPhotos.push({
+            label: 'Reading',
+            path: imgs.readingImage?.fileDownloadName || 'reading.jpg',
+            url: readingUrl
+          })
+        }
+        if (updatedPhotos.length > 0) {
+          site.photos = updatedPhotos
+          site._photosLoaded = true
+          if (selectedSite.value && selectedSite.value.id === site.id) {
+            selectedSite.value.photos = updatedPhotos
+          }
+        }
+      }
+    }).catch((err) => {
+      console.log(`[LcpNapMap] No uploaded photos found for site #${site.id}:`, err)
+    }).finally(() => {
+      isFetchingSitePhotos.value = false
     })
   }
 }
