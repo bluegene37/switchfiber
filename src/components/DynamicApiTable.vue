@@ -1463,6 +1463,7 @@
 
               <!-- City / Municipality Dropdown -->
               <div v-else-if="getFieldType(col) === 'city_dropdown'" class="position-relative">
+                <!--
                 <Select
                   :id="col"
                   v-model="formData[col]"
@@ -1473,6 +1474,20 @@
                   :disabled="isCityDisabled(formData)"
                   @change="onCityChanged(formData)"
                   :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getCityPlaceholder(formData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                -->
+                <!-- Gene - Oct 23, 2026: Remove virtualScrollerOptions to prevent 0-height empty dropdown container in modal -->
+                <Select
+                  :id="col"
+                  v-model="formData[col]"
+                  :options="createCityOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isCityDisabled(formData)"
+                  @change="onCityChanged(formData)"
                   :placeholder="getCityPlaceholder(formData)"
                   class="w-100 p-inputtext-sm"
                 />
@@ -1494,6 +1509,7 @@
 
               <!-- Barangay Dropdown -->
               <div v-else-if="getFieldType(col) === 'barangay_dropdown'" class="position-relative">
+                <!--
                 <Select
                   :id="col"
                   v-model="formData[col]"
@@ -1503,6 +1519,19 @@
                   :filter="true"
                   :disabled="isBarangayDisabled(formData)"
                   :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getBarangayPlaceholder(formData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                -->
+                <!-- Gene - Oct 23, 2026: Remove virtualScrollerOptions to prevent 0-height empty dropdown container in modal -->
+                <Select
+                  :id="col"
+                  v-model="formData[col]"
+                  :options="createBarangayOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isBarangayDisabled(formData)"
                   :placeholder="getBarangayPlaceholder(formData)"
                   class="w-100 p-inputtext-sm"
                 />
@@ -3902,6 +3931,7 @@
 
               <!-- City / Municipality Dropdown -->
               <div v-else-if="getFieldType(col) === 'city_dropdown'" class="position-relative">
+                <!--
                 <Select
                   :id="`edit-${col}`"
                   v-model="editFormData[col]"
@@ -3912,6 +3942,20 @@
                   :disabled="isCityDisabled(editFormData) || isFieldDisabledInEdit(col)"
                   @change="onCityChanged(editFormData)"
                   :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getCityPlaceholder(editFormData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                -->
+                <!-- Gene - Oct 23, 2026: Remove virtualScrollerOptions to prevent 0-height empty dropdown container in modal -->
+                <Select
+                  :id="`edit-${col}`"
+                  v-model="editFormData[col]"
+                  :options="createCityOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isCityDisabled(editFormData) || isFieldDisabledInEdit(col)"
+                  @change="onCityChanged(editFormData)"
                   :placeholder="getCityPlaceholder(editFormData)"
                   class="w-100 p-inputtext-sm"
                 />
@@ -3933,6 +3977,7 @@
 
               <!-- Barangay Dropdown -->
               <div v-else-if="getFieldType(col) === 'barangay_dropdown'" class="position-relative">
+                <!--
                 <Select
                   :id="`edit-${col}`"
                   v-model="editFormData[col]"
@@ -3942,6 +3987,19 @@
                   :filter="true"
                   :disabled="isBarangayDisabled(editFormData) || isFieldDisabledInEdit(col)"
                   :virtualScrollerOptions="{ itemSize: 38 }"
+                  :placeholder="getBarangayPlaceholder(editFormData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                -->
+                <!-- Gene - Oct 23, 2026: Remove virtualScrollerOptions to prevent 0-height empty dropdown container in modal -->
+                <Select
+                  :id="`edit-${col}`"
+                  v-model="editFormData[col]"
+                  :options="createBarangayOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isBarangayDisabled(editFormData) || isFieldDisabledInEdit(col)"
                   :placeholder="getBarangayPlaceholder(editFormData)"
                   class="w-100 p-inputtext-sm"
                 />
@@ -5528,8 +5586,14 @@ import { CrudService } from '../services/crud'
 import { RadiusUserService } from '../services/radiusUsers'
 import { normalizeServiceOrder } from '../services/serviceOrders'
 import phAddressService from '../services/phAddressService'
+/*
 import defaultRegions from '../../public/data/philippines/regions.json'
 import defaultProvinces from '../../public/data/philippines/provinces.json'
+*/
+// Gene - Oct 23, 2026: Import defaultCities to guarantee address cascading data is immediately available in memory
+import defaultRegions from '../../public/data/philippines/regions.json'
+import defaultProvinces from '../../public/data/philippines/provinces.json'
+import defaultCities from '../../public/data/philippines/cities.json'
 import ImageDropzone from './ImageDropzone.vue'
 import CoordinatePicker from './CoordinatePicker.vue'
 import ExifPanel from './ExifPanel.vue'
@@ -10549,7 +10613,18 @@ const defaultFormattedProvinces = (defaultProvinces || []).map(p => ({
 
 const regionsList = ref(defaultFormattedRegions)
 const provincesList = ref(defaultFormattedProvinces)
+/*
 const citiesList = ref([])
+*/
+// Gene - Oct 23, 2026: Format and initialize citiesList from bundled defaultCities for immediate synchronous availability
+const defaultFormattedCities = (defaultCities || []).map(c => ({
+  label: `${c.name} ${c.isCity ? '(City)' : ''}`,
+  value: c.name,
+  code: c.code,
+  regionCode: c.regionCode,
+  provinceCode: c.provinceCode
+}))
+const citiesList = ref((defaultFormattedCities || []).filter(c => c.regionCode === '040000000'))
 const barangaysList = ref([])
 
 // Last-resort labels only. The real Applications vocabulary is Schedule /
@@ -11192,6 +11267,7 @@ const fetchAddressData = async () => {
       }))
       allProvincesFallbackCache = provincesList.value
     }
+    /*
     if (citiesData && citiesData.length > 0) {
       citiesList.value = citiesData.map(c => ({
         label: `${c.name} ${c.isCity ? '(City)' : ''}`,
@@ -11202,12 +11278,32 @@ const fetchAddressData = async () => {
       }))
       allCitiesFallbackCache = citiesList.value
     }
+    */
+    // Gene - Oct 23, 2026: Store all cities in allCitiesFallbackCache without clobbering the active province-filtered citiesList
+    if (citiesData && citiesData.length > 0) {
+      allCitiesFallbackCache = citiesData.map(c => ({
+        label: `${c.name} ${c.isCity ? '(City)' : ''}`,
+        value: c.name,
+        code: c.code,
+        regionCode: c.regionCode,
+        provinceCode: c.provinceCode
+      }))
+    }
   } catch (e) {
     console.warn('Failed to load local PSGC region/city/province data:', e)
   }
 
+  /*
   try {
     const res = await fetch('/data/philippines/barangays.json')
+  */
+  // Gene - Oct 23, 2026: Fetch barangays using BASE_URL prefix to prevent 404 on Vite base paths
+  try {
+    const baseUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL)
+      ? import.meta.env.BASE_URL
+      : '/'
+    const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+    const res = await fetch(`${cleanBase}data/philippines/barangays.json`)
     if (res.ok) {
       const groupedData = await res.json()
       const allBrgys = []
@@ -11329,6 +11425,7 @@ const findProvinceOption = (val) => {
   ) || null
 }
 
+/*
 const updateCitiesForProvince = async (provinceVal) => {
   const prov = findProvinceOption(provinceVal)
   if (prov) {
@@ -11340,6 +11437,30 @@ const updateCitiesForProvince = async (provinceVal) => {
       }
     } catch (err) {
       console.error('Error filtering cities for province:', err)
+    }
+  }
+  // No/unknown province (legacy rows store "CALABARZON"): offer every
+  // CALABARZON city rather than stranding the user with an empty dropdown
+  await updateCitiesForSelectedRegion('CALABARZON')
+}
+*/
+// Gene - Oct 23, 2026: Update cities for province with synchronous fallback to defaultFormattedCities to guarantee non-empty dropdown
+const updateCitiesForProvince = async (provinceVal) => {
+  const prov = findProvinceOption(provinceVal)
+  if (prov) {
+    try {
+      const cList = await phAddressService.getCities(prov.regionCode, prov.code)
+      if (cList && cList.length > 0) {
+        citiesList.value = cList.map(c => ({ label: `${c.name} ${c.isCity ? '(City)' : ''}`, value: c.name, code: c.code, regionCode: c.regionCode, provinceCode: c.provinceCode }))
+        return
+      }
+    } catch (err) {
+      console.error('Error filtering cities for province:', err)
+    }
+    const syncCities = (defaultFormattedCities || []).filter(c => c.provinceCode === prov.code)
+    if (syncCities.length > 0) {
+      citiesList.value = syncCities
+      return
     }
   }
   // No/unknown province (legacy rows store "CALABARZON"): offer every
