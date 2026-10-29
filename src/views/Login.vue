@@ -78,11 +78,14 @@
             Remember me
           </label>
         </div>
+        <!-- Gene - Oct, 29, 2026: Hidden forgot password link pending backend API availability -->
+        <!--
         <div class="small">
           <button type="button" @click="handleForgotPassword" :disabled="isResetting" class="btn btn-link p-0 border-0 shadow-none align-baseline fw-semibold text-primary text-decoration-none small">
             {{ isResetting ? 'Sending…' : 'Forgot password?' }}
           </button>
         </div>
+        -->
       </div>
 
       <button 

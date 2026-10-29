@@ -90,6 +90,20 @@ describe('Router & Browser Tab Title Suite', () => {
     )
   })
 
+  // Gene - Oct, 29, 2026: Verify that forgot password link is hidden in Login.vue pending backend API implementation
+  test('Login.vue has forgot password link commented out/hidden', () => {
+    const loginPath = path.resolve(__dirname, '../src/views/Login.vue')
+    const loginContent = fs.readFileSync(loginPath, 'utf8')
+    assert.ok(
+      loginContent.includes('<!-- Gene - Oct, 29, 2026: Hidden forgot password link pending backend API availability -->'),
+      'Expected attribution comment for hidden forgot password link'
+    )
+    assert.ok(
+      loginContent.includes('<!--\n        <div class="small">\n          <button type="button" @click="handleForgotPassword"'),
+      'Expected forgot password link block to be commented out in Login.vue template'
+    )
+  })
+
   test('Sidebar.vue defaultLandingRoute points brand logo to /landing (Home)', () => {
     const sidebarPath = path.resolve(__dirname, '../src/components/Sidebar.vue')
     const sidebarContent = fs.readFileSync(sidebarPath, 'utf8')
