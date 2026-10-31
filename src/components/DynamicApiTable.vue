@@ -3311,6 +3311,7 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-between align-items-center w-100 mt-2 sfa-tracker-dialog-view-footer">
+          <!--
           <Button
             v-if="!readOnly"
             label="Edit Record"
@@ -3319,6 +3320,17 @@
             outlined
             class="p-button-outlined p-button-primary p-button-sm rounded-3 px-3"
             @click="displayViewDialog = false; openEditDialog(viewFormData)"
+          />
+          -->
+          <!-- Gene - Oct 31, 2026: Pass viewFormData.value to openEditDialog so existing loaded images and values transfer directly into Edit modal -->
+          <Button
+            v-if="!readOnly"
+            label="Edit Record"
+            icon="pi pi-pencil"
+            severity="primary"
+            outlined
+            class="p-button-outlined p-button-primary p-button-sm rounded-3 px-3"
+            @click="displayViewDialog = false; openEditDialog(viewFormData.value || viewFormData)"
           />
           <span v-else></span>
           <Button 
@@ -6451,11 +6463,29 @@ const getTableCellImageUrl = (row, col) => {
   return ''
 }
 
+/*
 const hasImageValue = (row, col) => {
   const val = row[col]
   if (!val) return false
   if (typeof val === 'string' && val.trim().length > 0) return true
   if (typeof val === 'object' && val !== null) return true
+  return false
+}
+*/
+// Gene - Oct 31, 2026: Check recordImagesCache in hasImageValue for LCP NAP rows so cached reading images render thumbnail and trigger on-demand preview
+const hasImageValue = (row, col) => {
+  const val = row[col]
+  if (val && typeof val === 'string' && val.trim().length > 0) return true
+  if (val && typeof val === 'object' && val !== null) return true
+  if (isLcpNapEndpoint.value && row?.id) {
+    const cached = recordImagesCache.get(`lcp:${row.id}`)
+    if (cached) {
+      const norm = normalizeColKey(col)
+      if (norm === 'image' && cached.image) return true
+      if (norm === 'image2' && cached.image2) return true
+      if (norm === 'readingimage' && cached.readingImage) return true
+    }
+  }
   return false
 }
 
@@ -14463,6 +14493,7 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
         }
       }
 */
+      /*
       // Gene - Oct 23, 2026: Fetch LCP NAP photos using both GetLCPNAPLocationImages and GetReadingImage endpoints with fallback support
       } else if (isLcpNapEndpoint.value && record.id) {
         let imgData = recordImagesCache.get(`lcp:${record.id}`)
@@ -14517,6 +14548,72 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
           }
         }
       }
+      */
+      // Gene - Oct 31, 2026: Attach LCP NAP images (including readingImage) directly to targetForm using attachToTargetForm helper without requiring pre-existing properties
+      } else if (isLcpNapEndpoint.value && record.id) {
+        const attachToTargetForm = (canonicalName, value) => {
+          if (!targetForm.value) return
+          const norm = normalizeColKey(canonicalName)
+          const actualKey = Object.keys(targetForm.value).find(k => normalizeColKey(k) === norm) ||
+            formColumns.value.find(c => normalizeColKey(c) === norm) ||
+            canonicalName
+          targetForm.value[actualKey] = value
+          targetForm.value[canonicalName] = value
+          targetForm.value[canonicalName.toLowerCase()] = value
+        }
+
+        let imgData = recordImagesCache.get(`lcp:${record.id}`)
+        if (!imgData) {
+          try {
+            const rawRes = await LcpNapLocationService.getLcpNapLocationImages(record.id)
+            imgData = unwrapApiPayload(rawRes)
+            if (imgData) recordImagesCache.set(`lcp:${record.id}`, imgData)
+          } catch (lcpErr) {
+            console.warn(`[DynamicApiTable] GetLCPNAPLocationImages error for #${record.id}:`, lcpErr)
+          }
+        }
+        if (imgData) {
+          if (imgData.image) {
+            const u = typeof imgData.image === 'string' && isRenderableImageUrl(imgData.image)
+              ? imgData.image
+              : fileResultToDataUrl(imgData.image)
+            if (u) attachToTargetForm('image', u)
+          }
+          if (imgData.image2) {
+            const u = typeof imgData.image2 === 'string' && isRenderableImageUrl(imgData.image2)
+              ? imgData.image2
+              : fileResultToDataUrl(imgData.image2)
+            if (u) attachToTargetForm('image2', u)
+          }
+          if (imgData.readingImage) {
+            const u = typeof imgData.readingImage === 'string' && isRenderableImageUrl(imgData.readingImage)
+              ? imgData.readingImage
+              : fileResultToDataUrl(imgData.readingImage)
+            if (u) attachToTargetForm('readingImage', u)
+          }
+        }
+
+        // If readingImage was not found or is not yet a renderable image in targetForm, fetch from GetReadingImage endpoint
+        const currentReading = targetForm.value.readingImage || targetForm.value.readingimage
+        if (!currentReading || !isRenderableImageUrl(currentReading)) {
+          try {
+            const readingBlobRes = await LcpNapLocationService.getReadingImage(record.id)
+            if (readingBlobRes && readingBlobRes.data) {
+              const readingUrl = await blobToDataUrl(readingBlobRes.data)
+              if (readingUrl) {
+                attachToTargetForm('readingImage', readingUrl)
+                if (!imgData) {
+                  imgData = {}
+                  recordImagesCache.set(`lcp:${record.id}`, imgData)
+                }
+                imgData.readingImage = readingUrl
+              }
+            }
+          } catch (rErr) {
+            // Expected 404 when location record has no reading image uploaded
+          }
+        }
+      }
     } catch (err) {
       console.warn(`[DynamicApiTable] Image fetch error for ${scope}:`, err)
     } finally {
@@ -14558,7 +14655,14 @@ const openEditDialog = async (record) => {
   removedImagesByCol.value.edit = {}
   editError.value = null
   showPasswordState.value = {}
+  /*
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  editingRecordId.value = getRecordId(normRecord)
+  editFormData.value = { ...normRecord }
+  */
+  // Gene - Oct 31, 2026: Unwrap Ref or reactive object if passed to openEditDialog so loaded images and properties are preserved
+  const rawRecord = (record && typeof record === 'object' && ('value' in record) && record.value) ? record.value : record
+  const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(rawRecord) : rawRecord
   editingRecordId.value = getRecordId(normRecord)
   editFormData.value = { ...normRecord }
   if (isMenuEndpoint.value && editFormData.value) {
@@ -14785,8 +14889,24 @@ const openEditDialog = async (record) => {
     } else if (type === 'date' && record[col]) {
       const d = new Date(record[col])
       editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
+    /*
     } else if (record[col] === null || record[col] === undefined) {
       if (col !== regCol && col !== cCol && col !== bCol && col !== statusCol && col !== coordCol) {
+        editFormData.value[col] = ''
+      }
+    }
+    */
+    // Gene - Oct 31, 2026: Protect image_upload and inventory_item_image fields from being reset to empty string when record[col] is null
+    } else if (record[col] === null || record[col] === undefined) {
+      if (
+        col !== regCol &&
+        col !== cCol &&
+        col !== bCol &&
+        col !== statusCol &&
+        col !== coordCol &&
+        type !== 'image_upload' &&
+        type !== 'inventory_item_image'
+      ) {
         editFormData.value[col] = ''
       }
     }
