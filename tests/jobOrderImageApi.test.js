@@ -250,4 +250,51 @@ describe('Job Order Image API & Multipart Integration Suite', () => {
     assert.ok(props.PortLabelImage, 'PortLabelImage supported')
     assert.ok(props.HouseFront, 'HouseFront supported')
   })
+
+  test('isJobOrderEndpoint matching normalizes leading slashes, trailing slashes, hyphens and underscores', () => {
+    const isJobOrderEndpoint = (endpoint) => {
+      const ep = (endpoint || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '').replace(/[-_]/g, '')
+      return ep === 'joborders' || ep === 'joborder'
+    }
+
+    assert.equal(isJobOrderEndpoint('JobOrders'), true)
+    assert.equal(isJobOrderEndpoint('/JobOrders'), true)
+    assert.equal(isJobOrderEndpoint('/JobOrders/'), true)
+    assert.equal(isJobOrderEndpoint('joborders'), true)
+    assert.equal(isJobOrderEndpoint('job-orders'), true)
+    assert.equal(isJobOrderEndpoint('job_orders'), true)
+    assert.equal(isJobOrderEndpoint('/api/joborders'), false)
+    assert.equal(isJobOrderEndpoint('Applications'), false)
+    assert.equal(isJobOrderEndpoint('Lcpnaps'), false)
+  })
+
+  test('api.js request interceptor sets multipart/form-data on FormData to avoid 415', async () => {
+    const { default: apiClient } = await import('../src/services/api.js')
+    
+    // Create dummy config with FormData
+    const fd = new FormData()
+    fd.append('foo', 'bar')
+    const config = {
+      method: 'put',
+      url: '/JobOrders/1',
+      headers: new apiClient.defaults.headers.constructor({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }),
+      data: fd
+    }
+
+    // Run registered request interceptor handlers
+    let transformedConfig = config
+    for (const h of apiClient.interceptors.request.handlers) {
+      if (typeof h.fulfilled === 'function') {
+        transformedConfig = (await h.fulfilled(transformedConfig)) || transformedConfig
+      }
+    }
+
+    const ct = typeof transformedConfig.headers.get === 'function'
+      ? transformedConfig.headers.get('Content-Type')
+      : transformedConfig.headers['Content-Type']
+    assert.equal(ct, 'multipart/form-data', 'FormData request must have multipart/form-data Content-Type')
+  })
 })

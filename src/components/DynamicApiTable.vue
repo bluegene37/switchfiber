@@ -5870,8 +5870,15 @@ const isApplicationEndpoint = computed(() => {
 // DTOs in Aug 2026, after the backend migration that had dropped them. The
 // generic save path strips every audit column, so these two are re-applied for
 // this endpoint only — see applyJobOrderCreationAudit.
+/*
 const isJobOrderEndpoint = computed(() => {
   const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'joborders' || ep === 'joborder'
+})
+*/
+// Gene - Nov 5, 2026: Robust endpoint matching for JobOrders stripping leading/trailing slashes, hyphens, and underscores
+const isJobOrderEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '').replace(/[-_]/g, '')
   return ep === 'joborders' || ep === 'joborder'
 })
 
@@ -15402,6 +15409,7 @@ const saveEdit = async () => {
       const files = selectedFilesByCol.value.edit || {}
       const removed = removedImagesByCol.value.edit || {}
 
+      /*
       const attachJoPhoto = (colKey, formField, fallbackFileName) => {
         const newlySelected = files[colKey]
         if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
@@ -15409,6 +15417,32 @@ const saveEdit = async () => {
           return
         }
         if (removed[colKey]) {
+          return // User explicitly removed it
+        }
+        const existingDataUrl = editFormData.value ? (
+          editFormData.value[colKey] ||
+          editFormData.value[formField] ||
+          editFormData.value[formField.charAt(0).toLowerCase() + formField.slice(1)] ||
+          editFormData.value[formField.toLowerCase()] ||
+          editFormData.value[Object.keys(editFormData.value).find(k => k.toLowerCase() === colKey.toLowerCase())]
+        ) : null
+        if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+          const blob = dataUriToBlob(existingDataUrl)
+          if (blob) {
+            form.append(formField, blob, fallbackFileName)
+          }
+        }
+      }
+      */
+      // Gene - Nov 5, 2026: Case-insensitive normalized column key lookup for selectedFiles and removed flags in attachJoPhoto
+      const attachJoPhoto = (colKey, formField, fallbackFileName) => {
+        const norm = normalizeColKey(colKey)
+        const newlySelected = files[colKey] || files[norm] || files[formField] || files[normalizeColKey(formField)]
+        if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+          form.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+          return
+        }
+        if (removed[colKey] || removed[norm] || removed[formField] || removed[normalizeColKey(formField)]) {
           return // User explicitly removed it
         }
         const existingDataUrl = editFormData.value ? (
@@ -15595,7 +15629,14 @@ const saveEdit = async () => {
 
     console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, finalPayload)
     const updatedId = editingRecordId.value
+    /*
     await CrudService.update(props.endpoint, updatedId, finalPayload)
+    */
+    // Gene - Nov 5, 2026: Explicitly pass multipart/form-data header config on FormData payload to prevent Axios 415 error
+    const updateReqConfig = (typeof FormData !== 'undefined' && finalPayload instanceof FormData)
+      ? { headers: { 'Content-Type': 'multipart/form-data' } }
+      : {}
+    await CrudService.update(props.endpoint, updatedId, finalPayload, updateReqConfig)
     await fetchData()
     displayEditDialog.value = false
     toast.add({

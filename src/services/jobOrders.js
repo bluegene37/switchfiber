@@ -63,8 +63,23 @@ export const JobOrderService = {
    * @param {string|number} id 
    * @param {import('../models/types').UpdateJobOrderRequest|FormData} data 
    */
+  /*
   updateJobOrder(id, data) {
     return apiClient.put(`/JobOrders/${id}`, data)
+  },
+  */
+  // Gene - Nov 5, 2026: Pass multipart/form-data header when updating Job Order with FormData payload to prevent 415 error
+  updateJobOrder(id, data, config = {}) {
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      return apiClient.put(`/JobOrders/${id}`, data, {
+        ...config,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(config && config.headers)
+        }
+      })
+    }
+    return apiClient.put(`/JobOrders/${id}`, data, config)
   },
   deleteJobOrder(id) {
     return apiClient.delete(`/JobOrders/${id}`)

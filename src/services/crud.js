@@ -41,8 +41,21 @@ export const create = (endpoint, payload, config = {}) => {
   return apiClient.post(toPath(endpoint), payload, config)
 }
 
-/** PUT /{endpoint}/{id} */
+// /** PUT /{endpoint}/{id} */
+// export const update = (endpoint, id, payload, config = {}) => {
+//   return apiClient.put(`${toPath(endpoint)}/${id}`, payload, config)
+// }
+// Gene - Nov 5, 2026: Explicitly pass multipart/form-data header when updating with FormData payload to prevent 415 Unsupported Media Type
 export const update = (endpoint, id, payload, config = {}) => {
+  if (typeof FormData !== 'undefined' && payload instanceof FormData) {
+    return apiClient.put(`${toPath(endpoint)}/${id}`, payload, {
+      ...config,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(config && config.headers)
+      }
+    })
+  }
   return apiClient.put(`${toPath(endpoint)}/${id}`, payload, config)
 }
 

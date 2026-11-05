@@ -88,6 +88,7 @@ apiClient.interceptors.request.use((config) => {
   return Promise.reject(error)
 })
 */
+/*
 // Gene - Oct 11, 2026: Automatically strip default application/json header when data is FormData so browser/axios sets multipart/form-data with proper boundary
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
@@ -104,6 +105,38 @@ apiClient.interceptors.request.use((config) => {
       } else {
         delete config.headers['Content-Type']
         delete config.headers['content-type']
+      }
+    }
+  }
+  // Only reads are cancellable — a mutation must never be killed mid-flight.
+  // A caller-supplied signal is left alone.
+  if ((config.method || 'get').toLowerCase() === 'get' && config.cancelOnNavigate !== false && !config.signal) {
+    const controller = new AbortController()
+    config.signal = controller.signal
+    config._navAbortController = controller
+    navCancellable.add(controller)
+  }
+  return config
+}, (error) => {
+  return Promise.reject(error)
+})
+*/
+// Gene - Nov 5, 2026: Set multipart/form-data on FormData payloads to prevent Axios 1.x from falling back to application/x-www-form-urlencoded (415 error) or serializing to JSON
+apiClient.interceptors.request.use((config) => {
+  const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null) ||
+    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('token') : null)
+  if (token && typeof token === 'string' && token.trim()) {
+    config.headers.Authorization = `Bearer ${token.trim()}`
+  }
+  if (config.url && typeof config.url === 'string') {
+    config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
+  }
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers) {
+      if (typeof config.headers.set === 'function') {
+        config.headers.set('Content-Type', 'multipart/form-data')
+      } else {
+        config.headers['Content-Type'] = 'multipart/form-data'
       }
     }
   }
