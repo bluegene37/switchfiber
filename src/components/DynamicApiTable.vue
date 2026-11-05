@@ -7376,6 +7376,7 @@ function getFieldType(col) {
     }
   }
 
+  /*
   // Payments endpoint specific overrides:
   // - Fiber Plan (stored in image, plan, or fiberplan) must link to Plan API as a dropdown
   // - Processed By (stored in remarks or processedby) is an input field, never a textarea
@@ -7385,6 +7386,19 @@ function getFieldType(col) {
     }
     if (lower === 'remarks' || lower === 'processedby') {
       return 'text'
+    }
+  }
+  */
+  // Gene - Nov 5, 2026: Payments overrides: Fiber Plan (plan_dropdown), Processed By (text), and Payment Date (date picker)
+  if (isPaymentEndpoint.value) {
+    if (lower === 'image' || lower === 'fiberplan' || lower === 'plan') {
+      return 'plan_dropdown'
+    }
+    if (lower === 'remarks' || lower === 'processedby') {
+      return 'text'
+    }
+    if (lower === 'receivedpayment' || lower === 'paymentdate') {
+      return 'date'
     }
   }
 
@@ -7762,6 +7776,13 @@ function deduplicateColumns(colList) {
     if (lowerRaw === 'lcpnapport' && lowerCols.includes('lcpnapportid')) return
     if (lowerRaw === 'plan' && lowerCols.includes('planid')) return
     if (lowerRaw === 'choose_plan' && lowerCols.includes('planid')) return
+
+    // Gene - Nov 5, 2026: Deduplicate Payments endpoint paired alias columns (paymentDate -> receivedPayment, processedBy -> remarks, plan -> image)
+    if (typeof isPaymentEndpoint !== 'undefined' && isPaymentEndpoint.value) {
+      if (lowerRaw === 'paymentdate' && lowerCols.includes('receivedpayment')) return
+      if (lowerRaw === 'processedby' && lowerCols.includes('remarks')) return
+      if ((lowerRaw === 'plan' || lowerRaw === 'fiberplan') && lowerCols.includes('image')) return
+    }
 
     if (aliasMap[lowerRaw]) {
       const primaryKeyLower = aliasMap[lowerRaw]
@@ -10138,6 +10159,7 @@ const DISCOUNT_FORM_LAYOUT = [
   }
 ]
 
+/*
 const PAYMENT_FORM_LAYOUT = [
   {
     key: 'transaction',
@@ -10171,6 +10193,48 @@ const PAYMENT_FORM_LAYOUT = [
       'processedBy',
       'dateProcessed',
       'paymentDate',
+      'location',
+      'barangay',
+      'city',
+      'userEmail'
+    ]
+  }
+]
+*/
+// Gene - Nov 5, 2026: Deduplicate PAYMENT_FORM_LAYOUT removing duplicate Fiber Plan (plan), Processed By (processedBy), and Payment Date (paymentDate)
+const PAYMENT_FORM_LAYOUT = [
+  {
+    key: 'transaction',
+    title: 'Payment & Transaction Details',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-primary',
+    columns: [
+      'transactionID',
+      'accountNo',
+      'fullName',
+      'contactNo',
+      'receivedPayment',
+      'paymentDate',
+      'paymentMethod',
+      'transactionType',
+      'referenceNo',
+      'orNo',
+      'image',
+      'plan',
+      'accountBalance',
+      'status',
+      'provider'
+    ]
+  },
+  {
+    key: 'processing',
+    title: 'Processing & Location Information',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-info',
+    columns: [
+      'remarks',
+      'processedBy',
+      'dateProcessed',
       'location',
       'barangay',
       'city',
@@ -10374,7 +10438,14 @@ const buildMenuSections = (cols, opts) => buildLayoutSections(cols, MENU_FORM_LA
 const buildAccessLevelSections = (cols, opts) => buildLayoutSections(cols, ACCESS_LEVEL_FORM_LAYOUT, opts)
 const buildDiscountTypeSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_TYPE_FORM_LAYOUT, opts)
 const buildDiscountSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_FORM_LAYOUT, opts)
+/*
 const buildPaymentSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_FORM_LAYOUT, opts)
+*/
+// Gene - Nov 5, 2026: Deduplicate payment form columns and build layout sections without duplicate Payment Date, Processed By, or Fiber Plan
+const buildPaymentSections = (cols, opts) => {
+  const dedupedCols = deduplicateColumns(cols)
+  return buildLayoutSections(dedupedCols, PAYMENT_FORM_LAYOUT, opts)
+}
 // Gene - Nov 5, 2026: Section layouts & builders for PaymentMethods and PaymentTypes under Transaction
 const PAYMENT_METHOD_FORM_LAYOUT = [
   {
@@ -13288,6 +13359,15 @@ const formatDisplayValue = (val, col) => {
     return normalizePhoneNumber(val)
   }
 
+  // Gene - Nov 5, 2026: Format Date object instances directly in formatDisplayValue
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return val.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit'
+    })
+  }
+
   // Format server-side timestamps and dates
   if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified' || (isPaymentEndpoint.value && lower === 'receivedpayment')) && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
     const d = new Date(val)
@@ -14460,6 +14540,23 @@ const saveData = async () => {
           createdBy: numericUserId,
           modifiedBy: numericUserId
         }
+      } else if (isPaymentEndpoint.value) {
+        // Gene - Nov 5, 2026: Sync Payment Date, Fiber Plan, and Processed By between legacy and DTO columns on CREATE
+        if (finalPayload.receivedPayment && !finalPayload.paymentDate) {
+          finalPayload.paymentDate = finalPayload.receivedPayment instanceof Date ? finalPayload.receivedPayment.toISOString() : String(finalPayload.receivedPayment)
+        } else if (finalPayload.paymentDate && !finalPayload.receivedPayment) {
+          finalPayload.receivedPayment = finalPayload.paymentDate instanceof Date ? finalPayload.paymentDate.toISOString() : String(finalPayload.paymentDate)
+        }
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = finalPayload.image
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = finalPayload.plan
+        }
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = finalPayload.remarks
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = finalPayload.processedBy
+        }
       }
     }
 
@@ -15052,7 +15149,25 @@ const openEditDialog = async (record) => {
       const bal = editFormData.value[col]
       editFormData.value[col] = (bal === null || bal === undefined || bal === '') ? 0 : Number(bal)
     }
+    // Gene - Nov 5, 2026: Parse date strings into Date objects for PrimeVue DatePicker in edit modal
+    if (getFieldType(col) === 'date' && editFormData.value[col]) {
+      const parsed = parseDateForPicker(editFormData.value[col])
+      if (parsed) editFormData.value[col] = parsed
+    }
   })
+
+  // Gene - Nov 5, 2026: Fallback sync for Payments edit modal when opening records with legacy or shifted properties
+  if (isPaymentEndpoint.value) {
+    if (!editFormData.value.receivedPayment && record.paymentDate) {
+      editFormData.value.receivedPayment = parseDateForPicker(record.paymentDate)
+    }
+    if (!editFormData.value.image && record.plan) {
+      editFormData.value.image = record.plan
+    }
+    if (!editFormData.value.remarks && record.processedBy) {
+      editFormData.value.remarks = record.processedBy
+    }
+  }
 
   // The state this edit is based on. Compared against the server just before the PUT
   // so a save cannot quietly discard someone else's edit made in the meantime.
@@ -15933,6 +16048,24 @@ const saveEdit = async () => {
 
       if (isPaymentEndpoint.value) {
         finalPayload.id = Number(editingRecordId.value) || editingRecordId.value
+      }
+      if (isPaymentEndpoint.value) {
+        // Gene - Nov 5, 2026: Sync Payment Date, Fiber Plan, and Processed By between legacy and DTO columns on PUT update
+        if (finalPayload.receivedPayment && !finalPayload.paymentDate) {
+          finalPayload.paymentDate = finalPayload.receivedPayment instanceof Date ? finalPayload.receivedPayment.toISOString() : String(finalPayload.receivedPayment)
+        } else if (finalPayload.paymentDate && !finalPayload.receivedPayment) {
+          finalPayload.receivedPayment = finalPayload.paymentDate instanceof Date ? finalPayload.paymentDate.toISOString() : String(finalPayload.paymentDate)
+        }
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = finalPayload.image
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = finalPayload.plan
+        }
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = finalPayload.remarks
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = finalPayload.processedBy
+        }
       }
 
       // Gene - Nov 5, 2026: Format PaymentMethods and PaymentTypes payload for PUT update
