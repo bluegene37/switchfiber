@@ -222,3 +222,45 @@ describe('Payment Form: Duplicate Fields Elimination Verification', () => {
     )
   })
 })
+
+describe('Payment Creation & Update Payload Sanitization Suite (400 Bad Request Prevention)', () => {
+  test('saveData sanitizes receivedPayment so it is never an ISO date string or Date object', () => {
+    assert.ok(
+      src.includes('finalPayload.receivedPayment = Number(finalPayload.receivedPayment)'),
+      'saveData must convert numeric receivedPayment to Number'
+    )
+    assert.ok(
+      src.includes('finalPayload.receivedPayment = Number(finalPayload.contactNo)'),
+      'saveData must derive receivedPayment from numeric contactNo if empty'
+    )
+    assert.ok(
+      src.includes("finalPayload.receivedPayment.includes('-')"),
+      'saveData must strip hyphenated date strings from receivedPayment'
+    )
+  })
+
+  test('saveEdit sanitizes receivedPayment and attaches transactionid in query params', () => {
+    assert.ok(
+      src.includes('params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID'),
+      'saveEdit must pass transactionid in query parameters for Payments PUT'
+    )
+  })
+
+  test('openCreateDialog defaults payment date to new Date()', () => {
+    assert.ok(
+      src.includes('formData.value.receivedPayment = new Date()'),
+      'openCreateDialog must initialize receivedPayment date picker'
+    )
+  })
+
+  test('openEditDialog and openViewDialog populate receivedPayment from paymentDate', () => {
+    assert.ok(
+      src.includes('editFormData.value.receivedPayment = parseDateForPicker(record.paymentDate)'),
+      'openEditDialog must parse record.paymentDate for date picker'
+    )
+    assert.ok(
+      src.includes('viewFormData.value.receivedPayment = parseDateForPicker(normRecord.paymentDate)'),
+      'openViewDialog must parse normRecord.paymentDate for date picker'
+    )
+  })
+})

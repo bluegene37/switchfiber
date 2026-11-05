@@ -10201,6 +10201,7 @@ const PAYMENT_FORM_LAYOUT = [
   }
 ]
 */
+/*
 // Gene - Nov 5, 2026: Deduplicate PAYMENT_FORM_LAYOUT removing duplicate Fiber Plan (plan), Processed By (processedBy), and Payment Date (paymentDate)
 const PAYMENT_FORM_LAYOUT = [
   {
@@ -10234,6 +10235,45 @@ const PAYMENT_FORM_LAYOUT = [
     columns: [
       'remarks',
       'processedBy',
+      'dateProcessed',
+      'location',
+      'barangay',
+      'city',
+      'userEmail'
+    ]
+  }
+]
+*/
+// Gene - Nov 5, 2026: Canonical PAYMENT_FORM_LAYOUT with zero duplicate columns: single Payment Date (receivedPayment), single Fiber Plan (image), and single Processed By (remarks)
+const PAYMENT_FORM_LAYOUT = [
+  {
+    key: 'transaction',
+    title: 'Payment & Transaction Details',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-primary',
+    columns: [
+      'transactionID',
+      'accountNo',
+      'fullName',
+      'contactNo',
+      'receivedPayment',
+      'paymentMethod',
+      'transactionType',
+      'referenceNo',
+      'orNo',
+      'image',
+      'accountBalance',
+      'status',
+      'provider'
+    ]
+  },
+  {
+    key: 'processing',
+    title: 'Processing & Location Information',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-info',
+    columns: [
+      'remarks',
       'dateProcessed',
       'location',
       'barangay',
@@ -13663,6 +13703,16 @@ const openCreateDialog = () => {
     }
   }
 
+  // Gene - Nov 5, 2026: Pre-fill Payment Date to today's date in Payments create dialog
+  if (isPaymentEndpoint.value) {
+    if (formColumns.value.some(c => c.toLowerCase() === 'receivedpayment')) {
+      formData.value.receivedPayment = new Date()
+    }
+    if (formColumns.value.some(c => c.toLowerCase() === 'paymentdate')) {
+      formData.value.paymentDate = new Date()
+    }
+  }
+
   // Default province for Create modal if empty (the plant lives in Binangonan, Rizal)
   const createRegCol = formColumns.value.find(c => getFieldType(c) === 'region_dropdown')
   if (createRegCol && !formData.value[createRegCol]) {
@@ -14541,12 +14591,47 @@ const saveData = async () => {
           modifiedBy: numericUserId
         }
       } else if (isPaymentEndpoint.value) {
+        /*
         // Gene - Nov 5, 2026: Sync Payment Date, Fiber Plan, and Processed By between legacy and DTO columns on CREATE
         if (finalPayload.receivedPayment && !finalPayload.paymentDate) {
           finalPayload.paymentDate = finalPayload.receivedPayment instanceof Date ? finalPayload.receivedPayment.toISOString() : String(finalPayload.receivedPayment)
         } else if (finalPayload.paymentDate && !finalPayload.receivedPayment) {
           finalPayload.receivedPayment = finalPayload.paymentDate instanceof Date ? finalPayload.paymentDate.toISOString() : String(finalPayload.paymentDate)
         }
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = finalPayload.image
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = finalPayload.plan
+        }
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = finalPayload.remarks
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = finalPayload.processedBy
+        }
+        */
+        // Gene - Nov 5, 2026: Format Payment Date as ISO string and ensure receivedPayment is decimal? (never a date) to prevent HTTP 400 Bad Request
+        if (finalPayload.paymentDate instanceof Date) {
+          finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
+        } else if (finalPayload.receivedPayment && !finalPayload.paymentDate) {
+          finalPayload.paymentDate = finalPayload.receivedPayment instanceof Date ? finalPayload.receivedPayment.toISOString() : String(finalPayload.receivedPayment)
+        }
+
+        // ASP.NET Core Payment.ReceivedPayment is decimal? (paid amount), never an ISO date string
+        if (finalPayload.receivedPayment instanceof Date || (typeof finalPayload.receivedPayment === 'string' && (finalPayload.receivedPayment.includes('-') || finalPayload.receivedPayment.includes('T')))) {
+          finalPayload.receivedPayment = null
+        }
+        if (finalPayload.receivedPayment === null || finalPayload.receivedPayment === undefined || finalPayload.receivedPayment === '') {
+          if (finalPayload.contactNo !== undefined && finalPayload.contactNo !== null && !isNaN(Number(finalPayload.contactNo)) && Number(finalPayload.contactNo) > 0) {
+            finalPayload.receivedPayment = Number(finalPayload.contactNo)
+          } else {
+            finalPayload.receivedPayment = null
+          }
+        } else if (!isNaN(Number(finalPayload.receivedPayment))) {
+          finalPayload.receivedPayment = Number(finalPayload.receivedPayment)
+        } else {
+          finalPayload.receivedPayment = null
+        }
+
         if (finalPayload.image && !finalPayload.plan) {
           finalPayload.plan = finalPayload.image
         } else if (finalPayload.plan && !finalPayload.image) {
@@ -14682,6 +14767,18 @@ const openViewDialog = (record) => {
   } else if (isAccessLevelEndpoint.value && viewFormData.value) {
     const disp = getAccessLevelDisplayName(viewFormData.value)
     if (disp) viewFormData.value.name = disp
+  }
+  // Gene - Nov 5, 2026: Format Payment Date and sync Fiber Plan & Processed By for Payments view modal
+  if (isPaymentEndpoint.value && viewFormData.value) {
+    if (normRecord.paymentDate) {
+      viewFormData.value.receivedPayment = parseDateForPicker(normRecord.paymentDate)
+    }
+    if (!viewFormData.value.image && normRecord.plan) {
+      viewFormData.value.image = normRecord.plan
+    }
+    if (!viewFormData.value.remarks && normRecord.processedBy) {
+      viewFormData.value.remarks = normRecord.processedBy
+    }
   }
   autoLocateOnOpen('view')
   fetchAndAttachImagesForDialog('view', normRecord)
@@ -15030,6 +15127,18 @@ const openViewDialog = (record) => {
     const disp = getAccessLevelDisplayName(viewFormData.value)
     if (disp) viewFormData.value.name = disp
   }
+  // Gene - Nov 5, 2026: Format Payment Date and sync Fiber Plan & Processed By for Payments view modal
+  if (isPaymentEndpoint.value && viewFormData.value) {
+    if (normRecord.paymentDate) {
+      viewFormData.value.receivedPayment = parseDateForPicker(normRecord.paymentDate)
+    }
+    if (!viewFormData.value.image && normRecord.plan) {
+      viewFormData.value.image = normRecord.plan
+    }
+    if (!viewFormData.value.remarks && normRecord.processedBy) {
+      viewFormData.value.remarks = normRecord.processedBy
+    }
+  }
   autoLocateOnOpen('view')
   pendingDialogImageFetch.view = fetchAndAttachImagesForDialog('view', normRecord)
   displayViewDialog.value = true
@@ -15158,7 +15267,13 @@ const openEditDialog = async (record) => {
 
   // Gene - Nov 5, 2026: Fallback sync for Payments edit modal when opening records with legacy or shifted properties
   if (isPaymentEndpoint.value) {
+    /*
     if (!editFormData.value.receivedPayment && record.paymentDate) {
+      editFormData.value.receivedPayment = parseDateForPicker(record.paymentDate)
+    }
+    */
+    // Gene - Nov 5, 2026: Parse record.paymentDate into Date object for receivedPayment date picker in Payments edit modal
+    if (record.paymentDate) {
       editFormData.value.receivedPayment = parseDateForPicker(record.paymentDate)
     }
     if (!editFormData.value.image && record.plan) {
@@ -15411,7 +15526,14 @@ const detectEditConflict = async () => {
   // Gene - Oct 11, 2026: Use applicationid string identifier when querying Applications endpoint since GET /api/Applications/{id} looks up by applicationid
   try {
     const lookupId = isApplicationEndpoint.value ? (base.applicationid || editingRecordId.value) : editingRecordId.value
+    /*
     current = await CrudService.getById(props.endpoint, lookupId)
+    */
+    // Gene - Nov 5, 2026: Pass transactionid query parameter when checking edit conflict for Payments
+    const getByIdConfig = (isPaymentEndpoint.value && (base.transactionID || base.transactionid))
+      ? { params: { transactionid: base.transactionID || base.transactionid } }
+      : {}
+    current = await CrudService.getById(props.endpoint, lookupId, getByIdConfig)
   } catch {
     // A failed pre-check must not block a legitimate save.
     return null
@@ -16050,12 +16172,47 @@ const saveEdit = async () => {
         finalPayload.id = Number(editingRecordId.value) || editingRecordId.value
       }
       if (isPaymentEndpoint.value) {
+        /*
         // Gene - Nov 5, 2026: Sync Payment Date, Fiber Plan, and Processed By between legacy and DTO columns on PUT update
         if (finalPayload.receivedPayment && !finalPayload.paymentDate) {
           finalPayload.paymentDate = finalPayload.receivedPayment instanceof Date ? finalPayload.receivedPayment.toISOString() : String(finalPayload.receivedPayment)
         } else if (finalPayload.paymentDate && !finalPayload.receivedPayment) {
           finalPayload.receivedPayment = finalPayload.paymentDate instanceof Date ? finalPayload.paymentDate.toISOString() : String(finalPayload.paymentDate)
         }
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = finalPayload.image
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = finalPayload.plan
+        }
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = finalPayload.remarks
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = finalPayload.processedBy
+        }
+        */
+        // Gene - Nov 5, 2026: Format Payment Date as ISO string and ensure receivedPayment is decimal? (never a date) to prevent HTTP 400 Bad Request
+        if (finalPayload.paymentDate instanceof Date) {
+          finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
+        } else if (finalPayload.receivedPayment && !finalPayload.paymentDate) {
+          finalPayload.paymentDate = finalPayload.receivedPayment instanceof Date ? finalPayload.receivedPayment.toISOString() : String(finalPayload.receivedPayment)
+        }
+
+        // ASP.NET Core Payment.ReceivedPayment is decimal? (paid amount), never an ISO date string
+        if (finalPayload.receivedPayment instanceof Date || (typeof finalPayload.receivedPayment === 'string' && (finalPayload.receivedPayment.includes('-') || finalPayload.receivedPayment.includes('T')))) {
+          finalPayload.receivedPayment = null
+        }
+        if (finalPayload.receivedPayment === null || finalPayload.receivedPayment === undefined || finalPayload.receivedPayment === '') {
+          if (finalPayload.contactNo !== undefined && finalPayload.contactNo !== null && !isNaN(Number(finalPayload.contactNo)) && Number(finalPayload.contactNo) > 0) {
+            finalPayload.receivedPayment = Number(finalPayload.contactNo)
+          } else {
+            finalPayload.receivedPayment = null
+          }
+        } else if (!isNaN(Number(finalPayload.receivedPayment))) {
+          finalPayload.receivedPayment = Number(finalPayload.receivedPayment)
+        } else {
+          finalPayload.receivedPayment = null
+        }
+
         if (finalPayload.image && !finalPayload.plan) {
           finalPayload.plan = finalPayload.image
         } else if (finalPayload.plan && !finalPayload.image) {
@@ -16096,10 +16253,21 @@ const saveEdit = async () => {
     /*
     await CrudService.update(props.endpoint, updatedId, finalPayload)
     */
+    /*
     // Gene - Nov 5, 2026: Explicitly pass multipart/form-data header config on FormData payload to prevent Axios 415 error
     const updateReqConfig = (typeof FormData !== 'undefined' && finalPayload instanceof FormData)
       ? { headers: { 'Content-Type': 'multipart/form-data' } }
       : {}
+    */
+    // Gene - Nov 5, 2026: Add transactionid query parameter on Payments PUT and preserve multipart/form-data headers
+    const updateReqConfig = {
+      ...((typeof FormData !== 'undefined' && finalPayload instanceof FormData)
+        ? { headers: { 'Content-Type': 'multipart/form-data' } }
+        : {}),
+      ...(isPaymentEndpoint.value && (finalPayload.transactionID || editBaseSnapshot.value?.transactionID || finalPayload.transactionid || editBaseSnapshot.value?.transactionid)
+        ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || finalPayload.transactionid || editBaseSnapshot.value?.transactionid } }
+        : {})
+    }
     await CrudService.update(props.endpoint, updatedId, finalPayload, updateReqConfig)
     await fetchData()
     displayEditDialog.value = false
