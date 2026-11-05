@@ -27,6 +27,11 @@ const ROUTE_TITLES = {
   invoice: 'Invoice',
   billing: 'Billing',
   payments: 'Payments',
+  // Gene - Nov 5, 2026: Route titles for Payment Methods and Payment Types under Transaction
+  'payment-methods': 'Payment Methods',
+  payment_methods: 'Payment Methods',
+  'payment-types': 'Payment Types',
+  payment_types: 'Payment Types',
   lcp: 'LCP',
   lcnap: 'LCNAP',
   lcnap_port: 'LCNAP Port',
@@ -340,6 +345,19 @@ const router = createRouter({
     {
       path: '/payments',
       name: 'payments',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    // Gene - Nov 5, 2026: Register routes for Payment Methods and Payment Types under Transaction
+    {
+      path: '/payment-methods',
+      name: 'payment-methods',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/payment-types',
+      name: 'payment-types',
       component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },

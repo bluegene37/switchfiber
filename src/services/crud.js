@@ -17,12 +17,19 @@ export const toPath = (endpoint) => {
   return `/${trimmed}`
 }
 */
+/*
 // Gene - Sept 30, 2026: Normalize 'Payments' endpoint to singular '/Payment' matching the ASP.NET controller route
 export const toPath = (endpoint) => {
   let trimmed = String(endpoint ?? '').trim().replace(/^\/+|\/+$/g, '')
   if (/^Payments([/?#]|$)/i.test(trimmed)) {
     trimmed = trimmed.replace(/^Payments([/?#]|$)/i, 'Payment$1')
   }
+  return `/${trimmed}`
+}
+*/
+// Gene - Nov 5, 2026: Backend migrated Payments controller to plural /Payments (singular /Payment returns 404). Retained plural /Payments endpoint.
+export const toPath = (endpoint) => {
+  const trimmed = String(endpoint ?? '').trim().replace(/^\/+|\/+$/g, '')
   return `/${trimmed}`
 }
 

@@ -5964,6 +5964,17 @@ const isPaymentEndpoint = computed(() => {
   return ep === 'payments' || ep === 'payment'
 })
 
+// Gene - Nov 5, 2026: Endpoint flags for PaymentMethods and PaymentTypes under Transaction
+const isPaymentMethodEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'paymentmethods' || ep === 'paymentmethod' || ep === 'payment_methods' || ep === 'payment_method'
+})
+
+const isPaymentTypeEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'paymenttypes' || ep === 'paymenttype' || ep === 'payment_types' || ep === 'payment_type'
+})
+
 // Gene - Oct, 16, 2026: Added endpoint flags for Promotions, Inventory Category, Inventory Item, and Inventory Logs
 const isPromotionEndpoint = computed(() => {
   const ep = (props.endpoint || '').trim().toLowerCase()
@@ -7951,6 +7962,19 @@ const PROMOTION_COLUMNS = [
   'isActive'
 ]
 
+// Gene - Nov 5, 2026: Concise table columns for PaymentMethods and PaymentTypes under Transaction
+const PAYMENT_METHOD_COLUMNS = [
+  'id',
+  'name',
+  'description'
+]
+
+const PAYMENT_TYPE_COLUMNS = [
+  'id',
+  'name',
+  'description'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
@@ -8021,7 +8045,20 @@ const CONCISE_ENDPOINT_COLUMNS = {
   Promotions: PROMOTION_COLUMNS,
   promotions: PROMOTION_COLUMNS,
   Promo: PROMOTION_COLUMNS,
-  promo: PROMOTION_COLUMNS
+  promo: PROMOTION_COLUMNS,
+  // Gene - Nov 5, 2026: Register PaymentMethods and PaymentTypes concise columns
+  PaymentMethods: PAYMENT_METHOD_COLUMNS,
+  paymentmethods: PAYMENT_METHOD_COLUMNS,
+  PaymentMethod: PAYMENT_METHOD_COLUMNS,
+  paymentmethod: PAYMENT_METHOD_COLUMNS,
+  payment_methods: PAYMENT_METHOD_COLUMNS,
+  payment_method: PAYMENT_METHOD_COLUMNS,
+  PaymentTypes: PAYMENT_TYPE_COLUMNS,
+  paymenttypes: PAYMENT_TYPE_COLUMNS,
+  PaymentType: PAYMENT_TYPE_COLUMNS,
+  paymenttype: PAYMENT_TYPE_COLUMNS,
+  payment_types: PAYMENT_TYPE_COLUMNS,
+  payment_type: PAYMENT_TYPE_COLUMNS
 }
 
 // Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
@@ -8258,6 +8295,19 @@ const defaultVisibleColumns = (cols) => {
   if (isPaymentEndpoint.value) {
     const picked = cols.filter(col =>
       PAYMENT_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
+    )
+    return picked.length > 0 ? picked : [...cols]
+  }
+  // Gene - Nov 5, 2026: Default visible columns for PaymentMethods and PaymentTypes
+  if (isPaymentMethodEndpoint.value) {
+    const picked = cols.filter(col =>
+      PAYMENT_METHOD_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
+    )
+    return picked.length > 0 ? picked : [...cols]
+  }
+  if (isPaymentTypeEndpoint.value) {
+    const picked = cols.filter(col =>
+      PAYMENT_TYPE_COLUMNS.some(pref => normalizeColKey(pref) === normalizeColKey(col))
     )
     return picked.length > 0 ? picked : [...cols]
   }
@@ -10325,6 +10375,29 @@ const buildAccessLevelSections = (cols, opts) => buildLayoutSections(cols, ACCES
 const buildDiscountTypeSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_TYPE_FORM_LAYOUT, opts)
 const buildDiscountSections = (cols, opts) => buildLayoutSections(cols, DISCOUNT_FORM_LAYOUT, opts)
 const buildPaymentSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_FORM_LAYOUT, opts)
+// Gene - Nov 5, 2026: Section layouts & builders for PaymentMethods and PaymentTypes under Transaction
+const PAYMENT_METHOD_FORM_LAYOUT = [
+  {
+    key: 'payment_method_info',
+    title: 'Payment Method Information',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-primary',
+    columns: ['name', 'description']
+  }
+]
+
+const PAYMENT_TYPE_FORM_LAYOUT = [
+  {
+    key: 'payment_type_info',
+    title: 'Payment Type Information',
+    icon: 'pi pi-tag',
+    badgeClass: 'text-primary',
+    columns: ['name', 'description']
+  }
+]
+
+const buildPaymentMethodSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_METHOD_FORM_LAYOUT, opts)
+const buildPaymentTypeSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_TYPE_FORM_LAYOUT, opts)
 // Gene - Oct, 16, 2026: Section builders for Promotions and Inventory endpoints
 const buildPromotionSections = (cols, opts) => buildLayoutSections(cols, PROMOTION_FORM_LAYOUT, opts)
 const buildInventoryCategorySections = (cols, opts) => buildLayoutSections(cols, INVENTORY_CATEGORY_FORM_LAYOUT, opts)
@@ -10550,6 +10623,13 @@ const baseFormSections = computed(() => {
   if (isPaymentEndpoint.value) {
     return buildPaymentSections(formColumns.value)
   }
+  // Gene - Nov 5, 2026: Form section builders for PaymentMethods and PaymentTypes under Transaction
+  if (isPaymentMethodEndpoint.value) {
+    return buildPaymentMethodSections(formColumns.value)
+  }
+  if (isPaymentTypeEndpoint.value) {
+    return buildPaymentTypeSections(formColumns.value)
+  }
   // Gene - Oct, 16, 2026: Use dedicated section builders for Promotions and Inventory endpoints
   if (isPromotionEndpoint.value) {
     return buildPromotionSections(formColumns.value)
@@ -10664,6 +10744,13 @@ const viewFormSections = computed(() => {
   }
   if (isPaymentEndpoint.value) {
     return buildPaymentSections(viewFormColumns.value, { includeAudit: true })
+  }
+  // Gene - Nov 5, 2026: View modal section builders for PaymentMethods and PaymentTypes
+  if (isPaymentMethodEndpoint.value) {
+    return buildPaymentMethodSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isPaymentTypeEndpoint.value) {
+    return buildPaymentTypeSections(viewFormColumns.value, { includeAudit: true })
   }
   // Gene - Oct, 16, 2026: Use dedicated section builders for Promotions and Inventory endpoints in View modal
   if (isPromotionEndpoint.value) {
@@ -14361,6 +14448,14 @@ const saveData = async () => {
         finalPayload = buildInventoryLogPayload(finalPayload, 'create', loggedInUserId)
       } else if (isInventoryCategoryEndpoint.value) {
         finalPayload = buildInventoryCategoryPayload(finalPayload, 'create', numericUserId)
+      } else if (isPaymentMethodEndpoint.value || isPaymentTypeEndpoint.value) {
+        // Gene - Nov 5, 2026: Format PaymentMethods and PaymentTypes payload for CREATE
+        finalPayload = {
+          name: payload.name !== undefined && payload.name !== null ? String(payload.name).trim() : '',
+          description: payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : '',
+          createdBy: numericUserId,
+          modifiedBy: numericUserId
+        }
       }
     }
 
@@ -15773,6 +15868,21 @@ const saveEdit = async () => {
 
       if (isPaymentEndpoint.value) {
         finalPayload.id = Number(editingRecordId.value) || editingRecordId.value
+      }
+
+      // Gene - Nov 5, 2026: Format PaymentMethods and PaymentTypes payload for PUT update
+      if (isPaymentMethodEndpoint.value || isPaymentTypeEndpoint.value) {
+        finalPayload.id = Number(editingRecordId.value) || editingRecordId.value
+        finalPayload.name = payload.name !== undefined && payload.name !== null ? String(payload.name).trim() : ''
+        finalPayload.description = payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : ''
+        if (editBaseSnapshot.value?.createdBy !== undefined && editBaseSnapshot.value?.createdBy !== null) {
+          finalPayload.createdBy = Number(editBaseSnapshot.value.createdBy) || numericUserId
+        } else {
+          finalPayload.createdBy = numericUserId
+        }
+        finalPayload.modifiedBy = numericUserId
+        delete finalPayload.createdDate
+        delete finalPayload.modifiedDate
       }
 
       if (isUserEndpoint.value) {

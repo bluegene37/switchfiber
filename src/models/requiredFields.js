@@ -132,6 +132,13 @@ const ENDPOINT_OVERRIDES = {
   ],
   inventorylogs: [
     'itemId', 'quantity', 'requestedBy', 'status'
+  ],
+  // Gene - Nov 5, 2026: Mandatory name field override for PaymentMethods and PaymentTypes under Transaction
+  paymentmethods: [
+    'name'
+  ],
+  paymenttypes: [
+    'name'
   ]
 }
 

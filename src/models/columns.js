@@ -278,6 +278,21 @@ export const EndpointColumns = {
     "modifiedBy",
     "modifiedDate"
   ],
+  // Gene - Nov 5, 2026: Add fallback columns for PaymentMethods and PaymentTypes under Transaction
+  "PaymentMethods": [
+    "id",
+    "name",
+    "description",
+    "createdBy",
+    "modifiedBy"
+  ],
+  "PaymentTypes": [
+    "id",
+    "name",
+    "description",
+    "createdBy",
+    "modifiedBy"
+  ],
   "Ports": [
     "id",
     "name",

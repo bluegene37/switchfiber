@@ -327,6 +327,27 @@ export const MENU_CATALOG = [
         aliases: ['Payments', 'Payment', 'Payment List', 'Customer Payments', 'Transaction Payments', 'Collections', 'Payment Transactions', 'Receipts'],
         path: '/payments',
         icon: 'pi-wallet'
+      },
+      // Gene - Nov 5, 2026: Added Payment Methods and Payment Types child items under Transaction
+      {
+        code: 'transaction.payment-methods',
+        shortCode: 'PM1',
+        codeAliases: ['TXNPM', 'PAYMENT_METHODS', 'PAYMENTMETHODS', 'TXN_PM'],
+        name: 'Payment Methods',
+        serverMenu: 'Payment Methods',
+        aliases: ['Payment Methods', 'Payment Method', 'PaymentMethods', 'Transaction Payment Methods', 'Payment Mode', 'Payment Channel'],
+        path: '/payment-methods',
+        icon: 'pi-credit-card'
+      },
+      {
+        code: 'transaction.payment-types',
+        shortCode: 'PT1',
+        codeAliases: ['TXNPT', 'PAYMENT_TYPES', 'PAYMENTTYPES', 'TXN_PT'],
+        name: 'Payment Types',
+        serverMenu: 'Payment Types',
+        aliases: ['Payment Types', 'Payment Type', 'PaymentTypes', 'Transaction Payment Types', 'Payment Category', 'Payment Classification'],
+        path: '/payment-types',
+        icon: 'pi-tag'
       }
     ]
   },

@@ -72,9 +72,10 @@ apiClient.interceptors.request.use((config) => {
   if (token && typeof token === 'string' && token.trim()) {
     config.headers.Authorization = `Bearer ${token.trim()}`
   }
-  if (config.url && typeof config.url === 'string') {
-    config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
-  }
+  // Gene - Nov 5, 2026: Backend migrated Payments controller to plural /Payments (singular /Payment returns 404). Preserved plural /Payments endpoint.
+  // if (config.url && typeof config.url === 'string') {
+  //   config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
+  // }
   // Only reads are cancellable — a mutation must never be killed mid-flight.
   // A caller-supplied signal is left alone.
   if ((config.method || 'get').toLowerCase() === 'get' && config.cancelOnNavigate !== false && !config.signal) {
@@ -95,9 +96,10 @@ apiClient.interceptors.request.use((config) => {
   if (token && typeof token === 'string' && token.trim()) {
     config.headers.Authorization = `Bearer ${token.trim()}`
   }
-  if (config.url && typeof config.url === 'string') {
-    config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
-  }
+  // Gene - Nov 5, 2026: Backend migrated Payments controller to plural /Payments (singular /Payment returns 404). Preserved plural /Payments endpoint.
+  // if (config.url && typeof config.url === 'string') {
+  //   config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
+  // }
   if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
     if (config.headers) {
       if (typeof config.headers.delete === 'function') {
@@ -128,9 +130,10 @@ apiClient.interceptors.request.use((config) => {
   if (token && typeof token === 'string' && token.trim()) {
     config.headers.Authorization = `Bearer ${token.trim()}`
   }
-  if (config.url && typeof config.url === 'string') {
-    config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
-  }
+  // Gene - Nov 5, 2026: Backend migrated Payments controller to plural /Payments (singular /Payment returns 404). Preserved plural /Payments endpoint.
+  // if (config.url && typeof config.url === 'string') {
+  //   config.url = config.url.replace(/^(\/)?Payments([/?#]|$)/i, '$1Payment$2')
+  // }
   if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
     if (config.headers) {
       if (typeof config.headers.set === 'function') {

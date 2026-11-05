@@ -882,3 +882,22 @@
  * @property {integer|string|null} discounttype_id
  * @property {string|null} accountNo
  */
+
+/**
+ * // Gene - Nov 5, 2026: DTO definitions for PaymentMethod and PaymentType
+ * @typedef {Object} PaymentMethodDto
+ * @property {number|string} id
+ * @property {string|null} name
+ * @property {string|null} description
+ * @property {number|string|null} createdBy
+ * @property {number|string|null} modifiedBy
+ */
+
+/**
+ * @typedef {Object} PaymentTypeDto
+ * @property {number|string} id
+ * @property {string|null} name
+ * @property {string|null} description
+ * @property {number|string|null} createdBy
+ * @property {number|string|null} modifiedBy
+ */

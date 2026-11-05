@@ -167,6 +167,43 @@ const routeMap = {
     icon: 'pi-wallet',
     description: 'Track customer collections, payment transactions, official receipts, and billing settlements.'
   },
+  // Gene - Nov 5, 2026: Add Payment Methods and Payment Types under Transaction group
+  '/payment-methods': {
+    title: 'Payment Methods',
+    endpoint: 'PaymentMethods',
+    icon: 'pi-credit-card',
+    description: 'Configure available payment channels, gateways, bank transfers, and over-the-counter options.'
+  },
+  '/payment_methods': {
+    title: 'Payment Methods',
+    endpoint: 'PaymentMethods',
+    icon: 'pi-credit-card',
+    description: 'Configure available payment channels, gateways, bank transfers, and over-the-counter options.'
+  },
+  '/paymentmethods': {
+    title: 'Payment Methods',
+    endpoint: 'PaymentMethods',
+    icon: 'pi-credit-card',
+    description: 'Configure available payment channels, gateways, bank transfers, and over-the-counter options.'
+  },
+  '/payment-types': {
+    title: 'Payment Types',
+    endpoint: 'PaymentTypes',
+    icon: 'pi-tag',
+    description: 'Categorize customer payment transactions, collections, advance deposits, and settlement types.'
+  },
+  '/payment_types': {
+    title: 'Payment Types',
+    endpoint: 'PaymentTypes',
+    icon: 'pi-tag',
+    description: 'Categorize customer payment transactions, collections, advance deposits, and settlement types.'
+  },
+  '/paymenttypes': {
+    title: 'Payment Types',
+    endpoint: 'PaymentTypes',
+    icon: 'pi-tag',
+    description: 'Categorize customer payment transactions, collections, advance deposits, and settlement types.'
+  },
   // RadiusUser records come back without a usable key (every `id` is an empty
   // string), so there is nothing to address a write to — this screen browses only.
   '/disconnection': {
