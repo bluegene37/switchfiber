@@ -5630,6 +5630,8 @@ import { LcpNapLocationService } from '../services/lcpNapLocations'
 import { ApplicationService } from '../services/applications'
 import { LcpNapLocationService } from '../services/lcpNapLocations'
 import { JobOrderService } from '../services/jobOrders'
+// Gene - Nov 5, 2026: Import ServiceOrderService for Service Order image viewing, caching, and multipart uploads
+import { ServiceOrderService } from '../services/serviceOrders'
 import {
   resolveMenuCodesFromName,
   isSuperAdminName,
@@ -5892,6 +5894,7 @@ const isLcpNapEndpoint = computed(() => {
   )
 })
 
+/*
 const isServiceOrderEndpoint = computed(() => {
   const ep = (props.endpoint || '').trim().toLowerCase()
   return (
@@ -5900,6 +5903,12 @@ const isServiceOrderEndpoint = computed(() => {
     ep === 'service_orders' ||
     ep === 'service_order'
   )
+})
+*/
+// Gene - Nov 5, 2026: Robust endpoint matching for ServiceOrders stripping leading/trailing slashes, hyphens, and underscores
+const isServiceOrderEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '').replace(/[-_]/g, '')
+  return ep === 'serviceorders' || ep === 'serviceorder'
 })
 
 const isBillingEndpoint = computed(() => {
@@ -6702,6 +6711,43 @@ const handleTableImageClick = async (row, col) => {
       }
     } catch (err) {
       console.warn('[handleTableImageClick] Could not fetch Job Order image:', err)
+    } finally {
+      if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
+      isFetchingImageOnDemand.value = false
+    }
+  }
+
+  // Gene - Nov 5, 2026: Fetch Service Order photos using GetServiceOrderImage with on-demand caching
+  if (isServiceOrderEndpoint.value && row?.id) {
+    fetchingCellKey.value = cellKey
+    isFetchingImageOnDemand.value = true
+    try {
+      let imgData = recordImagesCache.get(`so:${row.id}`)
+      if (!imgData) {
+        const rawRes = await ServiceOrderService.getServiceOrderImage(row.id)
+        imgData = unwrapApiPayload(rawRes)
+        if (imgData) recordImagesCache.set(`so:${row.id}`, imgData)
+      }
+      if (imgData) {
+        const normCol = normalizeColKey(col)
+        const fileKeyMap = {
+          clientsignature: 'clientSignatureFile',
+          image1: 'image1File',
+          image2: 'image2File',
+          image3: 'image3File',
+          housefrontpicture: 'houseFrontPictureFile',
+          housefront: 'houseFrontPictureFile'
+        }
+        const fileKey = fileKeyMap[normCol]
+        const fileObj = fileKey ? imgData[fileKey] : null
+        const dataUrl = fileResultToDataUrl(fileObj)
+        if (dataUrl) {
+          openImagePreview(dataUrl, title)
+          return
+        }
+      }
+    } catch (err) {
+      console.warn('[handleTableImageClick] Could not fetch Service Order image:', err)
     } finally {
       if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
       isFetchingImageOnDemand.value = false
@@ -14715,6 +14761,54 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
             targetForm.value[k] = getDirectImageUrl(v)
           }
         })
+      // Gene - Nov 5, 2026: Fetch and attach Service Order photos (clientSignature, image1, image2, image3, houseFrontPicture) using GetServiceOrderImage
+      } else if (isServiceOrderEndpoint.value && record.id) {
+        const attachToTargetForm = (canonicalName, value) => {
+          if (!targetForm.value) return
+          const norm = normalizeColKey(canonicalName)
+          const actualKey = Object.keys(targetForm.value).find(k => normalizeColKey(k) === norm) ||
+            formColumns.value.find(c => normalizeColKey(c) === norm) ||
+            canonicalName
+          targetForm.value[actualKey] = value
+          targetForm.value[canonicalName] = value
+          targetForm.value[canonicalName.toLowerCase()] = value
+        }
+
+        let imgData = recordImagesCache.get(`so:${record.id}`)
+        if (!imgData) {
+          try {
+            const rawRes = await ServiceOrderService.getServiceOrderImage(record.id)
+            imgData = unwrapApiPayload(rawRes)
+            if (imgData) recordImagesCache.set(`so:${record.id}`, imgData)
+          } catch (soErr) {
+            console.warn(`[DynamicApiTable] GetServiceOrderImage error for #${record.id}:`, soErr)
+          }
+        }
+        if (imgData) {
+          const mapping = {
+            clientSignature: imgData.clientSignatureFile,
+            image1: imgData.image1File,
+            image2: imgData.image2File,
+            image3: imgData.image3File,
+            houseFrontPicture: imgData.houseFrontPictureFile,
+            houseFront: imgData.houseFrontPictureFile
+          }
+          Object.entries(mapping).forEach(([colKey, fileObj]) => {
+            if (fileObj) {
+              const u = typeof fileObj === 'string' && isRenderableImageUrl(fileObj)
+                ? fileObj
+                : fileResultToDataUrl(fileObj)
+              if (u) attachToTargetForm(colKey, u)
+            }
+          })
+        }
+        // Also resolve any existing Google Drive links
+        Object.keys(targetForm.value).forEach(k => {
+          const v = targetForm.value[k]
+          if (typeof v === 'string' && (v.includes('drive.google.com') || v.includes('lh3.googleusercontent.com'))) {
+            targetForm.value[k] = getDirectImageUrl(v)
+          }
+        })
       }
     } catch (err) {
       console.warn(`[DynamicApiTable] Image fetch error for ${scope}:`, err)
@@ -15467,6 +15561,68 @@ const saveEdit = async () => {
       attachJoPhoto('routerReadingImage', 'RouterReadingImage', 'routerReadingImage.jpg')
       attachJoPhoto('portLabelImage', 'PortLabelImage', 'portLabelImage.jpg')
       attachJoPhoto('houseFront', 'HouseFront', 'houseFront.jpg')
+      finalPayload = form
+    // Gene - Nov 5, 2026: Switched ServiceOrders update to FormData (multipart/form-data) supporting image uploads, existing photo preservation, and clear support
+    } else if (isServiceOrderEndpoint.value) {
+      if (pendingDialogImageFetch.edit) {
+        try { await pendingDialogImageFetch.edit } catch (_) {}
+      }
+
+      const form = new FormData()
+
+      // PUT /ServiceOrders/{id} is a full replace: preserve original createdDate from snapshot
+      const originalCreatedDate = editBaseSnapshot.value?.createdDate
+      if (originalCreatedDate !== undefined && originalCreatedDate !== null && originalCreatedDate !== '') {
+        payload.createdDate = originalCreatedDate
+      }
+      payload.modifiedBy = loggedInUserId
+      payload.modifiedDate = nowIso
+
+      const soPhotoKeys = ['clientsignature', 'image1', 'image2', 'image3', 'housefrontpicture', 'housefront']
+      Object.entries(payload).forEach(([key, val]) => {
+        const lowerKey = key.toLowerCase()
+        if (soPhotoKeys.includes(lowerKey)) return
+        if (isAuditField(key) && key.toLowerCase() !== 'id' && key.toLowerCase() !== 'createddate' && key.toLowerCase() !== 'modifiedby' && key.toLowerCase() !== 'modifieddate') {
+          return
+        }
+        if (val !== undefined && val !== null) {
+          form.append(key, val instanceof Date ? val.toISOString() : String(val))
+        }
+      })
+
+      const files = selectedFilesByCol.value.edit || {}
+      const removed = removedImagesByCol.value.edit || {}
+
+      const attachSoPhoto = (colKey, formField, fallbackFileName) => {
+        const norm = normalizeColKey(colKey)
+        const newlySelected = files[colKey] || files[norm] || files[formField] || files[normalizeColKey(formField)]
+        if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+          form.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+          return
+        }
+        if (removed[colKey] || removed[norm] || removed[formField] || removed[normalizeColKey(formField)]) {
+          return // User explicitly removed it
+        }
+        const existingDataUrl = editFormData.value ? (
+          editFormData.value[colKey] ||
+          editFormData.value[formField] ||
+          editFormData.value[formField.charAt(0).toLowerCase() + formField.slice(1)] ||
+          editFormData.value[formField.toLowerCase()] ||
+          editFormData.value[Object.keys(editFormData.value).find(k => k.toLowerCase() === colKey.toLowerCase())]
+        ) : null
+        if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+          const blob = dataUriToBlob(existingDataUrl)
+          if (blob) {
+            form.append(formField, blob, fallbackFileName)
+          }
+        }
+      }
+
+      attachSoPhoto('clientSignature', 'ClientSignature', 'clientSignature.jpg')
+      attachSoPhoto('image1', 'Image1', 'image1.jpg')
+      attachSoPhoto('image2', 'Image2', 'image2.jpg')
+      attachSoPhoto('image3', 'Image3', 'image3.jpg')
+      attachSoPhoto('houseFrontPicture', 'HouseFrontPicture', 'houseFrontPicture.jpg')
       finalPayload = form
     /*
     } else if (isAccessLevelEndpoint.value) {

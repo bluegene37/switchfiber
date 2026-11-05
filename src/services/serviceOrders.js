@@ -93,6 +93,14 @@ export const ServiceOrderService = {
     const record = res?.data || res
     return normalizeServiceOrder(record)
   },
+  // Gene - Nov 5, 2026: Added getServiceOrderImage(id) to fetch Service Order photos from GET /api/ServiceOrders/{id}/GetServiceOrderImage
+  /**
+   * Fetch binary / base64 image files for a Service Order
+   * @param {string|number} id
+   */
+  getServiceOrderImage(id) {
+    return apiClient.get(`/ServiceOrders/${id}/GetServiceOrderImage`)
+  },
   /**
    * @param {import('../models/types').CreateServiceOrderRequest} data
    */
@@ -101,10 +109,26 @@ export const ServiceOrderService = {
   },
   /**
    * @param {string|number} id
-   * @param {import('../models/types').UpdateServiceOrderRequest} data
+   * @param {import('../models/types').UpdateServiceOrderRequest|FormData} data
+   * @param {Object} [config]
    */
+  /*
   updateServiceOrder(id, data) {
     return apiClient.put(`/ServiceOrders/${id}`, data)
+  },
+  */
+  // Gene - Nov 5, 2026: Pass multipart/form-data header when updating Service Order with FormData payload to prevent 415 error
+  updateServiceOrder(id, data, config = {}) {
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      return apiClient.put(`/ServiceOrders/${id}`, data, {
+        ...config,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(config && config.headers)
+        }
+      })
+    }
+    return apiClient.put(`/ServiceOrders/${id}`, data, config)
   },
   deleteServiceOrder(id) {
     return apiClient.delete(`/ServiceOrders/${id}`)

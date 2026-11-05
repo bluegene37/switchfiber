@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { ServiceOrderService } from '../services/serviceOrders'
+// import { ServiceOrderService } from '../services/serviceOrders'
+// Gene - Nov 5, 2026: Explicit .js extension for Node ESM test runner compatibility
+import { ServiceOrderService } from '../services/serviceOrders.js'
 
 export const useServiceOrderStore = defineStore('serviceOrders', () => {
   const serviceOrders = ref([])
@@ -78,12 +80,23 @@ export const useServiceOrderStore = defineStore('serviceOrders', () => {
     }
   }
 
+  // Gene - Nov 5, 2026: Added fetchServiceOrderImage action to retrieve binary/base64 Service Order photos
+  const fetchServiceOrderImage = async (id) => {
+    try {
+      return await ServiceOrderService.getServiceOrderImage(id)
+    } catch (err) {
+      console.warn(`[useServiceOrderStore] Failed to fetch image for Service Order #${id}:`, err)
+      throw err
+    }
+  }
+
   return {
     serviceOrders,
     isLoading,
     error,
     fetchServiceOrders,
     getServiceOrderById,
+    fetchServiceOrderImage,
     createServiceOrder,
     updateServiceOrder,
     deleteServiceOrder
