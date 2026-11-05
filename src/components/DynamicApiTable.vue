@@ -6807,6 +6807,7 @@ function formatLabel(col) {
     return 'Display Order'
   }
 
+  /*
   if (isPaymentEndpoint.value) {
     const k = normalizeColKey(col)
     if (k === 'transactionid') return 'Account #'
@@ -6820,6 +6821,29 @@ function formatLabel(col) {
     if (k === 'useremail') return 'Status'
     if (k === 'provider') return 'Fee Type'
     if (k === 'remarks' || k === 'processedby') return 'Processed By'
+  }
+  */
+  // Gene - Nov 6, 2026: Restored canonical field labels for Payments: transactionID = Transaction ID, accountNo = Account #, fullName = Customer Name, contactNo = Contact Number, receivedPayment = Paid Amount, paymentDate = Payment Date
+  if (isPaymentEndpoint.value) {
+    const k = normalizeColKey(col)
+    if (k === 'transactionid') return 'Transaction ID'
+    if (k === 'accountno') return 'Account #'
+    if (k === 'fullname') return 'Customer Name'
+    if (k === 'contactno') return 'Contact Number'
+    if (k === 'receivedpayment') return 'Paid Amount'
+    if (k === 'paymentdate') return 'Payment Date'
+    if (k === 'paymentmethod') return 'Payment Method'
+    if (k === 'transactiontype') return 'Transaction Type'
+    if (k === 'referenceno') return 'Reference #'
+    if (k === 'orno') return 'OR #'
+    if (k === 'image' || k === 'plan' || k === 'fiberplan') return 'Fiber Plan'
+    if (k === 'useremail') return 'User Email'
+    if (k === 'status') return 'Status'
+    if (k === 'provider') return 'Fee Type'
+    if (k === 'processedby') return 'Processed By'
+    if (k === 'remarks') return 'Remarks'
+    if (k === 'dateprocessed') return 'Date Processed'
+    if (k === 'accountbalance') return 'Account Balance'
   }
 
   const customOverrides = {
@@ -7006,8 +7030,12 @@ function formatLabel(col) {
 /*
 const NON_NUMERIC_ID_HINTS = ['valid', 'picture', 'photo', 'image', 'document', 'file', 'url', 'attachment', 'proof']
 */
+/*
 // Gene - Oct, 16, 2026: Include 'itemid' in NON_NUMERIC_ID_HINTS so InventoryItem/InventoryLogs string itemId stays a text input
 const NON_NUMERIC_ID_HINTS = ['valid', 'picture', 'photo', 'image', 'document', 'file', 'url', 'attachment', 'proof', 'itemid']
+*/
+// Gene - Nov 6, 2026: Added 'transactionid' to NON_NUMERIC_ID_HINTS to protect 26-digit transactionID from being coerced to Number/scientific notation
+const NON_NUMERIC_ID_HINTS = ['valid', 'picture', 'photo', 'image', 'document', 'file', 'url', 'attachment', 'proof', 'itemid', 'transactionid']
 
 function isNonNumericIdField(lower) {
   return NON_NUMERIC_ID_HINTS.some(hint => lower.includes(hint))
@@ -7389,6 +7417,7 @@ function getFieldType(col) {
     }
   }
   */
+  /*
   // Gene - Nov 5, 2026: Payments overrides: Fiber Plan (plan_dropdown), Processed By (text), and Payment Date (date picker)
   if (isPaymentEndpoint.value) {
     if (lower === 'image' || lower === 'fiberplan' || lower === 'plan') {
@@ -7399,6 +7428,25 @@ function getFieldType(col) {
     }
     if (lower === 'receivedpayment' || lower === 'paymentdate') {
       return 'date'
+    }
+  }
+  */
+  // Gene - Nov 6, 2026: Canonical Payments field types: paymentDate = date picker, receivedPayment = currency (paid amount), transactionID/accountNo = text
+  if (isPaymentEndpoint.value) {
+    if (lower === 'transactionid' || lower === 'accountno') {
+      return 'text'
+    }
+    if (lower === 'receivedpayment') {
+      return 'currency'
+    }
+    if (lower === 'paymentdate' || lower === 'dateprocessed') {
+      return 'date'
+    }
+    if (lower === 'image' || lower === 'fiberplan' || lower === 'plan') {
+      return 'plan_dropdown'
+    }
+    if (lower === 'remarks' || lower === 'processedby') {
+      return 'text'
     }
   }
 
@@ -7777,11 +7825,17 @@ function deduplicateColumns(colList) {
     if (lowerRaw === 'plan' && lowerCols.includes('planid')) return
     if (lowerRaw === 'choose_plan' && lowerCols.includes('planid')) return
 
+    /*
     // Gene - Nov 5, 2026: Deduplicate Payments endpoint paired alias columns (paymentDate -> receivedPayment, processedBy -> remarks, plan -> image)
     if (typeof isPaymentEndpoint !== 'undefined' && isPaymentEndpoint.value) {
       if (lowerRaw === 'paymentdate' && lowerCols.includes('receivedpayment')) return
       if (lowerRaw === 'processedby' && lowerCols.includes('remarks')) return
       if ((lowerRaw === 'plan' || lowerRaw === 'fiberplan') && lowerCols.includes('image')) return
+    }
+    */
+    // Gene - Nov 6, 2026: Retain both receivedPayment (Paid Amount) and paymentDate (Payment Date) as distinct canonical columns; deduplicate legacy image in favor of plan
+    if (typeof isPaymentEndpoint !== 'undefined' && isPaymentEndpoint.value) {
+      if (lowerRaw === 'image' && (lowerCols.includes('plan') || lowerCols.includes('fiberplan'))) return
     }
 
     if (aliasMap[lowerRaw]) {
@@ -7959,6 +8013,7 @@ const PLAN_COLUMNS = [
   'discountId'
 ]
 
+/*
 const PAYMENT_COLUMNS = [
   'id',
   'transactionID',
@@ -7968,6 +8023,20 @@ const PAYMENT_COLUMNS = [
   'paymentMethod',
   'image',
   'userEmail'
+]
+*/
+// Gene - Nov 6, 2026: Canonical concise grid columns for Payments: ID, Transaction ID, Account #, Customer Name, Contact Number, Paid Amount, Payment Date, Payment Method, Fiber Plan, Status
+const PAYMENT_COLUMNS = [
+  'id',
+  'transactionID',
+  'accountNo',
+  'fullName',
+  'contactNo',
+  'receivedPayment',
+  'paymentDate',
+  'paymentMethod',
+  'plan',
+  'status'
 ]
 
 // Gene - Oct, 16, 2026: Concise table columns for Promotions list (full 18-field schema shown in View/Edit modals)
@@ -8134,6 +8203,7 @@ function isReadOnlyField(col) {
   return lower === 'accountbalance' || lower === 'accountbal'
 }
 
+/*
 // Whitelist of fields permitted for editing when updating a payment record
 const PAYMENT_EDITABLE_COLUMNS = new Set([
   'transactiontype',
@@ -8142,6 +8212,20 @@ const PAYMENT_EDITABLE_COLUMNS = new Set([
   'orno',
   'remarks',
   'image'
+])
+*/
+// Gene - Nov 6, 2026: Whitelist of editable columns for Payments: paymentDate, receivedPayment (paid amount), paymentMethod, transactionType, referenceNo, orNo, plan, image, remarks, processedBy
+const PAYMENT_EDITABLE_COLUMNS = new Set([
+  'paymentdate',
+  'receivedpayment',
+  'paymentmethod',
+  'transactiontype',
+  'referenceno',
+  'orno',
+  'plan',
+  'image',
+  'remarks',
+  'processedby'
 ])
 
 // Determine whether a field should be disabled / read-only in the Edit dialog
@@ -10244,6 +10328,7 @@ const PAYMENT_FORM_LAYOUT = [
   }
 ]
 */
+/*
 // Gene - Nov 5, 2026: Canonical PAYMENT_FORM_LAYOUT with zero duplicate columns: single Payment Date (receivedPayment), single Fiber Plan (image), and single Processed By (remarks)
 const PAYMENT_FORM_LAYOUT = [
   {
@@ -10273,6 +10358,47 @@ const PAYMENT_FORM_LAYOUT = [
     icon: 'pi pi-map-marker',
     badgeClass: 'text-info',
     columns: [
+      'remarks',
+      'dateProcessed',
+      'location',
+      'barangay',
+      'city',
+      'userEmail'
+    ]
+  }
+]
+*/
+// Gene - Nov 6, 2026: Canonical PAYMENT_FORM_LAYOUT with correct fields: receivedPayment (Paid Amount) and paymentDate (Payment Date DatePicker), plan (Fiber Plan), processedBy (Processed By)
+const PAYMENT_FORM_LAYOUT = [
+  {
+    key: 'transaction',
+    title: 'Payment & Transaction Details',
+    icon: 'pi pi-credit-card',
+    badgeClass: 'text-primary',
+    columns: [
+      'transactionID',
+      'accountNo',
+      'fullName',
+      'contactNo',
+      'receivedPayment',
+      'paymentDate',
+      'paymentMethod',
+      'transactionType',
+      'referenceNo',
+      'orNo',
+      'plan',
+      'accountBalance',
+      'status',
+      'provider'
+    ]
+  },
+  {
+    key: 'processing',
+    title: 'Processing & Location Information',
+    icon: 'pi pi-map-marker',
+    badgeClass: 'text-info',
+    columns: [
+      'processedBy',
       'remarks',
       'dateProcessed',
       'location',
@@ -13314,10 +13440,30 @@ const getUserDisplayName = (val) => {
   return strVal
 }
 
+/*
 const isCurrencyField = (col) => {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
   return (
+    lower === 'servicecharge' ||
+    lower === 'installationfee' ||
+    lower === 'accountbalance' ||
+    lower === 'amount' ||
+    lower === 'price' ||
+    lower === 'balance' ||
+    lower === 'discountamount' ||
+    lower === 'remaining' ||
+    lower.includes('servicecharge') ||
+    lower.includes('discountamount')
+  )
+}
+*/
+// Gene - Nov 6, 2026: Include receivedpayment (Paid Amount) as currency field
+const isCurrencyField = (col) => {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  return (
+    lower === 'receivedpayment' ||
     lower === 'servicecharge' ||
     lower === 'installationfee' ||
     lower === 'accountbalance' ||
@@ -13386,7 +13532,13 @@ const formatDisplayValue = (val, col) => {
   if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
     return getAccessLevelLabel(val)
   }
+  /*
   if ((isCurrencyField(col) || (isPaymentEndpoint.value && lower === 'contactno')) && !isNaN(val)) {
+    return '₱' + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+  */
+  // Gene - Nov 6, 2026: Restored canonical currency formatting without legacy contactNo shift
+  if (isCurrencyField(col) && !isNaN(val)) {
     return '₱' + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
   if (lower === 'duration' && !isNaN(val)) {
@@ -13408,8 +13560,12 @@ const formatDisplayValue = (val, col) => {
     })
   }
 
+  /*
   // Format server-side timestamps and dates
   if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified' || (isPaymentEndpoint.value && lower === 'receivedpayment')) && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
+  */
+  // Gene - Nov 6, 2026: Canonical date formatting without legacy receivedpayment date shift
+  if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified') && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
     const d = new Date(val)
     if (!isNaN(d.getTime())) {
       if (val.includes('T') || val.includes(':')) {
@@ -13703,6 +13859,7 @@ const openCreateDialog = () => {
     }
   }
 
+  /*
   // Gene - Nov 5, 2026: Pre-fill Payment Date to today's date in Payments create dialog
   if (isPaymentEndpoint.value) {
     if (formColumns.value.some(c => c.toLowerCase() === 'receivedpayment')) {
@@ -13710,6 +13867,16 @@ const openCreateDialog = () => {
     }
     if (formColumns.value.some(c => c.toLowerCase() === 'paymentdate')) {
       formData.value.paymentDate = new Date()
+    }
+  }
+  */
+  // Gene - Nov 6, 2026: Pre-fill paymentDate to today's date and keep receivedPayment numeric in Payments create dialog
+  if (isPaymentEndpoint.value) {
+    formData.value.paymentDate = new Date()
+    formData.value.receivedPayment = null
+    const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+    if (currentUser) {
+      formData.value.processedBy = currentUser
     }
   }
 
@@ -14492,7 +14659,13 @@ const saveData = async () => {
         } else if (finalPayload[key] instanceof Date) {
           const d = finalPayload[key]
           finalPayload[key] = d.toISOString()
+        /*
         } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && !key.toLowerCase().startsWith('itemquantity') && key.toLowerCase() !== 'itemquantity') {
+          finalPayload[key] = Number(finalPayload[key])
+        }
+        */
+        // Gene - Nov 6, 2026: Protect 26-digit transactionID from being converted to Number / scientific notation
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && !key.toLowerCase().startsWith('itemquantity') && key.toLowerCase() !== 'itemquantity' && key.toLowerCase() !== 'transactionid') {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
@@ -14609,6 +14782,7 @@ const saveData = async () => {
           finalPayload.remarks = finalPayload.processedBy
         }
         */
+        /*
         // Gene - Nov 5, 2026: Format Payment Date as ISO string and ensure receivedPayment is decimal? (never a date) to prevent HTTP 400 Bad Request
         if (finalPayload.paymentDate instanceof Date) {
           finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
@@ -14626,6 +14800,39 @@ const saveData = async () => {
           } else {
             finalPayload.receivedPayment = null
           }
+        } else if (!isNaN(Number(finalPayload.receivedPayment))) {
+          finalPayload.receivedPayment = Number(finalPayload.receivedPayment)
+        } else {
+          finalPayload.receivedPayment = null
+        }
+
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = finalPayload.image
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = finalPayload.plan
+        }
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = finalPayload.remarks
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = finalPayload.processedBy
+        }
+        */
+        // Gene - Nov 6, 2026: Canonical Payments CREATE payload formatting: ISO paymentDate string, decimal receivedPayment (no contactNo fallback), and synced plan / processedBy
+        if (finalPayload.paymentDate instanceof Date) {
+          finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
+        } else if (finalPayload.paymentDate) {
+          const d = new Date(finalPayload.paymentDate)
+          finalPayload.paymentDate = isNaN(d.getTime()) ? finalPayload.paymentDate : d.toISOString()
+        } else {
+          finalPayload.paymentDate = new Date().toISOString()
+        }
+
+        // ASP.NET Core Payment.ReceivedPayment is decimal? (paid amount), never an ISO date string
+        if (finalPayload.receivedPayment instanceof Date || (typeof finalPayload.receivedPayment === 'string' && (finalPayload.receivedPayment.includes('-') || finalPayload.receivedPayment.includes('T')))) {
+          finalPayload.receivedPayment = null
+        }
+        if (finalPayload.receivedPayment === null || finalPayload.receivedPayment === undefined || finalPayload.receivedPayment === '') {
+          finalPayload.receivedPayment = null
         } else if (!isNaN(Number(finalPayload.receivedPayment))) {
           finalPayload.receivedPayment = Number(finalPayload.receivedPayment)
         } else {
@@ -15127,6 +15334,7 @@ const openViewDialog = (record) => {
     const disp = getAccessLevelDisplayName(viewFormData.value)
     if (disp) viewFormData.value.name = disp
   }
+  /*
   // Gene - Nov 5, 2026: Format Payment Date and sync Fiber Plan & Processed By for Payments view modal
   if (isPaymentEndpoint.value && viewFormData.value) {
     if (normRecord.paymentDate) {
@@ -15137,6 +15345,23 @@ const openViewDialog = (record) => {
     }
     if (!viewFormData.value.remarks && normRecord.processedBy) {
       viewFormData.value.remarks = normRecord.processedBy
+    }
+  }
+  */
+  // Gene - Nov 6, 2026: Canonical paymentDate (parsed Date) and receivedPayment (decimal) for Payments view modal
+  if (isPaymentEndpoint.value && viewFormData.value) {
+    const rawDate = normRecord.paymentDate || (typeof normRecord.receivedPayment === 'string' && (normRecord.receivedPayment.includes('-') || normRecord.receivedPayment.includes('T')) ? normRecord.receivedPayment : null)
+    if (rawDate) {
+      viewFormData.value.paymentDate = parseDateForPicker(rawDate)
+    }
+    if (typeof normRecord.receivedPayment === 'number' || (normRecord.receivedPayment && !isNaN(Number(normRecord.receivedPayment)) && !String(normRecord.receivedPayment).includes('-'))) {
+      viewFormData.value.receivedPayment = Number(normRecord.receivedPayment)
+    }
+    if (!viewFormData.value.plan && normRecord.image) {
+      viewFormData.value.plan = normRecord.image
+    }
+    if (!viewFormData.value.processedBy && normRecord.remarks) {
+      viewFormData.value.processedBy = normRecord.remarks
     }
   }
   autoLocateOnOpen('view')
@@ -15265,14 +15490,9 @@ const openEditDialog = async (record) => {
     }
   })
 
+  /*
   // Gene - Nov 5, 2026: Fallback sync for Payments edit modal when opening records with legacy or shifted properties
   if (isPaymentEndpoint.value) {
-    /*
-    if (!editFormData.value.receivedPayment && record.paymentDate) {
-      editFormData.value.receivedPayment = parseDateForPicker(record.paymentDate)
-    }
-    */
-    // Gene - Nov 5, 2026: Parse record.paymentDate into Date object for receivedPayment date picker in Payments edit modal
     if (record.paymentDate) {
       editFormData.value.receivedPayment = parseDateForPicker(record.paymentDate)
     }
@@ -15281,6 +15501,21 @@ const openEditDialog = async (record) => {
     }
     if (!editFormData.value.remarks && record.processedBy) {
       editFormData.value.remarks = record.processedBy
+    }
+  }
+  */
+  // Gene - Nov 6, 2026: Canonical Payments normalization for edit modal: paymentDate (Date object), receivedPayment (decimal number), transactionID (string)
+  if (isPaymentEndpoint.value) {
+    const rawDate = record.paymentDate || (typeof record.receivedPayment === 'string' && (record.receivedPayment.includes('-') || record.receivedPayment.includes('T')) ? record.receivedPayment : null)
+    editFormData.value.paymentDate = parseDateForPicker(rawDate) || new Date()
+    editFormData.value.receivedPayment = (!isNaN(Number(record.receivedPayment)) && record.receivedPayment !== null && !String(record.receivedPayment).includes('-')) ? Number(record.receivedPayment) : null
+    editFormData.value.transactionID = String(record.transactionID || record.transactionid || '').trim()
+    editFormData.value.accountNo = String(record.accountNo || record.accountno || '').trim()
+    if (!editFormData.value.plan && record.image) {
+      editFormData.value.plan = record.image
+    }
+    if (!editFormData.value.processedBy && record.remarks) {
+      editFormData.value.processedBy = record.remarks
     }
   }
 
@@ -15421,7 +15656,7 @@ const openEditDialog = async (record) => {
       }
     }
     */
-    // Gene - Oct 31, 2026: Protect image_upload and inventory_item_image fields from being reset to empty string when record[col] is null
+    // Gene - Nov 6, 2026: Protect image_upload, inventory_item_image, and Payments paymentDate/receivedPayment from being reset to empty string when record[col] is null
     } else if (record[col] === null || record[col] === undefined) {
       if (
         col !== regCol &&
@@ -15430,7 +15665,8 @@ const openEditDialog = async (record) => {
         col !== statusCol &&
         col !== coordCol &&
         type !== 'image_upload' &&
-        type !== 'inventory_item_image'
+        type !== 'inventory_item_image' &&
+        !(isPaymentEndpoint.value && (col === 'paymentDate' || col === 'receivedPayment'))
       ) {
         editFormData.value[col] = ''
       }
@@ -15476,6 +15712,8 @@ const openEditDialog = async (record) => {
   if (pwdCol) {
     editFormData.value.confirmPassword = record[pwdCol] || editFormData.value[pwdCol] || ''
   }
+  // Gene - Nov 6, 2026: Re-capture snapshot after full normalization to ensure baseline matches normalized form fields
+  editBaseSnapshot.value = { ...editFormData.value }
 }
 
 /**
@@ -15494,6 +15732,11 @@ const normalizeCompareValue = (col, val) => {
 
   if (type === 'phone' || isPhoneField(col)) {
     return normalizePhoneNumber(val)
+  }
+  // Gene - Nov 6, 2026: Compare date values by ISO date string (YYYY-MM-DD) to prevent Date vs string format mismatches in detectEditConflict
+  if (type === 'date') {
+    const d = val instanceof Date ? val : new Date(val)
+    return isNaN(d.getTime()) ? String(val).trim() : d.toISOString().split('T')[0]
   }
   if (type === 'agreement_checkbox') {
     return isAgreementChecked(val) ? 'yes' : 'no'
@@ -15553,11 +15796,13 @@ const detectEditConflict = async () => {
     return before !== now
   })
   */
-  // Gene - Oct 23, 2026: Ignore image fields and unwrap API payloads in detectEditConflict to prevent false edit conflict alerts
+  // Gene - Nov 6, 2026: Ignore read-only/disabled fields and server-computed audit/balance fields in detectEditConflict to prevent false edit conflict alerts
   const unwrappedCurrent = unwrapApiPayload(current)
   const changed = formColumns.value.filter(col => {
     if (getFieldType(col) === 'password' || isAuditField(col)) return false
     if (getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image') return false
+    if (isFieldDisabledInEdit(col)) return false
+    if (isPaymentEndpoint.value && ['accountbalance', 'dateprocessed', 'modifieddate', 'timestamp', 'rowversion'].includes(normalizeColKey(col))) return false
     const before = normalizeCompareValue(col, base[col])
     const now = normalizeCompareValue(col, unwrappedCurrent[col])
     return before !== now
@@ -16056,7 +16301,13 @@ const saveEdit = async () => {
           delete finalPayload[key]
         } else if (finalPayload[key] instanceof Date) {
           finalPayload[key] = finalPayload[key].toISOString()
+        /*
         } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && !key.toLowerCase().startsWith('itemquantity') && key.toLowerCase() !== 'itemquantity') {
+          finalPayload[key] = Number(finalPayload[key])
+        }
+        */
+        // Gene - Nov 6, 2026: Protect 26-digit transactionID from being converted to Number / scientific notation
+        } else if (typeof finalPayload[key] === 'string' && finalPayload[key].trim() !== '' && !isNaN(finalPayload[key]) && getFieldType(key) === 'number' && key !== 'id' && !key.toLowerCase().startsWith('itemquantity') && key.toLowerCase() !== 'itemquantity' && key.toLowerCase() !== 'transactionid') {
           finalPayload[key] = Number(finalPayload[key])
         }
       })
@@ -16172,6 +16423,17 @@ const saveEdit = async () => {
         finalPayload.id = Number(editingRecordId.value) || editingRecordId.value
       }
       if (isPaymentEndpoint.value) {
+        // Gene - Nov 6, 2026: Ensure string transactionID and accountNo are preserved in PUT payload
+        const txnId = String(finalPayload.transactionID || editBaseSnapshot.value?.transactionID || payload.transactionID || '').trim()
+        if (txnId) {
+          finalPayload.transactionID = txnId
+        }
+        const acct = String(finalPayload.accountNo || editBaseSnapshot.value?.accountNo || payload.accountNo || '').trim()
+        if (acct) {
+          finalPayload.accountNo = acct
+        }
+      }
+      if (isPaymentEndpoint.value) {
         /*
         // Gene - Nov 5, 2026: Sync Payment Date, Fiber Plan, and Processed By between legacy and DTO columns on PUT update
         if (finalPayload.receivedPayment && !finalPayload.paymentDate) {
@@ -16190,6 +16452,7 @@ const saveEdit = async () => {
           finalPayload.remarks = finalPayload.processedBy
         }
         */
+        /*
         // Gene - Nov 5, 2026: Format Payment Date as ISO string and ensure receivedPayment is decimal? (never a date) to prevent HTTP 400 Bad Request
         if (finalPayload.paymentDate instanceof Date) {
           finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
@@ -16207,6 +16470,39 @@ const saveEdit = async () => {
           } else {
             finalPayload.receivedPayment = null
           }
+        } else if (!isNaN(Number(finalPayload.receivedPayment))) {
+          finalPayload.receivedPayment = Number(finalPayload.receivedPayment)
+        } else {
+          finalPayload.receivedPayment = null
+        }
+
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = finalPayload.image
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = finalPayload.plan
+        }
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = finalPayload.remarks
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = finalPayload.processedBy
+        }
+        */
+        // Gene - Nov 6, 2026: Canonical Payments CREATE payload formatting: ISO paymentDate string, decimal receivedPayment (no contactNo fallback), and synced plan / processedBy
+        if (finalPayload.paymentDate instanceof Date) {
+          finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
+        } else if (finalPayload.paymentDate) {
+          const d = new Date(finalPayload.paymentDate)
+          finalPayload.paymentDate = isNaN(d.getTime()) ? finalPayload.paymentDate : d.toISOString()
+        } else {
+          finalPayload.paymentDate = new Date().toISOString()
+        }
+
+        // ASP.NET Core Payment.ReceivedPayment is decimal? (paid amount), never an ISO date string
+        if (finalPayload.receivedPayment instanceof Date || (typeof finalPayload.receivedPayment === 'string' && (finalPayload.receivedPayment.includes('-') || finalPayload.receivedPayment.includes('T')))) {
+          finalPayload.receivedPayment = null
+        }
+        if (finalPayload.receivedPayment === null || finalPayload.receivedPayment === undefined || finalPayload.receivedPayment === '') {
+          finalPayload.receivedPayment = null
         } else if (!isNaN(Number(finalPayload.receivedPayment))) {
           finalPayload.receivedPayment = Number(finalPayload.receivedPayment)
         } else {
@@ -16259,14 +16555,15 @@ const saveEdit = async () => {
       ? { headers: { 'Content-Type': 'multipart/form-data' } }
       : {}
     */
-    // Gene - Nov 5, 2026: Add transactionid query parameter on Payments PUT and preserve multipart/form-data headers
+    // Gene - Nov 6, 2026: Add clean transactionid string query parameter on Payments PUT and preserve multipart/form-data headers
+    const paymentTxnId = isPaymentEndpoint.value
+      ? String(finalPayload?.transactionID || editBaseSnapshot.value?.transactionID || payload?.transactionID || '').trim()
+      : ''
     const updateReqConfig = {
       ...((typeof FormData !== 'undefined' && finalPayload instanceof FormData)
         ? { headers: { 'Content-Type': 'multipart/form-data' } }
         : {}),
-      ...(isPaymentEndpoint.value && (finalPayload.transactionID || editBaseSnapshot.value?.transactionID || finalPayload.transactionid || editBaseSnapshot.value?.transactionid)
-        ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || finalPayload.transactionid || editBaseSnapshot.value?.transactionid } }
-        : {})
+      ...(paymentTxnId ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || paymentTxnId } } : {})
     }
     await CrudService.update(props.endpoint, updatedId, finalPayload, updateReqConfig)
     await fetchData()

@@ -18,6 +18,7 @@ describe('ISSUE-002: Invoice and Payments cannot be saved blank', () => {
     assert.deepEqual(resolveRequiredFields('Invoices', cols, 'create'), ['accountNo', 'amount', 'dueDate'])
   })
 
+/*
   test('Payments demand the fields the form labels Account #, Customer Name, Paid Amount, Payment Date, Payment Method', () => {
     const cols = ['id', 'transactionID', 'accountNo', 'fullName', 'contactNo', 'receivedPayment', 'paymentMethod', 'referenceNo', 'orNo', 'userEmail', 'status']
     assert.deepEqual(
@@ -29,6 +30,20 @@ describe('ISSUE-002: Invoice and Payments cannot be saved blank', () => {
   test('the endpoint key is matched case-insensitively, like every other override', () => {
     assert.ok(resolveRequiredFields('invoices', ['accountNo']).includes('accountNo'))
     assert.ok(resolveRequiredFields('PAYMENTS', ['contactNo']).includes('contactNo'))
+  })
+*/
+  // Gene - Nov 6, 2026: Updated Payments required fields test to match canonical backend schema (accountNo, receivedPayment, paymentDate, paymentMethod)
+  test('Payments demand canonical fields accountNo, receivedPayment, paymentDate, and paymentMethod', () => {
+    const cols = ['id', 'transactionID', 'accountNo', 'fullName', 'contactNo', 'receivedPayment', 'paymentDate', 'paymentMethod', 'referenceNo', 'orNo', 'userEmail', 'status']
+    assert.deepEqual(
+      resolveRequiredFields('Payments', cols, 'create'),
+      ['accountNo', 'receivedPayment', 'paymentDate', 'paymentMethod']
+    )
+  })
+
+  test('the endpoint key is matched case-insensitively, like every other override', () => {
+    assert.ok(resolveRequiredFields('invoices', ['accountNo']).includes('accountNo'))
+    assert.ok(resolveRequiredFields('PAYMENTS', ['accountNo']).includes('accountNo'))
   })
 })
 

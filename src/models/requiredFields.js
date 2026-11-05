@@ -103,6 +103,7 @@ const ENDPOINT_OVERRIDES = {
   invoices: [
     'accountNo', 'amount', 'dueDate'
   ],
+  /*
   // Payments columns are named by the labels the form shows, not the API
   // keys, because the data in this table is shifted one column (see the
   // Payments label map in DynamicApiTable): transactionID renders as
@@ -110,6 +111,11 @@ const ENDPOINT_OVERRIDES = {
   // receivedPayment as "Payment Date".
   payments: [
     'transactionID', 'accountNo', 'contactNo', 'receivedPayment', 'paymentMethod'
+  ],
+  */
+  // Gene - Nov 6, 2026: Aligned required fields for Payments with canonical backend schema: accountNo, receivedPayment (paid amount), paymentDate, and paymentMethod
+  payments: [
+    'accountNo', 'receivedPayment', 'paymentDate', 'paymentMethod'
   ],
   /*
   // Gene - Oct, 16, 2026: Added mandatory form field overrides for Promotions, InventoryCategory, InventoryItem, and InventoryLogs whose DTO properties are nullable in OpenAPI
