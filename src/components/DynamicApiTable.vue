@@ -13811,7 +13811,11 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     applicationId: normStr(payload.applicationId),
     houseFront: normStr(payload.houseFront || payload.houseFrontPicture),
     createdBy: payload.createdBy !== undefined && payload.createdBy !== null ? (Number(payload.createdBy) || null) : (Number(numericUserId) || null),
+    /*
     createdDate: null,
+    */
+    // Gene - Nov 5, 2026: Preserve original createdDate on Job Order update from payload or snapshot
+    createdDate: normDate(payload.createdDate || (typeof editBaseSnapshot !== 'undefined' ? editBaseSnapshot.value?.createdDate : null)),
     modifiedBy: String(loggedInUserId || numericUserId || 1),
     modifiedDate: localAuditTimestamp()
   }
@@ -15584,10 +15588,40 @@ const saveEdit = async () => {
       const joPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(joPayload, numericUserId, 'update')
 
+      /*
       const form = new FormData()
       Object.entries(joPayload).forEach(([key, val]) => {
         const lowerKey = key.toLowerCase()
         if (['setupimage', 'clientsignature', 'signedcontractimage', 'boxreadingimage', 'routerreadingimage', 'portlabelimage', 'housefront'].includes(lowerKey)) {
+          return
+        }
+        if (val !== undefined && val !== null) {
+          form.append(key, String(val))
+        }
+      })
+      */
+      // Gene - Nov 5, 2026: Sanitize JobOrders multipart FormData payload by omitting empty string values for numeric, date, and ID fields to prevent ASP.NET 500 error
+      const form = new FormData()
+      const numericOrDateKeys = new Set([
+        'itemquantity1', 'itemquantity2', 'itemquantity3', 'itemquantity4', 'itemquantity5',
+        'itemquantity6', 'itemquantity7', 'itemquantity8', 'itemquantity9', 'itemquantity10',
+        'installationfee', 'billingday', 'duration', 'lcpid', 'napid', 'vlanid',
+        'dateinstalled', 'installationdate', 'starttimestamp', 'endtimestamp',
+        'createdby', 'createddate'
+      ])
+      const joPhotoKeys = new Set([
+        'setupimage', 'clientsignature', 'signedcontractimage', 'boxreadingimage',
+        'routerreadingimage', 'portlabelimage', 'housefront', 'speedtestimage'
+      ])
+      Object.entries(joPayload).forEach(([key, val]) => {
+        const lowerKey = key.toLowerCase()
+        if (joPhotoKeys.has(lowerKey)) {
+          return
+        }
+        if (numericOrDateKeys.has(lowerKey)) {
+          if (val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim().toLowerCase() !== 'null') {
+            form.append(key, String(val).trim())
+          }
           return
         }
         if (val !== undefined && val !== null) {
