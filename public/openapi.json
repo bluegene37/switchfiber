@@ -403,34 +403,6 @@
             }
           },
           {
-            "name": "ProofOfBilling",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "GovernmentValidId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "SecondGovernmentValidId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "HouseFrontPicture",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "TermsAndConditionsAgreement",
             "in": "query",
             "schema": {
@@ -445,21 +417,7 @@
             }
           },
           {
-            "name": "SecondNearestLandmark",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "ApplicablePromo",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "DocumentPicture",
             "in": "query",
             "schema": {
               "type": "string"
@@ -474,13 +432,6 @@
           },
           {
             "name": "barangay2",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "pictureofstatmentbillingfromotherprovider",
             "in": "query",
             "schema": {
               "type": "string"
@@ -593,6 +544,28 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Applications/{id}/GetApplicationImages": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -820,24 +793,10 @@
             }
           },
           {
-            "name": "RemoveProofOfBilling",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
             "name": "GovernmentValidId",
             "in": "query",
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "name": "RemoveGovernmentValidId",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
             }
           },
           {
@@ -848,24 +807,10 @@
             }
           },
           {
-            "name": "RemoveSecondGovernmentValidId",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
             "name": "HouseFrontPicture",
             "in": "query",
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "name": "RemoveHouseFrontPicture",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
             }
           },
           {
@@ -904,13 +849,6 @@
             }
           },
           {
-            "name": "RemoveDocumentPicture",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
             "name": "barangay1",
             "in": "query",
             "schema": {
@@ -929,13 +867,6 @@
             "in": "query",
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "name": "RemovePictureOfStatementBillingFromOtherProvider",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
             }
           },
           {
@@ -3062,23 +2993,640 @@
               ],
               "format": "int32"
             }
+          },
+          {
+            "name": "EmailAddress",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ReferredBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "FirstName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MiddleInitial",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LastName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ContactNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ApplicantEmailAddress",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Address",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Location",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Barangay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "City",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PlanId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Remarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "InstallationFee",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ContractTemplate",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "BillingDay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PreferredDay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "JoRemarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VerifiedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModemRouterSN",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Provider",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LcpId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NapId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PortId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VlanId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Username",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWith",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWithOther",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OnsiteStatus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OnsiteRemarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "ContractLink",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ConnectionType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AssignedEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SpeedtestImage",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "StartTimeStamp",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "EndTimeStamp",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Duration",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ExternalId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LcpnapId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "BillingStatus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RouterModel",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DateInstalled",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "InstallationDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Ip",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "UsernameStatus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "LcpnapportId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName1",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity1",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName2",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity2",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName3",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity3",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName4",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity4",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName5",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity5",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName6",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity6",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName7",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity7",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName8",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity8",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName9",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity9",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName10",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity10",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "UsageType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Renter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "InstallationLandmark",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "StatusRemarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SecondContactNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AccountNo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AddressCoordinates",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ReferrersAccountNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ApplicationId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "CreatedBy",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "CreatedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
           }
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateJobOrderRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateJobOrderRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateJobOrderRequest"
+                "type": "object",
+                "properties": {
+                  "SetupImage": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "ClientSignature": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "SignedContractImage": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "BoxReadingImage": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "RouterReadingImage": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "PortLabelImage": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "HouseFront": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
               }
             }
           },
@@ -3126,6 +3674,33 @@
             "schema": {
               "type": "string",
               "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/JobOrders/{id}/GetJobOrderImage": {
+      "get": {
+        "tags": [
+          "JobOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -3294,17 +3869,6 @@
             }
           },
           {
-            "name": "ModifiedDate",
-            "in": "query",
-            "schema": {
-              "type": [
-                "null",
-                "string"
-              ],
-              "format": "date-time"
-            }
-          },
-          {
             "name": "UserEmail",
             "in": "query",
             "schema": {
@@ -3361,6 +3925,60 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/LCPNapLocations/{id}/GetLCPNAPLocationImages": {
+      "get": {
+        "tags": [
+          "LCPNapLocations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/LCPNapLocations/{id}/GetReadingImage": {
+      "get": {
+        "tags": [
+          "LCPNapLocations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -3458,17 +4076,6 @@
             "in": "query",
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "name": "ModifiedDate",
-            "in": "query",
-            "schema": {
-              "type": [
-                "null",
-                "string"
-              ],
-              "format": "date-time"
             }
           },
           {
@@ -4559,6 +5166,208 @@
         }
       }
     },
+    "/api/PaymentMethods": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/PaymentMethods/{id}": {
+      "get": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "PaymentMethods"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "modifiedBy",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Payments": {
       "get": {
         "tags": [
@@ -4725,6 +5534,208 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/PaymentTypes": {
+      "get": {
+        "tags": [
+          "PaymentTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentTypeDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentTypeDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentTypeDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "PaymentTypes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentTypeDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentTypeDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentTypeDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/PaymentTypes/{id}": {
+      "get": {
+        "tags": [
+          "PaymentTypes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "PaymentTypes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentTypeDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentTypeDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentTypeDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "PaymentTypes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "modifiedBy",
+            "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)$",
               "type": [
@@ -5668,23 +6679,659 @@
               ],
               "format": "int32"
             }
+          },
+          {
+            "name": "CreatedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "AccountNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DateInstalled",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "FullName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ContactNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EmailAddress",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Address",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Plan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Provider",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Username",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ConnectionType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RouterModemSN",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Lcp",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Nap",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Port",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Vlan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SupportStatus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Concern",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ConnectionRemarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PriorityLevel",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitStatus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWith",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitWithOthers",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "VisitRemarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ModifiedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "UserEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RequestedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AssignedEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "StartTimestamp",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "StopTimestamp",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Duration",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "RepairCategory",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NewRouterModemSN",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NewLCP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NewNAP",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NewPORT",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NewVLAN",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "RouterModel",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NewPLAN",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SupportRemarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PulloutRemarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PulloutRouterModel",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PulloutRouterModelSN",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PulloutCPESN",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName1",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity1",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName2",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity2",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName3",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity3",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName4",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity4",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName5",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity5",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName6",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity6",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName7",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity7",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName8",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity8",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName9",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity9",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ItemName10",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ItemQuantity10",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "null",
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ServiceCharge",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+              "type": [
+                "null",
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
+          },
+          {
+            "name": "Barangay",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "City",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AddressCoordinates",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TechModifiedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "AssignedBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AssignedDate",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
           }
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateServiceOrderRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateServiceOrderRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateServiceOrderRequest"
+                "type": "object",
+                "properties": {
+                  "ClientSignature": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "Image1": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "Image2": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "Image3": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "HouseFrontPicture": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
               }
             }
           },
@@ -5697,6 +7344,33 @@
         }
       },
       "delete": {
+        "tags": [
+          "ServiceOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ServiceOrders/{id}/GetServiceOrderImage": {
+      "get": {
         "tags": [
           "ServiceOrders"
         ],
@@ -9626,6 +11300,76 @@
           }
         }
       },
+      "PaymentMethodDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PaymentTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiedBy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "PlanDto": {
         "type": "object",
         "properties": {
@@ -10409,645 +12153,6 @@
           }
         }
       },
-      "UpdateJobOrderRequest": {
-        "required": [
-          "emailAddress",
-          "referredBy",
-          "firstName",
-          "middleInitial",
-          "lastName",
-          "contactNumber",
-          "applicantEmailAddress",
-          "address",
-          "location",
-          "barangay",
-          "city",
-          "region",
-          "planId",
-          "remarks",
-          "installationFee",
-          "contractTemplate",
-          "billingDay",
-          "preferredDay",
-          "joRemarks",
-          "status",
-          "verifiedBy",
-          "modemRouterSN",
-          "provider",
-          "lcpId",
-          "napId",
-          "portId",
-          "vlanId",
-          "username",
-          "visitBy",
-          "visitWith",
-          "visitWithOther",
-          "onsiteStatus",
-          "onsiteRemarks",
-          "modifiedBy",
-          "modifiedDate",
-          "contractLink",
-          "connectionType",
-          "assignedEmail",
-          "setupImage",
-          "speedtestImage",
-          "startTimeStamp",
-          "endTimeStamp",
-          "duration",
-          "externalId",
-          "lcpnapId",
-          "billingStatus",
-          "routerModel",
-          "dateInstalled",
-          "installationDate",
-          "clientSignature",
-          "ip",
-          "signedContractImage",
-          "boxReadingImage",
-          "routerReadingImage",
-          "usernameStatus",
-          "lcpnapportId",
-          "itemName1",
-          "itemQuantity1",
-          "itemName2",
-          "itemQuantity2",
-          "itemName3",
-          "itemQuantity3",
-          "itemName4",
-          "itemQuantity4",
-          "itemName5",
-          "itemQuantity5",
-          "itemName6",
-          "itemQuantity6",
-          "itemName7",
-          "itemQuantity7",
-          "itemName8",
-          "itemQuantity8",
-          "itemName9",
-          "itemQuantity9",
-          "itemName10",
-          "itemQuantity10",
-          "usageType",
-          "renter",
-          "installationLandmark",
-          "statusRemarks",
-          "portLabelImage",
-          "secondContactNumber",
-          "accountNo",
-          "addressCoordinates",
-          "referrersAccountNumber",
-          "applicationId",
-          "houseFront",
-          "createdBy",
-          "createdDate"
-        ],
-        "type": "object",
-        "properties": {
-          "emailAddress": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "referredBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "firstName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "middleInitial": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lastName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "applicantEmailAddress": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "address": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "location": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "barangay": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "region": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "planId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "remarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "installationFee": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contractTemplate": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "billingDay": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "preferredDay": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "joRemarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "status": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "verifiedBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modemRouterSN": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "provider": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lcpId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "napId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "portId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "vlanId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "username": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitWith": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitWithOther": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "onsiteStatus": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "onsiteRemarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "contractLink": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "connectionType": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "assignedEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "setupImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "speedtestImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "startTimeStamp": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "endTimeStamp": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "duration": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "externalId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lcpnapId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "billingStatus": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "routerModel": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "dateInstalled": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "installationDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "clientSignature": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "ip": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "signedContractImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "boxReadingImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "routerReadingImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "usernameStatus": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lcpnapportId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName1": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity1": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName2": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity2": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName3": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity3": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName4": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity4": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName5": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity5": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName6": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity6": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName7": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity7": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName8": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity8": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName9": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity9": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName10": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity10": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "usageType": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "renter": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "installationLandmark": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "statusRemarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "portLabelImage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "secondContactNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "accountNo": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "addressCoordinates": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "referrersAccountNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "applicationId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "houseFront": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "createdBy": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "createdDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          }
-        }
-      },
       "UpdateLcpnapportRequest": {
         "required": [
           "name",
@@ -11287,617 +12392,6 @@
           }
         }
       },
-      "UpdateServiceOrderRequest": {
-        "required": [
-          "createdDate",
-          "accountNumber",
-          "dateInstalled",
-          "fullName",
-          "contactNumber",
-          "emailAddress",
-          "address",
-          "plan",
-          "provider",
-          "username",
-          "connectionType",
-          "routerModemSN",
-          "lcp",
-          "nap",
-          "port",
-          "vlan",
-          "supportStatus",
-          "concern",
-          "connectionRemarks",
-          "priorityLevel",
-          "visitStatus",
-          "visitBy",
-          "visitWith",
-          "visitWithOthers",
-          "visitRemarks",
-          "modifiedBy",
-          "modifiedDate",
-          "userEmail",
-          "requestedBy",
-          "assignedEmail",
-          "startTimestamp",
-          "stopTimestamp",
-          "duration",
-          "repairCategory",
-          "newRouterModemSN",
-          "newLCP",
-          "newNAP",
-          "newPORT",
-          "newVLAN",
-          "routerModel",
-          "clientSignature",
-          "newPLAN",
-          "supportRemarks",
-          "pulloutRemarks",
-          "pulloutRouterModel",
-          "pulloutRouterModelSN",
-          "pulloutCPESN",
-          "itemName",
-          "itemQuantity",
-          "itemName1",
-          "itemQuantity1",
-          "itemName2",
-          "itemQuantity2",
-          "itemName3",
-          "itemQuantity3",
-          "itemName4",
-          "itemQuantity4",
-          "itemName5",
-          "itemQuantity5",
-          "itemName6",
-          "itemQuantity6",
-          "itemName7",
-          "itemQuantity7",
-          "itemName8",
-          "itemQuantity8",
-          "itemName9",
-          "itemQuantity9",
-          "itemName10",
-          "itemQuantity10",
-          "image1",
-          "image2",
-          "image3",
-          "serviceCharge",
-          "barangay",
-          "city",
-          "addressCoordinates",
-          "houseFrontPicture",
-          "techModifiedDate",
-          "assignedBy",
-          "assignedDate"
-        ],
-        "type": "object",
-        "properties": {
-          "createdDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "accountNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "dateInstalled": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "fullName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "emailAddress": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "address": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "plan": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "provider": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "username": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "connectionType": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "routerModemSN": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lcp": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "nap": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "port": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "vlan": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "supportStatus": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "concern": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "connectionRemarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "priorityLevel": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitStatus": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitWith": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitWithOthers": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "visitRemarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "modifiedDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "userEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "requestedBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "assignedEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "startTimestamp": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "stopTimestamp": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "duration": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "repairCategory": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "newRouterModemSN": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "newLCP": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "newNAP": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "newPORT": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "newVLAN": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "routerModel": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "clientSignature": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "newPLAN": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "supportRemarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "pulloutRemarks": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "pulloutRouterModel": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "pulloutRouterModelSN": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "pulloutCPESN": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName1": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity1": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName2": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity2": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName3": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity3": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName4": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity4": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName5": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity5": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName6": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity6": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName7": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity7": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName8": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity8": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName9": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity9": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "itemName10": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "itemQuantity10": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "image1": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "image2": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "image3": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "serviceCharge": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
-            "type": [
-              "null",
-              "number",
-              "string"
-            ],
-            "format": "double"
-          },
-          "barangay": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "addressCoordinates": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "houseFrontPicture": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "techModifiedDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "assignedBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "assignedDate": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          }
-        }
-      },
       "UpdateUserRequest": {
         "required": [
           "fname",
@@ -12116,7 +12610,13 @@
       "name": "Naps"
     },
     {
+      "name": "PaymentMethods"
+    },
+    {
       "name": "Payments"
+    },
+    {
+      "name": "PaymentTypes"
     },
     {
       "name": "Plans"

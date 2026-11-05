@@ -5622,8 +5622,14 @@ import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUr
 */
 // Gene - Oct 23, 2026: Import blobToDataUrl to handle binary Blob streams from GetReadingImage endpoint
 import { downloadImage, openImageInNewTab, getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl, blobToDataUrl } from '../utils/imageActions'
+/*
 import { ApplicationService } from '../services/applications'
 import { LcpNapLocationService } from '../services/lcpNapLocations'
+*/
+// Gene - Nov 5, 2026: Import JobOrderService for Job Order image viewing, caching, and multipart uploads
+import { ApplicationService } from '../services/applications'
+import { LcpNapLocationService } from '../services/lcpNapLocations'
+import { JobOrderService } from '../services/jobOrders'
 import {
   resolveMenuCodesFromName,
   isSuperAdminName,
@@ -6650,6 +6656,45 @@ const handleTableImageClick = async (row, col) => {
       }
     } catch (err) {
       console.warn('[handleTableImageClick] Could not fetch LCP NAP image:', err)
+    } finally {
+      if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
+      isFetchingImageOnDemand.value = false
+    }
+  }
+
+  // Gene - Nov 5, 2026: Fetch Job Order photos using GetJobOrderImage with on-demand caching
+  if (isJobOrderEndpoint.value && row?.id) {
+    fetchingCellKey.value = cellKey
+    isFetchingImageOnDemand.value = true
+    try {
+      let imgData = recordImagesCache.get(`jo:${row.id}`)
+      if (!imgData) {
+        const rawRes = await JobOrderService.getJobOrderImage(row.id)
+        imgData = unwrapApiPayload(rawRes)
+        if (imgData) recordImagesCache.set(`jo:${row.id}`, imgData)
+      }
+      if (imgData) {
+        const normCol = normalizeColKey(col)
+        const fileKeyMap = {
+          setupimage: 'setupImageFile',
+          clientsignature: 'clientSignatureFile',
+          signedcontractimage: 'signedContractImageFile',
+          boxreadingimage: 'boxReadingImageFile',
+          routerreadingimage: 'routerReadingImageFile',
+          portlabelimage: 'portLabelImageFile',
+          housefront: 'houseFrontFile',
+          housefrontpicture: 'houseFrontFile'
+        }
+        const fileKey = fileKeyMap[normCol]
+        const fileObj = fileKey ? imgData[fileKey] : null
+        const dataUrl = fileResultToDataUrl(fileObj)
+        if (dataUrl) {
+          openImagePreview(dataUrl, title)
+          return
+        }
+      }
+    } catch (err) {
+      console.warn('[handleTableImageClick] Could not fetch Job Order image:', err)
     } finally {
       if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
       isFetchingImageOnDemand.value = false
@@ -14613,6 +14658,56 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
             // Expected 404 when location record has no reading image uploaded
           }
         }
+      // Gene - Nov 5, 2026: Fetch and attach Job Order photos (setupImage, clientSignature, signedContractImage, boxReadingImage, routerReadingImage, portLabelImage, houseFront) using GetJobOrderImage
+      } else if (isJobOrderEndpoint.value && record.id) {
+        const attachToTargetForm = (canonicalName, value) => {
+          if (!targetForm.value) return
+          const norm = normalizeColKey(canonicalName)
+          const actualKey = Object.keys(targetForm.value).find(k => normalizeColKey(k) === norm) ||
+            formColumns.value.find(c => normalizeColKey(c) === norm) ||
+            canonicalName
+          targetForm.value[actualKey] = value
+          targetForm.value[canonicalName] = value
+          targetForm.value[canonicalName.toLowerCase()] = value
+        }
+
+        let imgData = recordImagesCache.get(`jo:${record.id}`)
+        if (!imgData) {
+          try {
+            const rawRes = await JobOrderService.getJobOrderImage(record.id)
+            imgData = unwrapApiPayload(rawRes)
+            if (imgData) recordImagesCache.set(`jo:${record.id}`, imgData)
+          } catch (joErr) {
+            console.warn(`[DynamicApiTable] GetJobOrderImage error for #${record.id}:`, joErr)
+          }
+        }
+        if (imgData) {
+          const mapping = {
+            setupImage: imgData.setupImageFile,
+            clientSignature: imgData.clientSignatureFile,
+            signedContractImage: imgData.signedContractImageFile,
+            boxReadingImage: imgData.boxReadingImageFile,
+            routerReadingImage: imgData.routerReadingImageFile,
+            portLabelImage: imgData.portLabelImageFile,
+            houseFront: imgData.houseFrontFile,
+            houseFrontPicture: imgData.houseFrontFile
+          }
+          Object.entries(mapping).forEach(([colKey, fileObj]) => {
+            if (fileObj) {
+              const u = typeof fileObj === 'string' && isRenderableImageUrl(fileObj)
+                ? fileObj
+                : fileResultToDataUrl(fileObj)
+              if (u) attachToTargetForm(colKey, u)
+            }
+          })
+        }
+        // Also resolve any existing Google Drive links
+        Object.keys(targetForm.value).forEach(k => {
+          const v = targetForm.value[k]
+          if (typeof v === 'string' && (v.includes('drive.google.com') || v.includes('lh3.googleusercontent.com'))) {
+            targetForm.value[k] = getDirectImageUrl(v)
+          }
+        })
       }
     } catch (err) {
       console.warn(`[DynamicApiTable] Image fetch error for ${scope}:`, err)
@@ -15280,9 +15375,65 @@ const saveEdit = async () => {
       attachLcpPhoto('image2', 'Image2', 'image2.jpg')
       attachLcpPhoto('readingimage', 'ReadingImage', 'readingImage.jpg')
       finalPayload = form
+    /*
     } else if (isJobOrderEndpoint.value) {
       finalPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
       applyJobOrderCreationAudit(finalPayload, numericUserId, 'update')
+    */
+    // Gene - Nov 5, 2026: Switched JobOrders update to FormData (multipart/form-data) supporting image uploads, existing photo preservation, and clear support
+    } else if (isJobOrderEndpoint.value) {
+      if (pendingDialogImageFetch.edit) {
+        try { await pendingDialogImageFetch.edit } catch (_) {}
+      }
+      const joPayload = buildJobOrderPayload(payload, 'update', numericUserId, loggedInUserId)
+      applyJobOrderCreationAudit(joPayload, numericUserId, 'update')
+
+      const form = new FormData()
+      Object.entries(joPayload).forEach(([key, val]) => {
+        const lowerKey = key.toLowerCase()
+        if (['setupimage', 'clientsignature', 'signedcontractimage', 'boxreadingimage', 'routerreadingimage', 'portlabelimage', 'housefront'].includes(lowerKey)) {
+          return
+        }
+        if (val !== undefined && val !== null) {
+          form.append(key, String(val))
+        }
+      })
+
+      const files = selectedFilesByCol.value.edit || {}
+      const removed = removedImagesByCol.value.edit || {}
+
+      const attachJoPhoto = (colKey, formField, fallbackFileName) => {
+        const newlySelected = files[colKey]
+        if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+          form.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+          return
+        }
+        if (removed[colKey]) {
+          return // User explicitly removed it
+        }
+        const existingDataUrl = editFormData.value ? (
+          editFormData.value[colKey] ||
+          editFormData.value[formField] ||
+          editFormData.value[formField.charAt(0).toLowerCase() + formField.slice(1)] ||
+          editFormData.value[formField.toLowerCase()] ||
+          editFormData.value[Object.keys(editFormData.value).find(k => k.toLowerCase() === colKey.toLowerCase())]
+        ) : null
+        if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+          const blob = dataUriToBlob(existingDataUrl)
+          if (blob) {
+            form.append(formField, blob, fallbackFileName)
+          }
+        }
+      }
+
+      attachJoPhoto('setupImage', 'SetupImage', 'setupImage.jpg')
+      attachJoPhoto('clientSignature', 'ClientSignature', 'clientSignature.jpg')
+      attachJoPhoto('signedContractImage', 'SignedContractImage', 'signedContractImage.jpg')
+      attachJoPhoto('boxReadingImage', 'BoxReadingImage', 'boxReadingImage.jpg')
+      attachJoPhoto('routerReadingImage', 'RouterReadingImage', 'routerReadingImage.jpg')
+      attachJoPhoto('portLabelImage', 'PortLabelImage', 'portLabelImage.jpg')
+      attachJoPhoto('houseFront', 'HouseFront', 'houseFront.jpg')
+      finalPayload = form
     /*
     } else if (isAccessLevelEndpoint.value) {
       finalPayload = {

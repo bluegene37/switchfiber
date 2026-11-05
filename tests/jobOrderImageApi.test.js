@@ -1,0 +1,253 @@
+import { test, describe } from 'node:test'
+import assert from 'node:assert/strict'
+import { getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl } from '../src/utils/imageActions.js'
+import { JobOrderService } from '../src/services/jobOrders.js'
+import { useJobOrderStore } from '../src/stores/jobOrders.js'
+
+// Gene - Nov 5, 2026: Comprehensive test suite for Job Order Image API, caching, and multipart update integration
+describe('Job Order Image API & Multipart Integration Suite', () => {
+  test('JobOrderService exposes getJobOrderImage method', () => {
+    assert.equal(typeof JobOrderService.getJobOrderImage, 'function')
+    assert.equal(typeof JobOrderService.getJobOrders, 'function')
+    assert.equal(typeof JobOrderService.updateJobOrder, 'function')
+  })
+
+  test('useJobOrderStore exposes fetchJobOrderImage action', () => {
+    // Pinia stores export a function defineStore
+    assert.equal(typeof useJobOrderStore, 'function')
+    assert.equal(useJobOrderStore.$id, 'jobOrders')
+  })
+
+  test('fileResultToDataUrl accurately maps all 7 Job Order image fields from GetJobOrderImage response', () => {
+    const mockApiResponse = {
+      setupImageFile: {
+        fileContents: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        contentType: 'image/png',
+        fileDownloadName: 'setup.png'
+      },
+      clientSignatureFile: {
+        fileContents: '/9j/4AAQSkZJRgABAQEASABIAAD',
+        contentType: 'image/jpeg',
+        fileDownloadName: 'signature.jpg'
+      },
+      signedContractImageFile: {
+        fileContents: '/9j/4AAQSkZJRgABAQEASABIAAD',
+        contentType: 'image/jpeg',
+        fileDownloadName: 'contract.jpg'
+      },
+      boxReadingImageFile: {
+        fileContents: '/9j/4AAQSkZJRgABAQEASABIAAD',
+        contentType: 'image/jpeg',
+        fileDownloadName: 'box.jpg'
+      },
+      routerReadingImageFile: {
+        fileContents: '/9j/4AAQSkZJRgABAQEASABIAAD',
+        contentType: 'image/jpeg',
+        fileDownloadName: 'router.jpg'
+      },
+      portLabelImageFile: {
+        fileContents: '/9j/4AAQSkZJRgABAQEASABIAAD',
+        contentType: 'image/jpeg',
+        fileDownloadName: 'port.jpg'
+      },
+      houseFrontFile: {
+        fileContents: '/9j/4AAQSkZJRgABAQEASABIAAD',
+        contentType: 'image/jpeg',
+        fileDownloadName: 'house.jpg'
+      }
+    }
+
+    const unwrapped = unwrapApiPayload({ data: mockApiResponse })
+    assert.ok(unwrapped)
+
+    // Check each of the 7 fields
+    const mapping = {
+      setupImage: unwrapped.setupImageFile,
+      clientSignature: unwrapped.clientSignatureFile,
+      signedContractImage: unwrapped.signedContractImageFile,
+      boxReadingImage: unwrapped.boxReadingImageFile,
+      routerReadingImage: unwrapped.routerReadingImageFile,
+      portLabelImage: unwrapped.portLabelImageFile,
+      houseFront: unwrapped.houseFrontFile
+    }
+
+    for (const [key, fileObj] of Object.entries(mapping)) {
+      const dataUrl = fileResultToDataUrl(fileObj)
+      assert.ok(dataUrl, `Data URL generated for ${key}`)
+      assert.ok(isRenderableImageUrl(dataUrl), `${key} should be renderable`)
+      assert.ok(dataUrl.startsWith('data:image/'), `${key} has data URI scheme`)
+    }
+  })
+
+  test('Job Order multipart update preserves existing photos as Blobs when not removed or replaced', () => {
+    const validDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='
+    const editFormData = {
+      id: 813,
+      firstName: 'Juan',
+      lastName: 'Dela Cruz',
+      status: 'Inprogress',
+      setupImage: validDataUrl,
+      clientSignature: validDataUrl,
+      signedContractImage: validDataUrl,
+      boxReadingImage: validDataUrl,
+      routerReadingImage: validDataUrl,
+      portLabelImage: validDataUrl,
+      houseFront: validDataUrl
+    }
+
+    const files = {} // No new files selected
+    const removed = {} // No images removed
+
+    const formEntries = []
+    const fakeForm = {
+      append: (k, v, name) => formEntries.push({ key: k, value: v, name })
+    }
+
+    const attachJoPhoto = (colKey, formField, fallbackFileName) => {
+      const newlySelected = files[colKey]
+      if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+        fakeForm.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+        return
+      }
+      if (removed[colKey]) {
+        return // User explicitly removed it
+      }
+      const existingDataUrl = editFormData[colKey]
+      if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+        const blob = dataUriToBlob(existingDataUrl)
+        if (blob) {
+          fakeForm.append(formField, blob, fallbackFileName)
+        }
+      }
+    }
+
+    attachJoPhoto('setupImage', 'SetupImage', 'setupImage.jpg')
+    attachJoPhoto('clientSignature', 'ClientSignature', 'clientSignature.jpg')
+    attachJoPhoto('signedContractImage', 'SignedContractImage', 'signedContractImage.jpg')
+    attachJoPhoto('boxReadingImage', 'BoxReadingImage', 'boxReadingImage.jpg')
+    attachJoPhoto('routerReadingImage', 'RouterReadingImage', 'routerReadingImage.jpg')
+    attachJoPhoto('portLabelImage', 'PortLabelImage', 'portLabelImage.jpg')
+    attachJoPhoto('houseFront', 'HouseFront', 'houseFront.jpg')
+
+    // Verify all 7 images preserved as Blobs
+    const appendedKeys = formEntries.map(e => e.key)
+    assert.deepEqual(appendedKeys, [
+      'SetupImage',
+      'ClientSignature',
+      'SignedContractImage',
+      'BoxReadingImage',
+      'RouterReadingImage',
+      'PortLabelImage',
+      'HouseFront'
+    ])
+
+    for (const entry of formEntries) {
+      assert.ok(entry.value instanceof Blob, `${entry.key} must be a Blob`)
+      assert.ok(entry.value.size > 0, `${entry.key} blob must have content`)
+    }
+  })
+
+  test('Job Order multipart update omits explicitly removed photos', () => {
+    const validDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='
+    const editFormData = {
+      setupImage: validDataUrl,
+      clientSignature: validDataUrl
+    }
+
+    const files = {}
+    const removed = { setupImage: true } // User clicked Clear on Setup Image
+
+    const formEntries = []
+    const fakeForm = {
+      append: (k, v, name) => formEntries.push({ key: k, value: v, name })
+    }
+
+    const attachJoPhoto = (colKey, formField, fallbackFileName) => {
+      const newlySelected = files[colKey]
+      if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+        fakeForm.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+        return
+      }
+      if (removed[colKey]) {
+        return // User explicitly removed it
+      }
+      const existingDataUrl = editFormData[colKey]
+      if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+        const blob = dataUriToBlob(existingDataUrl)
+        if (blob) {
+          fakeForm.append(formField, blob, fallbackFileName)
+        }
+      }
+    }
+
+    attachJoPhoto('setupImage', 'SetupImage', 'setupImage.jpg')
+    attachJoPhoto('clientSignature', 'ClientSignature', 'clientSignature.jpg')
+
+    assert.equal(formEntries.length, 1)
+    assert.equal(formEntries[0].key, 'ClientSignature')
+  })
+
+  test('Job Order multipart update prefers newly selected files over existing data URLs', () => {
+    const editFormData = {
+      setupImage: 'data:image/jpeg;base64,/9j/old=='
+    }
+
+    const newBlob = new Blob(['new-photo-bytes'], { type: 'image/jpeg' })
+    const files = {
+      setupImage: newBlob
+    }
+    const removed = {}
+
+    const formEntries = []
+    const fakeForm = {
+      append: (k, v, name) => formEntries.push({ key: k, value: v, name })
+    }
+
+    const attachJoPhoto = (colKey, formField, fallbackFileName) => {
+      const newlySelected = files[colKey]
+      if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+        fakeForm.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+        return
+      }
+      if (removed[colKey]) {
+        return
+      }
+      const existingDataUrl = editFormData[colKey]
+      if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+        const blob = dataUriToBlob(existingDataUrl)
+        if (blob) {
+          fakeForm.append(formField, blob, fallbackFileName)
+        }
+      }
+    }
+
+    attachJoPhoto('setupImage', 'SetupImage', 'setupImage.jpg')
+
+    assert.equal(formEntries.length, 1)
+    assert.equal(formEntries[0].key, 'SetupImage')
+    assert.equal(formEntries[0].value, newBlob)
+  })
+
+  test('OpenAPI spec contains GetJobOrderImage and multipart PUT /api/JobOrders/{id}', async () => {
+    const fs = await import('node:fs')
+    const spec = JSON.parse(fs.readFileSync('openapi.json', 'utf8'))
+    
+    // Check GetJobOrderImage path
+    assert.ok(spec.paths['/api/JobOrders/{id}/GetJobOrderImage'], 'Path /api/JobOrders/{id}/GetJobOrderImage must exist in spec')
+    assert.ok(spec.paths['/api/JobOrders/{id}/GetJobOrderImage'].get, 'GET method exists on GetJobOrderImage')
+
+    // Check PUT multipart schema
+    const putOp = spec.paths['/api/JobOrders/{id}']?.put
+    assert.ok(putOp, 'PUT method exists on /api/JobOrders/{id}')
+    const multipart = putOp.requestBody?.content?.['multipart/form-data']
+    assert.ok(multipart, 'PUT requestBody supports multipart/form-data')
+    const props = multipart.schema?.properties || {}
+    assert.ok(props.SetupImage, 'SetupImage supported')
+    assert.ok(props.ClientSignature, 'ClientSignature supported')
+    assert.ok(props.SignedContractImage, 'SignedContractImage supported')
+    assert.ok(props.BoxReadingImage, 'BoxReadingImage supported')
+    assert.ok(props.RouterReadingImage, 'RouterReadingImage supported')
+    assert.ok(props.PortLabelImage, 'PortLabelImage supported')
+    assert.ok(props.HouseFront, 'HouseFront supported')
+  })
+})

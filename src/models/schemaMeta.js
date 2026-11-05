@@ -191,10 +191,6 @@ export const EndpointSchemaMeta = {
     "create": {
       "schema": "CreateJobOrderRequest",
       "required": []
-    },
-    "update": {
-      "schema": "UpdateJobOrderRequest",
-      "required": []
     }
   },
   "Lcpnapports": {
@@ -277,6 +273,26 @@ export const EndpointSchemaMeta = {
       ]
     }
   },
+  "PaymentMethods": {
+    "create": {
+      "schema": "PaymentMethodDto",
+      "required": []
+    },
+    "update": {
+      "schema": "PaymentMethodDto",
+      "required": []
+    }
+  },
+  "PaymentTypes": {
+    "create": {
+      "schema": "PaymentTypeDto",
+      "required": []
+    },
+    "update": {
+      "schema": "PaymentTypeDto",
+      "required": []
+    }
+  },
   "Payments": {
     "create": {
       "schema": "Payment",
@@ -346,10 +362,6 @@ export const EndpointSchemaMeta = {
   "ServiceOrders": {
     "create": {
       "schema": "CreateServiceOrderRequest",
-      "required": []
-    },
-    "update": {
-      "schema": "UpdateServiceOrderRequest",
       "required": []
     }
   },
