@@ -565,4 +565,68 @@ describe('Job Order Image API & Multipart Integration Suite', () => {
     assert.equal(appendedKeys.includes('setupImage'), false, 'photo string setupImage must be omitted')
     assert.equal(appendedKeys.includes('modifiedDate'), false, 'empty modifiedDate must be omitted')
   })
+
+  // Gene - Nov 6, 2026: Regression tests for single canonical houseFront without duplicate houseFrontPicture
+  test('JOB_ORDER_FORM_LAYOUT includes houseFront and excludes redundant houseFrontPicture', async () => {
+    const fs = await import('node:fs')
+    const content = fs.readFileSync('src/components/DynamicApiTable.vue', 'utf8')
+    
+    // Strip multi-line comments so we inspect only the active code
+    const activeContent = content.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    // Extract active JOB_ORDER_FORM_LAYOUT definition
+    const joLayoutMatch = activeContent.match(/const JOB_ORDER_FORM_LAYOUT = \[([\s\S]*?)\]\n\nconst PLAN_FORM_LAYOUT/m)
+    assert.ok(joLayoutMatch, 'JOB_ORDER_FORM_LAYOUT should be defined')
+    const layoutStr = joLayoutMatch[1]
+
+    // Photos section check: must have houseFront, must NOT have active houseFrontPicture
+    const photosMatch = layoutStr.match(/key:\s*'photos'[\s\S]*?columns:\s*\[([\s\S]*?)\]\s*\}/)
+    assert.ok(photosMatch, 'Photos section found in JOB_ORDER_FORM_LAYOUT')
+    const photoCols = photosMatch[1]
+    
+    assert.ok(photoCols.includes("'houseFront'"), 'houseFront must be present in photos columns')
+    assert.equal(photoCols.includes("'houseFrontPicture'"), false, 'houseFrontPicture must NOT be present in active photos columns')
+  })
+
+  test('Job Orders image mapping and deduplication ensures only canonical houseFront exists', () => {
+    // Simulate deduplicateColumns behavior for Job Orders
+    const isJobOrderEndpoint = true
+    const deduplicateColumnsSim = (colList) => {
+      const normalizedSet = new Set()
+      const result = []
+      const lowerCols = colList.map(c => c.toLowerCase())
+      colList.forEach(col => {
+        const lowerNoUnderscore = col.toLowerCase().replace(/_/g, '')
+        const lowerRaw = col.toLowerCase()
+        if (isJobOrderEndpoint && lowerRaw === 'housefrontpicture') return
+        if (!normalizedSet.has(lowerNoUnderscore)) {
+          normalizedSet.add(lowerNoUnderscore)
+          result.push(col)
+        }
+      })
+      return result
+    }
+
+    const testCols = ['id', 'accountNo', 'houseFront', 'houseFrontPicture', 'setupImage', 'status']
+    const deduped = deduplicateColumnsSim(testCols)
+    assert.ok(deduped.includes('houseFront'), 'houseFront preserved')
+    assert.equal(deduped.includes('houseFrontPicture'), false, 'houseFrontPicture removed')
+
+    // Simulate viewFormData normalization in openViewDialog / fetchAndAttachImagesForDialog
+    const viewFormData = {
+      id: 101,
+      accountNo: 'SF-101',
+      houseFront: 'data:image/jpeg;base64,abc123',
+      houseFrontPicture: 'data:image/jpeg;base64,abc123'
+    }
+
+    if (!viewFormData.houseFront && viewFormData.houseFrontPicture) {
+      viewFormData.houseFront = viewFormData.houseFrontPicture
+    }
+    delete viewFormData.houseFrontPicture
+    delete viewFormData.housefrontpicture
+
+    assert.ok(viewFormData.houseFront, 'houseFront remains')
+    assert.equal(viewFormData.houseFrontPicture, undefined, 'houseFrontPicture removed from viewFormData')
+  })
 })

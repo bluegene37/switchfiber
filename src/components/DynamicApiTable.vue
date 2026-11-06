@@ -7838,6 +7838,16 @@ function deduplicateColumns(colList) {
       if (lowerRaw === 'image' && (lowerCols.includes('plan') || lowerCols.includes('fiberplan'))) return
     }
 
+    // Gene - Nov 6, 2026: Deduplicate houseFrontPicture in favor of canonical houseFront for Job Orders to prevent duplicate photo fields
+    if (typeof isJobOrderEndpoint !== 'undefined' && isJobOrderEndpoint.value) {
+      if (lowerRaw === 'housefrontpicture') return
+    }
+
+    // Gene - Nov 6, 2026: Deduplicate houseFront in favor of canonical houseFrontPicture for Service Orders and Applications
+    if (typeof isServiceOrderEndpoint !== 'undefined' && (isServiceOrderEndpoint.value || (typeof isApplicationEndpoint !== 'undefined' && isApplicationEndpoint.value))) {
+      if (lowerRaw === 'housefront' && lowerCols.includes('housefrontpicture')) return
+    }
+
     if (aliasMap[lowerRaw]) {
       const primaryKeyLower = aliasMap[lowerRaw]
       if (colList.some(c => c.toLowerCase().replace(/_/g, '') === primaryKeyLower && c !== col)) {
@@ -10088,6 +10098,7 @@ const JOB_ORDER_FORM_LAYOUT = [
       'itemQuantity10'
     ]
   },
+  /*
   {
     key: 'photos',
     title: 'Photos, Signatures & Reading Proofs',
@@ -10096,6 +10107,24 @@ const JOB_ORDER_FORM_LAYOUT = [
     columns: [
       'houseFront',
       'houseFrontPicture',
+      'setupImage',
+      'speedtestImage',
+      'signedContractImage',
+      'boxReadingImage',
+      'routerReadingImage',
+      'portLabelImage',
+      'clientSignature'
+    ]
+  }
+  */
+  // Gene - Nov 6, 2026: Removed duplicate houseFrontPicture from Job Orders photos layout so only canonical houseFront is rendered
+  {
+    key: 'photos',
+    title: 'Photos, Signatures & Reading Proofs',
+    icon: 'pi pi-images',
+    badgeClass: 'text-dark',
+    columns: [
+      'houseFront',
       'setupImage',
       'speedtestImage',
       'signedContractImage',
@@ -15014,6 +15043,14 @@ const openEditDialog = async (record) => {
     const disp = getAccessLevelDisplayName(editFormData.value)
     if (disp) editFormData.value.name = disp
   }
+  // Gene - Nov 6, 2026: Normalize Job Order house front fields so only canonical houseFront exists on editFormData
+  if (isJobOrderEndpoint.value && editFormData.value) {
+    if (!editFormData.value.houseFront && editFormData.value.houseFrontPicture) {
+      editFormData.value.houseFront = editFormData.value.houseFrontPicture
+    }
+    delete editFormData.value.houseFrontPicture
+    delete editFormData.value.housefrontpicture
+  }
   autoLocateOnOpen('edit')
   fetchAndAttachImagesForDialog('edit', normRecord)
 */
@@ -15234,6 +15271,7 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
             console.warn(`[DynamicApiTable] GetJobOrderImage error for #${record.id}:`, joErr)
           }
         }
+        /*
         if (imgData) {
           const mapping = {
             setupImage: imgData.setupImageFile,
@@ -15253,6 +15291,31 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
               if (u) attachToTargetForm(colKey, u)
             }
           })
+        }
+        */
+        // Gene - Nov 6, 2026: Map only canonical houseFront for Job Orders and clean up any redundant houseFrontPicture on targetForm
+        if (imgData) {
+          const mapping = {
+            setupImage: imgData.setupImageFile,
+            clientSignature: imgData.clientSignatureFile,
+            signedContractImage: imgData.signedContractImageFile,
+            boxReadingImage: imgData.boxReadingImageFile,
+            routerReadingImage: imgData.routerReadingImageFile,
+            portLabelImage: imgData.portLabelImageFile,
+            houseFront: imgData.houseFrontFile
+          }
+          Object.entries(mapping).forEach(([colKey, fileObj]) => {
+            if (fileObj) {
+              const u = typeof fileObj === 'string' && isRenderableImageUrl(fileObj)
+                ? fileObj
+                : fileResultToDataUrl(fileObj)
+              if (u) attachToTargetForm(colKey, u)
+            }
+          })
+          if (targetForm.value && (targetForm.value.houseFrontPicture || targetForm.value.housefrontpicture)) {
+            delete targetForm.value.houseFrontPicture
+            delete targetForm.value.housefrontpicture
+          }
         }
         // Also resolve any existing Google Drive links
         Object.keys(targetForm.value).forEach(k => {
@@ -15284,6 +15347,7 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
             console.warn(`[DynamicApiTable] GetServiceOrderImage error for #${record.id}:`, soErr)
           }
         }
+        /*
         if (imgData) {
           const mapping = {
             clientSignature: imgData.clientSignatureFile,
@@ -15301,6 +15365,29 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
               if (u) attachToTargetForm(colKey, u)
             }
           })
+        }
+        */
+        // Gene - Nov 6, 2026: Map only canonical houseFrontPicture for Service Orders and clean up any redundant houseFront on targetForm
+        if (imgData) {
+          const mapping = {
+            clientSignature: imgData.clientSignatureFile,
+            image1: imgData.image1File,
+            image2: imgData.image2File,
+            image3: imgData.image3File,
+            houseFrontPicture: imgData.houseFrontPictureFile
+          }
+          Object.entries(mapping).forEach(([colKey, fileObj]) => {
+            if (fileObj) {
+              const u = typeof fileObj === 'string' && isRenderableImageUrl(fileObj)
+                ? fileObj
+                : fileResultToDataUrl(fileObj)
+              if (u) attachToTargetForm(colKey, u)
+            }
+          })
+          if (targetForm.value && (targetForm.value.houseFront || targetForm.value.housefront)) {
+            delete targetForm.value.houseFront
+            delete targetForm.value.housefront
+          }
         }
         // Also resolve any existing Google Drive links
         Object.keys(targetForm.value).forEach(k => {
@@ -15364,6 +15451,14 @@ const openViewDialog = (record) => {
       viewFormData.value.processedBy = normRecord.remarks
     }
   }
+  // Gene - Nov 6, 2026: Normalize Job Order house front fields so only canonical houseFront exists on viewFormData
+  if (isJobOrderEndpoint.value && viewFormData.value) {
+    if (!viewFormData.value.houseFront && viewFormData.value.houseFrontPicture) {
+      viewFormData.value.houseFront = viewFormData.value.houseFrontPicture
+    }
+    delete viewFormData.value.houseFrontPicture
+    delete viewFormData.value.housefrontpicture
+  }
   autoLocateOnOpen('view')
   pendingDialogImageFetch.view = fetchAndAttachImagesForDialog('view', normRecord)
   displayViewDialog.value = true
@@ -15397,6 +15492,14 @@ const openEditDialog = async (record) => {
   } else if (isAccessLevelEndpoint.value && editFormData.value) {
     const disp = getAccessLevelDisplayName(editFormData.value)
     if (disp) editFormData.value.name = disp
+  }
+  // Gene - Nov 6, 2026: Normalize Job Order house front fields so only canonical houseFront exists on editFormData
+  if (isJobOrderEndpoint.value && editFormData.value) {
+    if (!editFormData.value.houseFront && editFormData.value.houseFrontPicture) {
+      editFormData.value.houseFront = editFormData.value.houseFrontPicture
+    }
+    delete editFormData.value.houseFrontPicture
+    delete editFormData.value.housefrontpicture
   }
   autoLocateOnOpen('edit')
   pendingDialogImageFetch.edit = fetchAndAttachImagesForDialog('edit', normRecord)
