@@ -68,6 +68,7 @@ export const JobOrderService = {
     return apiClient.put(`/JobOrders/${id}`, data)
   },
   */
+  /*
   // Gene - Nov 5, 2026: Pass multipart/form-data header when updating Job Order with FormData payload to prevent 415 error
   updateJobOrder(id, data, config = {}) {
     if (typeof FormData !== 'undefined' && data instanceof FormData) {
@@ -77,6 +78,20 @@ export const JobOrderService = {
           'Content-Type': 'multipart/form-data',
           ...(config && config.headers)
         }
+      })
+    }
+    return apiClient.put(`/JobOrders/${id}`, data, config)
+  },
+  */
+  // Gene - Nov 6, 2026: Strip manual Content-Type header on FormData updateJobOrder payload so browser XHR sets the dynamic boundary delimiter (preventing 400 Missing content-type boundary error)
+  updateJobOrder(id, data, config = {}) {
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      const cleanHeaders = { ...(config && config.headers) }
+      delete cleanHeaders['Content-Type']
+      delete cleanHeaders['content-type']
+      return apiClient.put(`/JobOrders/${id}`, data, {
+        ...config,
+        headers: cleanHeaders
       })
     }
     return apiClient.put(`/JobOrders/${id}`, data, config)

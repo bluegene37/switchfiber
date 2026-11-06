@@ -268,6 +268,7 @@ describe('Job Order Image API & Multipart Integration Suite', () => {
     assert.equal(isJobOrderEndpoint('Lcpnaps'), false)
   })
 
+  /*
   test('api.js request interceptor sets multipart/form-data on FormData to avoid 415', async () => {
     const { default: apiClient } = await import('../src/services/api.js')
     
@@ -296,6 +297,35 @@ describe('Job Order Image API & Multipart Integration Suite', () => {
       ? transformedConfig.headers.get('Content-Type')
       : transformedConfig.headers['Content-Type']
     assert.equal(ct, 'multipart/form-data', 'FormData request must have multipart/form-data Content-Type')
+  })
+  */
+  // Gene - Nov 6, 2026: Assert that api.js request interceptor strips Content-Type on FormData payloads so browser XHR automatically injects multipart/form-data with the dynamic boundary delimiter (preventing 400 Missing content-type boundary)
+  test('api.js request interceptor strips Content-Type on FormData so browser sets dynamic boundary', async () => {
+    const { default: apiClient } = await import('../src/services/api.js')
+    
+    const fd = new FormData()
+    fd.append('foo', 'bar')
+    const config = {
+      method: 'put',
+      url: '/JobOrders/1',
+      headers: new apiClient.defaults.headers.constructor({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }),
+      data: fd
+    }
+
+    let transformedConfig = config
+    for (const h of apiClient.interceptors.request.handlers) {
+      if (typeof h.fulfilled === 'function') {
+        transformedConfig = (await h.fulfilled(transformedConfig)) || transformedConfig
+      }
+    }
+
+    const ct = typeof transformedConfig.headers.get === 'function'
+      ? transformedConfig.headers.get('Content-Type')
+      : transformedConfig.headers['Content-Type']
+    assert.equal(ct, undefined, 'FormData request must NOT have manual Content-Type so browser sets boundary')
   })
 
   /*
@@ -370,6 +400,7 @@ describe('Job Order Image API & Multipart Integration Suite', () => {
     assert.equal(appendedKeys.includes('setupImage'), false, 'photo string setupImage must be omitted')
   })
   */
+  /*
   // Gene - Nov 5, 2026: Expanded test suite verifying lcpnapid, lcpnapportid, portid, and accountno are omitted when empty
   test('Job Order multipart update omits empty string values for numeric, date, and ID fields to prevent ASP.NET 500', () => {
     const numericOrDateKeys = new Set([
@@ -448,5 +479,90 @@ describe('Job Order Image API & Multipart Integration Suite', () => {
     assert.equal(appendedKeys.includes('itemQuantity1'), false, 'empty itemQuantity1 must be omitted')
     assert.equal(appendedKeys.includes('itemQuantity2'), false, 'empty itemQuantity2 must be omitted')
     assert.equal(appendedKeys.includes('setupImage'), false, 'photo string setupImage must be omitted')
+  })
+  */
+  // Gene - Nov 6, 2026: Include modifieddate in numericOrDateKeys and verify modifiedDate and string "null" are omitted when constructing FormData
+  test('Job Order multipart update omits empty string values for numeric, date, and ID fields to prevent ASP.NET 500', () => {
+    const numericOrDateKeys = new Set([
+      'itemquantity1', 'itemquantity2', 'itemquantity3', 'itemquantity4', 'itemquantity5',
+      'itemquantity6', 'itemquantity7', 'itemquantity8', 'itemquantity9', 'itemquantity10',
+      'installationfee', 'billingday', 'duration', 'lcpid', 'napid', 'vlanid', 'portid',
+      'lcpnapid', 'lcpnapportid', 'accountno',
+      'dateinstalled', 'installationdate', 'starttimestamp', 'endtimestamp',
+      'createdby', 'createddate', 'modifieddate'
+    ])
+    const joPhotoKeys = new Set([
+      'setupimage', 'clientsignature', 'signedcontractimage', 'boxreadingimage',
+      'routerreadingimage', 'portlabelimage', 'housefront', 'speedtestimage'
+    ])
+
+    const samplePayload = {
+      id: 4226,
+      firstName: 'QA Test1',
+      status: 'Inprogress',
+      remarks: '',
+      lcpId: '',
+      napId: '',
+      vlanId: '',
+      portId: '',
+      lcpnapId: '',
+      lcpnapportId: '',
+      accountNo: '',
+      duration: '',
+      itemQuantity1: '',
+      itemQuantity2: '',
+      installationFee: null,
+      billingDay: undefined,
+      startTimeStamp: null,
+      dateInstalled: '2026-10-30T00:00:00',
+      setupImage: '',
+      modifiedDate: '',
+      createdBy: 2
+    }
+
+    const appendedEntries = []
+    const fakeForm = {
+      append: (k, v) => appendedEntries.push({ key: k, value: v })
+    }
+
+    Object.entries(samplePayload).forEach(([key, val]) => {
+      const lowerKey = key.toLowerCase()
+      if (joPhotoKeys.has(lowerKey)) {
+        return
+      }
+      if (numericOrDateKeys.has(lowerKey)) {
+        if (val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim().toLowerCase() !== 'null') {
+          fakeForm.append(key, String(val).trim())
+        }
+        return
+      }
+      if (val !== undefined && val !== null) {
+        const strVal = String(val).trim()
+        if (strVal.toLowerCase() !== 'null') {
+          fakeForm.append(key, String(val))
+        }
+      }
+    })
+
+    const appendedKeys = appendedEntries.map(e => e.key)
+    assert.ok(appendedKeys.includes('id'), 'id should be included')
+    assert.ok(appendedKeys.includes('firstName'), 'firstName should be included')
+    assert.ok(appendedKeys.includes('status'), 'status should be included')
+    assert.ok(appendedKeys.includes('remarks'), 'remarks string field should be included')
+    assert.ok(appendedKeys.includes('dateInstalled'), 'dateInstalled valid date should be included')
+    assert.ok(appendedKeys.includes('createdBy'), 'createdBy should be included')
+
+    assert.equal(appendedKeys.includes('lcpId'), false, 'empty lcpId must be omitted')
+    assert.equal(appendedKeys.includes('napId'), false, 'empty napId must be omitted')
+    assert.equal(appendedKeys.includes('vlanId'), false, 'empty vlanId must be omitted')
+    assert.equal(appendedKeys.includes('portId'), false, 'empty portId must be omitted')
+    assert.equal(appendedKeys.includes('lcpnapId'), false, 'empty lcpnapId must be omitted')
+    assert.equal(appendedKeys.includes('lcpnapportId'), false, 'empty lcpnapportId must be omitted')
+    assert.equal(appendedKeys.includes('accountNo'), false, 'empty accountNo must be omitted')
+    assert.equal(appendedKeys.includes('duration'), false, 'empty duration must be omitted')
+    assert.equal(appendedKeys.includes('itemQuantity1'), false, 'empty itemQuantity1 must be omitted')
+    assert.equal(appendedKeys.includes('itemQuantity2'), false, 'empty itemQuantity2 must be omitted')
+    assert.equal(appendedKeys.includes('setupImage'), false, 'photo string setupImage must be omitted')
+    assert.equal(appendedKeys.includes('modifiedDate'), false, 'empty modifiedDate must be omitted')
   })
 })

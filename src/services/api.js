@@ -123,6 +123,7 @@ apiClient.interceptors.request.use((config) => {
   return Promise.reject(error)
 })
 */
+/*
 // Gene - Nov 5, 2026: Set multipart/form-data on FormData payloads to prevent Axios 1.x from falling back to application/x-www-form-urlencoded (415 error) or serializing to JSON
 apiClient.interceptors.request.use((config) => {
   const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null) ||
@@ -140,6 +141,37 @@ apiClient.interceptors.request.use((config) => {
         config.headers.set('Content-Type', 'multipart/form-data')
       } else {
         config.headers['Content-Type'] = 'multipart/form-data'
+      }
+    }
+  }
+  // Only reads are cancellable — a mutation must never be killed mid-flight.
+  // A caller-supplied signal is left alone.
+  if ((config.method || 'get').toLowerCase() === 'get' && config.cancelOnNavigate !== false && !config.signal) {
+    const controller = new AbortController()
+    config.signal = controller.signal
+    config._navAbortController = controller
+    navCancellable.add(controller)
+  }
+  return config
+}, (error) => {
+  return Promise.reject(error)
+})
+*/
+// Gene - Nov 6, 2026: Delete Content-Type header on FormData payloads so browser XHR / fetch automatically sets multipart/form-data with the dynamic boundary delimiter (preventing 400 Missing content-type boundary error)
+apiClient.interceptors.request.use((config) => {
+  const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null) ||
+    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('token') : null)
+  if (token && typeof token === 'string' && token.trim()) {
+    config.headers.Authorization = `Bearer ${token.trim()}`
+  }
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type')
+        config.headers.delete('content-type')
+      } else {
+        delete config.headers['Content-Type']
+        delete config.headers['content-type']
       }
     }
   }

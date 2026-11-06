@@ -52,6 +52,7 @@ export const create = (endpoint, payload, config = {}) => {
 // export const update = (endpoint, id, payload, config = {}) => {
 //   return apiClient.put(`${toPath(endpoint)}/${id}`, payload, config)
 // }
+/*
 // Gene - Nov 5, 2026: Explicitly pass multipart/form-data header when updating with FormData payload to prevent 415 Unsupported Media Type
 export const update = (endpoint, id, payload, config = {}) => {
   if (typeof FormData !== 'undefined' && payload instanceof FormData) {
@@ -61,6 +62,20 @@ export const update = (endpoint, id, payload, config = {}) => {
         'Content-Type': 'multipart/form-data',
         ...(config && config.headers)
       }
+    })
+  }
+  return apiClient.put(`${toPath(endpoint)}/${id}`, payload, config)
+}
+*/
+// Gene - Nov 6, 2026: Strip manual Content-Type header when updating with FormData payload so Axios and browser XHR generate the dynamic boundary delimiter (preventing 400 Missing content-type boundary error)
+export const update = (endpoint, id, payload, config = {}) => {
+  if (typeof FormData !== 'undefined' && payload instanceof FormData) {
+    const cleanHeaders = { ...(config && config.headers) }
+    delete cleanHeaders['Content-Type']
+    delete cleanHeaders['content-type']
+    return apiClient.put(`${toPath(endpoint)}/${id}`, payload, {
+      ...config,
+      headers: cleanHeaders
     })
   }
   return apiClient.put(`${toPath(endpoint)}/${id}`, payload, config)

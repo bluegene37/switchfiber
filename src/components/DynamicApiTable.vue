@@ -16112,6 +16112,7 @@ const saveEdit = async () => {
         }
       })
       */
+      /*
       // Gene - Nov 5, 2026: Expanded numeric, date, and identifier sanitization set to also include lcpnapid, lcpnapportid, portid, and accountno to prevent ASP.NET 500 error on blank string
       const form = new FormData()
       const numericOrDateKeys = new Set([
@@ -16139,6 +16140,39 @@ const saveEdit = async () => {
         }
         if (val !== undefined && val !== null) {
           form.append(key, String(val))
+        }
+      })
+      */
+      // Gene - Nov 6, 2026: Include modifieddate in numericOrDateKeys and prevent appending string "null" on FormData text fields to avoid ASP.NET 500 parse errors
+      const form = new FormData()
+      const numericOrDateKeys = new Set([
+        'itemquantity1', 'itemquantity2', 'itemquantity3', 'itemquantity4', 'itemquantity5',
+        'itemquantity6', 'itemquantity7', 'itemquantity8', 'itemquantity9', 'itemquantity10',
+        'installationfee', 'billingday', 'duration', 'lcpid', 'napid', 'vlanid', 'portid',
+        'lcpnapid', 'lcpnapportid', 'accountno',
+        'dateinstalled', 'installationdate', 'starttimestamp', 'endtimestamp',
+        'createdby', 'createddate', 'modifieddate'
+      ])
+      const joPhotoKeys = new Set([
+        'setupimage', 'clientsignature', 'signedcontractimage', 'boxreadingimage',
+        'routerreadingimage', 'portlabelimage', 'housefront', 'speedtestimage'
+      ])
+      Object.entries(joPayload).forEach(([key, val]) => {
+        const lowerKey = key.toLowerCase()
+        if (joPhotoKeys.has(lowerKey)) {
+          return
+        }
+        if (numericOrDateKeys.has(lowerKey)) {
+          if (val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim().toLowerCase() !== 'null') {
+            form.append(key, String(val).trim())
+          }
+          return
+        }
+        if (val !== undefined && val !== null) {
+          const strVal = String(val).trim()
+          if (strVal.toLowerCase() !== 'null') {
+            form.append(key, String(val))
+          }
         }
       })
 
@@ -16555,6 +16589,7 @@ const saveEdit = async () => {
       ? { headers: { 'Content-Type': 'multipart/form-data' } }
       : {}
     */
+    /*
     // Gene - Nov 6, 2026: Add clean transactionid string query parameter on Payments PUT and preserve multipart/form-data headers
     const paymentTxnId = isPaymentEndpoint.value
       ? String(finalPayload?.transactionID || editBaseSnapshot.value?.transactionID || payload?.transactionID || '').trim()
@@ -16563,6 +16598,14 @@ const saveEdit = async () => {
       ...((typeof FormData !== 'undefined' && finalPayload instanceof FormData)
         ? { headers: { 'Content-Type': 'multipart/form-data' } }
         : {}),
+      ...(paymentTxnId ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || paymentTxnId } } : {})
+    }
+    */
+    // Gene - Nov 6, 2026: Do not set Content-Type header on FormData so browser XHR / fetch automatically sets dynamic boundary delimiter (preventing 400 Missing content-type boundary error)
+    const paymentTxnId = isPaymentEndpoint.value
+      ? String(finalPayload?.transactionID || editBaseSnapshot.value?.transactionID || payload?.transactionID || '').trim()
+      : ''
+    const updateReqConfig = {
       ...(paymentTxnId ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || paymentTxnId } } : {})
     }
     await CrudService.update(props.endpoint, updatedId, finalPayload, updateReqConfig)
