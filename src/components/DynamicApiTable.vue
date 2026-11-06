@@ -236,6 +236,19 @@
           <span class="d-none d-sm-inline">Sync Access Level Codes</span>
           <span class="d-sm-none">Sync Codes</span>
         </Button>
+        <!-- Gene - Nov 6, 2026: Seed standard Payment Methods via backend API for PaymentMethods endpoint -->
+        <Button
+          v-if="isPaymentMethodEndpoint"
+          class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
+          :class="{ 'ms-auto': !showTopCreateButton }"
+          :loading="isSeedingPaymentMethods"
+          @click="seedPaymentMethodsViaApi"
+          v-tooltip.top="'Seed standard payment methods into backend API'"
+        >
+          <i class="pi pi-database"></i>
+          <span class="d-none d-sm-inline">Seed Payment Methods</span>
+          <span class="d-sm-none">Seed</span>
+        </Button>
         <Button 
           v-if="showTopCreateButton" 
           class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-2 fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-table-topbar-create-btn" 
@@ -420,6 +433,18 @@
               <i class="pi pi-sync"></i>
               <span class="d-none d-sm-inline">Sync Access Level Codes</span>
               <span class="d-sm-none">Sync Codes</span>
+            </Button>
+            <!-- Gene - Nov 6, 2026: Seed standard Payment Methods via backend API for PaymentMethods endpoint -->
+            <Button
+              v-if="isPaymentMethodEndpoint"
+              class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 ms-1"
+              :loading="isSeedingPaymentMethods"
+              @click="seedPaymentMethodsViaApi"
+              v-tooltip.top="'Seed standard payment methods into backend API'"
+            >
+              <i class="pi pi-database"></i>
+              <span class="d-none d-sm-inline">Seed Payment Methods</span>
+              <span class="d-sm-none">Seed</span>
             </Button>
             <!-- Primary Action: Create Button -->
             <Button 
@@ -1318,6 +1343,21 @@
                 :filter="true"
                 placeholder="Select VLAN" 
                 class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Gene - Nov 6, 2026: Subscriber Account Dropdown for Payments with BillingDetails auto-fill -->
+              <Select 
+                v-else-if="getFieldType(col) === 'account_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="getAccountOptions(formData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true" 
+                :editable="true"
+                placeholder="Select or enter subscriber Account #" 
+                class="w-100 p-inputtext-sm" 
+                @change="onPaymentAccountChange($event.value)"
               />
 
               <!-- Plan Dropdown -->
@@ -2777,6 +2817,7 @@
               </template>
 
               <template v-else>
+                <!--
                 <InputText 
                   :id="col" 
                   v-model="formData[col]" 
@@ -2790,6 +2831,22 @@
                   :disabled="isReadOnlyField(col)"
                   :readonly="isReadOnlyField(col)"
                   :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
+                />
+                -->
+                <!-- Gene - Nov 6, 2026: Auto-disabled transactionID with placeholder in Create modal for Payments endpoint -->
+                <InputText 
+                  :id="col" 
+                  v-model="formData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 
+                    'bg-light text-muted': isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid'),
+                    'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                    'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                  }" 
+                  :disabled="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
+                  :readonly="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
+                  :placeholder="isPaymentEndpoint && normalizeColKey(col) === 'transactionid' ? 'Auto-generated upon save' : (isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
                 />
                 <div v-if="getFieldMaxLength(col) && getFieldType(col) !== 'textarea' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'promotion_media_url'" class="d-flex justify-content-end text-xs text-muted mt-0.5">
                   <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
@@ -3788,6 +3845,20 @@
                 :filter="true"
                 :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select VLAN" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Gene - Nov 6, 2026: Subscriber Account Dropdown for Payments in Edit Modal (disabled) -->
+              <Select 
+                v-else-if="getFieldType(col) === 'account_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="getAccountOptions(editFormData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true" 
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Subscriber Account #" 
                 class="w-100 p-inputtext-sm" 
               />
 
@@ -7431,9 +7502,32 @@ function getFieldType(col) {
     }
   }
   */
+  /*
   // Gene - Nov 6, 2026: Canonical Payments field types: paymentDate = date picker, receivedPayment = currency (paid amount), transactionID/accountNo = text
   if (isPaymentEndpoint.value) {
     if (lower === 'transactionid' || lower === 'accountno') {
+      return 'text'
+    }
+    if (lower === 'receivedpayment') {
+      return 'currency'
+    }
+    if (lower === 'paymentdate' || lower === 'dateprocessed') {
+      return 'date'
+    }
+    if (lower === 'image' || lower === 'fiberplan' || lower === 'plan') {
+      return 'plan_dropdown'
+    }
+    if (lower === 'remarks' || lower === 'processedby') {
+      return 'text'
+    }
+  }
+  */
+  // Gene - Nov 6, 2026: Enhanced Payments field types: accountNo = account_dropdown (searchable BillingDetails subscriber list with auto-population), paymentDate = date picker, receivedPayment = currency (paid amount), transactionID = text
+  if (isPaymentEndpoint.value) {
+    if (lower === 'accountno') {
+      return 'account_dropdown'
+    }
+    if (lower === 'transactionid') {
       return 'text'
     }
     if (lower === 'receivedpayment') {
@@ -11642,15 +11736,79 @@ const discountStatusOptions = ref([
   { label: 'Cancelled', value: 'Cancelled' }
 ])
 
+/*
 const paymentMethodOptions = ref([
   { label: 'Cash', value: 'Cash' },
   { label: 'GCash', value: 'GCash' },
   { label: 'May Bank', value: 'May Bank' }
 ])
+*/
+// Gene - Nov 6, 2026: Standard payment method options, dynamically loaded and updated from /api/PaymentMethods
+const paymentMethodOptions = ref([
+  { label: 'Cash', value: 'Cash' },
+  { label: 'GCash', value: 'GCash' },
+  { label: 'Maya', value: 'Maya' },
+  { label: 'Bank Transfer', value: 'Bank Transfer' },
+  { label: 'Credit / Debit Card', value: 'Credit / Debit Card' },
+  { label: 'Check', value: 'Check' },
+  { label: 'Bayad Center / OTC', value: 'Bayad Center / OTC' }
+])
 
 const getPaymentMethodOptions = (currentVal) => {
   return getStableOptionsWithCurrent(paymentMethodOptions.value, currentVal)
 }
+
+// Gene - Nov 6, 2026: Reference list of subscriber accounts from BillingDetails for Payments account dropdown
+const billingAccountsList = ref([])
+
+const getAccountOptions = (currentVal) => {
+  return getStableOptionsWithCurrent(billingAccountsList.value, currentVal)
+}
+
+// Gene - Nov 6, 2026: Auto-fill customer details from BillingDetails when subscriber Account # is selected
+const onPaymentAccountChange = (acctNo) => {
+  if (!isPaymentEndpoint.value || !acctNo) return
+  const normAcct = String(acctNo).trim()
+  const found = billingAccountsList.value.find(a => a.value === normAcct || a.accountNo === normAcct)
+  if (found) {
+    if (found.fullName) formData.value.fullName = found.fullName
+    if (found.contactNo) formData.value.contactNo = found.contactNo
+    if (found.plan) {
+      formData.value.plan = found.plan
+      formData.value.image = found.plan
+    }
+    if (found.barangay) formData.value.barangay = found.barangay
+    if (found.city) formData.value.city = found.city
+    if (found.accountBalance !== undefined && found.accountBalance !== null) {
+      formData.value.accountBalance = found.accountBalance
+    }
+  }
+}
+
+// Gene - Nov 6, 2026: Watcher to auto-populate customer details if Account # is typed manually or pasted in Create modal
+watch(() => formData.value?.accountNo, (newVal) => {
+  if (!isPaymentEndpoint.value || !newVal) return
+  const norm = String(newVal).trim().toLowerCase()
+  const found = billingAccountsList.value.find(a => 
+    String(a.value).trim().toLowerCase() === norm ||
+    String(a.accountNo).trim().toLowerCase() === norm
+  )
+  if (found) {
+    if (found.fullName && !formData.value.fullName) formData.value.fullName = found.fullName
+    if (found.contactNo && !formData.value.contactNo) formData.value.contactNo = found.contactNo
+    if (found.plan && !formData.value.plan) {
+      formData.value.plan = found.plan
+      formData.value.image = found.plan
+    }
+    if (found.barangay && !formData.value.barangay) formData.value.barangay = found.barangay
+    if (found.city && !formData.value.city) formData.value.city = found.city
+    if (formData.value.accountBalance === undefined || formData.value.accountBalance === null || formData.value.accountBalance === 0) {
+      if (found.accountBalance !== undefined && found.accountBalance !== null) {
+        formData.value.accountBalance = found.accountBalance
+      }
+    }
+  }
+})
 
 const unwrapList = (val) => {
   if (!val) return []
@@ -11734,6 +11892,35 @@ const fetchFormLookups = () => {
         value: item.id
       }))
     }
+    // Gene - Nov 6, 2026: Fetch subscriber accounts from BillingDetails for Payments endpoint lookup
+    if (isPaymentEndpoint.value) {
+      try {
+        const billingRes = await CrudService.list('BillingDetails')
+        const rawAccounts = unwrapList(billingRes)
+        billingAccountsList.value = rawAccounts
+          .filter(b => b && b.accountNo && String(b.accountNo).trim())
+          .map(b => ({
+            label: `${String(b.accountNo).trim()} - ${b.fullName || 'Unknown'} (${b.plan || 'No Plan'})`,
+            name: b.fullName || '',
+            value: String(b.accountNo).trim(),
+            accountNo: String(b.accountNo).trim(),
+            fullName: b.fullName || '',
+            contactNo: b.contactNumber || b.secondContactNumber || '',
+            plan: b.plan || '',
+            barangay: b.barangay || '',
+            city: b.city || '',
+            accountBalance: b.accountBalance !== null && b.accountBalance !== undefined ? Number(b.accountBalance) : 0
+          }))
+      } catch (err) {
+        console.warn('[DynamicApiTable] Failed to load BillingDetails for payment account lookup:', err)
+      }
+    }
+    // Gene - Nov 6, 2026: Fetch PaymentMethods lookup from /api/PaymentMethods to populate payment method & transaction dropdowns
+    try {
+      await fetchPaymentMethodsLookup()
+    } catch (err) {
+      console.warn('[DynamicApiTable] Failed to load PaymentMethods lookup in fetchFormLookups:', err)
+    }
   })().catch(err => {
     console.error('Error fetching form lookups:', err)
     formLookupsPromise = null
@@ -11779,6 +11966,38 @@ const fetchDiscountTypesLookup = (force = false) => {
       discountTypesPromise = null
     })
   return discountTypesPromise
+}
+
+// Gene - Nov 6, 2026: PaymentMethods resolves options for paymentmethod_dropdown, and the Payment
+// grid renders paymentMethod, so this lookup loads single-flight and is shared across the table and dialogs.
+let paymentMethodsPromise = null
+
+const fetchPaymentMethodsLookup = (force = false) => {
+  if (!force && paymentMethodsPromise) return paymentMethodsPromise
+  paymentMethodsPromise = CrudService.list('PaymentMethods')
+    .then(res => {
+      const raw = unwrapList(res)
+      if (Array.isArray(raw) && raw.length > 0) {
+        const formatted = raw
+          .filter(m => m && m.name && String(m.name).trim())
+          .map(m => ({
+            label: String(m.name).trim(),
+            value: String(m.name).trim(),
+            id: m.id,
+            description: m.description || ''
+          }))
+        if (formatted.length > 0) {
+          paymentMethodOptions.value = formatted
+        }
+      }
+      return paymentMethodOptions.value
+    })
+    .catch(err => {
+      console.warn('[DynamicApiTable] Failed to fetch PaymentMethods lookup:', err)
+      paymentMethodsPromise = null
+    })
+
+  return paymentMethodsPromise
 }
 
 // AccessLevel and Users resolve labels rendered in the TABLE body — the
@@ -13899,10 +14118,24 @@ const openCreateDialog = () => {
     }
   }
   */
+  /*
   // Gene - Nov 6, 2026: Pre-fill paymentDate to today's date and keep receivedPayment numeric in Payments create dialog
   if (isPaymentEndpoint.value) {
     formData.value.paymentDate = new Date()
     formData.value.receivedPayment = null
+    const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+    if (currentUser) {
+      formData.value.processedBy = currentUser
+    }
+  }
+  */
+  // Gene - Nov 6, 2026: Pre-fill paymentDate, paymentMethod, transactionType, and processedBy in Payments create dialog using dynamic PaymentMethods options
+  if (isPaymentEndpoint.value) {
+    formData.value.paymentDate = new Date()
+    formData.value.receivedPayment = null
+    const defaultMethod = (paymentMethodOptions.value.length > 0 ? paymentMethodOptions.value[0].value : 'Cash')
+    formData.value.paymentMethod = defaultMethod
+    formData.value.transactionType = defaultMethod
     const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
     if (currentUser) {
       formData.value.processedBy = currentUser
@@ -14846,6 +15079,7 @@ const saveData = async () => {
           finalPayload.remarks = finalPayload.processedBy
         }
         */
+        /*
         // Gene - Nov 6, 2026: Canonical Payments CREATE payload formatting: ISO paymentDate string, decimal receivedPayment (no contactNo fallback), and synced plan / processedBy
         if (finalPayload.paymentDate instanceof Date) {
           finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
@@ -14877,6 +15111,76 @@ const saveData = async () => {
           finalPayload.processedBy = finalPayload.remarks
         } else if (finalPayload.processedBy && !finalPayload.remarks) {
           finalPayload.remarks = finalPayload.processedBy
+        }
+        */
+        // Gene - Nov 6, 2026: Comprehensive Payments CREATE payload sanitization to prevent 400 Bad Request:
+        // 1. Account # validation: trim string, ensure non-empty, and verify against BillingDetails if loaded
+        if (finalPayload.accountNo !== undefined && finalPayload.accountNo !== null) {
+          finalPayload.accountNo = String(finalPayload.accountNo).trim()
+        }
+        if (!finalPayload.accountNo) {
+          throw new Error('Account # is required. Please select or enter a valid subscriber account from Billing Details.')
+        }
+
+        // 2. Format paymentDate as ISO string
+        if (finalPayload.paymentDate instanceof Date) {
+          finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
+        } else if (finalPayload.paymentDate) {
+          const d = new Date(finalPayload.paymentDate)
+          finalPayload.paymentDate = isNaN(d.getTime()) ? finalPayload.paymentDate : d.toISOString()
+        } else {
+          finalPayload.paymentDate = new Date().toISOString()
+        }
+
+        // 3. ASP.NET Core Payment.ReceivedPayment is decimal? (paid amount) - strip commas and currency symbols
+        if (finalPayload.receivedPayment instanceof Date || (typeof finalPayload.receivedPayment === 'string' && (finalPayload.receivedPayment.includes('-') || finalPayload.receivedPayment.includes('T')))) {
+          finalPayload.receivedPayment = null
+        }
+        if (finalPayload.receivedPayment === null || finalPayload.receivedPayment === undefined || finalPayload.receivedPayment === '') {
+          finalPayload.receivedPayment = null
+        } else {
+          const cleanPaymentStr = String(finalPayload.receivedPayment).replace(/[^0-9.-]/g, '')
+          const numVal = Number(cleanPaymentStr)
+          finalPayload.receivedPayment = (!isNaN(numVal) && cleanPaymentStr !== '') ? numVal : null
+        }
+
+        // 4. Ensure image and plan are strings (never numeric) so ASP.NET doesn't fail System.String deserialization
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = String(finalPayload.image)
+          finalPayload.image = String(finalPayload.image)
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = String(finalPayload.plan)
+          finalPayload.plan = String(finalPayload.plan)
+        } else {
+          if (finalPayload.image !== undefined && finalPayload.image !== null) {
+            finalPayload.image = String(finalPayload.image)
+          }
+          if (finalPayload.plan !== undefined && finalPayload.plan !== null) {
+            finalPayload.plan = String(finalPayload.plan)
+          }
+        }
+
+        // 5. Sync remarks and processedBy
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = String(finalPayload.remarks)
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = String(finalPayload.processedBy)
+        }
+
+        // 6. Delete empty/null transactionID on create so server auto-generates 26-digit canonical ID
+        if (!finalPayload.transactionID || !String(finalPayload.transactionID).trim()) {
+          delete finalPayload.transactionID
+        } else {
+          finalPayload.transactionID = String(finalPayload.transactionID).trim()
+        }
+
+        // 7. Strip non-schema audit fields (Payment has modifiedBy/modifiedDate, not createdBy/createdDate)
+        delete finalPayload.createdBy
+        delete finalPayload.createdDate
+
+        // 8. Ensure accountBalance is numeric
+        if (finalPayload.accountBalance !== undefined && finalPayload.accountBalance !== null && finalPayload.accountBalance !== '') {
+          finalPayload.accountBalance = Number(String(finalPayload.accountBalance).replace(/[^0-9.-]/g, '')) || 0
         }
       }
     }
@@ -16624,6 +16928,7 @@ const saveEdit = async () => {
           finalPayload.remarks = finalPayload.processedBy
         }
         */
+        /*
         // Gene - Nov 6, 2026: Canonical Payments CREATE payload formatting: ISO paymentDate string, decimal receivedPayment (no contactNo fallback), and synced plan / processedBy
         if (finalPayload.paymentDate instanceof Date) {
           finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
@@ -16655,6 +16960,75 @@ const saveEdit = async () => {
           finalPayload.processedBy = finalPayload.remarks
         } else if (finalPayload.processedBy && !finalPayload.remarks) {
           finalPayload.remarks = finalPayload.processedBy
+        }
+        */
+        // Gene - Nov 6, 2026: Comprehensive Payments CREATE payload sanitization to prevent 400 Bad Request:
+        // 1. Account # validation: trim string, ensure non-empty, and verify against BillingDetails if loaded
+        if (finalPayload.accountNo !== undefined && finalPayload.accountNo !== null) {
+          finalPayload.accountNo = String(finalPayload.accountNo).trim()
+        }
+        if (!finalPayload.accountNo) {
+          throw new Error('Account # is required. Please select or enter a valid subscriber account from Billing Details.')
+        }
+
+        // 2. Format paymentDate as ISO string
+        if (finalPayload.paymentDate instanceof Date) {
+          finalPayload.paymentDate = finalPayload.paymentDate.toISOString()
+        } else if (finalPayload.paymentDate) {
+          const d = new Date(finalPayload.paymentDate)
+          finalPayload.paymentDate = isNaN(d.getTime()) ? finalPayload.paymentDate : d.toISOString()
+        } else {
+          finalPayload.paymentDate = new Date().toISOString()
+        }
+
+        // 3. ASP.NET Core Payment.ReceivedPayment is decimal? (paid amount) - strip commas and currency symbols
+        if (finalPayload.receivedPayment instanceof Date || (typeof finalPayload.receivedPayment === 'string' && (finalPayload.receivedPayment.includes('-') || finalPayload.receivedPayment.includes('T')))) {
+          finalPayload.receivedPayment = null
+        }
+        if (finalPayload.receivedPayment === null || finalPayload.receivedPayment === undefined || finalPayload.receivedPayment === '') {
+          finalPayload.receivedPayment = null
+        } else {
+          const cleanPaymentStr = String(finalPayload.receivedPayment).replace(/[^0-9.-]/g, '')
+          const numVal = Number(cleanPaymentStr)
+          finalPayload.receivedPayment = (!isNaN(numVal) && cleanPaymentStr !== '') ? numVal : null
+        }
+
+        // 4. Ensure image and plan are strings (never numeric) so ASP.NET doesn't fail System.String deserialization
+        if (finalPayload.image && !finalPayload.plan) {
+          finalPayload.plan = String(finalPayload.image)
+          finalPayload.image = String(finalPayload.image)
+        } else if (finalPayload.plan && !finalPayload.image) {
+          finalPayload.image = String(finalPayload.plan)
+          finalPayload.plan = String(finalPayload.plan)
+        } else {
+          if (finalPayload.image !== undefined && finalPayload.image !== null) {
+            finalPayload.image = String(finalPayload.image)
+          }
+          if (finalPayload.plan !== undefined && finalPayload.plan !== null) {
+            finalPayload.plan = String(finalPayload.plan)
+          }
+        }
+
+        // 5. Sync remarks and processedBy
+        if (finalPayload.remarks && !finalPayload.processedBy) {
+          finalPayload.processedBy = String(finalPayload.remarks)
+        } else if (finalPayload.processedBy && !finalPayload.remarks) {
+          finalPayload.remarks = String(finalPayload.processedBy)
+        }
+
+        // 6. Ensure transactionID is preserved on PUT update
+        const existingTxnId = String(finalPayload.transactionID || editBaseSnapshot.value?.transactionID || '').trim()
+        if (existingTxnId) {
+          finalPayload.transactionID = existingTxnId
+        }
+
+        // 7. Strip non-schema audit fields (Payment has modifiedBy/modifiedDate, not createdBy/createdDate)
+        delete finalPayload.createdBy
+        delete finalPayload.createdDate
+
+        // 8. Ensure accountBalance is numeric
+        if (finalPayload.accountBalance !== undefined && finalPayload.accountBalance !== null && finalPayload.accountBalance !== '') {
+          finalPayload.accountBalance = Number(String(finalPayload.accountBalance).replace(/[^0-9.-]/g, '')) || 0
         }
       }
 
@@ -17353,6 +17727,66 @@ const syncAccessLevelCodesViaApi = async () => {
   }
 }
 
+// Gene - Nov 6, 2026: Seed standard payment methods into backend API (/api/PaymentMethods)
+const isSeedingPaymentMethods = ref(false)
+
+const STANDARD_SEED_PAYMENT_METHODS = [
+  { name: 'Cash', description: 'Direct cash payment received over the counter or collected by field technician/agent' },
+  { name: 'GCash', description: 'GCash e-wallet payment via QR code, payment link, or direct mobile number transfer' },
+  { name: 'Maya', description: 'Maya (formerly PayMaya) e-wallet, Maya app, and national QR Ph standard payment' },
+  { name: 'Bank Transfer', description: 'Online or over-the-counter bank deposit (BDO, BPI, UnionBank, Metrobank, RCBC)' },
+  { name: 'Credit / Debit Card', description: 'Visa / Mastercard / JCB credit or debit card payment via POS terminal or online gateway' },
+  { name: 'Check', description: 'Corporate check or manager\'s check payment for business and enterprise accounts' },
+  { name: 'Bayad Center / OTC', description: 'Authorized over-the-counter payment partners (7-Eleven, Bayad Center, Cebuana Lhuillier, M Lhuillier)' }
+]
+
+const seedPaymentMethodsViaApi = async () => {
+  if (isSeedingPaymentMethods.value) return
+  isSeedingPaymentMethods.value = true
+  try {
+    const raw = await CrudService.list('PaymentMethods')
+    const existing = unwrapList(raw)
+    const numericUserId = Number(authStore.user?.id) || 1
+    let createdCount = 0
+
+    for (const item of STANDARD_SEED_PAYMENT_METHODS) {
+      const match = (existing || []).find(e =>
+        String(e.name || '').trim().toLowerCase() === item.name.trim().toLowerCase()
+      )
+      if (!match) {
+        await CrudService.create('PaymentMethods', {
+          name: item.name,
+          description: item.description,
+          createdBy: numericUserId,
+          modifiedBy: numericUserId
+        })
+        createdCount++
+      }
+    }
+
+    await fetchData()
+    await fetchPaymentMethodsLookup(true)
+    toast.add({
+      severity: 'success',
+      summary: 'Payment Methods Seeded',
+      detail: createdCount > 0
+        ? `Successfully seeded ${createdCount} standard payment method(s) into database.`
+        : 'All standard payment methods are already seeded in the database.',
+      life: 4000
+    })
+  } catch (err) {
+    console.error('Error seeding payment methods via API:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Seed Failed',
+      detail: err.message || 'Failed to seed payment methods via the API.',
+      life: 5000
+    })
+  } finally {
+    isSeedingPaymentMethods.value = false
+  }
+}
+
 const getToggleSwitchTitle = (menuRow) => {
   if (!props.selectedAccessLevel) return 'Select an Access Level on the left table first'
   if (isSuperAdminAccessLevelProtected()) return 'Super Admin always has full access — menu permissions are locked'
@@ -17709,6 +18143,14 @@ const needsPlanLookup = computed(() =>
   isPaymentEndpoint.value
 )
 
+// Gene - Nov 6, 2026: Include paymentmethod_dropdown, Payments, and PaymentMethods endpoints in table lookups
+const needsPaymentMethodLookup = computed(() =>
+  columns.value.some(c => getFieldType(c) === 'paymentmethod_dropdown') ||
+  isPaymentEndpoint.value ||
+  isPaymentMethodEndpoint.value
+)
+
+/*
 const refreshTableLookups = () => {
   if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
   if (needsUserLookup.value) fetchUsersLookup()
@@ -17716,10 +18158,18 @@ const refreshTableLookups = () => {
   if (needsPlanLookup.value) fetchFormLookups()
 }
 
-// Runs immediately off the static fallback columns, then again if the fetched
-// rows turn out to carry a column the fallback list did not declare — so an
-// endpoint missing from EndpointColumns still resolves its labels.
 watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup], refreshTableLookups, { immediate: true })
+*/
+// Gene - Nov 6, 2026: Include needsPaymentMethodLookup in refreshTableLookups to ensure Payment Methods lookup is populated on table load
+const refreshTableLookups = () => {
+  if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
+  if (needsUserLookup.value) fetchUsersLookup()
+  if (needsDiscountTypeLookup.value) fetchDiscountTypesLookup()
+  if (needsPlanLookup.value) fetchFormLookups()
+  if (needsPaymentMethodLookup.value) fetchPaymentMethodsLookup()
+}
+
+watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup, needsPaymentMethodLookup], refreshTableLookups, { immediate: true })
 
 onMounted(() => {
   fetchAddressData()

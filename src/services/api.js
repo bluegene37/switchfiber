@@ -290,11 +290,26 @@ apiClient.interceptors.response.use((response) => {
       }
     }
   }
+  /*
   if (!errorMessage) {
     if (!error.response && error.request) {
       errorMessage = 'Unable to connect to the API server. The backend may be offline or unreachable.'
     } else {
       errorMessage = error.response?.data?.title || error.message || 'An unexpected server error occurred.'
+    }
+  }
+  */
+  // Gene - Nov 6, 2026: Provide actionable guidance for Payments 400 Bad Request (unregistered subscriber account or invalid payload)
+  if (!errorMessage) {
+    if (!error.response && error.request) {
+      errorMessage = 'Unable to connect to the API server. The backend may be offline or unreachable.'
+    } else {
+      errorMessage = error.response?.data?.title || error.message || 'An unexpected server error occurred.'
+    }
+  }
+  if (error.response?.status === 400 && String(error.config?.url || '').includes('Payment')) {
+    if (!errorMessage || errorMessage === 'Bad Request' || errorMessage === 'One or more validation errors occurred.') {
+      errorMessage = 'Bad Request: The Account # must match an active subscriber account from Billing Details, and all required payment fields must be valid.'
     }
   }
 
