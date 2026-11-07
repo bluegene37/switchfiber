@@ -32,7 +32,11 @@ export const MONITORED_ENDPOINTS = [
   { key: 'promotions', path: '/Promotions', label: 'Promotions' },
   { key: 'inventoryCategory', path: '/InventoryCategory', label: 'Inventory Categories' },
   { key: 'inventoryItem', path: '/InventoryItem', label: 'Inventory Items' },
-  { key: 'inventoryLogs', path: '/InventoryLogs', label: 'Inventory Logs' }
+  { key: 'inventoryLogs', path: '/InventoryLogs', label: 'Inventory Logs' },
+  // Gene - Nov 7, 2026: Added Payments, Payment Methods, and Payment Types to monitored endpoints
+  { key: 'payments', path: '/Payments', label: 'Payments' },
+  { key: 'paymentMethods', path: '/PaymentMethods', label: 'Payment Methods' },
+  { key: 'paymentTypes', path: '/PaymentTypes', label: 'Payment Types' }
 ]
 
 export const labelForPath = (path) =>

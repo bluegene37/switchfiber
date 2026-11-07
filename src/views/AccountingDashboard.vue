@@ -508,12 +508,21 @@ const loadFinancialData = async () => {
       apiClient.get('/Payments')
     ])
 */
+/*
     // Gene - Sept 30, 2026: Request singular /Payment first (matching backend controller), with fallback to /Payments
     const [invRes, billingRes, planRes, paymentRes] = await Promise.allSettled([
       apiClient.get('/Invoices').catch(() => apiClient.get('/Invoice')),
       apiClient.get('/BillingDetails'),
       apiClient.get('/Plans'),
       apiClient.get('/Payment').catch(() => apiClient.get('/Payments'))
+    ])
+*/
+    // Gene - Nov 7, 2026: Query plural /Payments directly matching the updated Payments API controller
+    const [invRes, billingRes, planRes, paymentRes] = await Promise.allSettled([
+      apiClient.get('/Invoices').catch(() => apiClient.get('/Invoice')),
+      apiClient.get('/BillingDetails'),
+      apiClient.get('/Plans'),
+      apiClient.get('/Payments')
     ])
 
     let loadedInvoices = []
@@ -540,6 +549,7 @@ const loadFinancialData = async () => {
       invoices.value = loadedInvoices
       isDegraded.value = false
     } else if (Array.isArray(loadedPayments) && loadedPayments.length > 0) {
+      /*
       invoices.value = loadedPayments.map(p => {
         const amt = Number(p.contactNo) || Number(p.plan) || 0
         const status = (p.userEmail === 'Done' || p.userEmail === 'Approved') ? 'Paid' : (p.userEmail || 'Paid')
@@ -561,6 +571,36 @@ const loadFinancialData = async () => {
           orNo: p.orNo || '—',
           city: p.city || p.barangay || '',
           provider: p.provider || 'Recurring Fee',
+          remarks: p.remarks || ''
+        }
+      })
+      */
+      // Gene - Nov 7, 2026: Map canonical /api/Payments properties (receivedPayment = numeric paid amount, accountNo = Account #, fullName = Customer Name, paymentDate = Payment Date, paymentMethod = Payment Method)
+      invoices.value = loadedPayments.map(p => {
+        const isCanonicalAmt = typeof p.receivedPayment === 'number' ||
+          (p.receivedPayment !== null && p.receivedPayment !== undefined && p.receivedPayment !== '' && !String(p.receivedPayment).includes('-') && !isNaN(Number(p.receivedPayment)))
+        const amt = isCanonicalAmt ? Number(p.receivedPayment) : (Number(p.contactNo) || Number(p.plan) || 0)
+        const rawStatus = p.status || p.userEmail
+        const status = (!rawStatus || rawStatus === 'Done' || rawStatus === 'Approved') ? 'Paid' : rawStatus
+        const refNo = (p.referenceNo && p.referenceNo !== '-') ? p.referenceNo : ''
+        const resolvedDate = p.paymentDate || p.dateProcessed || (typeof p.receivedPayment === 'string' && p.receivedPayment.includes('-') ? p.receivedPayment : '')
+        return {
+          id: p.id,
+          invoiceNo: refNo ? `PAY-${refNo}` : (p.transactionID ? `TRX-${p.transactionID}` : `PAY-${p.id}`),
+          accountNo: p.accountNo || p.transactionID || '—',
+          fullName: p.fullName || p.accountNo || 'Subscriber',
+          plan: p.plan || p.image || 'SwitchConnect',
+          invoiceDate: resolvedDate,
+          dueDate: resolvedDate,
+          totalAmount: amt,
+          receivedPayment: amt,
+          invoiceBalance: Number(p.accountBalance) || 0,
+          paymentMethod: p.paymentMethod || p.provider || (refNo ? 'GCash / E-Wallet' : 'Cash'),
+          invoiceStatus: status,
+          referenceNo: refNo || '—',
+          orNo: p.orNo || '—',
+          city: p.city || p.barangay || '',
+          provider: p.transactionType || p.provider || 'Recurring Fee',
           remarks: p.remarks || ''
         }
       })

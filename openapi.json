@@ -5413,17 +5413,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Payment"
+                "$ref": "#/components/schemas/PaymentDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/Payment"
+                "$ref": "#/components/schemas/PaymentDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/Payment"
+                "$ref": "#/components/schemas/PaymentDto"
               }
             }
           },
@@ -5444,16 +5444,18 @@
         "operationId": "GetPayment",
         "parameters": [
           {
+            "name": "transactionID",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -5486,16 +5488,18 @@
         ],
         "parameters": [
           {
+            "name": "transactionid",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -5503,17 +5507,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Payment"
+                "$ref": "#/components/schemas/PaymentDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/Payment"
+                "$ref": "#/components/schemas/PaymentDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/Payment"
+                "$ref": "#/components/schemas/PaymentDto"
               }
             }
           },
@@ -5531,22 +5535,92 @@
         ],
         "parameters": [
           {
+            "name": "transactionId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Payments/search": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "name": "transactionID",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountNo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fullName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -11165,10 +11239,13 @@
             ]
           },
           "receivedPayment": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
             "type": [
               "null",
+              "number",
               "string"
-            ]
+            ],
+            "format": "double"
           },
           "dateProcessed": {
             "type": [
@@ -11297,6 +11374,98 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "PaymentDto": {
+        "type": "object",
+        "properties": {
+          "accountNo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "receivedPayment": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "processedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paymentMethod": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "referenceNo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "orNo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "remarks": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "modifiedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "userEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "provider": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "transactionType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "location": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "image": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

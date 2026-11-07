@@ -2833,7 +2833,8 @@
                   :placeholder="isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
                 />
                 -->
-                <!-- Gene - Nov 6, 2026: Auto-disabled transactionID with placeholder in Create modal for Payments endpoint -->
+                <!--
+                Gene - Nov 6, 2026: Auto-disabled transactionID with placeholder in Create modal for Payments endpoint
                 <InputText 
                   :id="col" 
                   v-model="formData[col]" 
@@ -2847,6 +2848,22 @@
                   :disabled="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
                   :readonly="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
                   :placeholder="isPaymentEndpoint && normalizeColKey(col) === 'transactionid' ? 'Auto-generated upon save' : (isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`))" 
+                />
+                -->
+                <!-- Gene - Nov 7, 2026: Balanced ternary parentheses in Create modal InputText placeholder expression -->
+                <InputText 
+                  :id="col" 
+                  v-model="formData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 
+                    'bg-light text-muted': isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid'),
+                    'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                    'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                  }" 
+                  :disabled="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
+                  :readonly="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
+                  :placeholder="isPaymentEndpoint && normalizeColKey(col) === 'transactionid' ? 'Auto-generated upon save' : (isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)))" 
                 />
                 <div v-if="getFieldMaxLength(col) && getFieldType(col) !== 'textarea' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'promotion_media_url'" class="d-flex justify-content-end text-xs text-muted mt-0.5">
                   <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 font-monospace">
@@ -16179,9 +16196,15 @@ const detectEditConflict = async () => {
     /*
     current = await CrudService.getById(props.endpoint, lookupId)
     */
+    /*
     // Gene - Nov 5, 2026: Pass transactionid query parameter when checking edit conflict for Payments
     const getByIdConfig = (isPaymentEndpoint.value && (base.transactionID || base.transactionid))
       ? { params: { transactionid: base.transactionID || base.transactionid } }
+      : {}
+    */
+    // Gene - Nov 7, 2026: Pass canonical transactionID query parameter on GET /api/Payments/{id} when checking edit conflict
+    const getByIdConfig = (isPaymentEndpoint.value && (base.transactionID || base.transactionid))
+      ? { params: { transactionID: base.transactionID || base.transactionid } }
       : {}
     current = await CrudService.getById(props.endpoint, lookupId, getByIdConfig)
   } catch {
@@ -17182,7 +17205,17 @@ const deleteRecord = async () => {
   deleteError.value = null
   try {
     console.log(`[DynamicApiTable] Submitting DELETE to endpoint: /api/${props.endpoint}/${targetId}`)
+    /*
     await CrudService.remove(props.endpoint, targetId)
+    */
+    // Gene - Nov 7, 2026: Pass transactionId query parameter on DELETE /api/Payments/{id} as required by the updated Payments API
+    const paymentDeleteTxnId = isPaymentEndpoint.value
+      ? String(recordToDelete.value?.transactionID || recordToDelete.value?.transactionId || recordToDelete.value?.transactionid || '').trim()
+      : ''
+    const deleteReqConfig = paymentDeleteTxnId
+      ? { params: { transactionId: paymentDeleteTxnId } }
+      : {}
+    await CrudService.remove(props.endpoint, targetId, deleteReqConfig)
     await fetchData()
     displayDeleteDialog.value = false
     toast.add({

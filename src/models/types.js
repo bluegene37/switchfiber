@@ -901,3 +901,52 @@
  * @property {number|string|null} createdBy
  * @property {number|string|null} modifiedBy
  */
+
+/**
+ * // Gene - Nov 7, 2026: Canonical Payment and PaymentDto definitions from updated /api/Payments OpenAPI schema
+ * @typedef {Object} Payment
+ * @property {number|string} id
+ * @property {string|null} transactionID
+ * @property {string|null} accountNo
+ * @property {string|null} fullName
+ * @property {string|null} contactNo
+ * @property {number|string|null} receivedPayment
+ * @property {string|null} dateProcessed
+ * @property {string|null} processedBy
+ * @property {string|null} paymentMethod
+ * @property {string|null} referenceNo
+ * @property {string|null} orNo
+ * @property {string|null} remarks
+ * @property {string|null} modifiedBy
+ * @property {string|null} modifiedDate
+ * @property {string|null} userEmail
+ * @property {string|null} status
+ * @property {string|null} provider
+ * @property {string|null} transactionType
+ * @property {string|null} location
+ * @property {string|null} paymentDate
+ * @property {string|null} barangay
+ * @property {string|null} city
+ * @property {string|null} image
+ * @property {string|null} plan
+ * @property {number|string|null} accountBalance
+ */
+
+/**
+ * @typedef {Object} PaymentDto
+ * @property {string|null} accountNo
+ * @property {number|string|null} receivedPayment
+ * @property {string|null} processedBy
+ * @property {string|null} paymentMethod
+ * @property {string|null} referenceNo
+ * @property {string|null} orNo
+ * @property {string|null} remarks
+ * @property {string|null} modifiedBy
+ * @property {string|null} userEmail
+ * @property {string|null} status
+ * @property {string|null} provider
+ * @property {string|null} transactionType
+ * @property {string|null} location
+ * @property {string|null} image
+ */
+

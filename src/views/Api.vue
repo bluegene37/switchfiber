@@ -254,6 +254,11 @@ const apiEndpoints = ref([
   { name: 'Access Level Menu', endpoint: 'AccessLevelMenu', description: 'Access level menu permission mappings' },
   { name: 'Invoice (Singular)', endpoint: 'Invoice', description: 'Single invoice entity lookup and generation' },
   { name: 'Invoices (Plural)', endpoint: 'Invoices', description: 'Customer billing invoices and statement records' },
+  // Gene - Nov 7, 2026: Added Payments, Payments Search, Payment Methods, and Payment Types to API Viewer endpoint list
+  { name: 'Payments', endpoint: 'Payments', description: 'Subscriber payment transactions, collections, and ledger records' },
+  { name: 'Payments Search', endpoint: 'Payments/search', description: 'Filtered payment search by transactionID, accountNo, fullName, or contactNumber' },
+  { name: 'Payment Methods', endpoint: 'PaymentMethods', description: 'Accepted payment methods and settlement channels' },
+  { name: 'Payment Types', endpoint: 'PaymentTypes', description: 'Transaction fee types and payment classifications' },
   { name: 'Barangays', endpoint: 'Barangays', description: 'Location barangay geographic lookup data' },
   { name: 'Radius Users', endpoint: 'RadiusUser', description: 'RADIUS subscriber user accounts and authentication profiles' },
   { name: 'Radius Sessions', endpoint: 'RadiusSession', description: 'Active RADIUS accounting sessions and connection state' },

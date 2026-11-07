@@ -295,11 +295,11 @@ export const EndpointSchemaMeta = {
   },
   "Payments": {
     "create": {
-      "schema": "Payment",
+      "schema": "PaymentDto",
       "required": []
     },
     "update": {
-      "schema": "Payment",
+      "schema": "PaymentDto",
       "required": []
     }
   },
