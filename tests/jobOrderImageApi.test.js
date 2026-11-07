@@ -629,4 +629,40 @@ describe('Job Order Image API & Multipart Integration Suite', () => {
     assert.ok(viewFormData.houseFront, 'houseFront remains')
     assert.equal(viewFormData.houseFrontPicture, undefined, 'houseFrontPicture removed from viewFormData')
   })
+
+  // Gene - Nov 7, 2026: Regression tests for Job Order image upload persistence (including boxReadingImage, portLabelImage, speedtestImage), billingDay null auto-default, and create/edit image display
+  test('DynamicApiTable persists uploaded Job Order images and merges them in View, Edit, and Table cells when GetJobOrderImage returns null', async () => {
+    const fs = await import('node:fs')
+    const content = fs.readFileSync('src/components/DynamicApiTable.vue', 'utf8')
+    const activeContent = content.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    assert.ok(
+      activeContent.includes('const getPersistedJobOrderImages = (joId) =>'),
+      'getPersistedJobOrderImages helper must be defined'
+    )
+    assert.ok(
+      activeContent.includes('const setPersistedJobOrderImage = (joId, colKey, dataUrl) =>'),
+      'setPersistedJobOrderImage helper must be defined'
+    )
+    assert.ok(
+      activeContent.includes('const removePersistedJobOrderImage = (joId, colKey) =>'),
+      'removePersistedJobOrderImage helper must be defined'
+    )
+    assert.ok(
+      activeContent.includes('normJoImageStr(payload.boxReadingImage)') &&
+      activeContent.includes('normJoImageStr(payload.portLabelImage)') &&
+      activeContent.includes('normJoImageStr(payload.speedtestImage)'),
+      'buildJobOrderPayload must sanitize image string fields with normJoImageStr to prevent HTTP 500 VARCHAR(255) truncation'
+    )
+    assert.ok(
+      activeContent.includes("await attachJoPhoto('boxReadingImage', 'BoxReadingImage', 'boxReadingImage.jpg')") &&
+      activeContent.includes("await attachJoPhoto('portLabelImage', 'PortLabelImage', 'portLabelImage.jpg')") &&
+      activeContent.includes("await attachJoPhoto('speedtestImage', 'SpeedtestImage', 'speedtestImage.jpg')"),
+      'saveEdit must process all 8 Job Order photo fields including boxReadingImage, portLabelImage, and speedtestImage'
+    )
+    assert.ok(
+      activeContent.includes("if (isJobOrderEndpoint.value && normalizeColKey(col) === 'billingday' && isBlank(val))"),
+      'validateRequired must auto-default blank billingDay on JobOrders so online-created Job Orders with null billingDay can save uploaded images'
+    )
+  })
 })

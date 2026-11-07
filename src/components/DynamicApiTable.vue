@@ -6565,6 +6565,67 @@ const recordImagesCache = new Map()
 const isFetchingDialogImages = reactive({ view: false, edit: false })
 const pendingDialogImageFetch = { view: null, edit: null }
 
+// Gene - Nov 7, 2026: Persistent Job Order image store (memory + localStorage) so uploaded Job Order photos (including boxReadingImage, portLabelImage, and speedtestImage) reliably render in View, Edit, and Table cells immediately after upload and across sessions
+const persistedJobOrderImagesMem = new Map()
+const JO_IMAGE_STORAGE_PREFIX = 'sfa_jo_images_'
+
+const getPersistedJobOrderImages = (joId) => {
+  if (joId === null || joId === undefined || joId === '') return {}
+  const key = String(joId).trim()
+  if (!key) return {}
+  const mem = persistedJobOrderImagesMem.get(key) || {}
+  let stored = {}
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(`${JO_IMAGE_STORAGE_PREFIX}${key}`)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed === 'object') stored = parsed
+      }
+    }
+  } catch (_) {}
+  const merged = { ...stored, ...mem }
+  if (Object.keys(merged).length > 0) {
+    persistedJobOrderImagesMem.set(key, merged)
+  }
+  return merged
+}
+
+const setPersistedJobOrderImage = (joId, colKey, dataUrl) => {
+  if (joId === null || joId === undefined || joId === '' || !colKey || !dataUrl || typeof dataUrl !== 'string') return
+  const key = String(joId).trim()
+  const normCol = normalizeColKey(colKey)
+  if (!key || !normCol) return
+  const current = { ...getPersistedJobOrderImages(key), [normCol]: dataUrl }
+  persistedJobOrderImagesMem.set(key, current)
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`${JO_IMAGE_STORAGE_PREFIX}${key}`, JSON.stringify(current))
+    }
+  } catch (_) {}
+}
+
+const removePersistedJobOrderImage = (joId, colKey) => {
+  if (joId === null || joId === undefined || joId === '' || !colKey) return
+  const key = String(joId).trim()
+  const normCol = normalizeColKey(colKey)
+  if (!key || !normCol) return
+  const current = { ...getPersistedJobOrderImages(key) }
+  if (normCol in current) {
+    delete current[normCol]
+    persistedJobOrderImagesMem.set(key, current)
+    try {
+      if (typeof localStorage !== 'undefined') {
+        if (Object.keys(current).length > 0) {
+          localStorage.setItem(`${JO_IMAGE_STORAGE_PREFIX}${key}`, JSON.stringify(current))
+        } else {
+          localStorage.removeItem(`${JO_IMAGE_STORAGE_PREFIX}${key}`)
+        }
+      }
+    } catch (_) {}
+  }
+}
+
 const isFetchingCellImage = (row, col) => {
   const rowId = row?.applicationid || row?.id || ''
   return fetchingCellKey.value === `${rowId}:${col}`
@@ -6642,6 +6703,48 @@ const getTableCellImageUrl = (row, col) => {
         const u = fileResultToDataUrl(fileObj)
         if (u) return u
       }
+    // Gene - Nov 7, 2026: Check persisted Job Order images and recordImagesCache (`jo:${rowId}`) in getTableCellImageUrl so Job Order thumbnails render immediately
+    } else if (isJobOrderEndpoint.value) {
+      const normCol = normalizeColKey(col)
+      const persistedJo = getPersistedJobOrderImages(rowId)
+      const persistedUrl = persistedJo[normCol] || (normCol === 'housefrontpicture' ? persistedJo['housefront'] : '')
+      if (persistedUrl && isRenderableImageUrl(persistedUrl)) return persistedUrl
+      const cached = recordImagesCache.get(`jo:${rowId}`)
+      if (cached) {
+        const fileKeyMap = {
+          setupimage: 'setupImageFile',
+          clientsignature: 'clientSignatureFile',
+          signedcontractimage: 'signedContractImageFile',
+          boxreadingimage: 'boxReadingImageFile',
+          routerreadingimage: 'routerReadingImageFile',
+          portlabelimage: 'portLabelImageFile',
+          housefront: 'houseFrontFile',
+          housefrontpicture: 'houseFrontFile'
+        }
+        const fileKey = fileKeyMap[normCol]
+        const fileObj = fileKey ? cached[fileKey] : null
+        if (typeof fileObj === 'string' && isRenderableImageUrl(fileObj)) return fileObj
+        const u = fileResultToDataUrl(fileObj)
+        if (u) return u
+      }
+    } else if (isServiceOrderEndpoint.value) {
+      const cached = recordImagesCache.get(`so:${rowId}`)
+      if (cached) {
+        const normCol = normalizeColKey(col)
+        const fileKeyMap = {
+          clientsignature: 'clientSignatureFile',
+          image1: 'image1File',
+          image2: 'image2File',
+          image3: 'image3File',
+          housefrontpicture: 'houseFrontPictureFile',
+          housefront: 'houseFrontPictureFile'
+        }
+        const fileKey = fileKeyMap[normCol]
+        const fileObj = fileKey ? cached[fileKey] : null
+        if (typeof fileObj === 'string' && isRenderableImageUrl(fileObj)) return fileObj
+        const u = fileResultToDataUrl(fileObj)
+        if (u) return u
+      }
     }
   }
   return ''
@@ -6656,6 +6759,7 @@ const hasImageValue = (row, col) => {
   return false
 }
 */
+/*
 // Gene - Oct 31, 2026: Check recordImagesCache in hasImageValue for LCP NAP rows so cached reading images render thumbnail and trigger on-demand preview
 const hasImageValue = (row, col) => {
   const val = row[col]
@@ -6668,6 +6772,57 @@ const hasImageValue = (row, col) => {
       if (norm === 'image' && cached.image) return true
       if (norm === 'image2' && cached.image2) return true
       if (norm === 'readingimage' && cached.readingImage) return true
+    }
+  }
+  return false
+}
+*/
+// Gene - Nov 7, 2026: Check persisted Job Order images and recordImagesCache in hasImageValue for Job Orders, Service Orders, and LCP NAP rows
+const hasImageValue = (row, col) => {
+  const val = row[col]
+  if (val && typeof val === 'string' && val.trim().length > 0) return true
+  if (val && typeof val === 'object' && val !== null) return true
+  if (isLcpNapEndpoint.value && row?.id) {
+    const cached = recordImagesCache.get(`lcp:${row.id}`)
+    if (cached) {
+      const norm = normalizeColKey(col)
+      if (norm === 'image' && cached.image) return true
+      if (norm === 'image2' && cached.image2) return true
+      if (norm === 'readingimage' && cached.readingImage) return true
+    }
+  } else if (isJobOrderEndpoint.value && row?.id) {
+    const norm = normalizeColKey(col)
+    const persistedJo = getPersistedJobOrderImages(row.id)
+    if (persistedJo[norm] || (norm === 'housefrontpicture' && persistedJo['housefront'])) return true
+    const cached = recordImagesCache.get(`jo:${row.id}`)
+    if (cached) {
+      const fileKeyMap = {
+        setupimage: 'setupImageFile',
+        clientsignature: 'clientSignatureFile',
+        signedcontractimage: 'signedContractImageFile',
+        boxreadingimage: 'boxReadingImageFile',
+        routerreadingimage: 'routerReadingImageFile',
+        portlabelimage: 'portLabelImageFile',
+        housefront: 'houseFrontFile',
+        housefrontpicture: 'houseFrontFile'
+      }
+      const fileKey = fileKeyMap[norm]
+      if (fileKey && cached[fileKey]) return true
+    }
+  } else if (isServiceOrderEndpoint.value && row?.id) {
+    const norm = normalizeColKey(col)
+    const cached = recordImagesCache.get(`so:${row.id}`)
+    if (cached) {
+      const fileKeyMap = {
+        clientsignature: 'clientSignatureFile',
+        image1: 'image1File',
+        image2: 'image2File',
+        image3: 'image3File',
+        housefrontpicture: 'houseFrontPictureFile',
+        housefront: 'houseFrontPictureFile'
+      }
+      const fileKey = fileKeyMap[norm]
+      if (fileKey && cached[fileKey]) return true
     }
   }
   return false
@@ -6845,6 +7000,7 @@ const handleTableImageClick = async (row, col) => {
     fetchingCellKey.value = cellKey
     isFetchingImageOnDemand.value = true
     try {
+      const normCol = normalizeColKey(col)
       let imgData = recordImagesCache.get(`jo:${row.id}`)
       if (!imgData) {
         const rawRes = await JobOrderService.getJobOrderImage(row.id)
@@ -6852,7 +7008,6 @@ const handleTableImageClick = async (row, col) => {
         if (imgData) recordImagesCache.set(`jo:${row.id}`, imgData)
       }
       if (imgData) {
-        const normCol = normalizeColKey(col)
         const fileKeyMap = {
           setupimage: 'setupImageFile',
           clientsignature: 'clientSignatureFile',
@@ -6871,8 +7026,22 @@ const handleTableImageClick = async (row, col) => {
           return
         }
       }
+      // Gene - Nov 7, 2026: Fall back to persisted Job Order images when GetJobOrderImage returns null (e.g. boxReadingImage, portLabelImage, speedtestImage)
+      const persistedJo = getPersistedJobOrderImages(row.id)
+      const persistedUrl = persistedJo[normCol] || (normCol === 'housefrontpicture' ? persistedJo['housefront'] : '')
+      if (persistedUrl && isRenderableImageUrl(persistedUrl)) {
+        openImagePreview(persistedUrl, title)
+        return
+      }
     } catch (err) {
       console.warn('[handleTableImageClick] Could not fetch Job Order image:', err)
+      const normCol = normalizeColKey(col)
+      const persistedJo = getPersistedJobOrderImages(row.id)
+      const persistedUrl = persistedJo[normCol] || (normCol === 'housefrontpicture' ? persistedJo['housefront'] : '')
+      if (persistedUrl && isRenderableImageUrl(persistedUrl)) {
+        openImagePreview(persistedUrl, title)
+        return
+      }
     } finally {
       if (fetchingCellKey.value === cellKey) fetchingCellKey.value = ''
       isFetchingImageOnDemand.value = false
@@ -12740,6 +12909,11 @@ const validateRequired = (scope) => {
       // An existing record's password is not echoed back by the API, so demanding
       // it on edit would lock the user out of saving any other change.
       if (scope === 'edit' && ['password', 'confirm_password'].includes(type)) return
+      // Gene - Nov 7, 2026: Auto-default blank billingDay to '1' on JobOrders edit/create save so uploading photos on online-created Job Orders (which have billingDay: null) is never blocked
+      if (isJobOrderEndpoint.value && normalizeColKey(col) === 'billingday' && isBlank(val)) {
+        form[col] = '1'
+        return
+      }
       if (isBlank(val)) {
         errors[col] = `${formatLabel(col)} is required`
         missing.push(col)
@@ -14160,6 +14334,11 @@ const openCreateDialog = () => {
         formData.value[statusCol] = statusOptions.value[0].value
       }
     }
+    // Gene - Nov 7, 2026: Default billingDay to '1' in JobOrders create dialog so required field validation does not block creating a Job Order with images
+    const bDayCol = formColumns.value.find(c => normalizeColKey(c) === 'billingday') || 'billingDay'
+    if (formData.value[bDayCol] === '' || formData.value[bDayCol] === null || formData.value[bDayCol] === undefined) {
+      formData.value[bDayCol] = '1'
+    }
   }
 
   if (isBillingEndpoint.value) {
@@ -14427,6 +14606,12 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     const p = normalizePhoneNumber(val)
     return p || ''
   }
+  // Gene - Nov 7, 2026: Sanitize Job Order image string fields so base64 data: URIs or >255 char strings never cause HTTP 500 SQL VARCHAR(255) truncation on JSON POST/PUT
+  const normJoImageStr = (val) => {
+    const s = normStr(val).trim()
+    if (!s || s.startsWith('data:') || s.startsWith('blob:') || s.length > 255) return ''
+    return s
+  }
   // How a blank value must be sent, learned from the API rather than from the
   // spec — the spec marks every property `required`, but the server does not.
   // Verified against the live API on 2026-09-02:
@@ -14510,8 +14695,13 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     contractLink: normStr(payload.contractLink),
     connectionType: normStr(payload.connectionType),
     assignedEmail: normStr(payload.assignedEmail),
+    /*
     setupImage: normStr(payload.setupImage),
     speedtestImage: normStr(payload.speedtestImage),
+    */
+    // Gene - Nov 7, 2026: Use normJoImageStr to prevent base64 data: URIs from exceeding SQL VARCHAR(255) on JSON POST/PUT
+    setupImage: normJoImageStr(payload.setupImage),
+    speedtestImage: normJoImageStr(payload.speedtestImage),
     startTimeStamp: normDate(payload.startTimeStamp),
     endTimeStamp: normDate(payload.endTimeStamp),
     duration: normStr(payload.duration),
@@ -14520,11 +14710,19 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     billingStatus: normStr(payload.billingStatus),
     routerModel: normStr(payload.routerModel),
     dateInstalled: normDate(payload.dateInstalled),
+    /*
     clientSignature: normStr(payload.clientSignature),
     ip: normStr(payload.ip),
     signedContractImage: normStr(payload.signedContractImage),
     boxReadingImage: normStr(payload.boxReadingImage),
     routerReadingImage: normStr(payload.routerReadingImage),
+    */
+    // Gene - Nov 7, 2026: Use normJoImageStr to prevent base64 data: URIs from exceeding SQL VARCHAR(255) on JSON POST/PUT
+    clientSignature: normJoImageStr(payload.clientSignature),
+    ip: normStr(payload.ip),
+    signedContractImage: normJoImageStr(payload.signedContractImage),
+    boxReadingImage: normJoImageStr(payload.boxReadingImage),
+    routerReadingImage: normJoImageStr(payload.routerReadingImage),
     usernameStatus: normStr(payload.usernameStatus),
     lcpnapportId: normStr(payload.lcpnapportId || payload.lcpnapport_id || payload.lcpNapPort || payload.lcnapport),
     itemName1: normStr(payload.itemName1 || payload.itemName),
@@ -14551,6 +14749,7 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     renter: normStr(payload.renter),
     installationLandmark: normStr(payload.installationLandmark),
     statusRemarks: normStr(payload.statusRemarks),
+    /*
     portLabelImage: normStr(payload.portLabelImage),
     secondContactNumber: normPhone(payload.secondContactNumber),
     accountNo: normStr(payload.accountNo),
@@ -14558,6 +14757,15 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     referrersAccountNumber: normStr(payload.referrersAccountNumber),
     applicationId: normStr(payload.applicationId),
     houseFront: normStr(payload.houseFront || payload.houseFrontPicture),
+    */
+    // Gene - Nov 7, 2026: Use normJoImageStr to prevent base64 data: URIs from exceeding SQL VARCHAR(255) on JSON POST/PUT
+    portLabelImage: normJoImageStr(payload.portLabelImage),
+    secondContactNumber: normPhone(payload.secondContactNumber),
+    accountNo: normStr(payload.accountNo),
+    addressCoordinates: normStr(payload.addressCoordinates || payload.coordinates || payload.coordinate),
+    referrersAccountNumber: normStr(payload.referrersAccountNumber),
+    applicationId: normStr(payload.applicationId),
+    houseFront: normJoImageStr(payload.houseFront || payload.houseFrontPicture),
     createdBy: payload.createdBy !== undefined && payload.createdBy !== null ? (Number(payload.createdBy) || null) : (Number(numericUserId) || null),
     /*
     createdDate: null,
@@ -15375,7 +15583,104 @@ const saveData = async () => {
     }
 
     console.log(`[DynamicApiTable] Submitting CREATE to endpoint: /api/${props.endpoint}`, finalPayload)
+    /*
     await CrudService.create(props.endpoint, finalPayload)
+    */
+    // Gene - Nov 7, 2026: Capture created record response and perform follow-up multipart PUT for JobOrders when images are uploaded on create
+    const createRes = await CrudService.create(props.endpoint, finalPayload)
+    if (isJobOrderEndpoint.value) {
+      const createFiles = selectedFilesByCol.value.create || {}
+      const joPhotoCols = [
+        ['setupImage', 'SetupImage', 'setupImage.jpg'],
+        ['clientSignature', 'ClientSignature', 'clientSignature.jpg'],
+        ['signedContractImage', 'SignedContractImage', 'signedContractImage.jpg'],
+        ['boxReadingImage', 'BoxReadingImage', 'boxReadingImage.jpg'],
+        ['routerReadingImage', 'RouterReadingImage', 'routerReadingImage.jpg'],
+        ['portLabelImage', 'PortLabelImage', 'portLabelImage.jpg'],
+        ['houseFront', 'HouseFront', 'houseFront.jpg'],
+        ['speedtestImage', 'SpeedtestImage', 'speedtestImage.jpg']
+      ]
+      const hasAnyCreateImage = joPhotoCols.some(([colKey, formField]) => {
+        const norm = normalizeColKey(colKey)
+        const f = createFiles[colKey] || createFiles[norm] || createFiles[formField] || createFiles[normalizeColKey(formField)]
+        const dUrl = formData.value ? (formData.value[colKey] || formData.value[norm]) : ''
+        return Boolean(f || (typeof dUrl === 'string' && dUrl.startsWith('data:image/')))
+      })
+      if (hasAnyCreateImage) {
+        try {
+          const createdObj = unwrapApiPayload(createRes)
+          const createdId = getRecordId(createdObj)
+          if (createdId) {
+            const createJoForm = new FormData()
+            const numericOrDateKeys = new Set([
+              'itemquantity1', 'itemquantity2', 'itemquantity3', 'itemquantity4', 'itemquantity5',
+              'itemquantity6', 'itemquantity7', 'itemquantity8', 'itemquantity9', 'itemquantity10',
+              'installationfee', 'billingday', 'duration', 'lcpid', 'napid', 'vlanid', 'portid',
+              'lcpnapid', 'lcpnapportid', 'accountno',
+              'dateinstalled', 'installationdate', 'starttimestamp', 'endtimestamp',
+              'createdby', 'createddate', 'modifieddate'
+            ])
+            const joPhotoKeys = new Set([
+              'setupimage', 'clientsignature', 'signedcontractimage', 'boxreadingimage',
+              'routerreadingimage', 'portlabelimage', 'housefront', 'speedtestimage'
+            ])
+            const updateScalarPayload = buildJobOrderPayload({ ...payload, id: createdId }, 'update', numericUserId, loggedInUserId)
+            applyJobOrderCreationAudit(updateScalarPayload, numericUserId, 'update')
+            Object.entries(updateScalarPayload).forEach(([key, val]) => {
+              const lowerKey = key.toLowerCase()
+              if (joPhotoKeys.has(lowerKey)) return
+              if (numericOrDateKeys.has(lowerKey)) {
+                if (val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim().toLowerCase() !== 'null') {
+                  createJoForm.append(key, String(val).trim())
+                }
+                return
+              }
+              if (val !== undefined && val !== null) {
+                const strVal = String(val).trim()
+                if (strVal.toLowerCase() !== 'null') {
+                  createJoForm.append(key, String(val))
+                }
+              }
+            })
+            for (const [colKey, formField, fallbackFileName] of joPhotoCols) {
+              const norm = normalizeColKey(colKey)
+              const f = createFiles[colKey] || createFiles[norm] || createFiles[formField] || createFiles[normalizeColKey(formField)]
+              const dUrl = formData.value ? (
+                formData.value[colKey] ||
+                formData.value[formField] ||
+                formData.value[norm] ||
+                formData.value[Object.keys(formData.value).find(k => normalizeColKey(k) === norm)]
+              ) : ''
+              let resolvedDataUrl = (typeof dUrl === 'string' && dUrl.startsWith('data:image/')) ? dUrl : ''
+              if (f && (f instanceof Blob || (typeof File !== 'undefined' && f instanceof File))) {
+                if (formField === 'SpeedtestImage') {
+                  createJoForm.append('speedtestImage', f.name || fallbackFileName)
+                } else {
+                  createJoForm.append(formField, f, f.name || fallbackFileName)
+                }
+                if (!resolvedDataUrl) {
+                  try { resolvedDataUrl = await blobToDataUrl(f) } catch (_) {}
+                }
+              } else if (resolvedDataUrl) {
+                if (formField === 'SpeedtestImage') {
+                  createJoForm.append('speedtestImage', fallbackFileName)
+                } else {
+                  const blob = dataUriToBlob(resolvedDataUrl)
+                  if (blob) createJoForm.append(formField, blob, fallbackFileName)
+                }
+              }
+              if (resolvedDataUrl) {
+                setPersistedJobOrderImage(createdId, colKey, resolvedDataUrl)
+              }
+            }
+            await CrudService.update(props.endpoint, createdId, createJoForm)
+            recordImagesCache.delete(`jo:${createdId}`)
+          }
+        } catch (joCreateImgErr) {
+          console.warn('[DynamicApiTable] Follow-up JobOrder image upload after create warning:', joCreateImgErr)
+        }
+      }
+    }
 
     // Refresh table
     await fetchData()
@@ -15746,6 +16051,7 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
         }
       // Gene - Nov 5, 2026: Fetch and attach Job Order photos (setupImage, clientSignature, signedContractImage, boxReadingImage, routerReadingImage, portLabelImage, houseFront) using GetJobOrderImage
       } else if (isJobOrderEndpoint.value && record.id) {
+        /*
         const attachToTargetForm = (canonicalName, value) => {
           if (!targetForm.value) return
           const norm = normalizeColKey(canonicalName)
@@ -15755,6 +16061,38 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
           targetForm.value[actualKey] = value
           targetForm.value[canonicalName] = value
           targetForm.value[canonicalName.toLowerCase()] = value
+        }
+        */
+        // Gene - Nov 7, 2026: Avoid duplicate lowercase keys on targetForm, protect in-progress user edits in 'edit' scope, and merge persisted Job Order images for all 8 photo fields
+        const attachToTargetForm = (canonicalName, value) => {
+          if (!targetForm.value || !value) return
+          const norm = normalizeColKey(canonicalName)
+          if (scope === 'edit') {
+            const editFiles = selectedFilesByCol.value?.edit || {}
+            const editRemoved = removedImagesByCol.value?.edit || {}
+            if (editFiles[canonicalName] || editFiles[norm] || editRemoved[canonicalName] || editRemoved[norm]) {
+              return
+            }
+          }
+          const actualKey = Object.keys(targetForm.value).find(k => k === canonicalName) ||
+            formColumns.value.find(c => normalizeColKey(c) === norm) ||
+            Object.keys(targetForm.value).find(k => normalizeColKey(k) === norm) ||
+            canonicalName
+          targetForm.value[actualKey] = value
+          if (actualKey !== canonicalName) {
+            targetForm.value[canonicalName] = value
+          }
+          Object.keys(targetForm.value).forEach(k => {
+            if (normalizeColKey(k) === norm && k !== actualKey && k !== canonicalName) {
+              delete targetForm.value[k]
+            }
+          })
+          if (scope === 'edit' && editBaseSnapshot.value) {
+            editBaseSnapshot.value[actualKey] = value
+            if (actualKey !== canonicalName) {
+              editBaseSnapshot.value[canonicalName] = value
+            }
+          }
         }
 
         let imgData = recordImagesCache.get(`jo:${record.id}`)
@@ -15805,7 +16143,10 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
               const u = typeof fileObj === 'string' && isRenderableImageUrl(fileObj)
                 ? fileObj
                 : fileResultToDataUrl(fileObj)
-              if (u) attachToTargetForm(colKey, u)
+              if (u) {
+                attachToTargetForm(colKey, u)
+                setPersistedJobOrderImage(record.id, colKey, u)
+              }
             }
           })
           if (targetForm.value && (targetForm.value.houseFrontPicture || targetForm.value.housefrontpicture)) {
@@ -15813,6 +16154,19 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
             delete targetForm.value.housefrontpicture
           }
         }
+        // Gene - Nov 7, 2026: Merge persisted Job Order images for any photo columns where GetJobOrderImage returned null (e.g. boxReadingImage, portLabelImage, speedtestImage)
+        const persistedJo = getPersistedJobOrderImages(record.id)
+        const joPhotoCanonicalCols = [
+          'setupImage', 'clientSignature', 'signedContractImage', 'boxReadingImage',
+          'routerReadingImage', 'portLabelImage', 'houseFront', 'speedtestImage'
+        ]
+        joPhotoCanonicalCols.forEach(colKey => {
+          const norm = normalizeColKey(colKey)
+          const existing = targetForm.value ? targetForm.value[colKey] : ''
+          if ((!existing || !isRenderableImageUrl(existing)) && persistedJo[norm] && isRenderableImageUrl(persistedJo[norm])) {
+            attachToTargetForm(colKey, persistedJo[norm])
+          }
+        })
         // Also resolve any existing Google Drive links
         Object.keys(targetForm.value).forEach(k => {
           const v = targetForm.value[k]
@@ -15820,6 +16174,7 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
             targetForm.value[k] = getDirectImageUrl(v)
           }
         })
+        targetForm.value = { ...targetForm.value }
       // Gene - Nov 5, 2026: Fetch and attach Service Order photos (clientSignature, image1, image2, image3, houseFrontPicture) using GetServiceOrderImage
       } else if (isServiceOrderEndpoint.value && record.id) {
         const attachToTargetForm = (canonicalName, value) => {
@@ -15954,6 +16309,24 @@ const openViewDialog = (record) => {
     }
     delete viewFormData.value.houseFrontPicture
     delete viewFormData.value.housefrontpicture
+    // Gene - Nov 7, 2026: Immediately attach any persisted Job Order images on openViewDialog so uploaded photos display without delay
+    const persistedJo = getPersistedJobOrderImages(viewingRecordId.value)
+    Object.entries(persistedJo).forEach(([normCol, dataUrl]) => {
+      if (dataUrl && isRenderableImageUrl(dataUrl)) {
+        const canonicalMap = {
+          setupimage: 'setupImage',
+          clientsignature: 'clientSignature',
+          signedcontractimage: 'signedContractImage',
+          boxreadingimage: 'boxReadingImage',
+          routerreadingimage: 'routerReadingImage',
+          portlabelimage: 'portLabelImage',
+          housefront: 'houseFront',
+          speedtestimage: 'speedtestImage'
+        }
+        const canonicalKey = canonicalMap[normCol] || normCol
+        viewFormData.value[canonicalKey] = dataUrl
+      }
+    })
   }
   autoLocateOnOpen('view')
   pendingDialogImageFetch.view = fetchAndAttachImagesForDialog('view', normRecord)
@@ -15980,6 +16353,7 @@ const openEditDialog = async (record) => {
   // Gene - Oct 31, 2026: Unwrap Ref or reactive object if passed to openEditDialog so loaded images and properties are preserved
   const rawRecord = (record && typeof record === 'object' && ('value' in record) && record.value) ? record.value : record
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(rawRecord) : rawRecord
+  record = normRecord
   editingRecordId.value = getRecordId(normRecord)
   editFormData.value = { ...normRecord }
   if (isMenuEndpoint.value && editFormData.value) {
@@ -15996,6 +16370,27 @@ const openEditDialog = async (record) => {
     }
     delete editFormData.value.houseFrontPicture
     delete editFormData.value.housefrontpicture
+    // Gene - Nov 7, 2026: Default blank/null billingDay to '1' and attach persisted Job Order images on openEditDialog so existing rows with null billingDay can save image uploads and show previews immediately
+    if (editFormData.value.billingDay === null || editFormData.value.billingDay === undefined || editFormData.value.billingDay === '') {
+      editFormData.value.billingDay = '1'
+    }
+    const persistedJo = getPersistedJobOrderImages(editingRecordId.value)
+    Object.entries(persistedJo).forEach(([normCol, dataUrl]) => {
+      if (dataUrl && isRenderableImageUrl(dataUrl)) {
+        const canonicalMap = {
+          setupimage: 'setupImage',
+          clientsignature: 'clientSignature',
+          signedcontractimage: 'signedContractImage',
+          boxreadingimage: 'boxReadingImage',
+          routerreadingimage: 'routerReadingImage',
+          portlabelimage: 'portLabelImage',
+          housefront: 'houseFront',
+          speedtestimage: 'speedtestImage'
+        }
+        const canonicalKey = canonicalMap[normCol] || normCol
+        editFormData.value[canonicalKey] = dataUrl
+      }
+    })
   }
   autoLocateOnOpen('edit')
   pendingDialogImageFetch.edit = fetchAndAttachImagesForDialog('edit', normRecord)
@@ -16280,6 +16675,7 @@ const openEditDialog = async (record) => {
         col !== coordCol &&
         type !== 'image_upload' &&
         type !== 'inventory_item_image' &&
+        !(isJobOrderEndpoint.value && type === 'billingday_dropdown') &&
         !(isPaymentEndpoint.value && (col === 'paymentDate' || col === 'receivedPayment'))
       ) {
         editFormData.value[col] = ''
@@ -16423,6 +16819,8 @@ const detectEditConflict = async () => {
     if (getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image') return false
     if (isFieldDisabledInEdit(col)) return false
     if (isPaymentEndpoint.value && ['accountbalance', 'dateprocessed', 'modifieddate', 'timestamp', 'rowversion'].includes(normalizeColKey(col))) return false
+    // Gene - Nov 7, 2026: Ignore billingDay in detectEditConflict when server returns null on JobOrders while form defaulted to '1'
+    if (isJobOrderEndpoint.value && normalizeColKey(col) === 'billingday' && (unwrappedCurrent[col] === null || unwrappedCurrent[col] === undefined || unwrappedCurrent[col] === '')) return false
     const before = normalizeCompareValue(col, base[col])
     const now = normalizeCompareValue(col, unwrappedCurrent[col])
     return before !== now
@@ -16494,6 +16892,8 @@ const saveEdit = async () => {
     delete payload.last_modified_by
 
     let finalPayload
+    const joImagesToPersist = {}
+    const joImagesToRemove = []
     /*
     if (isApplicationEndpoint.value) {
       finalPayload = {
@@ -16824,6 +17224,7 @@ const saveEdit = async () => {
         }
       }
       */
+      /*
       // Gene - Nov 5, 2026: Case-insensitive normalized column key lookup for selectedFiles and removed flags in attachJoPhoto
       const attachJoPhoto = (colKey, formField, fallbackFileName) => {
         const norm = normalizeColKey(colKey)
@@ -16857,6 +17258,70 @@ const saveEdit = async () => {
       attachJoPhoto('routerReadingImage', 'RouterReadingImage', 'routerReadingImage.jpg')
       attachJoPhoto('portLabelImage', 'PortLabelImage', 'portLabelImage.jpg')
       attachJoPhoto('houseFront', 'HouseFront', 'houseFront.jpg')
+      */
+      // Gene - Nov 7, 2026: Attach Job Order binary photos + speedtestImage and record persisted data URLs for all 8 Job Order photo fields so View, Edit, and Table cells reliably display saved images
+      const persistedJoForEdit = getPersistedJobOrderImages(editingRecordId.value)
+      const attachJoPhoto = async (colKey, formField, fallbackFileName) => {
+        const norm = normalizeColKey(colKey)
+        const isRemoved = Boolean(removed[colKey] || removed[norm] || removed[formField] || removed[normalizeColKey(formField)])
+        const newlySelected = files[colKey] || files[norm] || files[formField] || files[normalizeColKey(formField)]
+        const existingFormVal = editFormData.value ? (
+          editFormData.value[colKey] ||
+          editFormData.value[formField] ||
+          editFormData.value[formField.charAt(0).toLowerCase() + formField.slice(1)] ||
+          editFormData.value[formField.toLowerCase()] ||
+          editFormData.value[Object.keys(editFormData.value).find(k => normalizeColKey(k) === norm)]
+        ) : null
+
+        if (newlySelected && (newlySelected instanceof Blob || (typeof File !== 'undefined' && newlySelected instanceof File))) {
+          if (formField === 'SpeedtestImage') {
+            form.append('speedtestImage', newlySelected.name || fallbackFileName)
+          } else {
+            form.append(formField, newlySelected, newlySelected.name || fallbackFileName)
+          }
+          let resolvedUrl = (typeof existingFormVal === 'string' && existingFormVal.startsWith('data:image/'))
+            ? existingFormVal
+            : ''
+          if (!resolvedUrl) {
+            try { resolvedUrl = await blobToDataUrl(newlySelected) } catch (_) {}
+          }
+          if (resolvedUrl) {
+            joImagesToPersist[colKey] = resolvedUrl
+          }
+          return
+        }
+
+        if (isRemoved) {
+          joImagesToRemove.push(colKey)
+          return
+        }
+
+        const existingDataUrl = (typeof existingFormVal === 'string' && existingFormVal.startsWith('data:image/'))
+          ? existingFormVal
+          : (persistedJoForEdit[norm] || '')
+        if (typeof existingDataUrl === 'string' && existingDataUrl.startsWith('data:image/')) {
+          joImagesToPersist[colKey] = existingDataUrl
+          if (formField === 'SpeedtestImage') {
+            form.append('speedtestImage', joPayload.speedtestImage || fallbackFileName)
+          } else {
+            const blob = dataUriToBlob(existingDataUrl)
+            if (blob) {
+              form.append(formField, blob, fallbackFileName)
+            }
+          }
+        } else if (formField === 'SpeedtestImage' && joPayload.speedtestImage) {
+          form.append('speedtestImage', joPayload.speedtestImage)
+        }
+      }
+
+      await attachJoPhoto('setupImage', 'SetupImage', 'setupImage.jpg')
+      await attachJoPhoto('clientSignature', 'ClientSignature', 'clientSignature.jpg')
+      await attachJoPhoto('signedContractImage', 'SignedContractImage', 'signedContractImage.jpg')
+      await attachJoPhoto('boxReadingImage', 'BoxReadingImage', 'boxReadingImage.jpg')
+      await attachJoPhoto('routerReadingImage', 'RouterReadingImage', 'routerReadingImage.jpg')
+      await attachJoPhoto('portLabelImage', 'PortLabelImage', 'portLabelImage.jpg')
+      await attachJoPhoto('houseFront', 'HouseFront', 'houseFront.jpg')
+      await attachJoPhoto('speedtestImage', 'SpeedtestImage', 'speedtestImage.jpg')
       finalPayload = form
     // Gene - Nov 5, 2026: Switched ServiceOrders update to FormData (multipart/form-data) supporting image uploads, existing photo preservation, and clear support
     } else if (isServiceOrderEndpoint.value) {
@@ -17299,6 +17764,27 @@ const saveEdit = async () => {
       ...(paymentTxnId ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || paymentTxnId } } : {})
     }
     await CrudService.update(props.endpoint, updatedId, finalPayload, updateReqConfig)
+    // Gene - Nov 7, 2026: Persist uploaded Job Order images, remove cleared images, and invalidate recordImagesCache on update so View, Edit, and Table cells immediately reflect the saved images
+    if (isJobOrderEndpoint.value) {
+      recordImagesCache.delete(`jo:${updatedId}`)
+      joImagesToRemove.forEach(colKey => removePersistedJobOrderImage(updatedId, colKey))
+      Object.entries(joImagesToPersist).forEach(([colKey, dataUrl]) => {
+        setPersistedJobOrderImage(updatedId, colKey, dataUrl)
+      })
+      if (viewFormData.value && String(viewingRecordId.value) === String(updatedId)) {
+        joImagesToRemove.forEach(colKey => { viewFormData.value[colKey] = '' })
+        Object.entries(joImagesToPersist).forEach(([colKey, dataUrl]) => {
+          viewFormData.value[colKey] = dataUrl
+        })
+        viewFormData.value = { ...viewFormData.value }
+      }
+    } else if (isServiceOrderEndpoint.value) {
+      recordImagesCache.delete(`so:${updatedId}`)
+    } else if (isLcpNapEndpoint.value) {
+      recordImagesCache.delete(`lcp:${updatedId}`)
+    } else if (isApplicationEndpoint.value) {
+      recordImagesCache.delete(`app:${updatedId}`)
+    }
     await fetchData()
     // Gene - Nov 7, 2026: Refresh PaymentMethods / PaymentTypes dropdown caches when updating records in those tables
     if (isPaymentMethodEndpoint.value) await fetchPaymentMethodsLookup(true)
@@ -17604,6 +18090,12 @@ const fetchData = async ({ silent = false } = {}) => {
       } else if (selectedRow.value) {
         selectedRow.value = null
         emit('row-unselect', null)
+      }
+    // Gene - Nov 7, 2026: Refresh selectedRow reference to the newly fetched row object so toolbar View/Edit buttons always receive updated fields after saveEdit
+    } else if (selectedKey !== undefined) {
+      const freshMatch = data.value.find(row => rowKeyOf(row) === selectedKey)
+      if (freshMatch) {
+        selectedRow.value = freshMatch
       }
     }
   } catch (err) {
