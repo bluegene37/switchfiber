@@ -249,6 +249,19 @@
           <span class="d-none d-sm-inline">Seed Payment Methods</span>
           <span class="d-sm-none">Seed</span>
         </Button>
+        <!-- Gene - Nov 7, 2026: Seed standard Payment Types via backend API for PaymentTypes endpoint -->
+        <Button
+          v-if="isPaymentTypeEndpoint"
+          class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
+          :class="{ 'ms-auto': !showTopCreateButton }"
+          :loading="isSeedingPaymentTypes"
+          @click="seedPaymentTypesViaApi"
+          v-tooltip.top="'Seed standard payment types into backend API'"
+        >
+          <i class="pi pi-database"></i>
+          <span class="d-none d-sm-inline">Seed Payment Types</span>
+          <span class="d-sm-none">Seed</span>
+        </Button>
         <Button 
           v-if="showTopCreateButton" 
           class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-2 fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-table-topbar-create-btn" 
@@ -444,6 +457,18 @@
             >
               <i class="pi pi-database"></i>
               <span class="d-none d-sm-inline">Seed Payment Methods</span>
+              <span class="d-sm-none">Seed</span>
+            </Button>
+            <!-- Gene - Nov 7, 2026: Seed standard Payment Types via backend API for PaymentTypes endpoint -->
+            <Button
+              v-if="isPaymentTypeEndpoint"
+              class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 ms-1"
+              :loading="isSeedingPaymentTypes"
+              @click="seedPaymentTypesViaApi"
+              v-tooltip.top="'Seed standard payment types into backend API'"
+            >
+              <i class="pi pi-database"></i>
+              <span class="d-none d-sm-inline">Seed Payment Types</span>
               <span class="d-sm-none">Seed</span>
             </Button>
             <!-- Primary Action: Create Button -->
@@ -648,7 +673,16 @@
             </span>
           </div>
           <!-- Payment Method / Transaction Type Dropdown Reference -->
+          <!--
           <span v-else-if="getFieldType(col) === 'paymentmethod_dropdown'" class="fw-medium">
+            <span v-if="slotProps.data[col]" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill">
+              {{ formatDisplayValue(slotProps.data[col], col) }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </span>
+          -->
+          <!-- Gene - Nov 7, 2026: Render pill badge for both paymentmethod_dropdown (/api/PaymentMethods) and paymenttype_dropdown (/api/PaymentTypes) -->
+          <span v-else-if="getFieldType(col) === 'paymentmethod_dropdown' || getFieldType(col) === 'paymenttype_dropdown'" class="fw-medium">
             <span v-if="slotProps.data[col]" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill">
               {{ formatDisplayValue(slotProps.data[col], col) }}
             </span>
@@ -1655,6 +1689,20 @@
                 optionValue="value" 
                 :filter="true"
                 placeholder="Select Payment Method" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
+              />
+
+              <!-- Gene - Nov 7, 2026: Payment Type / Transaction Type Dropdown populated from /api/PaymentTypes -->
+              <Select 
+                v-else-if="getFieldType(col) === 'paymenttype_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="paymentTypeOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Payment Type" 
                 class="w-100 p-inputtext-sm" 
                 :class="{ 'p-invalid': hasFieldError('create', col) }"
               />
@@ -4188,6 +4236,21 @@
                 :filter="true"
                 :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Payment Method" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 'p-invalid': hasFieldError('edit', col) }"
+              />
+
+              <!-- Gene - Nov 7, 2026: Payment Type / Transaction Type Dropdown in Edit Modal populated from /api/PaymentTypes -->
+              <Select 
+                v-else-if="getFieldType(col) === 'paymenttype_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="getPaymentTypeOptions(editFormData[col])" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select Payment Type" 
                 class="w-100 p-inputtext-sm" 
                 :class="{ 'p-invalid': hasFieldError('edit', col) }"
               />
@@ -6921,7 +6984,11 @@ function formatLabel(col) {
     if (k === 'receivedpayment') return 'Paid Amount'
     if (k === 'paymentdate') return 'Payment Date'
     if (k === 'paymentmethod') return 'Payment Method'
+    /*
     if (k === 'transactiontype') return 'Transaction Type'
+    */
+    // Gene - Nov 7, 2026: Label transactionType as Payment Type in Payments form (populated from /api/PaymentTypes)
+    if (k === 'transactiontype' || k === 'paymenttype') return 'Payment Type'
     if (k === 'referenceno') return 'Reference #'
     if (k === 'orno') return 'OR #'
     if (k === 'image' || k === 'plan' || k === 'fiberplan') return 'Fiber Plan'
@@ -7694,6 +7761,7 @@ function getFieldType(col) {
   if (lower === 'invoicestatus' || lower === 'invoice_status' || (isInvoiceEndpoint.value && lower === 'status')) {
     return 'invoicestatus_dropdown'
   }
+  /*
   if (
     lower === 'paymentmethod' ||
     lower === 'payment_method' ||
@@ -7701,6 +7769,23 @@ function getFieldType(col) {
     lower === 'transaction_type'
   ) {
     return 'paymentmethod_dropdown'
+  }
+  */
+  // Gene - Nov 7, 2026: Separate paymentmethod_dropdown (/api/PaymentMethods) and paymenttype_dropdown (/api/PaymentTypes) in Payment form
+  if (
+    lower === 'paymentmethod' ||
+    lower === 'payment_method'
+  ) {
+    return 'paymentmethod_dropdown'
+  }
+  if (
+    lower === 'transactiontype' ||
+    lower === 'transaction_type' ||
+    lower === 'paymenttype' ||
+    lower === 'payment_type' ||
+    (isPaymentEndpoint.value && lower === 'provider')
+  ) {
+    return 'paymenttype_dropdown'
   }
   if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
     return 'accesslevel_dropdown'
@@ -10910,11 +10995,22 @@ const fieldSearchAliases = (col) => {
 }
 */
 // Gene - Oct, 22, 2026: Added Priority and Display Order search aliases for Promotions priority field
+/*
 const fieldSearchAliases = (col) => {
   const key = normalizeColKey(col)
   if (key === 'barangay1') return ['Barangay 1', 'Barangay 2']
   if (key === 'visitwithother') return ['Visit With (Other)', 'User Email', 'userEmail']
   if (isPromotionEndpoint.value && key === 'priority') return ['Priority', 'Display Order', 'Order']
+  return []
+}
+*/
+// Gene - Nov 7, 2026: Include Transaction Type and Payment Type search aliases for Payments transactionType field
+const fieldSearchAliases = (col) => {
+  const key = normalizeColKey(col)
+  if (key === 'barangay1') return ['Barangay 1', 'Barangay 2']
+  if (key === 'visitwithother') return ['Visit With (Other)', 'User Email', 'userEmail']
+  if (isPromotionEndpoint.value && key === 'priority') return ['Priority', 'Display Order', 'Order']
+  if (isPaymentEndpoint.value && key === 'transactiontype') return ['Payment Type', 'Transaction Type', 'transactionType']
   return []
 }
 
@@ -11775,6 +11871,19 @@ const getPaymentMethodOptions = (currentVal) => {
   return getStableOptionsWithCurrent(paymentMethodOptions.value, currentVal)
 }
 
+// Gene - Nov 7, 2026: Standard payment type options, dynamically loaded and updated from /api/PaymentTypes
+const paymentTypeOptions = ref([
+  { label: 'Monthly Subscription', value: 'Monthly Subscription' },
+  { label: 'Installation Fee', value: 'Installation Fee' },
+  { label: 'Reconnection Fee', value: 'Reconnection Fee' },
+  { label: 'Device / Router Fee', value: 'Device / Router Fee' },
+  { label: 'Advance Payment', value: 'Advance Payment' }
+])
+
+const getPaymentTypeOptions = (currentVal) => {
+  return getStableOptionsWithCurrent(paymentTypeOptions.value, currentVal)
+}
+
 // Gene - Nov 6, 2026: Reference list of subscriber accounts from BillingDetails for Payments account dropdown
 const billingAccountsList = ref([])
 
@@ -11938,6 +12047,12 @@ const fetchFormLookups = () => {
     } catch (err) {
       console.warn('[DynamicApiTable] Failed to load PaymentMethods lookup in fetchFormLookups:', err)
     }
+    // Gene - Nov 7, 2026: Fetch PaymentTypes lookup from /api/PaymentTypes to populate payment type / transaction type dropdown
+    try {
+      await fetchPaymentTypesLookup()
+    } catch (err) {
+      console.warn('[DynamicApiTable] Failed to load PaymentTypes lookup in fetchFormLookups:', err)
+    }
   })().catch(err => {
     console.error('Error fetching form lookups:', err)
     formLookupsPromise = null
@@ -12015,6 +12130,38 @@ const fetchPaymentMethodsLookup = (force = false) => {
     })
 
   return paymentMethodsPromise
+}
+
+// Gene - Nov 7, 2026: PaymentTypes resolves options for paymenttype_dropdown (transactionType / paymentType / provider on Payments),
+// loaded single-flight from /api/PaymentTypes and shared across the table and dialogs.
+let paymentTypesPromise = null
+
+const fetchPaymentTypesLookup = (force = false) => {
+  if (!force && paymentTypesPromise) return paymentTypesPromise
+  paymentTypesPromise = CrudService.list('PaymentTypes')
+    .then(res => {
+      const raw = unwrapList(res)
+      if (Array.isArray(raw) && raw.length > 0) {
+        const formatted = raw
+          .filter(t => t && t.name && String(t.name).trim())
+          .map(t => ({
+            label: String(t.name).trim(),
+            value: String(t.name).trim(),
+            id: t.id,
+            description: t.description || ''
+          }))
+        if (formatted.length > 0) {
+          paymentTypeOptions.value = formatted
+        }
+      }
+      return paymentTypeOptions.value
+    })
+    .catch(err => {
+      console.warn('[DynamicApiTable] Failed to fetch PaymentTypes lookup:', err)
+      paymentTypesPromise = null
+    })
+
+  return paymentTypesPromise
 }
 
 // AccessLevel and Users resolve labels rendered in the TABLE body — the
@@ -13870,6 +14017,8 @@ const formatDisplayValue = (val, col) => {
   }
   else if (type === 'discount_dropdown') targetList = discountsList.value
   else if (type === 'paymentmethod_dropdown') targetList = paymentMethodOptions.value
+  // Gene - Nov 7, 2026: Resolve paymenttype_dropdown display value against paymentTypeOptions (/api/PaymentTypes)
+  else if (type === 'paymenttype_dropdown') targetList = paymentTypeOptions.value
 
   if (targetList && targetList.length > 0) {
     const found = targetList.find(opt => 
@@ -13963,6 +14112,9 @@ const openCreateDialog = () => {
       formData.value[col] = discountStatusOptions.value[0].value
     } else if (type === 'paymentmethod_dropdown' && paymentMethodOptions.value.length > 0) {
       formData.value[col] = paymentMethodOptions.value[0].value
+    // Gene - Nov 7, 2026: Default paymenttype_dropdown in Create dialog to first option from paymentTypeOptions (/api/PaymentTypes)
+    } else if (type === 'paymenttype_dropdown' && paymentTypeOptions.value.length > 0) {
+      formData.value[col] = paymentTypeOptions.value[0].value
     /*
     } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown' || type === 'discounttype_dropdown') {
       formData.value[col] = null
@@ -14146,6 +14298,7 @@ const openCreateDialog = () => {
     }
   }
   */
+  /*
   // Gene - Nov 6, 2026: Pre-fill paymentDate, paymentMethod, transactionType, and processedBy in Payments create dialog using dynamic PaymentMethods options
   if (isPaymentEndpoint.value) {
     formData.value.paymentDate = new Date()
@@ -14153,6 +14306,25 @@ const openCreateDialog = () => {
     const defaultMethod = (paymentMethodOptions.value.length > 0 ? paymentMethodOptions.value[0].value : 'Cash')
     formData.value.paymentMethod = defaultMethod
     formData.value.transactionType = defaultMethod
+    const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+    if (currentUser) {
+      formData.value.processedBy = currentUser
+    }
+  }
+  */
+  // Gene - Nov 7, 2026: Pre-fill paymentMethod from PaymentMethods (/api/PaymentMethods) and transactionType / provider from PaymentTypes (/api/PaymentTypes) in Payments create dialog
+  if (isPaymentEndpoint.value) {
+    fetchPaymentMethodsLookup(true)
+    fetchPaymentTypesLookup(true)
+    formData.value.paymentDate = new Date()
+    formData.value.receivedPayment = null
+    const defaultMethod = (paymentMethodOptions.value.length > 0 ? paymentMethodOptions.value[0].value : 'Cash')
+    const defaultType = (paymentTypeOptions.value.length > 0 ? paymentTypeOptions.value[0].value : 'Monthly Subscription')
+    formData.value.paymentMethod = defaultMethod
+    formData.value.transactionType = defaultType
+    if ('provider' in formData.value) {
+      formData.value.provider = defaultType
+    }
     const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
     if (currentUser) {
       formData.value.processedBy = currentUser
@@ -15207,6 +15379,9 @@ const saveData = async () => {
 
     // Refresh table
     await fetchData()
+    // Gene - Nov 7, 2026: Refresh PaymentMethods / PaymentTypes dropdown caches when creating records in those tables
+    if (isPaymentMethodEndpoint.value) await fetchPaymentMethodsLookup(true)
+    if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
     displayCreateDialog.value = false
     toast.add({
       severity: 'success',
@@ -15848,6 +16023,18 @@ const openEditDialog = async (record) => {
         }
       }
     }
+    // Gene - Nov 7, 2026: Normalize paymenttype_dropdown against paymentTypeOptions (/api/PaymentTypes) in Edit dialog
+    if (getFieldType(col) === 'paymenttype_dropdown') {
+      const current = editFormData.value[col]
+      if (current !== null && current !== undefined && String(current).trim() !== '') {
+        const match = paymentTypeOptions.value.find(o =>
+          String(o.value).toLowerCase().replace(/[\s_-]+/g, '') === String(current).toLowerCase().replace(/[\s_-]+/g, '')
+        )
+        if (match) {
+          editFormData.value[col] = match.value
+        }
+      }
+    }
     /*
     // Gene - Oct, 16, 2026: Parse comma-separated placement string into array for MultiSelect in edit modal
     if (getFieldType(col) === 'promotion_placement_multiselect') {
@@ -15930,6 +16117,9 @@ const openEditDialog = async (record) => {
   */
   // Gene - Nov 6, 2026: Canonical Payments normalization for edit modal: paymentDate (Date object), receivedPayment (decimal number), transactionID (string)
   if (isPaymentEndpoint.value) {
+    // Gene - Nov 7, 2026: Refresh PaymentMethods (/api/PaymentMethods) and PaymentTypes (/api/PaymentTypes) options when opening Payment edit dialog
+    fetchPaymentMethodsLookup(true)
+    fetchPaymentTypesLookup(true)
     const rawDate = record.paymentDate || (typeof record.receivedPayment === 'string' && (record.receivedPayment.includes('-') || record.receivedPayment.includes('T')) ? record.receivedPayment : null)
     editFormData.value.paymentDate = parseDateForPicker(rawDate) || new Date()
     editFormData.value.receivedPayment = (!isNaN(Number(record.receivedPayment)) && record.receivedPayment !== null && !String(record.receivedPayment).includes('-')) ? Number(record.receivedPayment) : null
@@ -17110,6 +17300,9 @@ const saveEdit = async () => {
     }
     await CrudService.update(props.endpoint, updatedId, finalPayload, updateReqConfig)
     await fetchData()
+    // Gene - Nov 7, 2026: Refresh PaymentMethods / PaymentTypes dropdown caches when updating records in those tables
+    if (isPaymentMethodEndpoint.value) await fetchPaymentMethodsLookup(true)
+    if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
     displayEditDialog.value = false
     toast.add({
       severity: 'success',
@@ -17217,6 +17410,9 @@ const deleteRecord = async () => {
       : {}
     await CrudService.remove(props.endpoint, targetId, deleteReqConfig)
     await fetchData()
+    // Gene - Nov 7, 2026: Refresh PaymentMethods / PaymentTypes dropdown caches when deleting records in those tables
+    if (isPaymentMethodEndpoint.value) await fetchPaymentMethodsLookup(true)
+    if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
     displayDeleteDialog.value = false
     toast.add({
       severity: 'success',
@@ -17820,6 +18016,64 @@ const seedPaymentMethodsViaApi = async () => {
   }
 }
 
+// Gene - Nov 7, 2026: Seed standard payment types into backend API (/api/PaymentTypes)
+const isSeedingPaymentTypes = ref(false)
+
+const STANDARD_SEED_PAYMENT_TYPES = [
+  { name: 'Monthly Subscription', description: 'Recurring monthly internet fiber plan subscription fee' },
+  { name: 'Installation Fee', description: 'One-time fiber optical installation, modem setup, and activation fee' },
+  { name: 'Reconnection Fee', description: 'Line reconnection fee for temporarily suspended accounts' },
+  { name: 'Device / Router Fee', description: 'Payment for additional mesh Wi-Fi nodes, routers, or optical network terminals' },
+  { name: 'Advance Payment', description: 'Advance billing credit or security deposit applied to subscriber account' }
+]
+
+const seedPaymentTypesViaApi = async () => {
+  if (isSeedingPaymentTypes.value) return
+  isSeedingPaymentTypes.value = true
+  try {
+    const raw = await CrudService.list('PaymentTypes')
+    const existing = unwrapList(raw)
+    const numericUserId = Number(authStore.user?.id) || 1
+    let createdCount = 0
+
+    for (const item of STANDARD_SEED_PAYMENT_TYPES) {
+      const match = (existing || []).find(e =>
+        String(e.name || '').trim().toLowerCase() === item.name.trim().toLowerCase()
+      )
+      if (!match) {
+        await CrudService.create('PaymentTypes', {
+          name: item.name,
+          description: item.description,
+          createdBy: numericUserId,
+          modifiedBy: numericUserId
+        })
+        createdCount++
+      }
+    }
+
+    await fetchData()
+    await fetchPaymentTypesLookup(true)
+    toast.add({
+      severity: 'success',
+      summary: 'Payment Types Seeded',
+      detail: createdCount > 0
+        ? `Successfully seeded ${createdCount} standard payment type(s) into database.`
+        : 'All standard payment types are already seeded in the database.',
+      life: 4000
+    })
+  } catch (err) {
+    console.error('Error seeding payment types via API:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Seed Failed',
+      detail: err.message || 'Failed to seed payment types via the API.',
+      life: 5000
+    })
+  } finally {
+    isSeedingPaymentTypes.value = false
+  }
+}
+
 const getToggleSwitchTitle = (menuRow) => {
   if (!props.selectedAccessLevel) return 'Select an Access Level on the left table first'
   if (isSuperAdminAccessLevelProtected()) return 'Super Admin always has full access — menu permissions are locked'
@@ -18183,6 +18437,13 @@ const needsPaymentMethodLookup = computed(() =>
   isPaymentMethodEndpoint.value
 )
 
+// Gene - Nov 7, 2026: Include paymenttype_dropdown, Payments, and PaymentTypes endpoints in table lookups
+const needsPaymentTypeLookup = computed(() =>
+  columns.value.some(c => getFieldType(c) === 'paymenttype_dropdown') ||
+  isPaymentEndpoint.value ||
+  isPaymentTypeEndpoint.value
+)
+
 /*
 const refreshTableLookups = () => {
   if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
@@ -18193,6 +18454,7 @@ const refreshTableLookups = () => {
 
 watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup], refreshTableLookups, { immediate: true })
 */
+/*
 // Gene - Nov 6, 2026: Include needsPaymentMethodLookup in refreshTableLookups to ensure Payment Methods lookup is populated on table load
 const refreshTableLookups = () => {
   if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
@@ -18203,6 +18465,18 @@ const refreshTableLookups = () => {
 }
 
 watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup, needsPaymentMethodLookup], refreshTableLookups, { immediate: true })
+*/
+// Gene - Nov 7, 2026: Include both needsPaymentMethodLookup (/api/PaymentMethods) and needsPaymentTypeLookup (/api/PaymentTypes) in refreshTableLookups
+const refreshTableLookups = () => {
+  if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
+  if (needsUserLookup.value) fetchUsersLookup()
+  if (needsDiscountTypeLookup.value) fetchDiscountTypesLookup()
+  if (needsPlanLookup.value) fetchFormLookups()
+  if (needsPaymentMethodLookup.value) fetchPaymentMethodsLookup()
+  if (needsPaymentTypeLookup.value) fetchPaymentTypesLookup()
+}
+
+watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup, needsPaymentMethodLookup, needsPaymentTypeLookup], refreshTableLookups, { immediate: true })
 
 onMounted(() => {
   fetchAddressData()

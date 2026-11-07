@@ -5,6 +5,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import https from 'node:https'
 import { DEFAULT_PAYMENT_METHODS, PaymentMethodService } from '../src/services/paymentMethods.js'
+// Gene - Nov 7, 2026: Import DEFAULT_PAYMENT_TYPES and PaymentTypeService for Payment Type dropdown verification
+import { DEFAULT_PAYMENT_TYPES, PaymentTypeService } from '../src/services/paymentTypes.js'
 import { paymentMethodsSeedData, paymentTypesSeedData } from '../scripts/seed_payment_methods.js'
 
 test('Payment Methods Seed Data & Service Catalog', async (t) => {
@@ -97,7 +99,48 @@ test('DynamicApiTable Component Wiring for Payment Methods', async (t) => {
 
   await t.test('openCreateDialog defaults paymentMethod and transactionType from paymentMethodOptions', () => {
     assert.match(content, /formData\.value\.paymentMethod = defaultMethod/, 'Sets paymentMethod to defaultMethod')
-    assert.match(content, /formData\.value\.transactionType = defaultMethod/, 'Sets transactionType to defaultMethod')
+    assert.match(content, /formData\.value\.transactionType = defaultType/, 'Sets transactionType to defaultType from paymentTypeOptions')
+  })
+
+  // Gene - Nov 7, 2026: Verify Payment Types dropdown wiring from /api/PaymentTypes in DynamicApiTable.vue
+  await t.test('DynamicApiTable declares paymentTypeOptions and fetchPaymentTypesLookup for /api/PaymentTypes', () => {
+    assert.match(content, /const paymentTypeOptions = ref\(\[/, 'Declares paymentTypeOptions ref')
+    assert.match(content, /\{ label: 'Monthly Subscription', value: 'Monthly Subscription' \}/, 'Includes Monthly Subscription')
+    assert.match(content, /\{ label: 'Installation Fee', value: 'Installation Fee' \}/, 'Includes Installation Fee')
+    assert.match(content, /let paymentTypesPromise = null/, 'Declares paymentTypesPromise')
+    assert.match(content, /const fetchPaymentTypesLookup =/, 'Declares fetchPaymentTypesLookup')
+    assert.match(content, /CrudService\.list\('PaymentTypes'\)/, 'Calls CrudService.list(PaymentTypes)')
+    assert.match(content, /await fetchPaymentTypesLookup\(\)/, 'Awaits fetchPaymentTypesLookup in fetchFormLookups')
+  })
+
+  await t.test('DynamicApiTable separates paymentmethod_dropdown and paymenttype_dropdown in getFieldType and templates', () => {
+    assert.match(content, /return 'paymenttype_dropdown'/, 'getFieldType returns paymenttype_dropdown for transactionType / paymentType')
+    assert.match(content, /v-else-if="getFieldType\(col\) === 'paymenttype_dropdown'"/, 'Renders Select for paymenttype_dropdown')
+    assert.match(content, /:options="paymentTypeOptions"/, 'Create modal binds paymentTypeOptions')
+    assert.match(content, /:options="getPaymentTypeOptions\(editFormData\[col\]\)"/, 'Edit modal binds getPaymentTypeOptions')
+    assert.match(content, /const needsPaymentTypeLookup = computed\(\(\) =>/, 'Declares needsPaymentTypeLookup')
+    assert.match(content, /if \(needsPaymentTypeLookup\.value\) fetchPaymentTypesLookup\(\)/, 'Invokes fetchPaymentTypesLookup in refreshTableLookups')
+  })
+})
+
+// Gene - Nov 7, 2026: Verify PaymentTypeService default catalog & seeder helper
+test('Payment Types Seed Data & Service Catalog', async (t) => {
+  await t.test('DEFAULT_PAYMENT_TYPES includes all standard payment types', () => {
+    const names = DEFAULT_PAYMENT_TYPES.map(pt => pt.name)
+    assert.ok(names.includes('Monthly Subscription'))
+    assert.ok(names.includes('Installation Fee'))
+    assert.ok(names.includes('Reconnection Fee'))
+    assert.ok(names.includes('Device / Router Fee'))
+    assert.ok(names.includes('Advance Payment'))
+  })
+
+  await t.test('PaymentTypeService defines all standard REST methods and seeder helper', () => {
+    assert.equal(typeof PaymentTypeService.getPaymentTypes, 'function')
+    assert.equal(typeof PaymentTypeService.getPaymentTypeById, 'function')
+    assert.equal(typeof PaymentTypeService.createPaymentType, 'function')
+    assert.equal(typeof PaymentTypeService.updatePaymentType, 'function')
+    assert.equal(typeof PaymentTypeService.deletePaymentType, 'function')
+    assert.equal(typeof PaymentTypeService.seedDefaultPaymentTypes, 'function')
   })
 })
 
