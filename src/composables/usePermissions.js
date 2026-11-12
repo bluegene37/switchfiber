@@ -181,6 +181,17 @@ const refreshUserFromServer = async () => {
       resolvedLevelName.value = ''
       authStore.updateUser({ accesslevel_id: fresh, role: undefined, accessLevelName: undefined })
     }
+    // Gene - Nov, 11, 2026: Sync user profile fields (fname, lname, username, email) from /Users/{id} into authStore.user so processedBy, modifiedBy, and userEmail audit fields resolve accurately from the logged-in user
+    if (row && typeof row === 'object') {
+      const profilePatch = {}
+      if (row.fname && row.fname !== authStore.user?.fname) profilePatch.fname = row.fname
+      if (row.lname && row.lname !== authStore.user?.lname) profilePatch.lname = row.lname
+      if (row.username && row.username !== authStore.user?.username) profilePatch.username = row.username
+      if (row.email && row.email !== authStore.user?.email) profilePatch.email = row.email
+      if (Object.keys(profilePatch).length > 0) {
+        authStore.updateUser(profilePatch)
+      }
+    }
   } catch {
     // Keep the snapshot — the API being unreachable is already handled downstream.
   }

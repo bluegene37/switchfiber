@@ -14224,6 +14224,27 @@ const getDiscountTypeTooltip = (val) => {
   return found ? (found.label || found.name) : ''
 }
 
+// Gene - Nov, 11, 2026: Resolve the logged-in user's display name or identifier for auto-populating and auto-updating processedBy across Create and Update
+const getLoggedInProcessedBy = () => {
+  const cur = authStore.user
+  if (cur) {
+    const fullName = [cur.fname || cur.firstName || cur.first_name, cur.lname || cur.lastName || cur.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
+    if (fullName) return fullName
+    if (cur.name && String(cur.name).trim()) return String(cur.name).trim()
+    if (cur.id !== undefined && cur.id !== null && usersMap.value.has(Number(cur.id))) {
+      const mapped = usersMap.value.get(Number(cur.id))
+      if (mapped && !mapped.startsWith('User #')) return mapped
+    }
+    if (cur.username && String(cur.username).trim()) return String(cur.username).trim()
+    if (cur.email && String(cur.email).trim()) return String(cur.email).trim()
+    if (cur.id !== undefined && cur.id !== null) return String(cur.id).trim()
+  }
+  return ''
+}
+
 const openCreateDialog = () => {
   clearFieldSearch('create')
   resetAddressPin('create')
@@ -14238,7 +14259,9 @@ const openCreateDialog = () => {
   saveError.value = null
   showPasswordState.value = {}
   formData.value = {}
-  const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+  // const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+  // Gene - Nov, 11, 2026: Resolve currentUser via getLoggedInProcessedBy() so processedBy and requestedBy always reflect the logged-in user
+  const currentUser = getLoggedInProcessedBy() || (authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || String(authStore.user?.id || '')))
   const currentUserIdOrName = authStore.user?.id || currentUser
 
   formColumns.value.forEach(col => {
@@ -14504,10 +14527,31 @@ const openCreateDialog = () => {
     if ('provider' in formData.value) {
       formData.value.provider = defaultType
     }
+    /*
     const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
     if (currentUser) {
       formData.value.processedBy = currentUser
     }
+    */
+    // Gene - Nov, 11, 2026: Auto-populate processedBy, modifiedBy, and userEmail in Payment create dialog based on the logged-in user
+    const resolvedProcessedBy = getLoggedInProcessedBy() || currentUser
+    if (resolvedProcessedBy) {
+      formData.value.processedBy = resolvedProcessedBy
+    }
+    formData.value.modifiedBy = String(authStore.user?.id || 1)
+    if (authStore.user?.email) {
+      formData.value.userEmail = authStore.user.email
+    }
+  }
+
+  // Gene - Nov, 11, 2026: Pre-fill processedBy and userEmail on any other endpoint that exposes those columns in Create dialog (e.g. Discounts, Invoices)
+  const procByCol = formColumns.value.find(c => normalizeColKey(c) === 'processedby')
+  if (procByCol && !formData.value[procByCol] && currentUser) {
+    formData.value[procByCol] = currentUser
+  }
+  const genEmailCol = formColumns.value.find(c => normalizeColKey(c) === 'useremail')
+  if (genEmailCol && !formData.value[genEmailCol] && authStore.user?.email) {
+    formData.value[genEmailCol] = authStore.user.email
   }
 
   // Default province for Create modal if empty (the plant lives in Binangonan, Rizal)
@@ -14881,7 +14925,9 @@ const buildBillingPayload = (payload, mode, loggedInUserId) => {
     mikrotikId: normNullableNum(payload.mikrotikId),
     modifiedBy: String(loggedInUserId || 1),
     modifiedDate: localAuditTimestamp(),
-    userEmail: normStr(payload.userEmail || authStore.user?.email || 'admin@switchfiber.com'),
+    // userEmail: normStr(payload.userEmail || authStore.user?.email || 'admin@switchfiber.com'),
+    // Gene - Nov, 11, 2026: Prioritize logged-in user email on Create and Update of BillingDetails so userEmail reflects the modifier
+    userEmail: normStr(authStore.user?.email || payload.userEmail || 'admin@switchfiber.com'),
     billingDay: normNullableNum(payload.billingDay) ?? 1,
     billingStatus: normStr(payload.billingStatus || 'Pending'),
     deliveryStatus: normStr(payload.deliveryStatus || 'Delivered'),
@@ -15029,7 +15075,9 @@ const buildInventoryItemPayload = (payload, mode, loggedInUserId) => {
     supplier: normStr(payload.supplier, 100),
     quantity: cleanQty,
     image: cleanImage,
-    userEmail: normStr(payload.userEmail || authStore.user?.email || 'admin@switchfiber.com', 100),
+    // userEmail: normStr(payload.userEmail || authStore.user?.email || 'admin@switchfiber.com', 100),
+    // Gene - Nov, 11, 2026: Prioritize logged-in user email on Create and Update of InventoryItem so userEmail reflects the modifier
+    userEmail: normStr(authStore.user?.email || payload.userEmail || 'admin@switchfiber.com', 100),
     category: normStr(payload.category, 100)
   }
 
@@ -15304,9 +15352,18 @@ const saveData = async () => {
         }
       })
 
+      /*
       if (columns.value.includes('userEmail') && !payload.userEmail) {
         payload.userEmail = currentUserEmail
       } else if (!columns.value.includes('userEmail')) {
+        delete payload.userEmail
+      }
+      */
+      // Gene - Nov, 11, 2026: Preserve and stamp userEmail from logged-in user when userEmail is in columns or allRawColumns (e.g. Payments, Discounts, Invoices)
+      const hasUserEmailCol = columns.value.includes('userEmail') || allRawColumns.value.some(c => normalizeColKey(c) === 'useremail') || isPaymentEndpoint.value || isDiscountEndpoint.value || isInvoiceEndpoint.value
+      if (hasUserEmailCol && !payload.userEmail) {
+        payload.userEmail = currentUserEmail
+      } else if (!hasUserEmailCol) {
         delete payload.userEmail
       }
 
@@ -15558,11 +15615,26 @@ const saveData = async () => {
         }
 
         // 5. Sync remarks and processedBy
+        /*
         if (finalPayload.remarks && !finalPayload.processedBy) {
           finalPayload.processedBy = String(finalPayload.remarks)
         } else if (finalPayload.processedBy && !finalPayload.remarks) {
           finalPayload.remarks = String(finalPayload.processedBy)
         }
+        */
+        // Gene - Nov, 11, 2026: Auto-populate processedBy, modifiedBy, modifiedDate, and userEmail on Payment CREATE based on the logged-in user
+        const loggedInProcBy = getLoggedInProcessedBy() || String(loggedInUserId)
+        if (!finalPayload.processedBy || !String(finalPayload.processedBy).trim()) {
+          finalPayload.processedBy = String(loggedInProcBy)
+        } else {
+          finalPayload.processedBy = String(finalPayload.processedBy).trim()
+        }
+        if (!finalPayload.remarks && finalPayload.processedBy) {
+          finalPayload.remarks = String(finalPayload.processedBy)
+        }
+        finalPayload.modifiedBy = String(loggedInUserId)
+        finalPayload.modifiedDate = localAuditTimestamp()
+        finalPayload.userEmail = currentUserEmail
 
         // 6. Delete empty/null transactionID on create so server auto-generates 26-digit canonical ID
         if (!finalPayload.transactionID || !String(finalPayload.transactionID).trim()) {
@@ -16523,8 +16595,21 @@ const openEditDialog = async (record) => {
     if (!editFormData.value.plan && record.image) {
       editFormData.value.plan = record.image
     }
+    /*
     if (!editFormData.value.processedBy && record.remarks) {
       editFormData.value.processedBy = record.remarks
+    }
+    */
+    // Gene - Nov, 11, 2026: Auto-update processedBy, modifiedBy, and userEmail to the logged-in user when opening Payment edit dialog
+    const loggedInProcessedBy = getLoggedInProcessedBy() || String(authStore.user?.id || '')
+    if (loggedInProcessedBy) {
+      editFormData.value.processedBy = loggedInProcessedBy
+    } else if (!editFormData.value.processedBy && record.remarks) {
+      editFormData.value.processedBy = record.remarks
+    }
+    editFormData.value.modifiedBy = String(authStore.user?.id || 1)
+    if (authStore.user?.email) {
+      editFormData.value.userEmail = authStore.user.email
     }
   }
 
@@ -16544,7 +16629,9 @@ const openEditDialog = async (record) => {
   // while they are empty, which would leave the dropdowns showing a raw value.
   // The dialog is already on screen, so this resolves the dropdowns in place.
   await fetchFormLookups()
-  const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+  // const currentUser = authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || '')
+  // Gene - Nov, 11, 2026: Resolve currentUser via getLoggedInProcessedBy() after fetchFormLookups populates usersMap
+  const currentUser = getLoggedInProcessedBy() || (authStore.user?.fname ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim() : (authStore.user?.name || authStore.user?.username || authStore.user?.email || String(authStore.user?.id || '')))
   const currentUserIdOrName = authStore.user?.id || currentUser
 
   // 1. Normalize and match Province (the `region` column stores the PROVINCE)
@@ -16722,6 +16809,17 @@ const openEditDialog = async (record) => {
   if (pwdCol) {
     editFormData.value.confirmPassword = record[pwdCol] || editFormData.value[pwdCol] || ''
   }
+  // Gene - Nov, 11, 2026: Re-apply logged-in user processedBy on Payment after fetchFormLookups resolves usersMap so both editFormData and editBaseSnapshot hold the resolved logged-in user name
+  if (isPaymentEndpoint.value) {
+    const refreshedProcessedBy = getLoggedInProcessedBy() || currentUser
+    if (refreshedProcessedBy) {
+      editFormData.value.processedBy = refreshedProcessedBy
+    }
+    editFormData.value.modifiedBy = String(authStore.user?.id || 1)
+    if (authStore.user?.email) {
+      editFormData.value.userEmail = authStore.user.email
+    }
+  }
   // Gene - Nov 6, 2026: Re-capture snapshot after full normalization to ensure baseline matches normalized form fields
   editBaseSnapshot.value = { ...editFormData.value }
 }
@@ -16818,7 +16916,9 @@ const detectEditConflict = async () => {
     if (getFieldType(col) === 'password' || isAuditField(col)) return false
     if (getFieldType(col) === 'image_upload' || getFieldType(col) === 'inventory_item_image') return false
     if (isFieldDisabledInEdit(col)) return false
-    if (isPaymentEndpoint.value && ['accountbalance', 'dateprocessed', 'modifieddate', 'timestamp', 'rowversion'].includes(normalizeColKey(col))) return false
+    // if (isPaymentEndpoint.value && ['accountbalance', 'dateprocessed', 'modifieddate', 'timestamp', 'rowversion'].includes(normalizeColKey(col))) return false
+    // Gene - Nov, 11, 2026: Also ignore processedby, modifiedby, and useremail in detectEditConflict for Payments since openEditDialog auto-updates them to the logged-in user
+    if (isPaymentEndpoint.value && ['accountbalance', 'dateprocessed', 'modifieddate', 'modifiedby', 'processedby', 'useremail', 'timestamp', 'rowversion'].includes(normalizeColKey(col))) return false
     // Gene - Nov 7, 2026: Ignore billingDay in detectEditConflict when server returns null on JobOrders while form defaulted to '1'
     if (isJobOrderEndpoint.value && normalizeColKey(col) === 'billingday' && (unwrappedCurrent[col] === null || unwrappedCurrent[col] === undefined || unwrappedCurrent[col] === '')) return false
     const before = normalizeCompareValue(col, base[col])
@@ -17044,7 +17144,9 @@ const saveEdit = async () => {
       if (payload.region) form.append('Region', String(payload.region))
       form.append('ModifiedBy', loggedInUserId)
       form.append('ModifiedDate', nowIso)
-      form.append('UserEmail', capStr(payload.userEmail || currentUserEmail, 100))
+      // form.append('UserEmail', capStr(payload.userEmail || currentUserEmail, 100))
+      // Gene - Nov, 11, 2026: Prioritize logged-in user email on LCP NAP update
+      form.append('UserEmail', capStr(authStore.user?.email || payload.userEmail || currentUserEmail, 100))
 
       const files = selectedFilesByCol.value.edit || {}
       const removed = removedImagesByCol.value.edit || {}
@@ -17338,6 +17440,8 @@ const saveEdit = async () => {
       }
       payload.modifiedBy = loggedInUserId
       payload.modifiedDate = nowIso
+      // Gene - Nov, 11, 2026: Update userEmail to the logged-in user on ServiceOrders update
+      payload.userEmail = authStore.user?.email || payload.userEmail || currentUserEmail
 
       const soPhotoKeys = ['clientsignature', 'image1', 'image2', 'image3', 'housefrontpicture', 'housefront']
       Object.entries(payload).forEach(([key, val]) => {
@@ -17452,6 +17556,22 @@ const saveEdit = async () => {
         const originalCreatedDate = editBaseSnapshot.value?.createdDate
         if (originalCreatedDate !== undefined && originalCreatedDate !== null && originalCreatedDate !== '') {
           finalPayload.createdDate = originalCreatedDate
+        }
+      }
+
+      // Gene - Nov, 11, 2026: Preserve original createdBy and createdDate on Plans, Discounts, and DiscountTypes during PUT while stamping modifiedBy, modifiedDate, and userEmail from the logged-in user
+      if (isPlanEndpoint.value || isDiscountEndpoint.value || isDiscountTypeEndpoint.value) {
+        if (editBaseSnapshot.value?.createdBy !== undefined && editBaseSnapshot.value?.createdBy !== null && editBaseSnapshot.value?.createdBy !== '') {
+          finalPayload.createdBy = String(editBaseSnapshot.value.createdBy)
+        }
+        if (editBaseSnapshot.value?.createdDate !== undefined && editBaseSnapshot.value?.createdDate !== null && editBaseSnapshot.value?.createdDate !== '') {
+          finalPayload.createdDate = editBaseSnapshot.value.createdDate
+        }
+      }
+      if (isDiscountEndpoint.value || isInvoiceEndpoint.value) {
+        finalPayload.userEmail = currentUserEmail
+        if (isDiscountEndpoint.value && (!finalPayload.processedBy || !String(finalPayload.processedBy).trim())) {
+          finalPayload.processedBy = String(getLoggedInProcessedBy() || loggedInUserId)
         }
       }
 
@@ -17688,11 +17808,22 @@ const saveEdit = async () => {
         }
 
         // 5. Sync remarks and processedBy
+        /*
         if (finalPayload.remarks && !finalPayload.processedBy) {
           finalPayload.processedBy = String(finalPayload.remarks)
         } else if (finalPayload.processedBy && !finalPayload.remarks) {
           finalPayload.remarks = String(finalPayload.processedBy)
         }
+        */
+        // Gene - Nov, 11, 2026: Always auto-update processedBy, modifiedBy, modifiedDate, and userEmail on Payment PUT update based on the currently logged-in user
+        const loggedInProcBy = getLoggedInProcessedBy() || String(loggedInUserId)
+        finalPayload.processedBy = String(loggedInProcBy)
+        if (!finalPayload.remarks && finalPayload.processedBy) {
+          finalPayload.remarks = String(finalPayload.processedBy)
+        }
+        finalPayload.modifiedBy = String(loggedInUserId)
+        finalPayload.modifiedDate = localAuditTimestamp()
+        finalPayload.userEmail = currentUserEmail
 
         // 6. Ensure transactionID is preserved on PUT update
         const existingTxnId = String(finalPayload.transactionID || editBaseSnapshot.value?.transactionID || '').trim()
@@ -18370,7 +18501,9 @@ const syncMenuCodesViaApi = async () => {
         await CrudService.update('Menus', menu.id, {
           name: targetName,
           description: menu.description || '',
-          modifiedBy: Number(authStore.user?.id) || 1,
+          // modifiedBy: Number(authStore.user?.id) || 1,
+          // Gene - Nov, 11, 2026: Stamp modifiedBy as string of logged-in user ID to match MenuDto schema
+          modifiedBy: String(authStore.user?.id || 1),
           modifiedDate: null
         })
         updatedCount++
@@ -18418,7 +18551,9 @@ const syncAccessLevelCodesViaApi = async () => {
         await CrudService.update('AccessLevel', level.id, {
           name: targetName,
           description: level.description || '',
-          modifiedBy: Number(authStore.user?.id) || 1,
+          // modifiedBy: Number(authStore.user?.id) || 1,
+          // Gene - Nov, 11, 2026: Stamp modifiedBy as string of logged-in user ID to match AccessLevelDto schema
+          modifiedBy: String(authStore.user?.id || 1),
           modifiedDate: null
         })
         updatedCount++
@@ -18702,11 +18837,24 @@ const toggleMenuLink = async (menuRow) => {
       // retrying strands another one.
       if (!targetMenuId || isNaN(targetMenuId)) {
         console.log(`[DynamicApiTable] Creating new Menu row in /api/Menus:`, menuRow)
+        /*
         const createMenuPayload = {
           name: menuRow.name || 'New Menu',
           route: menuRow.route || '',
           icon: menuRow.icon || 'pi pi-list',
           description: menuRow.description || ''
+        }
+        */
+        // Gene - Nov, 11, 2026: Include createdBy and modifiedBy from the logged-in user when auto-creating a Menu row
+        const createMenuPayload = {
+          name: menuRow.name || 'New Menu',
+          route: menuRow.route || '',
+          icon: menuRow.icon || 'pi pi-list',
+          description: menuRow.description || '',
+          createdBy: String(authStore.user?.id || 1),
+          createdDate: null,
+          modifiedBy: String(authStore.user?.id || 1),
+          modifiedDate: null
         }
         const createdMenu = await CrudService.create('Menus', createMenuPayload)
         const newId = Number(createdMenu?.id ?? createdMenu?.Id ?? createdMenu?.data?.id)
