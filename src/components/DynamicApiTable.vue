@@ -275,10 +275,39 @@
       </div>
 
       <!-- Actual DataTable -->
+      <!-- Gene - Nov, 14, 2026: Enable resizable/draggable columns with expand mode, persisted column-resize-end handler, and click propagation guard so resizer drags never trigger sorting. -->
+      <!--
       <DataTable class="sfa-tracker-table-datatable" 
         ref="dt"
         :value="filteredData" 
         scrollable
+        :size="tableSize"
+        :paginator="true" 
+        :rows="rowsPerPage" 
+        v-model:first="firstRowIndex"
+        v-model:sortField="sortField"
+        v-model:sortOrder="sortOrder"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+        v-model:selection="selectedRow"
+        selectionMode="single"
+        @row-select="handleRowSelect"
+        @row-unselect="handleRowUnselect"
+        @row-click="handleRowClick"
+        @selection-change="handleSelectionChange"
+        :dataKey="tableDataKey"
+        filterDisplay="menu"
+        :globalFilterFields="displayedColumns"
+        :class="['small highlight-selected-row', densityClass]"
+      >
+      -->
+      <DataTable class="sfa-tracker-table-datatable" 
+        ref="dt"
+        :value="filteredData" 
+        scrollable
+        resizableColumns
+        columnResizeMode="expand"
+        @column-resize-end="onColumnResizeEnd"
+        :pt="dataTableResizePt"
         :size="tableSize"
         :paginator="true" 
         :rows="rowsPerPage" 
@@ -361,9 +390,26 @@
 
             <Popover class="sfa-tracker-table-column-picker" ref="columnPopover">
               <div class="p-2 column-picker-panel" style="min-width: 220px; max-width: 280px;">
+                <!-- Gene - Nov, 14, 2026: Added Reset Widths action alongside Reset All in the Customize Columns popover when custom column widths exist. -->
+                <!--
                 <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
                   <span class="fw-bold small text-body">Visible Columns</span>
                   <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small fw-medium reset-columns-btn" @click="resetColumns">Reset All</button>
+                </div>
+                -->
+                <div class="d-flex align-items-center justify-content-between gap-2 pb-2 mb-2 border-bottom">
+                  <span class="fw-bold small text-body">Visible Columns</span>
+                  <div class="d-flex align-items-center gap-2">
+                    <button
+                      v-if="hasCustomColumnWidths"
+                      type="button"
+                      class="btn btn-link btn-sm p-0 text-decoration-none small fw-medium text-secondary reset-column-widths-btn"
+                      @click="resetColumnWidths"
+                    >
+                      Reset Widths
+                    </button>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small fw-medium reset-columns-btn" @click="resetColumns">Reset All</button>
+                  </div>
                 </div>
                 <div class="d-flex flex-column gap-1.5 overflow-y-auto" style="max-height: 240px;">
                   <label 
@@ -498,6 +544,8 @@
       </template>
 
       <!-- Dynamic Visible Columns -->
+      <!-- Gene - Nov, 14, 2026: Bind persisted dynamic column width styles and headerCell field metadata PT hooks for resizable columns. -->
+      <!--
       <Column class="sfa-tracker-table-col-data"
         v-for="col in displayedColumns"
         :key="col"
@@ -506,6 +554,21 @@
         :sortable="true"
         :frozen="isLeftFrozenColumn(col)"
         alignFrozen="left"
+        :class="isLeftFrozenColumn(col) ? 'frozen-left-col' : ''"
+        :headerClass="[isStatusColumn(col) ? 'text-center' : '', `sfa-header-${String(col).toLowerCase()}`]"
+        :bodyClass="[isStatusColumn(col) ? 'text-center' : '', `sfa-cell-${String(col).toLowerCase()}`]"
+      >
+      -->
+      <Column class="sfa-tracker-table-col-data"
+        v-for="col in displayedColumns"
+        :key="col"
+        :field="col"
+        :header="formatLabel(col)"
+        :sortable="true"
+        :frozen="isLeftFrozenColumn(col)"
+        alignFrozen="left"
+        :style="getDynamicColumnStyle(col)"
+        :pt="getDynamicColumnPt(col)"
         :class="isLeftFrozenColumn(col) ? 'frozen-left-col' : ''"
         :headerClass="[isStatusColumn(col) ? 'text-center' : '', `sfa-header-${String(col).toLowerCase()}`]"
         :bodyClass="[isStatusColumn(col) ? 'text-center' : '', `sfa-cell-${String(col).toLowerCase()}`]"
@@ -701,7 +764,13 @@
           <span v-else-if="(getFieldType(col) === 'phone' || isPhoneField(col)) && slotProps.data[col]" class="font-monospace small">
             {{ formatDisplayValue(slotProps.data[col], col) }}
           </span>
+          <!-- Gene - Nov, 14, 2026: Use dynamic multiline cell style so custom column resize widths can override default min/max wrapping bounds. -->
+          <!--
           <span v-else-if="getFieldType(col) === 'textarea' || col.toLowerCase().includes('description')" class="d-inline-block text-wrap py-1" style="min-width: 250px; max-width: 480px; white-space: normal; word-break: break-word;">
+            {{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}
+          </span>
+          -->
+          <span v-else-if="getFieldType(col) === 'textarea' || col.toLowerCase().includes('description')" :class="[columnWidths[col] ? 'd-block' : 'd-inline-block', 'text-wrap', 'py-1']" :style="getMultilineCellStyle(col)">
             {{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}
           </span>
           <span v-else-if="normalizeColKey(col) === 'applicationid' || normalizeColKey(col) === 'applicationidvalue'" class="font-monospace small">
@@ -720,7 +789,16 @@
           <span v-else-if="isAccessLevelEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name')" class="d-inline-flex align-items-center gap-2">
             <span class="fw-medium text-body">{{ getAccessLevelDisplayName(slotProps.data) || slotProps.data[col] || '-' }}</span>
           </span>
+          <!-- Gene - Nov, 14, 2026: Switch truncated cells to full-width block truncation with dynamic max-width when resized by the user. -->
+          <!--
           <span v-else class="d-inline-block text-truncate" style="max-width: 240px;" :title="slotProps.data[col]">
+            <span v-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
+              {{ slotProps.data[col].name || slotProps.data[col].title || slotProps.data[col].label || slotProps.data[col].id || '-' }}
+            </span>
+            <span v-else>{{ slotProps.data[col] !== null && slotProps.data[col] !== undefined ? slotProps.data[col] : '-' }}</span>
+          </span>
+          -->
+          <span v-else :class="[columnWidths[col] ? 'd-block' : 'd-inline-block', 'text-truncate']" :style="getTruncateCellStyle(col)" :title="slotProps.data[col]">
             <span v-if="typeof slotProps.data[col] === 'object' && slotProps.data[col] !== null">
               {{ slotProps.data[col].name || slotProps.data[col].title || slotProps.data[col].label || slotProps.data[col].id || '-' }}
             </span>
@@ -2755,6 +2833,7 @@
               />
 
               <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Start Time / End Time / Stop Time fields across all endpoints -->
+              <!--
               <DatePicker 
                 v-else-if="getFieldType(col) === 'time'" 
                 :id="col" 
@@ -2769,6 +2848,65 @@
                 placeholder="Select time" 
                 class="w-100"
               />
+              -->
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker with one-click Now button (inline + popup footer) in Create Modal -->
+              <div
+                v-else-if="getFieldType(col) === 'time'"
+                class="d-flex align-items-center gap-2 w-100"
+              >
+                <div class="flex-grow-1" style="min-width: 0;">
+                  <DatePicker
+                    :id="col"
+                    :ref="timePickerRefSetter('create', col)"
+                    v-model="formData[col]"
+                    timeOnly
+                    hourFormat="12"
+                    showIcon
+                    iconDisplay="input"
+                    icon="pi pi-clock"
+                    fluid
+                    size="small"
+                    placeholder="Select time"
+                    class="w-100"
+                    :class="{ 'p-invalid': hasFieldError('create', col) }"
+                  >
+                    <template #footer>
+                      <div class="d-flex align-items-center justify-content-between gap-2 pt-2 mt-1 border-top">
+                        <Button
+                          type="button"
+                          label="Now"
+                          icon="pi pi-clock"
+                          size="small"
+                          severity="primary"
+                          text
+                          class="p-button-sm fw-semibold"
+                          @click="setFieldTimeNow('create', col)"
+                        />
+                        <Button
+                          type="button"
+                          label="Clear"
+                          size="small"
+                          severity="secondary"
+                          text
+                          class="p-button-sm"
+                          :disabled="!formData[col]"
+                          @click="clearFieldTime('create', col)"
+                        />
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+                <Button
+                  type="button"
+                  size="small"
+                  class="p-button-outlined p-button-secondary p-button-sm flex-shrink-0 px-2.5 fw-semibold d-inline-flex align-items-center gap-1"
+                  v-tooltip.top="'Set current time'"
+                  @click="setFieldTimeNow('create', col)"
+                >
+                  <i class="pi pi-clock" style="font-size: 0.75rem;"></i>
+                  <span>Now</span>
+                </Button>
+              </div>
 
               <!-- Email Input for Email Fields -->
               <InputText 
@@ -5462,6 +5600,7 @@
               />
 
               <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Start Time / End Time / Stop Time fields in Edit Modal -->
+              <!--
               <DatePicker 
                 v-else-if="getFieldType(col) === 'time'" 
                 :id="`edit-${col}`" 
@@ -5478,6 +5617,68 @@
                 :class="{ 'p-disabled bg-light': isFieldDisabledInEdit(col) }"
                 class="w-100"
               />
+              -->
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker with one-click Now button (inline + popup footer) in Edit Modal -->
+              <div
+                v-else-if="getFieldType(col) === 'time'"
+                class="d-flex align-items-center gap-2 w-100"
+              >
+                <div class="flex-grow-1" style="min-width: 0;">
+                  <DatePicker
+                    :id="`edit-${col}`"
+                    :ref="timePickerRefSetter('edit', col)"
+                    v-model="editFormData[col]"
+                    timeOnly
+                    hourFormat="12"
+                    showIcon
+                    iconDisplay="input"
+                    icon="pi pi-clock"
+                    fluid
+                    size="small"
+                    placeholder="Select time"
+                    :disabled="isFieldDisabledInEdit(col)"
+                    :class="{ 'p-disabled bg-light': isFieldDisabledInEdit(col), 'p-invalid': hasFieldError('edit', col) }"
+                    class="w-100"
+                  >
+                    <template #footer>
+                      <div class="d-flex align-items-center justify-content-between gap-2 pt-2 mt-1 border-top">
+                        <Button
+                          type="button"
+                          label="Now"
+                          icon="pi pi-clock"
+                          size="small"
+                          severity="primary"
+                          text
+                          class="p-button-sm fw-semibold"
+                          :disabled="isFieldDisabledInEdit(col)"
+                          @click="setFieldTimeNow('edit', col)"
+                        />
+                        <Button
+                          type="button"
+                          label="Clear"
+                          size="small"
+                          severity="secondary"
+                          text
+                          class="p-button-sm"
+                          :disabled="!editFormData[col] || isFieldDisabledInEdit(col)"
+                          @click="clearFieldTime('edit', col)"
+                        />
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+                <Button
+                  type="button"
+                  size="small"
+                  class="p-button-outlined p-button-secondary p-button-sm flex-shrink-0 px-2.5 fw-semibold d-inline-flex align-items-center gap-1"
+                  :disabled="isFieldDisabledInEdit(col)"
+                  v-tooltip.top="'Set current time'"
+                  @click="setFieldTimeNow('edit', col)"
+                >
+                  <i class="pi pi-clock" style="font-size: 0.75rem;"></i>
+                  <span>Now</span>
+                </Button>
+              </div>
 
               <!-- Email Input for Email Fields -->
               <InputText 
@@ -9069,6 +9270,8 @@ const toggleColumnPicker = (event) => {
   }
 }
 
+// Gene - Nov, 14, 2026: Reset saved column widths on Reset All and clear PrimeVue imperative resize styles when toggling column visibility.
+/*
 const resetColumns = () => {
   visibleColumns.value = [...columns.value]
 }
@@ -9082,6 +9285,23 @@ const toggleColumnVisibility = (col) => {
   } else {
     visibleColumns.value.push(col)
   }
+}
+*/
+const resetColumns = () => {
+  visibleColumns.value = [...columns.value]
+  resetColumnWidths()
+}
+
+const toggleColumnVisibility = (col) => {
+  const idx = visibleColumns.value.indexOf(col)
+  if (idx > -1) {
+    if (visibleColumns.value.length > 1) {
+      visibleColumns.value.splice(idx, 1)
+    }
+  } else {
+    visibleColumns.value.push(col)
+  }
+  clearImperativeResizeStyles()
 }
 
 // Default concise visible columns for Discount Types and Discounts
@@ -9188,6 +9408,216 @@ const leftFrozenColumns = computed(() => {
 })
 
 const isLeftFrozenColumn = (col) => leftFrozenColumns.value.includes(col)
+
+// Gene - Nov, 14, 2026: Added per-user/per-endpoint resizable column width persistence, PrimeVue imperative style cleanup, PT resizer-click sort guard, and dynamic cell/column style helpers.
+const COLUMN_WIDTHS_STORAGE_KEY = 'switchfiber_column_widths_v1'
+const MIN_RESIZABLE_COL_WIDTH = 72
+const MAX_RESIZABLE_COL_WIDTH = 960
+
+const columnWidths = ref({})
+
+const columnWidthEndpointKey = computed(() => {
+  const raw = String(props.endpoint || '').trim().toLowerCase().replace(/^\/+/, '').replace(/^api\//, '')
+  return raw || 'default'
+})
+
+const columnWidthStoreKey = computed(() => {
+  const userId = authStore?.user?.id ?? 'anon'
+  return `${userId}:${columnWidthEndpointKey.value}`
+})
+
+const hasCustomColumnWidths = computed(() => Object.keys(columnWidths.value).length > 0)
+
+const parsePixelWidth = (val) => {
+  if (typeof val === 'number' && Number.isFinite(val)) return val
+  if (typeof val !== 'string') return null
+  const trimmed = val.trim()
+  if (!trimmed.endsWith('px')) return null
+  const parsed = Number.parseFloat(trimmed.slice(0, -2))
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const clampColumnWidth = (widthPx) => {
+  const rounded = Math.round(Number(widthPx))
+  if (!Number.isFinite(rounded)) return MIN_RESIZABLE_COL_WIDTH
+  return Math.min(MAX_RESIZABLE_COL_WIDTH, Math.max(MIN_RESIZABLE_COL_WIDTH, rounded))
+}
+
+const sanitizeColumnWidthMap = (rawMap) => {
+  if (!rawMap || typeof rawMap !== 'object' || Array.isArray(rawMap)) return {}
+  const cleaned = {}
+  for (const [key, val] of Object.entries(rawMap)) {
+    const px = parsePixelWidth(val)
+    if (key && px != null) {
+      cleaned[key] = `${clampColumnWidth(px)}px`
+    }
+  }
+  return cleaned
+}
+
+const readColumnWidthStore = () => {
+  try {
+    if (typeof localStorage === 'undefined') return {}
+    const raw = localStorage.getItem(COLUMN_WIDTHS_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+const loadColumnWidths = (storeKey = columnWidthStoreKey.value) => {
+  const store = readColumnWidthStore()
+  columnWidths.value = sanitizeColumnWidthMap(store[storeKey])
+}
+
+const saveColumnWidths = (widths = columnWidths.value, storeKey = columnWidthStoreKey.value) => {
+  try {
+    if (typeof localStorage === 'undefined') return
+    const store = readColumnWidthStore()
+    const sanitized = sanitizeColumnWidthMap(widths)
+    if (Object.keys(sanitized).length > 0) {
+      store[storeKey] = sanitized
+    } else {
+      delete store[storeKey]
+    }
+    localStorage.setItem(COLUMN_WIDTHS_STORAGE_KEY, JSON.stringify(store))
+  } catch {
+    // Ignore storage quota or serialization errors so column resizing remains non-blocking.
+  }
+}
+
+const clearImperativeResizeStyles = () => {
+  try {
+    dt.value?.destroyStyleElement?.()
+    const rootEl = dt.value?.$el
+    if (!rootEl || typeof rootEl.querySelector !== 'function') return
+    const tableEl = rootEl.querySelector('table.p-datatable-table, table')
+    if (tableEl?.style) {
+      tableEl.style.width = ''
+      tableEl.style.minWidth = ''
+    }
+  } catch {
+    // Ignore cleanup errors when table instance is unmounted.
+  }
+}
+
+const resetColumnWidths = () => {
+  columnWidths.value = {}
+  saveColumnWidths({}, columnWidthStoreKey.value)
+  clearImperativeResizeStyles()
+}
+
+watch(columnWidthStoreKey, (nextKey) => {
+  loadColumnWidths(nextKey)
+  clearImperativeResizeStyles()
+}, { immediate: true })
+
+const stopColumnResizerClick = (event) => {
+  event?.stopPropagation?.()
+}
+
+const dataTableResizePt = {
+  column: {
+    columnResizer: {
+      onClick: stopColumnResizerClick
+    }
+  }
+}
+
+const getDynamicColumnPt = (col) => ({
+  headerCell: {
+    'data-sfa-col': col
+  },
+  columnResizer: {
+    onClick: stopColumnResizerClick
+  }
+})
+
+const getDynamicColumnStyle = (col) => {
+  const width = columnWidths.value[col]
+  if (!width) return undefined
+  return {
+    width,
+    minWidth: width,
+    maxWidth: width
+  }
+}
+
+const getMultilineCellStyle = (col) => {
+  if (columnWidths.value[col]) {
+    return {
+      width: '100%',
+      minWidth: '0px',
+      maxWidth: '100%',
+      whiteSpace: 'normal',
+      wordBreak: 'break-word'
+    }
+  }
+  return {
+    minWidth: '250px',
+    maxWidth: '480px',
+    whiteSpace: 'normal',
+    wordBreak: 'break-word'
+  }
+}
+
+const getTruncateCellStyle = (col) => {
+  if (columnWidths.value[col]) {
+    return {
+      maxWidth: '100%'
+    }
+  }
+  return {
+    maxWidth: '240px'
+  }
+}
+
+const resolveColumnFieldFromHeaderEl = (headerEl) => {
+  if (!headerEl) return null
+  const directField = headerEl.getAttribute?.('data-sfa-col')
+  if (directField && displayedColumns.value.includes(directField)) {
+    return directField
+  }
+  if (headerEl.classList) {
+    const matched = displayedColumns.value.find((col) =>
+      headerEl.classList.contains(`sfa-header-${String(col).toLowerCase()}`)
+    )
+    if (matched) return matched
+  }
+  return null
+}
+
+const onColumnResizeEnd = (event) => {
+  const headerEl = event?.element
+  const col = resolveColumnFieldFromHeaderEl(headerEl)
+  if (!col) return
+
+  const prevPx = parsePixelWidth(columnWidths.value[col])
+  const delta = Number(event?.delta)
+  let nextPx = null
+
+  if (prevPx != null && Number.isFinite(delta)) {
+    nextPx = clampColumnWidth(prevPx + delta)
+  } else {
+    const rectWidth = headerEl?.getBoundingClientRect?.().width
+    const stylePx = parsePixelWidth(headerEl?.style?.width)
+    const measuredWidth = Number.isFinite(rectWidth) && rectWidth > 0
+      ? rectWidth
+      : (stylePx ?? headerEl?.offsetWidth)
+    if (Number.isFinite(measuredWidth) && measuredWidth > 0) {
+      nextPx = clampColumnWidth(measuredWidth)
+    }
+  }
+
+  if (nextPx == null) return
+  columnWidths.value = {
+    ...columnWidths.value,
+    [col]: `${nextPx}px`
+  }
+  saveColumnWidths(columnWidths.value, columnWidthStoreKey.value)
+}
 
 const hasActiveColumn = computed(() => {
   return (columns.value || []).some(c => {
@@ -13296,6 +13726,50 @@ const eitherOrHint = (col) => {
 
 const hasFieldError = (scope, col) => Boolean(fieldErrors.value[scope]?.[col])
 const fieldErrorText = (scope, col) => fieldErrors.value[scope]?.[col] || ''
+
+// Gene - Nov, 14, 2026: One-click "Now" and "Clear" helpers for PrimeVue timeOnly DatePicker fields in Create and Edit forms
+const timePickerRefs = {}
+
+const timePickerRefSetter = (scope, col) => (el) => {
+  const key = `${scope}:${col}`
+  if (el) {
+    timePickerRefs[key] = el
+  } else {
+    delete timePickerRefs[key]
+  }
+}
+
+const closeTimePickerOverlay = (scope, col) => {
+  const inst = timePickerRefs[`${scope}:${col}`]
+  if (inst && typeof inst === 'object' && 'overlayVisible' in inst) {
+    inst.overlayVisible = false
+  }
+}
+
+const setFieldTimeNow = (scope, col, nowFactory = () => new Date()) => {
+  if (!col) return null
+  if (scope === 'edit' && isFieldDisabledInEdit(col)) return null
+  const now = nowFactory()
+  const target = scope === 'edit' ? editFormData.value : formData.value
+  if (target) {
+    target[col] = now
+  }
+  if (fieldErrors.value?.[scope]?.[col]) {
+    delete fieldErrors.value[scope][col]
+  }
+  closeTimePickerOverlay(scope, col)
+  return now
+}
+
+const clearFieldTime = (scope, col) => {
+  if (!col) return
+  if (scope === 'edit' && isFieldDisabledInEdit(col)) return
+  const target = scope === 'edit' ? editFormData.value : formData.value
+  if (target) {
+    target[col] = null
+  }
+  closeTimePickerOverlay(scope, col)
+}
 
 /* ------------------------------------------------------------------
  * Photo EXIF, per form scope and column. ImageDropzone reads it off the

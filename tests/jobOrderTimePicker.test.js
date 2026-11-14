@@ -298,7 +298,17 @@ test('DynamicApiTable template renders 3 timeOnly 12h DatePicker blocks plus Vie
   assert.notEqual(templateEnd, -1)
   const templateSrc = tableSrc.slice(0, templateEnd)
 
+  /*
   const timeBranches = [...templateSrc.matchAll(/<DatePicker\s+v-else-if="getFieldType\(col\) === 'time'"[\s\S]{0,600}?\/>/g)]
+  assert.equal(timeBranches.length, 3, 'Expected Create, View, and Edit time DatePicker branches')
+  */
+  // Gene - Nov, 14, 2026: Match active timeOnly DatePickers (self-closing View + Create/Edit with footer Now/Clear slots) and strip HTML comments
+  const activeTemplateSrc = templateSrc.replace(/<!--[\s\S]*?-->/g, '')
+  const timeBranches = [
+    ...activeTemplateSrc.matchAll(
+      /<DatePicker\b(?:(?!<DatePicker\b)[\s\S])*?\btimeOnly\b(?:(?!<DatePicker\b)[\s\S])*?<\/DatePicker>|<DatePicker\b[^>]*?\btimeOnly\b[^>]*?\/>/g
+    )
+  ]
   assert.equal(timeBranches.length, 3, 'Expected Create, View, and Edit time DatePicker branches')
 
   const joined = timeBranches.map((m) => m[0]).join('\n')
@@ -314,8 +324,24 @@ test('DynamicApiTable template renders 3 timeOnly 12h DatePicker blocks plus Vie
   assert.match(joined, /\bdisabled\b/)
   assert.match(joined, /v-model="editFormData\[col\]"/)
 
+  const interactiveTimeWrappers = [
+    ...activeTemplateSrc.matchAll(
+      /<div\s+v-else-if="getFieldType\(col\) === 'time'"[\s\S]*?<\/DatePicker>\s*<\/div>\s*<Button[\s\S]*?<\/Button>\s*<\/div>/g
+    )
+  ]
+  assert.equal(interactiveTimeWrappers.length, 2, 'Expected Create and Edit time wrapper blocks with Now button')
+  const createWrapper = interactiveTimeWrappers.find((m) => m[0].includes("setFieldTimeNow('create', col)"))
+  const editWrapper = interactiveTimeWrappers.find((m) => m[0].includes("setFieldTimeNow('edit', col)"))
+  assert.ok(createWrapper, 'Create time wrapper should expose inline + footer Now button')
+  assert.ok(editWrapper, 'Edit time wrapper should expose inline + footer Now button')
+  assert.match(createWrapper[0], /<template #footer>[\s\S]*label="Now"[\s\S]*clearFieldTime\('create', col\)/)
+  assert.match(createWrapper[0], /<span>Now<\/span>/)
+  assert.match(editWrapper[0], /<template #footer>[\s\S]*label="Now"[\s\S]*clearFieldTime\('edit', col\)/)
+  assert.match(editWrapper[0], /<span>Now<\/span>/)
+  assert.match(editWrapper[0], /:disabled="isFieldDisabledInEdit\(col\)"/)
+
   assert.match(
-    templateSrc,
+    activeTemplateSrc,
     /<DatePicker\s+v-else-if="getFieldType\(col\) === 'date' && isDateTimeField\(col\)"[\s\S]{0,400}?showTime[\s\S]{0,120}?hourFormat="12"/,
     'View modal should display date & 12-hour time for audit/system date-time fields'
   )
@@ -496,4 +522,62 @@ test('buildJobOrderPayload serializes time fields as local YYYY-MM-DDTHH:mm:ss a
   })
   assert.equal(blankPayload.startTimeStamp, null)
   assert.equal(blankPayload.endTimeStamp, null)
+})
+
+test('setFieldTimeNow and clearFieldTime populate current time, close overlay, respect edit disabled guard, and serialize to payload', () => {
+  const activeSrc = tableSrc.replace(/\r\n/g, '\n')
+  const timeActionSrc = sliceBetween(
+    activeSrc,
+    'const timePickerRefs = {}',
+    '\nconst photoExifByCol'
+  )
+
+  const formData = { value: { dateInstalled: new Date(2026, 10, 14, 0, 0, 0), startTimeStamp: null } }
+  const editFormData = { value: { startTimeStamp: null, endTimeStamp: null } }
+  const fieldErrors = { value: { create: { startTimeStamp: 'Required' }, edit: {} } }
+  const disabledCols = new Set(['startTimeStamp'])
+  const isFieldDisabledInEdit = (col) => disabledCols.has(col)
+
+  const helpers = new Function(
+    'formData',
+    'editFormData',
+    'fieldErrors',
+    'isFieldDisabledInEdit',
+    `${timeActionSrc}\nreturn { timePickerRefs, timePickerRefSetter, setFieldTimeNow, clearFieldTime }`
+  )(formData, editFormData, fieldErrors, isFieldDisabledInEdit)
+
+  const createOverlay = { overlayVisible: true }
+  const editOverlay = { overlayVisible: true }
+  helpers.timePickerRefSetter('create', 'startTimeStamp')(createOverlay)
+  helpers.timePickerRefSetter('edit', 'endTimeStamp')(editOverlay)
+
+  const fixedNow = new Date(2026, 10, 14, 15, 42, 18)
+  const picked = helpers.setFieldTimeNow('create', 'startTimeStamp', () => fixedNow)
+  assert.equal(picked, fixedNow)
+  assert.equal(formData.value.startTimeStamp, fixedNow)
+  assert.equal(fieldErrors.value.create.startTimeStamp, undefined, 'setFieldTimeNow should clear field validation error')
+  assert.equal(createOverlay.overlayVisible, false, 'setFieldTimeNow should close open DatePicker overlay')
+
+  const buildJobOrderPayload = makeBuildJobOrderPayload()
+  const serialized = buildJobOrderPayload(formData.value)
+  assert.equal(serialized.startTimeStamp, '2026-11-14T15:42:18')
+
+  const disabledResult = helpers.setFieldTimeNow('edit', 'startTimeStamp', () => fixedNow)
+  assert.equal(disabledResult, null)
+  assert.equal(editFormData.value.startTimeStamp, null, 'Disabled edit field must not be overwritten')
+
+  const editPicked = helpers.setFieldTimeNow('edit', 'endTimeStamp', () => fixedNow)
+  assert.equal(editPicked, fixedNow)
+  assert.equal(editFormData.value.endTimeStamp, fixedNow)
+  assert.equal(editOverlay.overlayVisible, false)
+
+  createOverlay.overlayVisible = true
+  helpers.clearFieldTime('create', 'startTimeStamp')
+  assert.equal(formData.value.startTimeStamp, null)
+  assert.equal(createOverlay.overlayVisible, false)
+
+  editOverlay.overlayVisible = true
+  helpers.clearFieldTime('edit', 'endTimeStamp')
+  assert.equal(editFormData.value.endTimeStamp, null)
+  assert.equal(editOverlay.overlayVisible, false)
 })
