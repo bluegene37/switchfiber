@@ -4249,11 +4249,26 @@
               />
 
               <!-- Onsite Status Dropdown -->
+              <!--
               <Select 
                 v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
                 :id="`edit-${col}`" 
                 v-model="editFormData[col]" 
                 :options="onsiteStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select Onsite Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+              -->
+              <!-- Gene - Nov, 14, 2026: Bind Edit modal Onsite Status dropdown to editOnsiteStatusOptions (Done, Failed, Rescheduled, InProgress + legacy value preservation) -->
+              <Select 
+                v-else-if="getFieldType(col) === 'onsitestatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="editOnsiteStatusOptions" 
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
@@ -12195,10 +12210,38 @@ const editStatusOptions = computed(() => {
   return getStableOptionsWithCurrent(statusOptions.value, current)
 })
 
+/*
 const onsiteStatusOptions = ref([
   { label: 'Done', value: 'Done' },
   { label: 'Failed', value: 'Failed' }
 ])
+*/
+// Gene - Nov, 14, 2026: Added Rescheduled and InProgress options to Job Order Onsite Status dropdown, with normalization and edit-mode fallback preservation
+const onsiteStatusOptions = ref([
+  { label: 'Done', value: 'Done' },
+  { label: 'Failed', value: 'Failed' },
+  { label: 'Rescheduled', value: 'Rescheduled' },
+  { label: 'InProgress', value: 'InProgress' }
+])
+
+const normalizeOnsiteStatus = (val) => {
+  if (val === null || val === undefined) return ''
+  const raw = String(val).trim()
+  if (!raw) return ''
+  const compact = raw.toLowerCase().replace(/[\s_-]+/g, '')
+  if (compact === 'done') return 'Done'
+  if (compact === 'failed') return 'Failed'
+  if (compact === 'rescheduled' || compact === 'reschedule') return 'Rescheduled'
+  if (compact === 'inprogress') return 'InProgress'
+  return raw
+}
+
+const editOnsiteStatusOptions = computed(() => {
+  const record = editFormData.value || {}
+  const onsiteKey = Object.keys(record).find(k => normalizeColKey(k) === 'onsitestatus') || 'onsiteStatus'
+  const current = normalizeOnsiteStatus(record[onsiteKey])
+  return getStableOptionsWithCurrent(onsiteStatusOptions.value, current)
+})
 
 const billingStatusOptions = ref([
   { label: 'Done', value: 'Done' },
@@ -17039,6 +17082,10 @@ const openEditDialog = async (record) => {
     if (getFieldType(col) === 'time') {
       editFormData.value[col] = editFormData.value[col] ? parseTimeForPicker(editFormData.value[col]) : null
     }
+    // Gene - Nov, 14, 2026: Normalize legacy Onsite Status casing/spacing variants to canonical dropdown values in edit modal
+    if (getFieldType(col) === 'onsitestatus_dropdown' && editFormData.value[col]) {
+      editFormData.value[col] = normalizeOnsiteStatus(editFormData.value[col])
+    }
   })
 
   /*
@@ -17221,6 +17268,9 @@ const openEditDialog = async (record) => {
     // Gene - Nov, 14, 2026: Parse Job Order time fields into local Date objects (or null when blank) for PrimeVue timeOnly DatePicker in edit modal
     } else if (type === 'time') {
       editFormData.value[col] = record[col] ? parseTimeForPicker(record[col]) : null
+    // Gene - Nov, 14, 2026: Normalize legacy Onsite Status casing/spacing variants after lookup refresh in edit modal
+    } else if (type === 'onsitestatus_dropdown' && record[col]) {
+      editFormData.value[col] = normalizeOnsiteStatus(record[col])
     /*
     } else if (record[col] === null || record[col] === undefined) {
       if (col !== regCol && col !== cCol && col !== bCol && col !== statusCol && col !== coordCol) {
@@ -17328,6 +17378,10 @@ const normalizeCompareValue = (col, val) => {
     if (!t) return String(val).trim()
     const pad = (n) => String(n).padStart(2, '0')
     return `${pad(t.getHours())}:${pad(t.getMinutes())}`
+  }
+  // Gene - Nov, 14, 2026: Normalize Onsite Status variants during conflict comparison so legacy spellings do not trigger false edit conflicts
+  if (type === 'onsitestatus_dropdown') {
+    return normalizeOnsiteStatus(val)
   }
   if (type === 'agreement_checkbox') {
     return isAgreementChecked(val) ? 'yes' : 'no'
