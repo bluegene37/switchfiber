@@ -689,7 +689,13 @@
             <span v-else class="text-muted">-</span>
           </span>
           <!-- Date / Timestamp Formatted Columns -->
+          <!--
           <span v-else-if="isDateField(col) && slotProps.data[col]" class="text-nowrap small">
+            {{ formatDisplayValue(slotProps.data[col], col) }}
+          </span>
+          -->
+          <!-- Gene - Nov, 14, 2026: Render all date, date-time, and time cells through formatDisplayValue (including blank and 0001-01-01 sentinels) -->
+          <span v-else-if="isDateField(col)" class="text-nowrap small">
             {{ formatDisplayValue(slotProps.data[col], col) }}
           </span>
           <span v-else-if="(getFieldType(col) === 'phone' || isPhoneField(col)) && slotProps.data[col]" class="font-monospace small">
@@ -2718,7 +2724,7 @@
                 class="w-100"
               />
 
-              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Job Order Start Time and End Time fields -->
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Start Time / End Time / Stop Time fields across all endpoints -->
               <DatePicker 
                 v-else-if="getFieldType(col) === 'time'" 
                 :id="col" 
@@ -3169,7 +3175,36 @@
                 </label>
               </div>
 
-              <!-- DatePicker for Date Fields -->
+              <!-- DatePicker for Date and Date-Time Fields -->
+              <!--
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'date'" 
+                :id="`view-${col}`" 
+                :modelValue="parseDateForPicker(viewFormData[col])" 
+                showIcon 
+                iconDisplay="input"
+                fluid
+                size="small"
+                dateFormat="yy-mm-dd" 
+                disabled
+                class="w-100"
+              />
+              -->
+              <!-- Gene - Nov, 14, 2026: Show both date and 12-hour time for system/audit Date-Time fields in View modal, while pure business date fields stay date-only -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'date' && isDateTimeField(col)" 
+                :id="`view-${col}`" 
+                :modelValue="parseDateForPicker(viewFormData[col])" 
+                showTime
+                hourFormat="12"
+                showIcon 
+                iconDisplay="input"
+                fluid
+                size="small"
+                dateFormat="yy-mm-dd" 
+                disabled
+                class="w-100"
+              />
               <DatePicker 
                 v-else-if="getFieldType(col) === 'date'" 
                 :id="`view-${col}`" 
@@ -3183,7 +3218,7 @@
                 class="w-100"
               />
 
-              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Job Order Start Time and End Time in View Modal -->
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Start Time / End Time / Stop Time fields in View Modal -->
               <DatePicker 
                 v-else-if="getFieldType(col) === 'time'" 
                 :id="`view-${col}`" 
@@ -5350,7 +5385,7 @@
                 class="w-100"
               />
 
-              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Job Order Start Time and End Time in Edit Modal -->
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Start Time / End Time / Stop Time fields in Edit Modal -->
               <DatePicker 
                 v-else-if="getFieldType(col) === 'time'" 
                 :id="`edit-${col}`" 
@@ -7177,6 +7212,11 @@ function formatLabel(col) {
     return 'Display Order'
   }
 
+  // Gene - Nov, 14, 2026: Label modifiedDate / lastModified as Modified Date & Time on Job Orders
+  if (typeof isJobOrderEndpoint !== 'undefined' && isJobOrderEndpoint.value && (normalizeColKey(col) === 'modifieddate' || normalizeColKey(col) === 'lastmodified')) {
+    return 'Modified Date & Time'
+  }
+
   /*
   if (isPaymentEndpoint.value) {
     const k = normalizeColKey(col)
@@ -7316,10 +7356,19 @@ function formatLabel(col) {
     starttimestamp: 'Start Time',
     stoptimestamp: 'Stop Time',
     */
+    /*
     // Gene - Nov, 14, 2026: Add End Time label override for Job Order endTimeStamp alongside Start Time and Stop Time
     starttimestamp: 'Start Time',
     endtimestamp: 'End Time',
     stoptimestamp: 'Stop Time',
+    */
+    // Gene - Nov, 14, 2026: Add canonical time labels across all endpoints (Start Time, End Time, Stop Time)
+    starttimestamp: 'Start Time',
+    endtimestamp: 'End Time',
+    stoptimestamp: 'Stop Time',
+    starttime: 'Start Time',
+    endtime: 'End Time',
+    stoptime: 'Stop Time',
     assignedby: 'Assigned By',
     assignedemail: 'Assigned Email',
     assigneddate: 'Assigned Date',
@@ -7441,6 +7490,7 @@ const normalizeAgreementValue = (val) => {
   return ''
 }
 
+/*
 const parseDateForPicker = (val) => {
   if (!val) return null
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val
@@ -7471,6 +7521,90 @@ const parseTimeForPicker = (val) => {
   }
   const d = new Date(str)
   return isNaN(d.getTime()) ? null : d
+}
+*/
+// Gene - Nov, 14, 2026: Safely parse local YYYY-MM-DD / ISO date strings (ignoring .NET 0001-01-01 sentinels) and provide local YYYY-MM-DDTHH:mm:ss serialization for all time fields
+const parseDateForPicker = (val) => {
+  if (!val) return null
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val
+  const str = String(val).trim()
+  if (!str || str.startsWith('0001-01-01')) return null
+  const ymdOnly = str.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (ymdOnly) {
+    return new Date(Number(ymdOnly[1]), Number(ymdOnly[2]) - 1, Number(ymdOnly[3]))
+  }
+  const d = new Date(str)
+  return isNaN(d.getTime()) ? null : d
+}
+
+const parseTimeForPicker = (val) => {
+  if (!val) return null
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val
+  const str = String(val).trim()
+  if (!str || str.startsWith('0001-01-01')) return null
+  const timeOnlyMatch = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM))?$/i)
+  if (timeOnlyMatch) {
+    let hours = parseInt(timeOnlyMatch[1], 10)
+    const minutes = parseInt(timeOnlyMatch[2], 10)
+    const seconds = timeOnlyMatch[3] ? parseInt(timeOnlyMatch[3], 10) : 0
+    const meridiem = timeOnlyMatch[4] ? timeOnlyMatch[4].toUpperCase() : null
+    if (meridiem) {
+      if (hours < 1 || hours > 12) return null
+      if (meridiem === 'AM' && hours === 12) hours = 0
+      else if (meridiem === 'PM' && hours < 12) hours += 12
+    }
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) return null
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, seconds, 0)
+  }
+  const d = new Date(str)
+  return isNaN(d.getTime()) ? null : d
+}
+
+const serializeTimeForPayload = (val, anchorVal = null) => {
+  if (val === null || val === undefined) return null
+  let hours, minutes, seconds
+  let fallbackDate = null
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return null
+    hours = val.getHours()
+    minutes = val.getMinutes()
+    seconds = val.getSeconds()
+    fallbackDate = val
+  } else {
+    const str = String(val).trim()
+    if (!str || str.startsWith('0001-01-01')) return null
+    const m = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM))?$/i)
+    if (m) {
+      hours = parseInt(m[1], 10)
+      minutes = parseInt(m[2], 10)
+      seconds = m[3] ? parseInt(m[3], 10) : 0
+      const mer = m[4] ? m[4].toUpperCase() : null
+      if (mer) {
+        if (hours < 1 || hours > 12) return null
+        if (mer === 'AM' && hours === 12) hours = 0
+        else if (mer === 'PM' && hours < 12) hours += 12
+      }
+      if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) return null
+    } else {
+      const d = new Date(str)
+      if (isNaN(d.getTime())) return null
+      hours = d.getHours()
+      minutes = d.getMinutes()
+      seconds = d.getSeconds()
+      fallbackDate = d
+    }
+  }
+  let anchor = null
+  if (anchorVal instanceof Date && !isNaN(anchorVal.getTime())) {
+    anchor = anchorVal
+  } else if (typeof anchorVal === 'string' && anchorVal.trim() && !anchorVal.trim().startsWith('0001-01-01')) {
+    const ad = new Date(anchorVal.trim())
+    if (!isNaN(ad.getTime())) anchor = ad
+  }
+  const base = anchor || fallbackDate || new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${base.getFullYear()}-${pad(base.getMonth() + 1)}-${pad(base.getDate())}T${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
 }
 
 const getRowCoordinateValue = (row, col) => {
@@ -7878,8 +8012,25 @@ function getFieldType(col) {
     }
   }
 
+  /*
   // Gene - Nov, 14, 2026: Render Job Order Start Time (startTimeStamp) and End Time (endTimeStamp) as time selection pickers instead of date pickers
   if (isJobOrderEndpoint.value && (lower === 'starttimestamp' || lower === 'endtimestamp')) {
+    return 'time'
+  }
+  */
+  // Gene - Nov, 14, 2026: Classify all time-only fields across all endpoints (JobOrders, ServiceOrders, etc.) as time selection pickers
+  if (
+    lower === 'starttimestamp' ||
+    lower === 'endtimestamp' ||
+    lower === 'stoptimestamp' ||
+    lower === 'starttime' ||
+    lower === 'endtime' ||
+    lower === 'stoptime' ||
+    lower === 'timein' ||
+    lower === 'timeout' ||
+    lower === 'preferredtime' ||
+    (lower.endsWith('time') && !lower.includes('date') && lower !== 'runtime' && lower !== 'uptime')
+  ) {
     return 'time'
   }
 
@@ -8463,7 +8614,11 @@ const JOB_ORDER_COLUMNS = [
   // Who the job order is assigned to is the field dispatchers scan for, so it
   // takes the slot the install date used to hold; `dateInstalled` is still in
   // the View Details modal, which lists the whole record.
-  'assignedEmail'
+  // 'assignedEmail'
+  // Gene - Nov, 14, 2026: Include Modified By and Modified Date & Time columns in the Job Orders table
+  'assignedEmail',
+  'modifiedBy',
+  'modifiedDate'
 ]
 
 const PLAN_COLUMNS = [
@@ -8639,13 +8794,36 @@ const columns = computed(() => {
         matchedList.push(rawMap.get('applicationidvalue'))
       } else if (normKey === 'applicationidvalue' && rawMap.has('applicationid')) {
         matchedList.push(rawMap.get('applicationid'))
+      // Gene - Nov, 14, 2026: Resolve Modified By / Modified Date aliases and guarantee both columns stay present on JobOrders even if sparse API rows omit them
+      } else if (normKey === 'modifiedby' && rawMap.has('lastmodifiedby')) {
+        matchedList.push(rawMap.get('lastmodifiedby'))
+      } else if (normKey === 'modifiedby' && rawMap.has('modifiedbyuserid')) {
+        matchedList.push(rawMap.get('modifiedbyuserid'))
+      } else if (normKey === 'modifieddate' && rawMap.has('lastmodified')) {
+        matchedList.push(rawMap.get('lastmodified'))
+      } else if (isJobOrderEndpoint.value && (normKey === 'modifiedby' || normKey === 'modifieddate')) {
+        matchedList.push(col)
       }
     })
     if (matchedList.length > 0) colList = matchedList
   }
 
   return colList.filter(col => {
+    /*
     if (isCreatedOrModifiedField(col)) return false
+    */
+    // Gene - Nov, 14, 2026: Allow Modified By and Modified Date & Time columns in the Job Orders table while keeping audit fields hidden from other tables and Create/Edit forms
+    if (isCreatedOrModifiedField(col)) {
+      const normCol = normalizeColKey(col)
+      const allowJobOrderModified = isJobOrderEndpoint.value && (
+        normCol === 'modifiedby' ||
+        normCol === 'lastmodifiedby' ||
+        normCol === 'modifiedbyuserid' ||
+        normCol === 'modifieddate' ||
+        normCol === 'lastmodified'
+      )
+      if (!allowJobOrderModified) return false
+    }
     const lower = col.toLowerCase()
     if (lower === 'password' || lower === 'pass' || lower === 'pwd') return false
 
@@ -11203,8 +11381,18 @@ const pinnedTileValue = (scope, col) => {
   const data = scope === 'edit' ? editFormData.value : formData.value
   const val = data ? data[col] : undefined
   if (val === null || val === undefined || String(val).trim() === '') return 'Not set'
+  /*
   if (val instanceof Date) {
     return isNaN(val.getTime()) ? 'Not set' : val.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+  }
+  */
+  // Gene - Nov, 14, 2026: Format Quick Fields time and date-time Date objects via formatDisplayValue instead of showing a calendar date for time pickers
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return 'Not set'
+    if (getFieldType(col) === 'time' || isDateTimeField(col)) {
+      return formatDisplayValue(val, col)
+    }
+    return val.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
   }
   if (getFieldType(col) === 'assignedemail_dropdown') {
     const wanted = String(val).trim().toLowerCase()
@@ -11266,9 +11454,15 @@ const fieldSearchAliases = (col) => {
   if (key === 'visitwithother') return ['Visit With (Other)', 'User Email', 'userEmail']
   if (isPromotionEndpoint.value && key === 'priority') return ['Priority', 'Display Order', 'Order']
   if (isPaymentEndpoint.value && key === 'transactiontype') return ['Payment Type', 'Transaction Type', 'transactionType']
+  /*
   // Gene - Nov, 14, 2026: Add field search aliases for Job Order Start Time and End Time
   if (isJobOrderEndpoint.value && key === 'starttimestamp') return ['Start Time', 'Time Start', 'startTimeStamp']
   if (isJobOrderEndpoint.value && key === 'endtimestamp') return ['End Time', 'Time End', 'Start End', 'endTimeStamp']
+  */
+  // Gene - Nov, 14, 2026: Add field search aliases for Start Time, End Time, and Stop Time across all endpoints
+  if (key === 'starttimestamp' || key === 'starttime') return ['Start Time', 'Time Start', 'startTimeStamp', 'startTimestamp']
+  if (key === 'endtimestamp' || key === 'endtime') return ['End Time', 'Time End', 'Start End', 'endTimeStamp']
+  if (key === 'stoptimestamp' || key === 'stoptime') return ['Stop Time', 'Time Stop', 'End Time', 'stopTimestamp']
   return []
 }
 
@@ -11557,6 +11751,14 @@ const exportExcel = () => {
           rowObj[header] = getUserDisplayName(val)
         } else if (getFieldType(col) === 'agreement_checkbox') {
           rowObj[header] = isAgreementChecked(val) ? 'Yes, I Agree' : ''
+        /*
+        } else {
+          rowObj[header] = val !== null && val !== undefined ? String(val) : '-'
+        }
+        */
+        // Gene - Nov, 14, 2026: Format Date, Date-Time, and Time columns via formatDisplayValue during Excel export
+        } else if (isDateField(col)) {
+          rowObj[header] = formatDisplayValue(val, col)
         } else {
           rowObj[header] = val !== null && val !== undefined ? String(val) : '-'
         }
@@ -11639,6 +11841,13 @@ const exportPDF = () => {
         }
         if (getFieldType(col) === 'agreement_checkbox') {
           return isAgreementChecked(val) ? 'Yes, I Agree' : '-'
+        }
+        /*
+        return val !== null && val !== undefined ? String(val) : '-'
+        */
+        // Gene - Nov, 14, 2026: Format Date, Date-Time, and Time columns via formatDisplayValue during PDF export
+        if (isDateField(col)) {
+          return formatDisplayValue(val, col)
         }
         return val !== null && val !== undefined ? String(val) : '-'
       })
@@ -14152,6 +14361,27 @@ const isCurrencyField = (col) => {
   )
 }
 
+// Gene - Nov, 14, 2026: Distinguish system/audit date-time columns (which carry both date and time) from pure calendar date or time-only columns
+function isDateTimeField(col) {
+  if (!col) return false
+  const lower = col.toLowerCase().replace(/_/g, '')
+  if (getFieldType(col) === 'time') return false
+  return (
+    lower === 'modifieddate' ||
+    lower === 'createddate' ||
+    lower === 'techmodifieddate' ||
+    lower === 'updateddate' ||
+    lower === 'lastmodified' ||
+    lower === 'timestamp' ||
+    lower === 'datetime' ||
+    lower === 'created' ||
+    lower === 'modified' ||
+    lower === 'expiresat' ||
+    lower === 'lastusedat' ||
+    lower === 'revokedat'
+  )
+}
+
 const isDateField = (col) => {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
@@ -14238,6 +14468,7 @@ const formatDisplayValue = (val, col) => {
     return normalizePhoneNumber(val)
   }
 
+  /*
   // Gene - Nov, 14, 2026: Format Job Order time selection fields (startTimeStamp, endTimeStamp) as 12-hour clock times
   if (type === 'time') {
     const t = parseTimeForPicker(val)
@@ -14259,15 +14490,70 @@ const formatDisplayValue = (val, col) => {
     })
   }
 
-  /*
-  // Format server-side timestamps and dates
-  if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified' || (isPaymentEndpoint.value && lower === 'receivedpayment')) && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
-  */
   // Gene - Nov 6, 2026: Canonical date formatting without legacy receivedpayment date shift
   if ((type === 'date' || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified') && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
     const d = new Date(val)
     if (!isNaN(d.getTime())) {
       if (val.includes('T') || val.includes(':')) {
+        return d.toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        })
+      }
+      return d.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit'
+      })
+    }
+  }
+  */
+  // Gene - Nov, 14, 2026: Ignore .NET 0001-01-01 sentinel strings and enforce Time vs Date vs Date-Time formatting across all endpoints
+  if (typeof val === 'string' && val.trim().startsWith('0001-01-01')) {
+    return '-'
+  }
+
+  if (type === 'time') {
+    const t = parseTimeForPicker(val)
+    if (t) {
+      return t.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      })
+    }
+    return typeof val === 'string' ? (val.trim() || '-') : '-'
+  }
+
+  // Gene - Nov 5, 2026: Format Date object instances directly in formatDisplayValue
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    if (isDateTimeField(col)) {
+      return val.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })
+    }
+    return val.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit'
+    })
+  }
+
+  if ((type === 'date' || isDateTimeField(col) || lower.includes('date') || lower.includes('timestamp') || lower === 'datetime' || lower === 'created' || lower === 'modified') && typeof val === 'string' && val.length >= 10 && !isNaN(Date.parse(val))) {
+    const d = parseDateForPicker(val)
+    if (d && !isNaN(d.getTime())) {
+      if (isDateTimeField(col) && (val.includes('T') || val.includes(':'))) {
         return d.toLocaleString('en-US', {
           year: 'numeric',
           month: 'short',
@@ -15539,6 +15825,22 @@ const saveData = async () => {
       Object.keys(finalPayload).forEach(key => {
         if (finalPayload[key] === '' || finalPayload[key] === null || finalPayload[key] === undefined) {
           delete finalPayload[key]
+        /*
+        } else if (finalPayload[key] instanceof Date) {
+          const d = finalPayload[key]
+          finalPayload[key] = d.toISOString()
+        */
+        // Gene - Nov, 14, 2026: Serialize time picker fields as local YYYY-MM-DDTHH:mm:ss instead of UTC .toISOString() on Create
+        } else if (getFieldType(key) === 'time') {
+          const serializedTime = serializeTimeForPayload(
+            finalPayload[key],
+            payload.assignedDate || payload.dateInstalled || payload.startDate || null
+          )
+          if (serializedTime) {
+            finalPayload[key] = serializedTime
+          } else {
+            delete finalPayload[key]
+          }
         } else if (finalPayload[key] instanceof Date) {
           const d = finalPayload[key]
           finalPayload[key] = d.toISOString()
@@ -17631,7 +17933,23 @@ const saveEdit = async () => {
         if (isAuditField(key) && key.toLowerCase() !== 'id' && key.toLowerCase() !== 'createddate' && key.toLowerCase() !== 'modifiedby' && key.toLowerCase() !== 'modifieddate') {
           return
         }
+        /*
         if (val !== undefined && val !== null) {
+          form.append(key, val instanceof Date ? val.toISOString() : String(val))
+        }
+        */
+        // Gene - Nov, 14, 2026: Serialize ServiceOrders time fields as local YYYY-MM-DDTHH:mm:ss and omit blank/null date & time keys in FormData
+        const fieldType = getFieldType(key)
+        if (fieldType === 'time') {
+          const serializedTime = serializeTimeForPayload(val, payload.assignedDate || payload.dateInstalled || null)
+          if (serializedTime) {
+            form.append(key, serializedTime)
+          }
+        } else if (fieldType === 'date') {
+          if (val !== undefined && val !== null && String(val).trim() !== '') {
+            form.append(key, val instanceof Date ? val.toISOString() : String(val))
+          }
+        } else if (val !== undefined && val !== null) {
           form.append(key, val instanceof Date ? val.toISOString() : String(val))
         }
       })
@@ -17703,6 +18021,21 @@ const saveEdit = async () => {
       Object.keys(finalPayload).forEach(key => {
         if (finalPayload[key] === '' || finalPayload[key] === null || finalPayload[key] === undefined) {
           delete finalPayload[key]
+        /*
+        } else if (finalPayload[key] instanceof Date) {
+          finalPayload[key] = finalPayload[key].toISOString()
+        */
+        // Gene - Nov, 14, 2026: Serialize time picker fields as local YYYY-MM-DDTHH:mm:ss instead of UTC .toISOString() on Update
+        } else if (getFieldType(key) === 'time') {
+          const serializedTime = serializeTimeForPayload(
+            finalPayload[key],
+            payload.assignedDate || payload.dateInstalled || payload.startDate || null
+          )
+          if (serializedTime) {
+            finalPayload[key] = serializedTime
+          } else {
+            delete finalPayload[key]
+          }
         } else if (finalPayload[key] instanceof Date) {
           finalPayload[key] = finalPayload[key].toISOString()
         /*
