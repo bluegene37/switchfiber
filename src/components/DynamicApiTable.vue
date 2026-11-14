@@ -9938,9 +9938,20 @@ const recordToDelete = ref(null)
 const deleting = ref(false)
 const deleteError = ref(null)
 
+// Gene - Nov, 14, 2026: Hide Remarks and Status Remarks fields from Job Order forms while retaining JO Remarks and Onsite Remarks
+const isHiddenJobOrderFormField = (col) => {
+  if (!col || !(typeof isJobOrderEndpoint !== 'undefined' && isJobOrderEndpoint.value)) return false
+  const norm = normalizeColKey(col)
+  return norm === 'remarks' || norm === 'statusremarks'
+}
+
 // Filter out system-generated fields (id, created/modified dates & times, createdBy/modifiedBy, rowVersion) from forms
 const formColumns = computed(() => {
+  /*
   const list = allRawColumns.value.filter(col => !isAuditField(col))
+  */
+  // Gene - Nov, 14, 2026: Exclude hidden Job Order form fields (Remarks, Status Remarks) from Create, Edit, and Quick Fields forms
+  const list = allRawColumns.value.filter(col => !isAuditField(col)).filter(col => !isHiddenJobOrderFormField(col))
 
   // If username field exists, inject email immediately after username for 2-column alignment
   const usernameIndex = list.findIndex(c => c.toLowerCase() === 'username')
@@ -10685,6 +10696,7 @@ const JOB_ORDER_FORM_LAYOUT = [
       'lcpnapportId'
     ]
   },
+  /*
   {
     key: 'dispatch',
     title: 'Field Service Dispatch & Operations',
@@ -10712,6 +10724,35 @@ const JOB_ORDER_FORM_LAYOUT = [
       'remarks',
       'onsiteRemarks',
       'statusRemarks'
+    ]
+  },
+  */
+  // Gene - Nov, 14, 2026: Hide Remarks and Status Remarks from Job Order form layout while retaining JO Remarks and Onsite Remarks
+  {
+    key: 'dispatch',
+    title: 'Field Service Dispatch & Operations',
+    icon: 'pi pi-check-square',
+    badgeClass: 'text-secondary',
+    columns: [
+      'status',
+      'onsiteStatus',
+      'verifiedBy',
+      'visitBy',
+      'visitWith',
+      'visitWithOther',
+      'assignedEmail',
+      'dateInstalled',
+      'startTimeStamp',
+      'endTimeStamp',
+      'duration',
+      'usageType',
+      'renter',
+      'usernameStatus',
+      'externalId',
+      'applicationId',
+      'applicationIdValue',
+      'joRemarks',
+      'onsiteRemarks'
     ]
   },
   {
@@ -11268,7 +11309,17 @@ const buildLayoutSections = (cols, layout, { includeAudit = false } = {}) => {
   return sections
 }
 
+/*
 const buildJobOrderSections = (cols, opts) => buildLayoutSections(cols, JOB_ORDER_FORM_LAYOUT, opts)
+*/
+// Gene - Nov, 14, 2026: Exclude Remarks and Status Remarks when building Job Order form sections so they never leak into Additional Details
+const buildJobOrderSections = (cols, opts) => {
+  const filteredCols = (cols || []).filter(col => {
+    const norm = normalizeColKey(col)
+    return norm !== 'remarks' && norm !== 'statusremarks'
+  })
+  return buildLayoutSections(filteredCols, JOB_ORDER_FORM_LAYOUT, opts)
+}
 const buildPlanSections = (cols, opts) => buildLayoutSections(cols, PLAN_FORM_LAYOUT, opts)
 const buildRouterSections = (cols, opts) => buildLayoutSections(cols, ROUTER_FORM_LAYOUT, opts)
 const buildInvoiceSections = (cols, opts) => buildLayoutSections(cols, INVOICE_FORM_LAYOUT, opts)
@@ -11631,8 +11682,12 @@ const viewFormColumns = computed(() => {
     keys = [...allRawColumns.value]
   }
 
+  /*
   // Deduplicate redundant/paired fields and EF Core navigation objects for View Modal
   keys = deduplicateColumns(keys)
+  */
+  // Gene - Nov, 14, 2026: Deduplicate redundant fields and exclude hidden Job Order form fields (Remarks, Status Remarks) from View Details modal
+  keys = deduplicateColumns(keys).filter(col => !isHiddenJobOrderFormField(col))
 
   const idIndex = keys.findIndex(k => k.toLowerCase() === 'id')
   if (idIndex > 0) {
