@@ -1511,6 +1511,7 @@
               />
 
               <!-- Assigned Email: pick a user by name, store their email -->
+              <!--
               <Select
                 v-else-if="getFieldType(col) === 'assignedemail_dropdown'"
                 :id="col"
@@ -1526,6 +1527,35 @@
                 class="w-100 p-inputtext-sm"
                 :class="{ 'p-invalid': hasFieldError('create', col) }"
               />
+              -->
+              <!-- Gene - Nov, 14, 2026: Display user name description for assigned email while storing email and including all JO-saved emails -->
+              <Select
+                v-else-if="getFieldType(col) === 'assignedemail_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="getAssignedUserOptions(formData[col])"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                :filterFields="['label', 'email', 'value']"
+                filterPlaceholder="Search by name or email"
+                :showClear="true"
+                :loading="assignedUsersLoading"
+                placeholder="Select User"
+                class="w-100 p-inputtext-sm"
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
+              >
+                <template #value="slotProps">
+                  <span v-if="slotProps.value">{{ getUserDisplayName(slotProps.value) }}</span>
+                  <span v-else>{{ slotProps.placeholder }}</span>
+                </template>
+                <template #option="slotProps">
+                  <div class="d-flex flex-column">
+                    <span>{{ slotProps.option.label }}</span>
+                    <small v-if="slotProps.option.email && slotProps.option.label !== slotProps.option.email" class="text-muted">{{ slotProps.option.email }}</small>
+                  </div>
+                </template>
+              </Select>
 
               <!-- Province Dropdown (the API column is named `region` but stores the province) -->
               <Select
@@ -4112,6 +4142,7 @@
               />
 
               <!-- Assigned Email: pick a user by name, store their email -->
+              <!--
               <Select
                 v-else-if="getFieldType(col) === 'assignedemail_dropdown'"
                 :id="`edit-${col}`"
@@ -4128,6 +4159,36 @@
                 class="w-100 p-inputtext-sm"
                 :class="{ 'p-invalid': hasFieldError('edit', col) }"
               />
+              -->
+              <!-- Gene - Nov, 14, 2026: Display user name description for assigned email while storing email and including all JO-saved emails -->
+              <Select
+                v-else-if="getFieldType(col) === 'assignedemail_dropdown'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="getAssignedUserOptions(editFormData[col])"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                :filterFields="['label', 'email', 'value']"
+                filterPlaceholder="Search by name or email"
+                :showClear="true"
+                :loading="assignedUsersLoading"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select User"
+                class="w-100 p-inputtext-sm"
+                :class="{ 'p-invalid': hasFieldError('edit', col) }"
+              >
+                <template #value="slotProps">
+                  <span v-if="slotProps.value">{{ getUserDisplayName(slotProps.value) }}</span>
+                  <span v-else>{{ slotProps.placeholder }}</span>
+                </template>
+                <template #option="slotProps">
+                  <div class="d-flex flex-column">
+                    <span>{{ slotProps.option.label }}</span>
+                    <small v-if="slotProps.option.email && slotProps.option.label !== slotProps.option.email" class="text-muted">{{ slotProps.option.email }}</small>
+                  </div>
+                </template>
+              </Select>
 
               <!-- Province Dropdown (the API column is named `region` but stores the province) -->
               <Select
@@ -12113,6 +12174,7 @@ const getReferrerOptions = (currentVal) => {
 // The label also carries the email so type-to-filter finds a user either way.
 // Every user is offered for now; narrowing to technicians is a later step.
 const assignedUsersLoading = ref(false)
+/*
 const assignedUserOptions = computed(() => {
   const seen = new Set()
   const list = []
@@ -12128,6 +12190,60 @@ const assignedUserOptions = computed(() => {
     const name = fullName || u.username || u.name || email
     list.push({ label: name === email ? email : `${name} (${email})`, value: email, name })
   })
+  return list.sort((a, b) => a.label.localeCompare(b.label))
+})
+
+const getAssignedUserOptions = (currentVal) => {
+  return getStableOptionsWithCurrent(assignedUserOptions.value, currentVal)
+}
+*/
+// Gene - Nov, 14, 2026: Store user name description as option label while saving email value, and merge all JobOrder-saved emails across Create, Update, and all forms
+const jobOrderSavedEmails = ref([])
+
+const recordSavedAssignedEmail = (rawEmail) => {
+  const email = rawEmail !== null && rawEmail !== undefined ? String(rawEmail).trim() : ''
+  if (!email) return
+  const key = email.toLowerCase()
+  if (jobOrderSavedEmails.value.some(existing => String(existing).trim().toLowerCase() === key)) return
+  jobOrderSavedEmails.value = [...jobOrderSavedEmails.value, email]
+}
+
+const assignedUserOptions = computed(() => {
+  const seen = new Set()
+  const list = []
+  const combinedUsers = [
+    ...(usersList.value || []),
+    ...(userStore.users || []),
+    ...(authStore.user ? [authStore.user] : [])
+  ]
+  combinedUsers.forEach(u => {
+    const email = u && u.email ? String(u.email).trim() : ''
+    if (!email) return
+    const key = email.toLowerCase()
+    if (seen.has(key)) return
+    seen.add(key)
+    const fullName = [
+      u.fname || u.firstName || u.first_name,
+      u.mname || u.middleName || u.middle_name,
+      u.lname || u.lastName || u.last_name
+    ].filter(Boolean).join(' ').trim()
+    const name = fullName || u.name || u.fullName || u.description || u.username || email
+    list.push({ label: name, value: email, name, email })
+  })
+
+  const joEmails = [
+    ...(jobOrderSavedEmails.value || []),
+    ...((Array.isArray(data.value) ? data.value : []).map(row => rowFieldOf(row, 'assignedEmail')))
+  ]
+  joEmails.forEach(rawEmail => {
+    const email = rawEmail !== null && rawEmail !== undefined ? String(rawEmail).trim() : ''
+    if (!email) return
+    const key = email.toLowerCase()
+    if (seen.has(key)) return
+    seen.add(key)
+    list.push({ label: email, value: email, name: email, email })
+  })
+
   return list.sort((a, b) => a.label.localeCompare(b.label))
 })
 
@@ -12538,8 +12654,21 @@ const fetchFormLookups = () => {
       fetchDiscountTypesLookup(),
       CrudService.list('Discounts')
     ])
+    /*
     if (needsUserLookup.value) {
       fetchUsersLookup()
+    }
+    */
+    // Gene - Nov, 14, 2026: Await user and JobOrder-saved email lookups during form open so assignedEmail resolves to name immediately on Create/Edit
+    const pendingUserLookups = []
+    if (needsUserLookup.value) {
+      pendingUserLookups.push(fetchUsersLookup())
+    }
+    if (hasAssignedEmailDropdown.value) {
+      pendingUserLookups.push(fetchJobOrderAssignedEmailsLookup())
+    }
+    if (pendingUserLookups.length > 0) {
+      await Promise.allSettled(pendingUserLookups)
     }
 
     if (menuRes.status === 'fulfilled') {
@@ -12796,13 +12925,59 @@ const fetchUsersLookup = () => {
   return usersLookupPromise
 }
 
+let jobOrderEmailsLookupPromise = null
+
+// Gene - Nov, 14, 2026: Fetch distinct assignedEmail values saved across JobOrders so Create, Edit, and all forms include them in dropdown select
+const fetchJobOrderAssignedEmailsLookup = () => {
+  if (jobOrderEmailsLookupPromise) return jobOrderEmailsLookupPromise
+  jobOrderEmailsLookupPromise = CrudService.list('JobOrders')
+    .then(res => {
+      const rows = unwrapList(res)
+      const seen = new Set()
+      const emails = []
+      rows.forEach(row => {
+        const email = rowFieldOf(row, 'assignedEmail')
+        if (!email) return
+        const key = email.toLowerCase()
+        if (seen.has(key)) return
+        seen.add(key)
+        emails.push(email)
+      })
+      if (emails.length > 0) {
+        const merged = [...jobOrderSavedEmails.value]
+        emails.forEach(email => {
+          const key = email.toLowerCase()
+          if (!merged.some(existing => String(existing).trim().toLowerCase() === key)) {
+            merged.push(email)
+          }
+        })
+        jobOrderSavedEmails.value = merged
+      }
+    })
+    .catch(err => {
+      console.warn('[DynamicApiTable] Error fetching JobOrders assigned emails:', err)
+      jobOrderEmailsLookupPromise = null
+    })
+  return jobOrderEmailsLookupPromise
+}
+
 // Drops every cached lookup so the next dialog open re-requests it. Used by the
 // manual Refresh button, which previously re-pulled all ten lists inline.
+/*
 const invalidateLookups = () => {
   formLookupsPromise = null
   discountTypesPromise = null
   accessLevelsPromise = null
   usersLookupPromise = null
+}
+*/
+// Gene - Nov, 14, 2026: Reset JobOrders assigned-email cache alongside user and lookup promises on refresh
+const invalidateLookups = () => {
+  formLookupsPromise = null
+  discountTypesPromise = null
+  accessLevelsPromise = null
+  usersLookupPromise = null
+  jobOrderEmailsLookupPromise = null
 }
 
 let allBarangaysFallbackCache = null
@@ -14339,6 +14514,7 @@ const getStatusBadgeConfig = (val) => {
 const isUserRefField = (col) => {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
+  /*
   return (
     lower.includes('createdby') ||
     lower.includes('modifiedby') ||
@@ -14350,6 +14526,20 @@ const isUserRefField = (col) => {
     lower === 'modifiedbyuserid' ||
     lower === 'userid'
   )
+  */
+  // Gene - Nov, 14, 2026: Include assignedEmail in user reference fields so tables, View Details, and exports show user names instead of raw emails
+  return (
+    lower.includes('createdby') ||
+    lower.includes('modifiedby') ||
+    lower.includes('updatedby') ||
+    lower.includes('processedby') ||
+    lower.includes('verifiedby') ||
+    lower.includes('lastmodifiedby') ||
+    lower === 'createdbyuserid' ||
+    lower === 'modifiedbyuserid' ||
+    lower === 'userid' ||
+    lower === 'assignedemail'
+  )
 }
 
 const usersMap = computed(() => {
@@ -14358,8 +14548,17 @@ const usersMap = computed(() => {
   // 1. Current logged-in user from authStore
   const cur = authStore.user
   if (cur) {
+    /*
     const curNameParts = [cur.fname || cur.firstName || cur.first_name, cur.lname || cur.lastName || cur.last_name].filter(Boolean)
     const curName = curNameParts.join(' ').trim() || cur.username || cur.name || cur.email || (cur.id !== undefined ? `User #${cur.id}` : 'Current User')
+    */
+    // Gene - Nov, 14, 2026: Prioritize full name and description fields before username for consistent user display labels
+    const curNameParts = [
+      cur.fname || cur.firstName || cur.first_name,
+      cur.mname || cur.middleName || cur.middle_name,
+      cur.lname || cur.lastName || cur.last_name
+    ].filter(Boolean)
+    const curName = curNameParts.join(' ').trim() || cur.name || cur.fullName || cur.description || cur.username || cur.email || (cur.id !== undefined ? `User #${cur.id}` : 'Current User')
     if (cur.id !== undefined && cur.id !== null) {
       map.set(Number(cur.id), curName)
       map.set(String(cur.id).trim(), curName)
@@ -14378,6 +14577,7 @@ const usersMap = computed(() => {
   const combinedList = [...(userStore.users || []), ...(usersList.value || [])]
   combinedList.forEach(u => {
     if (!u) return
+    /*
     const nameParts = [
       u.fname || u.firstName || u.first_name,
       u.mname || u.middleName || u.middle_name,
@@ -14385,6 +14585,15 @@ const usersMap = computed(() => {
     ].filter(Boolean)
     const fullName = nameParts.join(' ').trim()
     const name = fullName || u.username || u.name || u.email || (u.id !== undefined ? `User #${u.id}` : 'Unknown User')
+    */
+    // Gene - Nov, 14, 2026: Prioritize name, fullName, and description fields before username to align usersMap with assignedUserOptions
+    const nameParts = [
+      u.fname || u.firstName || u.first_name,
+      u.mname || u.middleName || u.middle_name,
+      u.lname || u.lastName || u.last_name
+    ].filter(Boolean)
+    const fullName = nameParts.join(' ').trim()
+    const name = fullName || u.name || u.fullName || u.description || u.username || u.email || (u.id !== undefined ? `User #${u.id}` : 'Unknown User')
     if (u.id !== undefined && u.id !== null) {
       map.set(Number(u.id), name)
       map.set(String(u.id).trim(), name)
@@ -14541,7 +14750,13 @@ const formatDisplayValue = (val, col) => {
   if (val === null || val === undefined || val === '') return '-'
   const lower = col.toLowerCase().replace(/_/g, '')
 
+  /*
   if (isUserRefField(col)) {
+    return getUserDisplayName(val)
+  }
+  */
+  // Gene - Nov, 14, 2026: Resolve assignedemail_dropdown values to user display names consistently alongside user reference fields
+  if (isUserRefField(col) || getFieldType(col) === 'assignedemail_dropdown') {
     return getUserDisplayName(val)
   }
   if (lower === 'accesslevel_id' || lower === 'accesslevelid') {
@@ -16227,6 +16442,8 @@ const saveData = async () => {
     */
     // Gene - Nov 7, 2026: Capture created record response and perform follow-up multipart PUT for JobOrders when images are uploaded on create
     const createRes = await CrudService.create(props.endpoint, finalPayload)
+    // Gene - Nov, 14, 2026: Record newly created assignedEmail so dropdown options immediately include it
+    recordSavedAssignedEmail(payload?.assignedEmail || payload?.assigned_email || (finalPayload && !(typeof FormData !== 'undefined' && finalPayload instanceof FormData) ? (finalPayload.assignedEmail || finalPayload.assigned_email) : ''))
     if (isJobOrderEndpoint.value) {
       const createFiles = selectedFilesByCol.value.create || {}
       const joPhotoCols = [
@@ -17141,6 +17358,12 @@ const openEditDialog = async (record) => {
     if (getFieldType(col) === 'onsitestatus_dropdown' && editFormData.value[col]) {
       editFormData.value[col] = normalizeOnsiteStatus(editFormData.value[col])
     }
+    // Gene - Nov, 14, 2026: Match stored assignedEmail case-insensitively to canonical option value in edit modal
+    if (getFieldType(col) === 'assignedemail_dropdown' && editFormData.value[col]) {
+      const wanted = String(editFormData.value[col]).trim().toLowerCase()
+      const match = assignedUserOptions.value.find(opt => opt.value.toLowerCase() === wanted)
+      if (match) editFormData.value[col] = match.value
+    }
   })
 
   /*
@@ -17437,6 +17660,10 @@ const normalizeCompareValue = (col, val) => {
   // Gene - Nov, 14, 2026: Normalize Onsite Status variants during conflict comparison so legacy spellings do not trigger false edit conflicts
   if (type === 'onsitestatus_dropdown') {
     return normalizeOnsiteStatus(val)
+  }
+  // Gene - Nov, 14, 2026: Compare assignedEmail case-insensitively in conflict check
+  if (type === 'assignedemail_dropdown') {
+    return String(val).trim().toLowerCase()
   }
   if (type === 'agreement_checkbox') {
     return isAgreementChecked(val) ? 'yes' : 'no'
@@ -18518,6 +18745,8 @@ const saveEdit = async () => {
       ...(paymentTxnId ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || paymentTxnId } } : {})
     }
     await CrudService.update(props.endpoint, updatedId, finalPayload, updateReqConfig)
+    // Gene - Nov, 14, 2026: Record newly updated assignedEmail so dropdown options immediately include it
+    recordSavedAssignedEmail(payload?.assignedEmail || payload?.assigned_email || (finalPayload && !(typeof FormData !== 'undefined' && finalPayload instanceof FormData) ? (finalPayload.assignedEmail || finalPayload.assigned_email) : ''))
     // Gene - Nov 7, 2026: Persist uploaded Job Order images, remove cleared images, and invalidate recordImagesCache on update so View, Edit, and Table cells immediately reflect the saved images
     if (isJobOrderEndpoint.value) {
       recordImagesCache.delete(`jo:${updatedId}`)
@@ -19670,6 +19899,11 @@ const needsUserLookup = computed(() =>
   columns.value.some(c => isUserRefField(c) || getFieldType(c) === 'assignedemail_dropdown') ||
   formColumns.value.some(c => isUserRefField(c) || getFieldType(c) === 'assignedemail_dropdown')
 )
+// Gene - Nov, 14, 2026: Detect endpoints containing assignedemail_dropdown so JO-saved emails are prefetched across all forms
+const hasAssignedEmailDropdown = computed(() =>
+  columns.value.some(c => getFieldType(c) === 'assignedemail_dropdown') ||
+  formColumns.value.some(c => getFieldType(c) === 'assignedemail_dropdown')
+)
 // Plans.discountId, Applications.applicablePromo and Discounts.discounttype_id
 // all print a discount type NAME in the grid, which needs /DiscountTypes loaded
 // before the first render rather than on the first dialog open.
@@ -19729,6 +19963,7 @@ const refreshTableLookups = () => {
 
 watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup, needsPaymentMethodLookup], refreshTableLookups, { immediate: true })
 */
+/*
 // Gene - Nov 7, 2026: Include both needsPaymentMethodLookup (/api/PaymentMethods) and needsPaymentTypeLookup (/api/PaymentTypes) in refreshTableLookups
 const refreshTableLookups = () => {
   if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
@@ -19740,6 +19975,19 @@ const refreshTableLookups = () => {
 }
 
 watch([needsAccessLevelLookup, needsUserLookup, needsDiscountTypeLookup, needsPlanLookup, needsPaymentMethodLookup, needsPaymentTypeLookup], refreshTableLookups, { immediate: true })
+*/
+// Gene - Nov, 14, 2026: Include hasAssignedEmailDropdown lookup in refreshTableLookups so saved JobOrder emails load for Create, Edit, and table rendering
+const refreshTableLookups = () => {
+  if (needsAccessLevelLookup.value) fetchAccessLevelsLookup()
+  if (needsUserLookup.value) fetchUsersLookup()
+  if (hasAssignedEmailDropdown.value) fetchJobOrderAssignedEmailsLookup()
+  if (needsDiscountTypeLookup.value) fetchDiscountTypesLookup()
+  if (needsPlanLookup.value) fetchFormLookups()
+  if (needsPaymentMethodLookup.value) fetchPaymentMethodsLookup()
+  if (needsPaymentTypeLookup.value) fetchPaymentTypesLookup()
+}
+
+watch([needsAccessLevelLookup, needsUserLookup, hasAssignedEmailDropdown, needsDiscountTypeLookup, needsPlanLookup, needsPaymentMethodLookup, needsPaymentTypeLookup], refreshTableLookups, { immediate: true })
 
 onMounted(() => {
   fetchAddressData()
