@@ -1800,3 +1800,67 @@ html[data-bs-theme="dark"] .p-paginator .p-paginator-page.p-highlight,
   .py-xl-4\.5 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
   .gap-xl-4\.5 { gap: 2rem !important; }
 }
+
+/* Gene - Nov, 14, 2026: Added resizable DataTable column clipping/ellipsis, 8px column resizer handle hover/active styling, and resize guide indicator styles. */
+.p-datatable-resizable-table > .p-datatable-thead > tr > th,
+.p-datatable-resizable-table > .p-datatable-tfoot > tr > td,
+.p-datatable-resizable-table > .p-datatable-tbody > tr > td {
+  overflow: hidden;
+}
+
+.p-datatable-resizable-table > .p-datatable-thead > tr > th .p-datatable-column-header-content {
+  min-width: 0;
+}
+
+.p-datatable-resizable-table > .p-datatable-thead > tr > th .p-datatable-column-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.p-datatable-column-resizer {
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  width: 8px;
+  height: 100%;
+  padding: 0;
+  cursor: col-resize;
+  border: 1px solid transparent;
+  z-index: 3;
+  transition: background-color 0.15s ease;
+}
+
+.p-datatable-column-resizer::after {
+  content: "";
+  position: absolute;
+  top: 20%;
+  right: 3px;
+  width: 2px;
+  height: 60%;
+  border-radius: 1px;
+  background-color: transparent;
+  transition: background-color 0.15s ease, top 0.15s ease, height 0.15s ease;
+}
+
+.p-datatable-resizable-table > .p-datatable-thead > tr > th:hover .p-datatable-column-resizer::after {
+  background-color: rgba(100, 116, 139, 0.35);
+}
+
+.p-datatable-column-resizer:hover::after,
+.p-datatable-column-resizer:active::after {
+  top: 0;
+  height: 100%;
+  background-color: var(--p-primary-color, #2563eb);
+}
+
+.p-datatable-column-resize-indicator {
+  width: 2px;
+  position: absolute;
+  z-index: 20;
+  display: none;
+  background-color: var(--p-primary-color, #2563eb);
+  pointer-events: none;
+}

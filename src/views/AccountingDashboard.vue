@@ -152,10 +152,26 @@
       </div>
 
       <!-- Settled Payments DataTable -->
+      <!-- Gene - Nov, 14, 2026: Enable resizable/draggable column widths in expand mode with resizer click sort guard on Settled Payments DataTable. -->
+      <!--
       <DataTable
         :value="filteredInvoices"
         :loading="isLoading"
         scrollable
+        :paginator="true"
+        :rows="8"
+        paginatorTemplate="PrevPageLink PageLinks NextPageLink CurrentPageReport"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} payments"
+        class="p-datatable-sm small"
+      >
+      -->
+      <DataTable
+        :value="filteredInvoices"
+        :loading="isLoading"
+        scrollable
+        resizableColumns
+        columnResizeMode="expand"
+        :pt="dataTableResizePt"
         :paginator="true"
         :rows="8"
         paginatorTemplate="PrevPageLink PageLinks NextPageLink CurrentPageReport"
@@ -293,10 +309,26 @@
       </div>
 
       <!-- Outstanding Receivables DataTable -->
+      <!-- Gene - Nov, 14, 2026: Enable resizable/draggable column widths in expand mode with resizer click sort guard on Outstanding Receivables DataTable. -->
+      <!--
       <DataTable
         :value="filteredOutstandingAccounts"
         :loading="isLoading"
         scrollable
+        :paginator="true"
+        :rows="8"
+        paginatorTemplate="PrevPageLink PageLinks NextPageLink CurrentPageReport"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} overdue accounts"
+        class="p-datatable-sm small"
+      >
+      -->
+      <DataTable
+        :value="filteredOutstandingAccounts"
+        :loading="isLoading"
+        scrollable
+        resizableColumns
+        columnResizeMode="expand"
+        :pt="dataTableResizePt"
         :paginator="true"
         :rows="8"
         paginatorTemplate="PrevPageLink PageLinks NextPageLink CurrentPageReport"
@@ -397,6 +429,19 @@ import { usePermissions } from '../composables/usePermissions'
 const router = useRouter()
 const toast = useToast()
 const { isApiDown } = usePermissions()
+
+// Gene - Nov, 14, 2026: Prevent column resizer clicks from triggering header sorting on AccountingDashboard DataTables.
+const stopColumnResizerClick = (event) => {
+  event?.stopPropagation?.()
+}
+
+const dataTableResizePt = {
+  column: {
+    columnResizer: {
+      onClick: stopColumnResizerClick
+    }
+  }
+}
 
 const isLoading = ref(false)
 const isExporting = ref(false)

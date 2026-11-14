@@ -138,11 +138,27 @@
         </div>
       </div>
 
+      <!-- Gene - Nov, 14, 2026: Enable resizable/draggable column widths in expand mode with resizer click sort guard. -->
+      <!--
       <DataTable
         v-else
         :value="filteredRecentConnections"
         :loading="appStore.isLoadingConnections"
         scrollable
+        :paginator="true"
+        :rows="5"
+        paginatorTemplate="PrevPageLink PageLinks NextPageLink"
+        class="p-datatable-sm small"
+      >
+      -->
+      <DataTable
+        v-else
+        :value="filteredRecentConnections"
+        :loading="appStore.isLoadingConnections"
+        scrollable
+        resizableColumns
+        columnResizeMode="expand"
+        :pt="dataTableResizePt"
         :paginator="true"
         :rows="5"
         paginatorTemplate="PrevPageLink PageLinks NextPageLink"
@@ -208,6 +224,19 @@ import autoTable from 'jspdf-autotable'
 const appStore = useAppStore()
 const router = useRouter()
 const toast = useToast()
+
+// Gene - Nov, 14, 2026: Prevent column resizer clicks from triggering header sorting on Recent Applications DataTable.
+const stopColumnResizerClick = (event) => {
+  event?.stopPropagation?.()
+}
+
+const dataTableResizePt = {
+  column: {
+    columnResizer: {
+      onClick: stopColumnResizerClick
+    }
+  }
+}
 const { canAccess, isApiDown } = usePermissions()
 
 // Live counts pulled from the API. `null` means "not loaded / unavailable" and
