@@ -2718,6 +2718,22 @@
                 class="w-100"
               />
 
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Job Order Start Time and End Time fields -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'time'" 
+                :id="col" 
+                v-model="formData[col]" 
+                timeOnly
+                hourFormat="12"
+                showIcon 
+                iconDisplay="input"
+                icon="pi pi-clock"
+                fluid
+                size="small"
+                placeholder="Select time" 
+                class="w-100"
+              />
+
               <!-- Email Input for Email Fields -->
               <InputText 
                 v-else-if="getFieldType(col) === 'email'" 
@@ -3163,6 +3179,22 @@
                 fluid
                 size="small"
                 dateFormat="yy-mm-dd" 
+                disabled
+                class="w-100"
+              />
+
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Job Order Start Time and End Time in View Modal -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'time'" 
+                :id="`view-${col}`" 
+                :modelValue="parseTimeForPicker(viewFormData[col])" 
+                timeOnly
+                hourFormat="12"
+                showIcon 
+                iconDisplay="input"
+                icon="pi pi-clock"
+                fluid
+                size="small"
                 disabled
                 class="w-100"
               />
@@ -5318,6 +5350,24 @@
                 class="w-100"
               />
 
+              <!-- Gene - Nov, 14, 2026: Time-only DatePicker for Job Order Start Time and End Time in Edit Modal -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'time'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                timeOnly
+                hourFormat="12"
+                showIcon 
+                iconDisplay="input"
+                icon="pi pi-clock"
+                fluid
+                size="small"
+                placeholder="Select time" 
+                :disabled="isFieldDisabledInEdit(col)"
+                :class="{ 'p-disabled bg-light': isFieldDisabledInEdit(col) }"
+                class="w-100"
+              />
+
               <!-- Email Input for Email Fields -->
               <InputText 
                 v-else-if="getFieldType(col) === 'email'" 
@@ -7262,7 +7312,13 @@ function formatLabel(col) {
     connectionremarks: 'Connection Remarks',
     visitremarks: 'Visit Remarks',
     supportremarks: 'Support Remarks',
+    /*
     starttimestamp: 'Start Time',
+    stoptimestamp: 'Stop Time',
+    */
+    // Gene - Nov, 14, 2026: Add End Time label override for Job Order endTimeStamp alongside Start Time and Stop Time
+    starttimestamp: 'Start Time',
+    endtimestamp: 'End Time',
     stoptimestamp: 'Stop Time',
     assignedby: 'Assigned By',
     assignedemail: 'Assigned Email',
@@ -7389,6 +7445,31 @@ const parseDateForPicker = (val) => {
   if (!val) return null
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val
   const d = new Date(val)
+  return isNaN(d.getTime()) ? null : d
+}
+
+// Gene - Nov, 14, 2026: Parse Date instances, ISO timestamps, or HH:mm[:ss] [AM/PM] strings into local Date objects for PrimeVue timeOnly DatePicker
+const parseTimeForPicker = (val) => {
+  if (!val) return null
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val
+  const str = String(val).trim()
+  if (!str) return null
+  const timeOnlyMatch = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM))?$/i)
+  if (timeOnlyMatch) {
+    let hours = parseInt(timeOnlyMatch[1], 10)
+    const minutes = parseInt(timeOnlyMatch[2], 10)
+    const seconds = timeOnlyMatch[3] ? parseInt(timeOnlyMatch[3], 10) : 0
+    const meridiem = timeOnlyMatch[4] ? timeOnlyMatch[4].toUpperCase() : null
+    if (meridiem) {
+      if (hours < 1 || hours > 12) return null
+      if (meridiem === 'AM' && hours === 12) hours = 0
+      else if (meridiem === 'PM' && hours < 12) hours += 12
+    }
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) return null
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, seconds, 0)
+  }
+  const d = new Date(str)
   return isNaN(d.getTime()) ? null : d
 }
 
@@ -7795,6 +7876,11 @@ function getFieldType(col) {
     if (lower === 'remarks' || lower === 'processedby') {
       return 'text'
     }
+  }
+
+  // Gene - Nov, 14, 2026: Render Job Order Start Time (startTimeStamp) and End Time (endTimeStamp) as time selection pickers instead of date pickers
+  if (isJobOrderEndpoint.value && (lower === 'starttimestamp' || lower === 'endtimestamp')) {
+    return 'time'
   }
 
   // Generic overrides for Fiber Plan and Processed By across any table
@@ -11180,6 +11266,9 @@ const fieldSearchAliases = (col) => {
   if (key === 'visitwithother') return ['Visit With (Other)', 'User Email', 'userEmail']
   if (isPromotionEndpoint.value && key === 'priority') return ['Priority', 'Display Order', 'Order']
   if (isPaymentEndpoint.value && key === 'transactiontype') return ['Payment Type', 'Transaction Type', 'transactionType']
+  // Gene - Nov, 14, 2026: Add field search aliases for Job Order Start Time and End Time
+  if (isJobOrderEndpoint.value && key === 'starttimestamp') return ['Start Time', 'Time Start', 'startTimeStamp']
+  if (isJobOrderEndpoint.value && key === 'endtimestamp') return ['End Time', 'Time End', 'Start End', 'endTimeStamp']
   return []
 }
 
@@ -14067,8 +14156,20 @@ const isDateField = (col) => {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
   const type = getFieldType(col)
+  /*
   return (
     type === 'date' ||
+    lower.includes('date') ||
+    lower.includes('timestamp') ||
+    lower === 'datetime' ||
+    lower === 'created' ||
+    lower === 'modified'
+  )
+  */
+  // Gene - Nov, 14, 2026: Include time fields in isDateField for table/export formatting
+  return (
+    type === 'date' ||
+    type === 'time' ||
     lower.includes('date') ||
     lower.includes('timestamp') ||
     lower === 'datetime' ||
@@ -14135,6 +14236,18 @@ const formatDisplayValue = (val, col) => {
   const type = getFieldType(col)
   if (type === 'phone' || isPhoneField(col)) {
     return normalizePhoneNumber(val)
+  }
+
+  // Gene - Nov, 14, 2026: Format Job Order time selection fields (startTimeStamp, endTimeStamp) as 12-hour clock times
+  if (type === 'time') {
+    const t = parseTimeForPicker(val)
+    if (t) {
+      return t.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      })
+    }
   }
 
   // Gene - Nov 5, 2026: Format Date object instances directly in formatDisplayValue
@@ -14328,7 +14441,12 @@ const openCreateDialog = () => {
       formData.value[col] = 'medium'
     } else if (type === 'promotion_themecolor_select') {
       formData.value[col] = 'red'
+    /*
     } else if (type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown' || type === 'discounttype_dropdown') {
+      formData.value[col] = null
+    */
+    // Gene - Nov, 14, 2026: Include time fields in null initialization for PrimeVue timeOnly DatePicker in Create dialog
+    } else if (type === 'time' || type === 'menu_dropdown' || type === 'lcpnap_dropdown' || type === 'lcpnapport_dropdown' || type === 'lcp_dropdown' || type === 'nap_dropdown' || type === 'port_dropdown' || type === 'vlan_dropdown' || type === 'plan_dropdown' || type === 'discounttype_dropdown') {
       formData.value[col] = null
     } else if (isReadOnlyField(col)) {
       formData.value[col] = 0
@@ -14687,6 +14805,50 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     const d = new Date(str)
     return isNaN(d.getTime()) ? null : d.toISOString()
   }
+  // Gene - Nov, 14, 2026: Serialize Job Order time picker values as local YYYY-MM-DDTHH:mm:ss (no UTC Z shift) anchored to dateInstalled or local date
+  const normTime = (val, anchorVal) => {
+    if (val === null || val === undefined) return null
+    let hours, minutes, seconds
+    let fallbackDate = null
+    if (val instanceof Date) {
+      if (isNaN(val.getTime())) return null
+      hours = val.getHours()
+      minutes = val.getMinutes()
+      seconds = val.getSeconds()
+      fallbackDate = val
+    } else {
+      const str = String(val).trim()
+      if (!str) return null
+      const m = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM))?$/i)
+      if (m) {
+        hours = parseInt(m[1], 10)
+        minutes = parseInt(m[2], 10)
+        seconds = m[3] ? parseInt(m[3], 10) : 0
+        const mer = m[4] ? m[4].toUpperCase() : null
+        if (mer) {
+          if (hours < 1 || hours > 12) return null
+          if (mer === 'AM' && hours === 12) hours = 0
+          else if (mer === 'PM' && hours < 12) hours += 12
+        }
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) return null
+      } else {
+        const d = new Date(str)
+        if (isNaN(d.getTime())) return null
+        hours = d.getHours()
+        minutes = d.getMinutes()
+        seconds = d.getSeconds()
+        fallbackDate = d
+      }
+    }
+    let baseDate = null
+    if (anchorVal) {
+      const ad = anchorVal instanceof Date ? anchorVal : new Date(String(anchorVal).trim())
+      if (!isNaN(ad.getTime())) baseDate = ad
+    }
+    if (!baseDate) baseDate = fallbackDate || new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${baseDate.getFullYear()}-${pad(baseDate.getMonth() + 1)}-${pad(baseDate.getDate())}T${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+  }
 
   const jobOrderId = payload.id !== undefined && payload.id !== null
     ? payload.id
@@ -14746,8 +14908,13 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     // Gene - Nov 7, 2026: Use normJoImageStr to prevent base64 data: URIs from exceeding SQL VARCHAR(255) on JSON POST/PUT
     setupImage: normJoImageStr(payload.setupImage),
     speedtestImage: normJoImageStr(payload.speedtestImage),
+    /*
     startTimeStamp: normDate(payload.startTimeStamp),
     endTimeStamp: normDate(payload.endTimeStamp),
+    */
+    // Gene - Nov, 14, 2026: Serialize Job Order Start Time and End Time via normTime to preserve local clock time without UTC Z shift
+    startTimeStamp: normTime(payload.startTimeStamp, payload.dateInstalled),
+    endTimeStamp: normTime(payload.endTimeStamp, payload.dateInstalled),
     duration: normStr(payload.duration),
     externalId: normStr(payload.externalId),
     lcpnapId: normStr(payload.lcpnapId || payload.lcpnap_id || payload.lcpNap || payload.lcnap),
@@ -16566,6 +16733,10 @@ const openEditDialog = async (record) => {
       const parsed = parseDateForPicker(editFormData.value[col])
       if (parsed) editFormData.value[col] = parsed
     }
+    // Gene - Nov, 14, 2026: Parse Job Order time fields into local Date objects (or null when blank) for PrimeVue timeOnly DatePicker in edit modal
+    if (getFieldType(col) === 'time') {
+      editFormData.value[col] = editFormData.value[col] ? parseTimeForPicker(editFormData.value[col]) : null
+    }
   })
 
   /*
@@ -16745,6 +16916,9 @@ const openEditDialog = async (record) => {
     } else if (type === 'date' && record[col]) {
       const d = new Date(record[col])
       editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
+    // Gene - Nov, 14, 2026: Parse Job Order time fields into local Date objects (or null when blank) for PrimeVue timeOnly DatePicker in edit modal
+    } else if (type === 'time') {
+      editFormData.value[col] = record[col] ? parseTimeForPicker(record[col]) : null
     /*
     } else if (record[col] === null || record[col] === undefined) {
       if (col !== regCol && col !== cCol && col !== bCol && col !== statusCol && col !== coordCol) {
@@ -16845,6 +17019,13 @@ const normalizeCompareValue = (col, val) => {
   if (type === 'date') {
     const d = val instanceof Date ? val : new Date(val)
     return isNaN(d.getTime()) ? String(val).trim() : d.toISOString().split('T')[0]
+  }
+  // Gene - Nov, 14, 2026: Compare time picker values by local HH:mm to avoid false edit conflicts between Date instances and ISO strings
+  if (type === 'time') {
+    const t = parseTimeForPicker(val)
+    if (!t) return String(val).trim()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${pad(t.getHours())}:${pad(t.getMinutes())}`
   }
   if (type === 'agreement_checkbox') {
     return isAgreementChecked(val) ? 'yes' : 'no'
