@@ -46,6 +46,10 @@ export const JobOrderService = {
   getJobOrderById(id) {
     return apiClient.get(`/JobOrders/${id}`)
   },
+  // Gene - Nov, 16, 2026: Added getJobOrderByApplicationId to resolve linked Job Order via GET /api/JobOrders/applicationid/{applicationId}
+  getJobOrderByApplicationId(applicationId, config = {}) {
+    return apiClient.get(`/JobOrders/applicationid/${encodeURIComponent(String(applicationId).trim())}`, config)
+  },
   /**
    * Fetch binary / base64 image files for a Job Order
    * @param {string|number} id

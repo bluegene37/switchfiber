@@ -72,7 +72,10 @@ export function useSearch() {
       subtitle: 'Open customer application form',
       icon: 'pi pi-plus-circle',
       route: '/application'
-    },
+    }
+    // Gene - Nov, 16, 2026: Hide manual Job Order creation quick action because Job Orders are automated from Applications
+    /*
+    ,
     {
       id: 'act-new-job',
       category: 'Quick Actions',
@@ -81,6 +84,7 @@ export function useSearch() {
       icon: 'pi pi-send',
       route: '/job-orders'
     }
+    */
   ]
 
   // Dynamic API Entity Results

@@ -881,7 +881,11 @@
       </Column>
 
       <!-- Actions Column (Frozen on Right) -->
+      <!-- Gene - Nov, 16, 2026: Widen Actions column on Applications to accommodate the View Job Order button and add per-row View Job Order action -->
+      <!--
       <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '105px', width: isMenuEndpoint ? '150px' : '105px' }" class="text-center frozen-actions-col sfa-tracker-table-col-actions">
+      -->
+      <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : (isApplicationEndpoint ? '145px' : '105px'), width: isMenuEndpoint ? '150px' : (isApplicationEndpoint ? '145px' : '105px') }" class="text-center frozen-actions-col sfa-tracker-table-col-actions">
         <template #body="slotProps">
           <div class="d-flex gap-1 justify-content-center align-items-center" @click.stop>
             <!-- Interactive Toggle Switch & Status Pill in Actions Column for Menus -->
@@ -911,6 +915,16 @@
               v-tooltip.top="'View Details'" 
               aria-label="View Details"
               @click="openViewDialog(slotProps.data)" 
+            />
+            <!-- Gene - Nov, 16, 2026: Per-row action button on Applications to auto-locate and view the linked Job Order -->
+            <Button
+              v-if="isApplicationEndpoint"
+              :icon="locatingJobOrderId === getApplicationLookupId(slotProps.data) ? 'pi pi-spin pi-spinner' : 'pi pi-clipboard'"
+              class="p-button-text p-button-sm p-button-rounded p-button-info p-0 action-row-btn"
+              v-tooltip.top="'View Job Order'"
+              aria-label="View Job Order"
+              :disabled="locatingJobOrderId !== null"
+              @click="goToLinkedJobOrder(slotProps.data)"
             />
             <!--
             <Button
@@ -6106,7 +6120,9 @@ import { ref, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick, u
 */
 // Gene - Oct 23, 2026: Import reactive from vue for isFetchingDialogImages state
 import { ref, reactive, onMounted, onUnmounted, computed, watch, isRef, unref, nextTick, useId } from 'vue'
-import { useRoute } from 'vue-router'
+// import { useRoute } from 'vue-router'
+// Gene - Nov, 16, 2026: Import useRouter to navigate from Applications to linked Job Orders
+import { useRoute, useRouter } from 'vue-router'
 import { CrudService } from '../services/crud'
 import { RadiusUserService } from '../services/radiusUsers'
 import { normalizeServiceOrder } from '../services/serviceOrders'
@@ -6593,7 +6609,11 @@ const normalizeColKey = (col) => String(col || '').toLowerCase().replace(/_/g, '
 
 // A read-only table offers no way in to the create form, whatever the parent asked
 // for with hide-create-button.
+/*
 const showCreateButton = computed(() => !props.hideCreateButton && !props.readOnly)
+*/
+// Gene - Nov, 16, 2026: Hide Job Order Create button across all JobOrders table surfaces because Job Orders are auto-created from Applications
+const showCreateButton = computed(() => !props.hideCreateButton && !props.readOnly && !isJobOrderEndpoint.value)
 
 // The top level action bar button (Level 1)
 const showTopCreateButton = computed(() => (
@@ -9190,6 +9210,8 @@ const rowsPerPage = ref(50)
 const rowOptions = ref([5, 10, 20, 50, 100])
 
 const route = useRoute()
+// Gene - Nov, 16, 2026: Router instance for navigating from Applications rows to linked Job Orders
+const router = useRouter()
 const initialQuerySearch = route?.query?.search || route?.query?.q || null
 
 const filters = ref({
@@ -19555,6 +19577,12 @@ const fetchData = async ({ silent = false } = {}) => {
         selectedRow.value = freshMatch
       }
     }
+
+    // Gene - Nov, 16, 2026: Auto-locate and open the linked Job Order after data settles when arriving from Applications
+    if (!silent && token === fetchToken) {
+      loading.value = false
+    }
+    await locateTargetRecordFromRoute()
   } catch (err) {
     if (token !== fetchToken) return
     // Canceled because the user navigated away — not a data failure.
@@ -20478,8 +20506,229 @@ onUnmounted(() => {
   window.removeEventListener('accesslevelmenu-updated', fetchCurrentUserPermissions)
 })
 
+// Gene - Nov, 16, 2026: Helpers for Applications -> Job Order navigation and Job Order auto-locate on arrival
+const locatingJobOrderId = ref(null)
+const consumedLocateKey = ref('')
+
+const getApplicationLookupId = (record) => {
+  if (!record || typeof record !== 'object') return ''
+  return String(
+    record.applicationid ??
+    record.applicationId ??
+    record.applicationIdValue ??
+    getRecordId(record) ??
+    ''
+  ).trim()
+}
+
+const formatLocalYmd = (dateObj) => {
+  const y = dateObj.getFullYear()
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const d = String(dateObj.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+const extractJobOrderDateWindow = (jobOrder) => {
+  if (!jobOrder || typeof jobOrder !== 'object') return null
+  const dateFields = [
+    jobOrder.timestamp,
+    jobOrder.createdDate,
+    jobOrder.dateInstalled,
+    jobOrder.assignedDate,
+    jobOrder.modifiedDate,
+    jobOrder.startTimeStamp,
+    jobOrder.endTimeStamp
+  ]
+  const validDates = []
+  dateFields.forEach(raw => {
+    if (!raw) return
+    const d = raw instanceof Date ? raw : new Date(raw)
+    if (!Number.isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2100) {
+      validDates.push(d)
+    }
+  })
+  if (validDates.length === 0) return null
+  validDates.sort((a, b) => a.getTime() - b.getTime())
+  return {
+    dateFrom: formatLocalYmd(validDates[0]),
+    dateTo: formatLocalYmd(validDates[validDates.length - 1])
+  }
+}
+
+const goToLinkedJobOrder = async (record) => {
+  if (!record || locatingJobOrderId.value !== null) return
+  const candidates = []
+  const pushCandidate = (v) => {
+    if (v !== undefined && v !== null) {
+      const s = String(v).trim()
+      if (s && !candidates.includes(s)) candidates.push(s)
+    }
+  }
+  pushCandidate(record.applicationid)
+  pushCandidate(record.applicationId)
+  pushCandidate(record.applicationIdValue)
+  pushCandidate(getRecordId(record))
+
+  if (candidates.length === 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Missing Application ID',
+      detail: 'Cannot look up Job Order without an Application ID.',
+      life: 3000
+    })
+    return
+  }
+
+  const rowKey = getApplicationLookupId(record) || candidates[0]
+  locatingJobOrderId.value = rowKey
+
+  try {
+    let foundJobOrder = null
+    let matchedCandidate = candidates[0]
+    let lastNon404Error = null
+
+    for (const candidate of candidates) {
+      try {
+        const res = await JobOrderService.getJobOrderByApplicationId(candidate, { cancelOnNavigate: false })
+        let payload = unwrapApiPayload(res)
+        if (Array.isArray(payload)) payload = payload[0] || null
+        if (payload && typeof payload === 'object' && Object.keys(payload).length > 0) {
+          foundJobOrder = payload
+          matchedCandidate = candidate
+          break
+        }
+      } catch (err) {
+        const status = err?.response?.status ?? err?.status
+        if (status && status !== 404) {
+          lastNon404Error = err
+        }
+      }
+    }
+
+    if (!foundJobOrder) {
+      if (lastNon404Error) {
+        throw lastNon404Error
+      }
+      toast.add({
+        severity: 'info',
+        summary: 'No Job Order Found',
+        detail: `No Job Order was found for Application #${candidates[0]}.`,
+        life: 3500
+      })
+      return
+    }
+
+    const joId = getRecordId(foundJobOrder)
+    const joAppId = String(
+      foundJobOrder.applicationId ??
+      foundJobOrder.applicationIdValue ??
+      foundJobOrder.applicationid ??
+      matchedCandidate
+    ).trim()
+    const window = extractJobOrderDateWindow(foundJobOrder)
+
+    await router.push({
+      path: '/job-orders',
+      query: {
+        search: String(joId ?? joAppId ?? ''),
+        ...(joId !== null && joId !== undefined && String(joId).trim() !== '' ? { locateJobOrderId: String(joId).trim() } : {}),
+        ...(joAppId ? { locateApplicationId: joAppId } : {}),
+        ...(window ? { dateFrom: window.dateFrom, dateTo: window.dateTo } : {})
+      }
+    })
+  } catch (err) {
+    console.error('[DynamicApiTable] Error locating Job Order for Application:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Lookup Failed',
+      detail: err?.message || 'Unable to look up the linked Job Order.',
+      life: 4000
+    })
+  } finally {
+    locatingJobOrderId.value = null
+  }
+}
+
+const locateTargetRecordFromRoute = async () => {
+  if (!isJobOrderEndpoint.value) return
+  const targetJoId = String(route?.query?.locateJobOrderId || '').trim()
+  const targetAppId = String(route?.query?.locateApplicationId || '').trim()
+  if (!targetJoId && !targetAppId) {
+    consumedLocateKey.value = ''
+    return
+  }
+  const locateKey = `${targetJoId}|${targetAppId}`
+  if (consumedLocateKey.value === locateKey) return
+  consumedLocateKey.value = locateKey
+
+  const findInRows = (rows) => {
+    if (!Array.isArray(rows)) return null
+    let found = null
+    if (targetJoId) {
+      found = rows.find(row => String(getRecordId(row) ?? '').trim() === targetJoId)
+    }
+    if (!found && targetAppId) {
+      found = rows.find(row => {
+        const rowAppId = String(row?.applicationId ?? row?.applicationIdValue ?? row?.applicationid ?? '').trim()
+        return rowAppId && rowAppId === targetAppId
+      })
+    }
+    return found
+  }
+
+  let match = findInRows(data.value)
+  if (!match) {
+    try {
+      let fetched = null
+      if (targetJoId) {
+        const res = await JobOrderService.getJobOrderById(targetJoId)
+        fetched = unwrapApiPayload(res)
+      }
+      if ((!fetched || (Array.isArray(fetched) && fetched.length === 0)) && targetAppId) {
+        const res = await JobOrderService.getJobOrderByApplicationId(targetAppId)
+        fetched = unwrapApiPayload(res)
+      }
+      if (Array.isArray(fetched)) fetched = fetched[0] || null
+      if (fetched && typeof fetched === 'object' && Object.keys(fetched).length > 0) {
+        match = findInRows(data.value) || fetched
+        if (!findInRows(data.value)) {
+          data.value = [fetched, ...(Array.isArray(data.value) ? data.value : [])]
+        }
+      }
+    } catch (err) {
+      console.warn('[DynamicApiTable] Could not fetch located Job Order:', err)
+    }
+  }
+
+  if (match) {
+    selectedRow.value = match
+    emit('row-select', match)
+    await nextTick()
+    const matchKey = rowKeyOf(match)
+    const idx = (filteredData.value || []).findIndex(r => rowKeyOf(r) === matchKey)
+    if (idx >= 0 && rowsPerPage.value > 0) {
+      firstRowIndex.value = Math.floor(idx / rowsPerPage.value) * rowsPerPage.value
+    }
+    openViewDialog(match)
+  } else {
+    toast.add({
+      severity: 'warn',
+      summary: 'Job Order Not Found',
+      detail: `Could not locate Job Order ${targetJoId ? `#${targetJoId}` : `for Application #${targetAppId}`}.`,
+      life: 3500
+    })
+  }
+}
+
+watch(() => [route?.query?.locateJobOrderId, route?.query?.locateApplicationId], () => {
+  if (hasFetched.value) {
+    locateTargetRecordFromRoute()
+  }
+})
+
 defineExpose({
   openCreateDialog,
+  openViewDialog,
   openEditDialog,
   confirmDelete,
   fetchData,

@@ -10,6 +10,8 @@
 
     <!-- Data Viewer -->
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-file-maintenance-table-card">
+      <!-- Gene - Nov, 16, 2026: Support hideCreate flag per route so Job Orders hides manual Create -->
+      <!--
       <DynamicApiTable
         ref="apiTableRef"
         v-if="endpoint"
@@ -17,6 +19,16 @@
         :key="endpoint"
         :read-only="readOnly"
         :hide-create-button="readOnly"
+        :create-button-label="`Create ${title}`"
+      />
+      -->
+      <DynamicApiTable
+        ref="apiTableRef"
+        v-if="endpoint"
+        :endpoint="endpoint"
+        :key="endpoint"
+        :read-only="readOnly"
+        :hide-create-button="readOnly || hideCreate"
         :create-button-label="`Create ${title}`"
       />
       <div v-else class="p-4 text-center text-muted">Invalid Configuration</div>
@@ -137,10 +149,20 @@ const routeMap = {
     icon: 'pi-sliders-h', 
     description: 'Configure role-based menu access permissions, feature visibility matrices, and module display authorizations.' 
   },
+  /*
   '/job_order': { 
     title: 'Job Order', 
     endpoint: 'JobOrders', 
     icon: 'pi-clipboard', 
+    description: 'Track technical dispatch work orders, site installations, subscriber repairs, and field service assignments.' 
+  },
+  */
+  // Gene - Nov, 16, 2026: Hide manual Job Order Create on legacy /job_order route because Job Orders are auto-created from Applications
+  '/job_order': { 
+    title: 'Job Order', 
+    endpoint: 'JobOrders', 
+    icon: 'pi-clipboard', 
+    hideCreate: true,
     description: 'Track technical dispatch work orders, site installations, subscriber repairs, and field service assignments.' 
   },
   '/invoice': { 
@@ -323,6 +345,8 @@ const title = computed(() => config.value.title)
 const endpoint = computed(() => config.value.endpoint)
 const icon = computed(() => config.value.icon || 'pi-list')
 const readOnly = computed(() => config.value.readOnly === true)
+// Gene - Nov, 16, 2026: Read hideCreate flag from route config
+const hideCreate = computed(() => config.value.hideCreate === true)
 const description = computed(() => config.value.description || `Manage ${title.value} records and system configurations.`)
 
 const openCreateModal = () => {

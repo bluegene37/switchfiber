@@ -112,6 +112,8 @@
             />
           </div>
 
+          <!-- Gene - Nov, 16, 2026: Hide Job Order Create button because Job Orders are automated and auto-created from Applications -->
+          <!--
           <Button
             class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-auto fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
             aria-label="Create Job Order"
@@ -121,6 +123,7 @@
             <span class="d-none d-sm-inline">Create Job Order</span>
             <span class="d-sm-none">Create</span>
           </Button>
+          -->
         </div>
 
       </div>
@@ -149,6 +152,8 @@
              window, dynamically populating statusTabs and counts.
            - On dedicated status routes (In Progress, Completed, Activated): status is passed
              upstream to /JobOrders/status-date?status=...&dateFrom=...&dateTo=... -->
+      <!-- Gene - Nov, 16, 2026: Hide Job Order Create button inside DynamicApiTable because Job Orders are auto-created from Applications -->
+      <!--
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="JobOrders"
@@ -160,6 +165,25 @@
         :status-label="activeStatusLabel"
         :show-top-bar="false"
         :hide-create-button="false"
+        :create-button-in-toolbar="false"
+        hide-status-filter
+        create-button-label="Create Job Order"
+        @reset-filters="clearAllFilters"
+        @select-status="onSelectStatus"
+        @widen-date-range="searchAllDates"
+      />
+      -->
+      <DynamicApiTable
+        ref="apiTableRef"
+        endpoint="JobOrders"
+        filter-endpoint="JobOrders/status-date"
+        server-date-filter
+        :filter-params="activeFilterParams"
+        :client-filters="clientFilters"
+        :client-status-filter="!isDedicatedStatusRoute"
+        :status-label="activeStatusLabel"
+        :show-top-bar="false"
+        :hide-create-button="true"
         :create-button-in-toolbar="false"
         hide-status-filter
         create-button-label="Create Job Order"
@@ -475,6 +499,64 @@ watch([selectedStatus, selectedAssignedEmail], () => {
 
 // Default to 'This Week' filter on initial load
 setDateRange('this_week')
+
+// Gene - Nov, 16, 2026: Honor explicit dateFrom/dateTo or locateJobOrderId query params when arriving from Applications so the target Job Order is inside the fetched date window
+const parseLocalQueryDate = (val, isEnd = false) => {
+  if (!val) return null
+  const str = String(val).trim()
+  const ymd = str.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (ymd) {
+    const y = Number(ymd[1])
+    const m = Number(ymd[2]) - 1
+    const d = Number(ymd[3])
+    return isEnd
+      ? new Date(y, m, d, 23, 59, 59, 999)
+      : new Date(y, m, d, 0, 0, 0, 0)
+  }
+  const parsed = new Date(str)
+  if (Number.isNaN(parsed.getTime())) return null
+  return isEnd
+    ? new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 23, 59, 59, 999)
+    : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0)
+}
+
+const syncLocateWindowFromRoute = () => {
+  const qFrom = route.query.dateFrom || route.query.fromDate
+  const qTo = route.query.dateTo || route.query.toDate
+  const qLocateId = route.query.locateJobOrderId || route.query.locateApplicationId
+  if (qFrom || qTo) {
+    const parsedFrom = parseLocalQueryDate(qFrom || qTo, false)
+    const parsedTo = parseLocalQueryDate(qTo || qFrom, true)
+    if (parsedFrom && parsedTo) {
+      autoWidenEnabled.value = false
+      autoWidenLabel.value = ''
+      selectedDatePreset.value = CUSTOM_PRESET
+      fromDate.value = parsedFrom
+      toDate.value = parsedTo
+      return
+    }
+  }
+  if (qLocateId) {
+    autoWidenEnabled.value = false
+    autoWidenLabel.value = ''
+    setDateRange('last_12_months')
+  }
+}
+
+watch(
+  [
+    () => route.query.dateFrom,
+    () => route.query.fromDate,
+    () => route.query.dateTo,
+    () => route.query.toDate,
+    () => route.query.locateJobOrderId,
+    () => route.query.locateApplicationId
+  ],
+  () => {
+    syncLocateWindowFromRoute()
+  },
+  { immediate: true }
+)
 
 const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
