@@ -9909,6 +9909,7 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
   if (q) {
     const tokens = q.split(/\s+/).filter(Boolean)
     const cols = columns.value || []
+    /*
     const rowMatchesTokens = (row) => {
       let rowText = row._sf_searchCache
       if (rowText === undefined) {
@@ -9944,6 +9945,56 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
         } catch (_) {
           row._sf_searchCache = rowText
         }
+      }
+      return tokens.every(token => rowText.includes(token))
+    }
+    */
+    // Gene - Nov, 16, 2026: Index resolved user display names for isUserRefField and assignedemail_dropdown columns in global search and invalidate _sf_searchCache whenever usersMap recomputes
+    const userMapRef = typeof usersMap !== 'undefined' ? (usersMap.value ?? null) : null
+    const setHiddenCacheProp = (target, prop, value) => {
+      try {
+        Object.defineProperty(target, prop, {
+          value,
+          writable: true,
+          configurable: true,
+          enumerable: false
+        })
+      } catch (_) {
+        target[prop] = value
+      }
+    }
+    const rowMatchesTokens = (row) => {
+      let rowText = row._sf_searchCacheMap === userMapRef ? row._sf_searchCache : undefined
+      if (rowText === undefined) {
+        let parts = []
+        for (let i = 0; i < cols.length; i++) {
+          const val = row[cols[i]]
+          if (val !== null && val !== undefined) {
+            if (typeof val === 'object') {
+              for (const k in val) {
+                const inner = val[k]
+                if (inner !== null && inner !== undefined) parts.push(String(inner))
+              }
+            } else {
+              parts.push(String(val))
+              const fType = getFieldType(cols[i])
+              if (
+                fType === 'discounttype_dropdown' ||
+                fType === 'plan_dropdown' ||
+                fType === 'assignedemail_dropdown' ||
+                isUserRefField(cols[i])
+              ) {
+                const labelVal = formatDisplayValue(val, cols[i])
+                if (labelVal && labelVal !== '-' && labelVal !== String(val)) {
+                  parts.push(labelVal)
+                }
+              }
+            }
+          }
+        }
+        rowText = parts.join(' ').toLowerCase()
+        setHiddenCacheProp(row, '_sf_searchCache', rowText)
+        setHiddenCacheProp(row, '_sf_searchCacheMap', userMapRef)
       }
       return tokens.every(token => rowText.includes(token))
     }
@@ -10161,6 +10212,32 @@ const clearAllFilters = () => {
   }
   sortOrder.value = resolveDefaultSortOrder()
   firstRowIndex.value = 0
+  /*
+  emit('reset-filters')
+  */
+  // Gene - Nov, 16, 2026: Reset consumed locate key and clear locate/search/date query parameters on Reset
+  consumedLocateKey.value = ''
+  if (router?.replace && route?.query && (
+    route.query.search !== undefined ||
+    route.query.q !== undefined ||
+    route.query.locateJobOrderId !== undefined ||
+    route.query.locateApplicationId !== undefined ||
+    route.query.dateFrom !== undefined ||
+    route.query.fromDate !== undefined ||
+    route.query.dateTo !== undefined ||
+    route.query.toDate !== undefined
+  )) {
+    const nextQuery = { ...route.query }
+    delete nextQuery.search
+    delete nextQuery.q
+    delete nextQuery.locateJobOrderId
+    delete nextQuery.locateApplicationId
+    delete nextQuery.dateFrom
+    delete nextQuery.fromDate
+    delete nextQuery.dateTo
+    delete nextQuery.toDate
+    router.replace({ path: route.path, query: nextQuery }).catch(() => {})
+  }
   emit('reset-filters')
 }
 
@@ -13116,8 +13193,14 @@ const fetchFormLookups = () => {
     if (needsUserLookup.value) {
       pendingUserLookups.push(fetchUsersLookup())
     }
+    /*
     if (hasAssignedEmailDropdown.value) {
       pendingUserLookups.push(fetchJobOrderAssignedEmailsLookup())
+    }
+    */
+    // Gene - Nov, 16, 2026: Pass fromDialog flag so JobOrders email lookup only fires on demand when opening a dialog
+    if (hasAssignedEmailDropdown.value) {
+      pendingUserLookups.push(fetchJobOrderAssignedEmailsLookup({ fromDialog: true }))
     }
     if (pendingUserLookups.length > 0) {
       await Promise.allSettled(pendingUserLookups)
@@ -13380,6 +13463,7 @@ const fetchUsersLookup = () => {
 let jobOrderEmailsLookupPromise = null
 
 // Gene - Nov, 14, 2026: Fetch distinct assignedEmail values saved across JobOrders so Create, Edit, and all forms include them in dropdown select
+/*
 const fetchJobOrderAssignedEmailsLookup = () => {
   if (jobOrderEmailsLookupPromise) return jobOrderEmailsLookupPromise
   jobOrderEmailsLookupPromise = CrudService.list('JobOrders')
@@ -13405,6 +13489,53 @@ const fetchJobOrderAssignedEmailsLookup = () => {
         })
         jobOrderSavedEmails.value = merged
       }
+    })
+    .catch(err => {
+      console.warn('[DynamicApiTable] Error fetching JobOrders assigned emails:', err)
+      jobOrderEmailsLookupPromise = null
+    })
+  return jobOrderEmailsLookupPromise
+}
+*/
+// Gene - Nov, 16, 2026: Harvest assignedEmail from already-loaded JobOrders rows when available and skip unbounded GET /JobOrders on initial table mount
+const fetchJobOrderAssignedEmailsLookup = (options = {}) => {
+  if (jobOrderEmailsLookupPromise) return jobOrderEmailsLookupPromise
+
+  const mergeEmails = (rows) => {
+    const seen = new Set()
+    const emails = []
+    rows.forEach(row => {
+      const email = rowFieldOf(row, 'assignedEmail')
+      if (!email) return
+      const key = email.toLowerCase()
+      if (seen.has(key)) return
+      seen.add(key)
+      emails.push(email)
+    })
+    if (emails.length > 0) {
+      const merged = [...jobOrderSavedEmails.value]
+      emails.forEach(email => {
+        const key = email.toLowerCase()
+        if (!merged.some(existing => String(existing).trim().toLowerCase() === key)) {
+          merged.push(email)
+        }
+      })
+      jobOrderSavedEmails.value = merged
+    }
+  }
+
+  if (typeof isJobOrderEndpoint !== 'undefined' && isJobOrderEndpoint.value && typeof data !== 'undefined' && Array.isArray(data.value) && data.value.length > 0) {
+    mergeEmails(data.value)
+    return Promise.resolve(jobOrderSavedEmails.value)
+  }
+
+  if (typeof isJobOrderEndpoint !== 'undefined' && !options?.fromDialog) {
+    return Promise.resolve(jobOrderSavedEmails.value)
+  }
+
+  jobOrderEmailsLookupPromise = CrudService.list('JobOrders')
+    .then(res => {
+      mergeEmails(unwrapList(res))
     })
     .catch(err => {
       console.warn('[DynamicApiTable] Error fetching JobOrders assigned emails:', err)
@@ -18036,9 +18167,15 @@ const openEditDialog = async (record) => {
       editFormData.value[col] = record[col] === true || record[col] === 'true'
     } else if (type === 'agreement_checkbox') {
       editFormData.value[col] = isAgreementChecked(record[col]) ? 'Yes, I Agree' : ''
+    /*
     } else if (type === 'date' && record[col]) {
       const d = new Date(record[col])
       editFormData.value[col] = isNaN(d.getTime()) ? record[col] : d
+    */
+    // Gene - Nov, 16, 2026: Use parseDateForPicker instead of raw new Date() so YYYY-MM-DD strings stay anchored to local midnight
+    } else if (type === 'date' && record[col]) {
+      const parsed = parseDateForPicker(record[col])
+      editFormData.value[col] = parsed || record[col]
     // Gene - Nov, 14, 2026: Parse Job Order time fields into local Date objects (or null when blank) for PrimeVue timeOnly DatePicker in edit modal
     } else if (type === 'time') {
       editFormData.value[col] = record[col] ? parseTimeForPicker(record[col]) : null
@@ -18141,10 +18278,17 @@ const normalizeCompareValue = (col, val) => {
   if (type === 'phone' || isPhoneField(col)) {
     return normalizePhoneNumber(val)
   }
+  /*
   // Gene - Nov 6, 2026: Compare date values by ISO date string (YYYY-MM-DD) to prevent Date vs string format mismatches in detectEditConflict
   if (type === 'date') {
     const d = val instanceof Date ? val : new Date(val)
     return isNaN(d.getTime()) ? String(val).trim() : d.toISOString().split('T')[0]
+  }
+  */
+  // Gene - Nov, 16, 2026: Compare date fields by local YYYY-MM-DD via parseDateForPicker + formatLocalYmd so UTC+8 midnight Date objects never mismatch server strings in detectEditConflict
+  if (type === 'date') {
+    const d = val instanceof Date ? val : parseDateForPicker(val)
+    return (!d || isNaN(d.getTime())) ? String(val).trim() : formatLocalYmd(d)
   }
   // Gene - Nov, 14, 2026: Compare time picker values by local HH:mm to avoid false edit conflicts between Date instances and ISO strings
   if (type === 'time') {
@@ -19548,6 +19692,13 @@ const fetchData = async ({ silent = false } = {}) => {
     // Gene - Oct 23, 2026: Set unwrapped data and clear stale image cache
     data.value = unwrappedData || []
     recordImagesCache.clear()
+    // Gene - Nov, 16, 2026: Harvest assignedEmail from loaded JobOrders rows so dropdowns stay populated without an unbounded GET /JobOrders
+    if (isJobOrderEndpoint.value && Array.isArray(data.value) && data.value.length > 0) {
+      data.value.forEach(row => {
+        const email = rowFieldOf(row, 'assignedEmail')
+        if (email) recordSavedAssignedEmail(email)
+      })
+    }
     // The dataset is now confirmed: an empty table from here on really is empty
     hasFetched.value = true
     lastFetchedParams.value = { ...serverParams }
@@ -20528,6 +20679,7 @@ const formatLocalYmd = (dateObj) => {
   return `${y}-${m}-${d}`
 }
 
+/*
 const extractJobOrderDateWindow = (jobOrder) => {
   if (!jobOrder || typeof jobOrder !== 'object') return null
   const dateFields = [
@@ -20552,6 +20704,34 @@ const extractJobOrderDateWindow = (jobOrder) => {
   return {
     dateFrom: formatLocalYmd(validDates[0]),
     dateTo: formatLocalYmd(validDates[validDates.length - 1])
+  }
+}
+*/
+// Gene - Nov, 16, 2026: Exclude time-only fields (startTimeStamp, endTimeStamp) from extractJobOrderDateWindow and pad dateFrom/dateTo by +/-1 day so UTC+8 toISOString conversion never clips afternoon/evening Job Orders
+const extractJobOrderDateWindow = (jobOrder) => {
+  if (!jobOrder || typeof jobOrder !== 'object') return null
+  const dateFields = [
+    jobOrder.timestamp,
+    jobOrder.createdDate,
+    jobOrder.dateInstalled,
+    jobOrder.assignedDate,
+    jobOrder.modifiedDate
+  ]
+  const validDates = []
+  dateFields.forEach(raw => {
+    if (!raw) return
+    const d = raw instanceof Date ? raw : (parseDateForPicker(raw) || new Date(raw))
+    if (!Number.isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2100) {
+      validDates.push(d)
+    }
+  })
+  if (validDates.length === 0) return null
+  validDates.sort((a, b) => a.getTime() - b.getTime())
+  const minDate = new Date(validDates[0].getTime() - 86400000)
+  const maxDate = new Date(validDates[validDates.length - 1].getTime() + 86400000)
+  return {
+    dateFrom: formatLocalYmd(minDate),
+    dateTo: formatLocalYmd(maxDate)
   }
 }
 
@@ -20710,6 +20890,13 @@ const locateTargetRecordFromRoute = async () => {
       firstRowIndex.value = Math.floor(idx / rowsPerPage.value) * rowsPerPage.value
     }
     openViewDialog(match)
+    // Gene - Nov, 16, 2026: Strip one-shot locate query params after opening the View modal so page refresh does not re-open it
+    if (router?.replace && route?.query && (route.query.locateJobOrderId !== undefined || route.query.locateApplicationId !== undefined)) {
+      const nextQuery = { ...route.query }
+      delete nextQuery.locateJobOrderId
+      delete nextQuery.locateApplicationId
+      router.replace({ path: route.path, query: nextQuery }).catch(() => {})
+    }
   } else {
     toast.add({
       severity: 'warn',

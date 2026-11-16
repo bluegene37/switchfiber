@@ -185,6 +185,8 @@
         </Column>
 
         <Column header="Actions" :exportable="false" style="min-width: 7rem" class="text-center">
+          <!-- Gene - Nov, 16, 2026: Pass clicked application name/id as search query when navigating from Recent Applications row -->
+          <!--
           <template #body>
             <Button
               icon="pi pi-external-link"
@@ -194,6 +196,18 @@
               aria-label="Open in Applications"
               v-tooltip.top="'Open in Applications'"
               @click="router.push('/application')"
+            />
+          </template>
+          -->
+          <template #body="{ data }">
+            <Button
+              icon="pi pi-external-link"
+              severity="secondary"
+              text
+              rounded
+              aria-label="Open in Applications"
+              v-tooltip.top="'Open in Applications'"
+              @click="router.push({ path: '/application', query: (data?.name || data?.id) ? { search: String(data.name || data.id).trim() } : {} })"
             />
           </template>
         </Column>

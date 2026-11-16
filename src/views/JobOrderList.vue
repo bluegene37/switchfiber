@@ -558,6 +558,7 @@ watch(
   { immediate: true }
 )
 
+/*
 const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''
@@ -568,6 +569,41 @@ const clearAllFilters = () => {
   autoWidenStep.value = -1
   autoWidenLabel.value = ''
   setDateRange('this_week')
+}
+*/
+// Gene - Nov, 16, 2026: Clear locate, date, and search query params from URL on Reset so refreshing does not re-apply the located Job Order filter
+const clearAllFilters = () => {
+  if (!isDedicatedStatusRoute.value) {
+    selectedStatus.value = ''
+  }
+  selectedAssignedEmail.value = null
+  // "Cleared" dates mean the default week, never an unbounded range
+  autoWidenEnabled.value = true
+  autoWidenStep.value = -1
+  autoWidenLabel.value = ''
+  setDateRange('this_week')
+
+  if (router?.replace && route?.query && (
+    route.query.locateJobOrderId !== undefined ||
+    route.query.locateApplicationId !== undefined ||
+    route.query.dateFrom !== undefined ||
+    route.query.fromDate !== undefined ||
+    route.query.dateTo !== undefined ||
+    route.query.toDate !== undefined ||
+    route.query.search !== undefined ||
+    route.query.q !== undefined
+  )) {
+    const nextQuery = { ...route.query }
+    delete nextQuery.locateJobOrderId
+    delete nextQuery.locateApplicationId
+    delete nextQuery.dateFrom
+    delete nextQuery.fromDate
+    delete nextQuery.dateTo
+    delete nextQuery.toDate
+    delete nextQuery.search
+    delete nextQuery.q
+    router.replace({ path: route.path, query: nextQuery }).catch(() => {})
+  }
 }
 </script>
 

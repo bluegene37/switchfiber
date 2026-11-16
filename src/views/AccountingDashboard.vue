@@ -244,6 +244,8 @@
         </Column>
 
         <Column header="Actions" :exportable="false" style="min-width: 5rem" class="text-center">
+          <!-- Gene - Nov, 16, 2026: Pass clicked payment invoiceNo/accountNo as search query when navigating to Payments -->
+          <!--
           <template #body>
             <Button
               icon="pi pi-external-link"
@@ -253,6 +255,18 @@
               aria-label="View Payment"
               v-tooltip.top="'View in Payments'"
               @click="router.push('/payments')"
+            />
+          </template>
+          -->
+          <template #body="{ data }">
+            <Button
+              icon="pi pi-external-link"
+              severity="secondary"
+              text
+              rounded
+              aria-label="View Payment"
+              v-tooltip.top="'View in Payments'"
+              @click="router.push({ path: '/payments', query: (data?.invoiceNo || data?.accountNo) ? { search: String(data.invoiceNo || data.accountNo).trim() } : {} })"
             />
           </template>
         </Column>
@@ -393,6 +407,8 @@
         </Column>
 
         <Column header="Actions" :exportable="false" style="min-width: 5rem" class="text-center">
+          <!-- Gene - Nov, 16, 2026: Pass clicked subscriber accountNo/fullName as search query when navigating to Billing -->
+          <!--
           <template #body>
             <Button
               icon="pi pi-arrow-up-right"
@@ -402,6 +418,18 @@
               aria-label="View in Billing"
               v-tooltip.top="'View in Billing'"
               @click="router.push('/billing')"
+            />
+          </template>
+          -->
+          <template #body="{ data }">
+            <Button
+              icon="pi pi-arrow-up-right"
+              severity="secondary"
+              text
+              rounded
+              aria-label="View in Billing"
+              v-tooltip.top="'View in Billing'"
+              @click="router.push({ path: '/billing', query: (data?.accountNo || data?.fullName) ? { search: String(data.accountNo || data.fullName).trim() } : {} })"
             />
           </template>
         </Column>
