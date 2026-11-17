@@ -171,12 +171,22 @@
           </div>
         </template>
 
+        <!-- Gene - Nov, 17, 2026: Replace inline min-width with width on Recent Applications columns so columns can shrink below their initial width. -->
+        <!--
         <Column field="name" header="Client Name" :sortable="true" style="min-width: 11rem"></Column>
         <Column field="node" header="City" :sortable="true" style="min-width: 8rem"></Column>
         <Column field="type" header="Applying For" :sortable="true" style="min-width: 9rem"></Column>
         <Column field="limit" header="Desired Plan" :sortable="true" style="min-width: 9rem"></Column>
+        -->
+        <Column field="name" header="Client Name" :sortable="true" style="width: 11rem"></Column>
+        <Column field="node" header="City" :sortable="true" style="width: 8rem"></Column>
+        <Column field="type" header="Applying For" :sortable="true" style="width: 9rem"></Column>
+        <Column field="limit" header="Desired Plan" :sortable="true" style="width: 9rem"></Column>
 
+        <!--
         <Column field="status" header="Status" :sortable="true" style="min-width: 8rem">
+        -->
+        <Column field="status" header="Status" :sortable="true" style="width: 8rem">
           <template #body="{ data }">
             <!-- Gene - Oct 3, 2026: Preserved old Tag and updated with distinct purple badge styling for Rescheduled status -->
             <!-- <Tag :severity="getSeverity(data.status)" :value="data.status" rounded></Tag> -->
@@ -184,7 +194,10 @@
           </template>
         </Column>
 
+        <!--
         <Column header="Actions" :exportable="false" style="min-width: 7rem" class="text-center">
+        -->
+        <Column header="Actions" :exportable="false" style="width: 7rem" class="text-center">
           <!-- Gene - Nov, 16, 2026: Pass clicked application name/id as search query when navigating from Recent Applications row -->
           <!--
           <template #body>
@@ -244,10 +257,76 @@ const stopColumnResizerClick = (event) => {
   event?.stopPropagation?.()
 }
 
+// Gene - Nov, 17, 2026: Clamp column resize drag indicator to [72, 960] px and clear inline minWidth so columns can shrink reliably.
+/*
 const dataTableResizePt = {
   column: {
     columnResizer: {
       onClick: stopColumnResizerClick
+    }
+  }
+}
+*/
+const MIN_RESIZABLE_COL_WIDTH = 72
+const MAX_RESIZABLE_COL_WIDTH = 960
+
+const onColumnResizerMouseDown = (event) => {
+  const resizerEl = event?.currentTarget || event?.target
+  const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
+  if (!headerEl) return
+
+  if (headerEl.style) {
+    headerEl.style.minWidth = ''
+  }
+
+  if (typeof window === 'undefined') return
+  const dtEl = headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
+  const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
+  if (!dtEl || !resizeHelperEl) return
+
+  const rectWidth = headerEl.getBoundingClientRect?.().width
+  const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
+    ? rectWidth
+    : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
+
+  const dtRect = dtEl.getBoundingClientRect?.()
+  if (!dtRect) return
+  const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
+  const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
+  const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
+  const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
+  const minHelperX = startHelperX + minDelta
+  const maxHelperX = startHelperX + maxDelta
+
+  const clampHelperPosition = (moveEvent) => {
+    if (resizeHelperEl.style.display !== 'block') return
+    const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
+    const fallbackX = typeof moveEvent?.pageX === 'number'
+      ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
+      : startHelperX
+    const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
+    const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
+    resizeHelperEl.style.left = `${clampedX}px`
+  }
+
+  const onMouseUpCapture = (upEvent) => {
+    clampHelperPosition(upEvent)
+    if (headerEl.style) {
+      headerEl.style.minWidth = ''
+    }
+    window.removeEventListener('mousemove', clampHelperPosition)
+    window.removeEventListener('mouseup', onMouseUpCapture, true)
+  }
+
+  window.addEventListener('mousemove', clampHelperPosition)
+  window.addEventListener('mouseup', onMouseUpCapture, true)
+}
+
+const dataTableResizePt = {
+  column: {
+    columnResizer: {
+      onClick: stopColumnResizerClick,
+      onMousedown: onColumnResizerMouseDown
     }
   }
 }

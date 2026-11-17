@@ -1812,7 +1812,20 @@ html[data-bs-theme="dark"] .p-paginator .p-paginator-page.p-highlight,
   min-width: 0;
 }
 
+/* Gene - Nov, 17, 2026: Apply persisted column min-width via --sfa-col-width on header cells so inline style.minWidth stays empty and never blocks shrinking in PrimeVue DataTable. */
+/*
 .p-datatable-resizable-table > .p-datatable-thead > tr > th .p-datatable-column-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+*/
+.p-datatable-resizable-table > .p-datatable-thead > tr > th.sfa-tracker-table-col-data {
+  min-width: var(--sfa-col-width, 0px);
+}
+
+.p-datatable-resizable-table > .p-datatable-thead > tr > th .p-datatable-column-title {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

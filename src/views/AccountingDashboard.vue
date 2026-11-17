@@ -185,13 +185,16 @@
           </div>
         </template>
 
-        <Column field="invoiceNo" header="Reference / ID" :sortable="true" style="min-width: 8.5rem">
+        <!-- Gene - Nov, 17, 2026: Replace inline min-width with width on Settled Payments columns so columns can shrink below initial width. -->
+        <!-- <Column field="invoiceNo" header="Reference / ID" :sortable="true" style="min-width: 8.5rem"> -->
+        <Column field="invoiceNo" header="Reference / ID" :sortable="true" style="width: 8.5rem">
           <template #body="{ data }">
             <span class="fw-semibold text-primary font-monospace">{{ data.invoiceNo || 'PAY-REF' }}</span>
           </template>
         </Column>
 
-        <Column field="fullName" header="Customer / Account" :sortable="true" style="min-width: 12rem">
+        <!-- <Column field="fullName" header="Customer / Account" :sortable="true" style="min-width: 12rem"> -->
+        <Column field="fullName" header="Customer / Account" :sortable="true" style="width: 12rem">
           <template #body="{ data }">
             <div>
               <div class="fw-semibold text-body">{{ data.fullName || 'Subscriber' }}</div>
@@ -200,7 +203,8 @@
           </template>
         </Column>
 
-        <Column field="plan" header="Fiber Plan" :sortable="true" style="min-width: 9rem">
+        <!-- <Column field="plan" header="Fiber Plan" :sortable="true" style="min-width: 9rem"> -->
+        <Column field="plan" header="Fiber Plan" :sortable="true" style="width: 9rem">
           <template #body="{ data }">
             <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 px-2 py-1 rounded-2">
               {{ data.plan || 'SwitchConnect' }}
@@ -208,19 +212,22 @@
           </template>
         </Column>
 
-        <Column field="invoiceDate" header="Payment Date" :sortable="true" style="min-width: 8rem">
+        <!-- <Column field="invoiceDate" header="Payment Date" :sortable="true" style="min-width: 8rem"> -->
+        <Column field="invoiceDate" header="Payment Date" :sortable="true" style="width: 8rem">
           <template #body="{ data }">
             <span>{{ formatDate(data.invoiceDate) }}</span>
           </template>
         </Column>
 
-        <Column field="receivedPayment" header="Paid Amount" :sortable="true" style="min-width: 8rem" class="text-end">
+        <!-- <Column field="receivedPayment" header="Paid Amount" :sortable="true" style="min-width: 8rem" class="text-end"> -->
+        <Column field="receivedPayment" header="Paid Amount" :sortable="true" style="width: 8rem" class="text-end">
           <template #body="{ data }">
             <span class="text-success fw-bold">{{ formatCurrency(data.receivedPayment) }}</span>
           </template>
         </Column>
 
-        <Column field="provider" header="Fee Type" :sortable="true" style="min-width: 8.5rem">
+        <!-- <Column field="provider" header="Fee Type" :sortable="true" style="min-width: 8.5rem"> -->
+        <Column field="provider" header="Fee Type" :sortable="true" style="width: 8.5rem">
           <template #body="{ data }">
             <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20 px-2 py-0.5 rounded-pill small">
               {{ data.provider || 'Recurring Fee' }}
@@ -228,7 +235,8 @@
           </template>
         </Column>
 
-        <Column field="paymentMethod" header="Method / Channel" :sortable="true" style="min-width: 9rem">
+        <!-- <Column field="paymentMethod" header="Method / Channel" :sortable="true" style="min-width: 9rem"> -->
+        <Column field="paymentMethod" header="Method / Channel" :sortable="true" style="width: 9rem">
           <template #body="{ data }">
             <span class="d-flex align-items-center gap-1 small text-secondary">
               <i :class="getPaymentMethodIcon(data.paymentMethod)" style="font-size: 0.8rem;"></i>
@@ -237,13 +245,15 @@
           </template>
         </Column>
 
-        <Column field="invoiceStatus" header="Status" :sortable="true" style="min-width: 7.5rem">
+        <!-- <Column field="invoiceStatus" header="Status" :sortable="true" style="min-width: 7.5rem"> -->
+        <Column field="invoiceStatus" header="Status" :sortable="true" style="width: 7.5rem">
           <template #body="{ data }">
             <Tag :severity="getStatusSeverity(data.invoiceStatus)" :value="data.invoiceStatus || 'Paid'" rounded></Tag>
           </template>
         </Column>
 
-        <Column header="Actions" :exportable="false" style="min-width: 5rem" class="text-center">
+        <!-- <Column header="Actions" :exportable="false" style="min-width: 5rem" class="text-center"> -->
+        <Column header="Actions" :exportable="false" style="width: 5rem" class="text-center">
           <!-- Gene - Nov, 16, 2026: Pass clicked payment invoiceNo/accountNo as search query when navigating to Payments -->
           <!--
           <template #body>
@@ -356,13 +366,16 @@
           </div>
         </template>
 
-        <Column field="accountNo" header="Account #" :sortable="true" style="min-width: 8rem">
+        <!-- Gene - Nov, 17, 2026: Replace inline min-width with width on Outstanding Receivables columns so columns can shrink below initial width. -->
+        <!-- <Column field="accountNo" header="Account #" :sortable="true" style="min-width: 8rem"> -->
+        <Column field="accountNo" header="Account #" :sortable="true" style="width: 8rem">
           <template #body="{ data }">
             <span class="fw-semibold text-primary font-monospace">{{ data.accountNo }}</span>
           </template>
         </Column>
 
-        <Column field="fullName" header="Subscriber Name" :sortable="true" style="min-width: 12rem">
+        <!-- <Column field="fullName" header="Subscriber Name" :sortable="true" style="min-width: 12rem"> -->
+        <Column field="fullName" header="Subscriber Name" :sortable="true" style="width: 12rem">
           <template #body="{ data }">
             <div>
               <div class="fw-semibold text-body">{{ data.fullName || 'Subscriber' }}</div>
@@ -371,7 +384,8 @@
           </template>
         </Column>
 
-        <Column field="plan" header="Fiber Plan" :sortable="true" style="min-width: 9rem">
+        <!-- <Column field="plan" header="Fiber Plan" :sortable="true" style="min-width: 9rem"> -->
+        <Column field="plan" header="Fiber Plan" :sortable="true" style="width: 9rem">
           <template #body="{ data }">
             <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 px-2 py-1 rounded-2">
               {{ data.plan || 'SwitchConnect' }}
@@ -379,7 +393,8 @@
           </template>
         </Column>
 
-        <Column field="billingDay" header="Billing Cutoff" :sortable="true" style="min-width: 8rem">
+        <!-- <Column field="billingDay" header="Billing Cutoff" :sortable="true" style="min-width: 8rem"> -->
+        <Column field="billingDay" header="Billing Cutoff" :sortable="true" style="width: 8rem">
           <template #body="{ data }">
             <span class="badge bg-light text-body border px-2 py-1 rounded-pill small">
               Day {{ data.billingDay || 20 }}
@@ -387,26 +402,30 @@
           </template>
         </Column>
 
-        <Column field="accountBalance" header="Outstanding Balance" :sortable="true" style="min-width: 9.5rem" class="text-end">
+        <!-- <Column field="accountBalance" header="Outstanding Balance" :sortable="true" style="min-width: 9.5rem" class="text-end"> -->
+        <Column field="accountBalance" header="Outstanding Balance" :sortable="true" style="width: 9.5rem" class="text-end">
           <template #body="{ data }">
             <span class="text-danger fw-bold fs-6">{{ formatCurrency(data.accountBalance) }}</span>
           </template>
         </Column>
 
-        <Column field="city" header="Location" :sortable="true" style="min-width: 9rem">
+        <!-- <Column field="city" header="Location" :sortable="true" style="min-width: 9rem"> -->
+        <Column field="city" header="Location" :sortable="true" style="width: 9rem">
           <template #body="{ data }">
             <span class="small text-body">{{ data.city || 'Binangonan' }}</span>
             <span v-if="data.barangay" class="small text-secondary ms-1">({{ data.barangay }})</span>
           </template>
         </Column>
 
-        <Column field="billingStatus" header="Status" :sortable="true" style="min-width: 7.5rem">
+        <!-- <Column field="billingStatus" header="Status" :sortable="true" style="min-width: 7.5rem"> -->
+        <Column field="billingStatus" header="Status" :sortable="true" style="width: 7.5rem">
           <template #body="{ data }">
             <Tag :severity="String(data.billingStatus).toLowerCase() === 'active' ? 'success' : 'warn'" :value="data.billingStatus || 'Active'" rounded></Tag>
           </template>
         </Column>
 
-        <Column header="Actions" :exportable="false" style="min-width: 5rem" class="text-center">
+        <!-- <Column header="Actions" :exportable="false" style="min-width: 5rem" class="text-center"> -->
+        <Column header="Actions" :exportable="false" style="width: 5rem" class="text-center">
           <!-- Gene - Nov, 16, 2026: Pass clicked subscriber accountNo/fullName as search query when navigating to Billing -->
           <!--
           <template #body>
@@ -463,10 +482,76 @@ const stopColumnResizerClick = (event) => {
   event?.stopPropagation?.()
 }
 
+// Gene - Nov, 17, 2026: Clamp column resize drag indicator to [72, 960] px and clear inline minWidth so columns can shrink reliably.
+/*
 const dataTableResizePt = {
   column: {
     columnResizer: {
       onClick: stopColumnResizerClick
+    }
+  }
+}
+*/
+const MIN_RESIZABLE_COL_WIDTH = 72
+const MAX_RESIZABLE_COL_WIDTH = 960
+
+const onColumnResizerMouseDown = (event) => {
+  const resizerEl = event?.currentTarget || event?.target
+  const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
+  if (!headerEl) return
+
+  if (headerEl.style) {
+    headerEl.style.minWidth = ''
+  }
+
+  if (typeof window === 'undefined') return
+  const dtEl = headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
+  const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
+  if (!dtEl || !resizeHelperEl) return
+
+  const rectWidth = headerEl.getBoundingClientRect?.().width
+  const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
+    ? rectWidth
+    : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
+
+  const dtRect = dtEl.getBoundingClientRect?.()
+  if (!dtRect) return
+  const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
+  const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
+  const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
+  const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
+  const minHelperX = startHelperX + minDelta
+  const maxHelperX = startHelperX + maxDelta
+
+  const clampHelperPosition = (moveEvent) => {
+    if (resizeHelperEl.style.display !== 'block') return
+    const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
+    const fallbackX = typeof moveEvent?.pageX === 'number'
+      ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
+      : startHelperX
+    const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
+    const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
+    resizeHelperEl.style.left = `${clampedX}px`
+  }
+
+  const onMouseUpCapture = (upEvent) => {
+    clampHelperPosition(upEvent)
+    if (headerEl.style) {
+      headerEl.style.minWidth = ''
+    }
+    window.removeEventListener('mousemove', clampHelperPosition)
+    window.removeEventListener('mouseup', onMouseUpCapture, true)
+  }
+
+  window.addEventListener('mousemove', clampHelperPosition)
+  window.addEventListener('mouseup', onMouseUpCapture, true)
+}
+
+const dataTableResizePt = {
+  column: {
+    columnResizer: {
+      onClick: stopColumnResizerClick,
+      onMousedown: onColumnResizerMouseDown
     }
   }
 }

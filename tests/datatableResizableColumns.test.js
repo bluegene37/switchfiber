@@ -116,7 +116,18 @@ function createResizeHarness({
       saveColumnWidths,
       clearImperativeResizeStyles,
       resetColumnWidths,
+    // Gene - Nov, 17, 2026: Expose onColumnResizerMouseDown from resize harness.
+    /*
       stopColumnResizerClick,
+      dataTableResizePt,
+      getDynamicColumnPt,
+      getDynamicColumnStyle,
+      getMultilineCellStyle,
+      getTruncateCellStyle,
+      onColumnResizeEnd
+    */
+      stopColumnResizerClick,
+      onColumnResizerMouseDown,
       dataTableResizePt,
       getDynamicColumnPt,
       getDynamicColumnStyle,
@@ -184,6 +195,43 @@ test('All active DataTable components enable expandable column resizing and sort
     }
   }
 
+  // Gene - Nov, 17, 2026: Verify active resizable <Column> tags in Dashboard.vue, AccountingDashboard.vue, and non-frozen columns in DynamicApiTable.vue do not set inline min-width/minWidth.
+  /*
+  for (const { name, src } of files) {
+    const activeTemplate = stripHtmlComments(extractTemplate(src))
+    const columnTags = activeTemplate.match(/<Column\b[\s\S]*?>/g) || []
+    for (const colTag of columnTags) {
+      assert.doesNotMatch(
+        colTag,
+        /\bmin-width\s*:/i,
+        `${name} <Column> must not use inline min-width CSS: ${colTag}`
+      )
+      assert.doesNotMatch(
+        colTag,
+        /\bminWidth\s*:/,
+        `${name} <Column> must not use inline minWidth style prop: ${colTag}`
+      )
+    }
+  }
+  */
+  for (const { name, src } of files) {
+    const activeTemplate = stripHtmlComments(extractTemplate(src))
+    const columnTags = activeTemplate.match(/<Column\b[\s\S]*?>/g) || []
+    for (const colTag of columnTags) {
+      if (name === 'DynamicApiTable.vue' && /:frozen="true"/.test(colTag)) continue
+      assert.doesNotMatch(
+        colTag,
+        /\bmin-width\s*:/i,
+        `${name} <Column> must not use inline min-width CSS: ${colTag}`
+      )
+      assert.doesNotMatch(
+        colTag,
+        /\bminWidth\s*:/,
+        `${name} <Column> must not use inline minWidth style prop: ${colTag}`
+      )
+    }
+  }
+
   const activeDynamicTemplate = stripHtmlComments(extractTemplate(tableSrc))
   const [dynamicTableTag] = activeDynamicTemplate.match(/<DataTable\b[\s\S]*?>/g) || []
   assert.match(dynamicTableTag, /class="sfa-tracker-table-datatable"/)
@@ -213,6 +261,8 @@ test('Global stylesheet defines active styles for resizable DataTable cells, res
   assert.match(activeCss, /\.p-datatable-column-resizer\s*\{[\s\S]*?width:\s*8px;[\s\S]*?cursor:\s*col-resize;/)
   assert.match(activeCss, /\.p-datatable-column-resizer:hover::after/)
   assert.match(activeCss, /\.p-datatable-column-resize-indicator\s*\{/)
+  // Gene - Nov, 17, 2026: Verify persisted column width uses --sfa-col-width CSS variable on header cells.
+  assert.match(activeCss, /\.p-datatable-resizable-table\s*>\s*\.p-datatable-thead\s*>\s*tr\s*>\s*th\.sfa-tracker-table-col-data\s*\{[\s\S]*?min-width:\s*var\(--sfa-col-width,\s*0px\)/)
 })
 
 test('DynamicApiTable resize logic persists per user/endpoint, isolates resizer clicks from sort, clamps bounds, and resets cleanly', () => {
@@ -231,10 +281,13 @@ test('DynamicApiTable resize logic persists per user/endpoint, isolates resizer 
     }
   })
   assert.equal(stopped, true)
+  // Gene - Nov, 17, 2026: Verify onMousedown drag-clamp handler is bound on DataTable and dynamic Column PT.
+  assert.equal(api.dataTableResizePt.column.columnResizer.onMousedown, api.onColumnResizerMouseDown)
 
   const colPt = api.getDynamicColumnPt('customerName')
   assert.equal(colPt.headerCell['data-sfa-col'], 'customerName')
   assert.equal(colPt.columnResizer.onClick, api.stopColumnResizerClick)
+  assert.equal(colPt.columnResizer.onMousedown, api.onColumnResizerMouseDown)
 
   // Initial resize via data-sfa-col attribute
   api.onColumnResizeEnd({
@@ -250,11 +303,20 @@ test('DynamicApiTable resize logic persists per user/endpoint, isolates resizer 
   })
 
   assert.equal(api.hasCustomColumnWidths.value, true)
+  // Gene - Nov, 17, 2026: Assert getDynamicColumnStyle sets --sfa-col-width, width, and maxWidth without inline minWidth.
+  /*
   assert.deepEqual(api.getDynamicColumnStyle('customerName'), {
     width: '280px',
     minWidth: '280px',
     maxWidth: '280px'
   })
+  */
+  assert.deepEqual(api.getDynamicColumnStyle('customerName'), {
+    '--sfa-col-width': '280px',
+    width: '280px',
+    maxWidth: '280px'
+  })
+  assert.equal(api.getDynamicColumnStyle('customerName').minWidth, undefined)
   assert.equal(api.getTruncateCellStyle('customerName').maxWidth, '100%')
 
   // Incremental shrink via delta + classList fallback and min clamp (72px)
@@ -363,4 +425,77 @@ test('Corrupt localStorage entries are handled gracefully without throwing', () 
     customerName: '72px',
     description: '320px'
   })
+})
+
+// Gene - Nov, 17, 2026: Verify a column expanded to a large width can be shrunk back down without inline minWidth blocking PrimeVue.
+test('Expanded column can shrink back down cleanly without inline minWidth blocking PrimeVue', () => {
+  const { api } = createResizeHarness()
+
+  let currentWidth = 200
+  const attrs = new Map([['data-sfa-col', 'customerName']])
+  const styleProps = new Map()
+  const headerEl = {
+    style: {
+      minWidth: '200px',
+      width: '',
+      maxWidth: '',
+      setProperty(k, v) {
+        styleProps.set(k, v)
+      },
+      removeProperty(k) {
+        styleProps.delete(k)
+      }
+    },
+    getAttribute(k) {
+      return attrs.get(k) ?? null
+    },
+    setAttribute(k, v) {
+      attrs.set(k, String(v))
+    },
+    removeAttribute(k) {
+      attrs.delete(k)
+    },
+    getBoundingClientRect() {
+      return { width: currentWidth }
+    },
+    get offsetWidth() {
+      return currentWidth
+    }
+  }
+  const resizerEl = { parentElement: headerEl }
+
+  // Start drag -> mousedown clears inline minWidth and captures start width
+  api.onColumnResizerMouseDown({ currentTarget: resizerEl, pageX: 200 })
+  assert.equal(headerEl.style.minWidth, '')
+  assert.equal(attrs.get('data-sfa-start-width'), '200')
+
+  // Expand to 600px
+  currentWidth = 600
+  api.onColumnResizeEnd({ element: headerEl, delta: 400 })
+  assert.equal(api.columnWidths.value.customerName, '600px')
+  assert.equal(styleProps.get('--sfa-col-width'), '600px')
+  assert.equal(headerEl.style.minWidth, '')
+
+  // Simulate Vue applying getDynamicColumnStyle to headerEl.style before the next drag
+  const nextStyle = api.getDynamicColumnStyle('customerName')
+  assert.equal(nextStyle.minWidth, undefined)
+  Object.assign(headerEl.style, { width: nextStyle.width, maxWidth: nextStyle.maxWidth })
+
+  // PrimeVue's shrink guard: columnWidth + delta > parseInt(headerEl.style.minWidth || 15, 10)
+  const shrinkDelta = -380
+  const primeVueMinWidth = headerEl.style.minWidth || 15
+  assert.equal(currentWidth + shrinkDelta > parseInt(primeVueMinWidth, 10), true)
+
+  // Shrink back from 600px to 220px, then down to 72px
+  api.onColumnResizerMouseDown({ currentTarget: resizerEl, pageX: 600 })
+  assert.equal(attrs.get('data-sfa-start-width'), '600')
+  currentWidth = 220
+  api.onColumnResizeEnd({ element: headerEl, delta: shrinkDelta })
+  assert.equal(api.columnWidths.value.customerName, '220px')
+
+  api.onColumnResizerMouseDown({ currentTarget: resizerEl, pageX: 220 })
+  assert.equal(attrs.get('data-sfa-start-width'), '220')
+  currentWidth = 72
+  api.onColumnResizeEnd({ element: headerEl, delta: -148 })
+  assert.equal(api.columnWidths.value.customerName, '72px')
 })

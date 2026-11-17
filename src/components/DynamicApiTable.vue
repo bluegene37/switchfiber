@@ -811,10 +811,20 @@
            column ahead of the switch that changes it. Tracks the in-flight value
            while a connect / disconnect is running, so it never disagrees with the
            switch beside it. -->
+      <!-- Gene - Nov, 17, 2026: Use width instead of minWidth so Connection Status column can be shrunk below 180px when resized. -->
+      <!--
       <Column class="sfa-tracker-table-col-connection-status"
         v-if="isRadiusUserEndpoint"
         header="Connection Status"
         :style="{ minWidth: '180px', width: '180px' }"
+        headerClass="text-center"
+        bodyClass="text-center"
+      >
+      -->
+      <Column class="sfa-tracker-table-col-connection-status"
+        v-if="isRadiusUserEndpoint"
+        header="Connection Status"
+        :style="{ width: '180px' }"
         headerClass="text-center"
         bodyClass="text-center"
       >
@@ -836,11 +846,23 @@
            sits alone and the header carries the meaning; when the caption is on it
            reads after the switch in a fixed-width slot, so the switches stay
            aligned down the column instead of shifting with the word beside them. -->
+      <!-- Gene - Nov, 17, 2026: Use width instead of minWidth so Connection column can be shrunk when resized. -->
+      <!--
       <Column class="sfa-tracker-table-col-connection"
         v-if="isRadiusUserEndpoint"
         header="Connection"
         :style="{
           minWidth: SHOW_CONNECTION_STATE_LABEL ? '165px' : '120px',
+          width: SHOW_CONNECTION_STATE_LABEL ? '165px' : '120px'
+        }"
+        headerClass="text-center"
+        bodyClass="text-center"
+      >
+      -->
+      <Column class="sfa-tracker-table-col-connection"
+        v-if="isRadiusUserEndpoint"
+        header="Connection"
+        :style="{
           width: SHOW_CONNECTION_STATE_LABEL ? '165px' : '120px'
         }"
         headerClass="text-center"
@@ -9540,6 +9562,8 @@ const stopColumnResizerClick = (event) => {
   event?.stopPropagation?.()
 }
 
+// Gene - Nov, 17, 2026: Remove inline minWidth from column styles (using --sfa-col-width CSS variable instead) and clamp drag guide in onColumnResizerMouseDown so columns can always shrink as well as expand.
+/*
 const dataTableResizePt = {
   column: {
     columnResizer: {
@@ -9563,6 +9587,88 @@ const getDynamicColumnStyle = (col) => {
   return {
     width,
     minWidth: width,
+    maxWidth: width
+  }
+}
+*/
+const onColumnResizerMouseDown = (event) => {
+  const resizerEl = event?.currentTarget || event?.target
+  const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
+  if (!headerEl) return
+
+  if (headerEl.style) {
+    headerEl.style.minWidth = ''
+  }
+
+  const rectWidth = headerEl.getBoundingClientRect?.().width
+  const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
+    ? rectWidth
+    : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
+  headerEl.setAttribute?.('data-sfa-start-width', String(Math.round(startWidth)))
+
+  if (typeof window === 'undefined') return
+  const dtEl = dt.value?.$el || headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
+  const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
+  if (!dtEl || !resizeHelperEl) return
+
+  const dtRect = dtEl.getBoundingClientRect?.()
+  if (!dtRect) return
+  const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
+  const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
+  const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
+  const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
+  const minHelperX = startHelperX + minDelta
+  const maxHelperX = startHelperX + maxDelta
+
+  const clampHelperPosition = (moveEvent) => {
+    if (resizeHelperEl.style.display !== 'block') return
+    const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
+    const fallbackX = typeof moveEvent?.pageX === 'number'
+      ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
+      : startHelperX
+    const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
+    const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
+    resizeHelperEl.style.left = `${clampedX}px`
+  }
+
+  const onMouseUpCapture = (upEvent) => {
+    clampHelperPosition(upEvent)
+    if (headerEl.style) {
+      headerEl.style.minWidth = ''
+    }
+    window.removeEventListener('mousemove', clampHelperPosition)
+    window.removeEventListener('mouseup', onMouseUpCapture, true)
+  }
+
+  window.addEventListener('mousemove', clampHelperPosition)
+  window.addEventListener('mouseup', onMouseUpCapture, true)
+}
+
+const dataTableResizePt = {
+  column: {
+    columnResizer: {
+      onClick: stopColumnResizerClick,
+      onMousedown: onColumnResizerMouseDown
+    }
+  }
+}
+
+const getDynamicColumnPt = (col) => ({
+  headerCell: {
+    'data-sfa-col': col
+  },
+  columnResizer: {
+    onClick: stopColumnResizerClick,
+    onMousedown: onColumnResizerMouseDown
+  }
+})
+
+const getDynamicColumnStyle = (col) => {
+  const width = columnWidths.value[col]
+  if (!width) return undefined
+  return {
+    '--sfa-col-width': width,
+    width,
     maxWidth: width
   }
 }
@@ -9611,6 +9717,8 @@ const resolveColumnFieldFromHeaderEl = (headerEl) => {
   return null
 }
 
+// Gene - Nov, 17, 2026: Clear inline minWidth/--sfa-col-width before fallback measurement, compute resize delta against recorded start width, and synchronously apply updated width styles.
+/*
 const onColumnResizeEnd = (event) => {
   const headerEl = event?.element
   const col = resolveColumnFieldFromHeaderEl(headerEl)
@@ -9637,6 +9745,51 @@ const onColumnResizeEnd = (event) => {
   columnWidths.value = {
     ...columnWidths.value,
     [col]: `${nextPx}px`
+  }
+  saveColumnWidths(columnWidths.value, columnWidthStoreKey.value)
+}
+*/
+const onColumnResizeEnd = (event) => {
+  const headerEl = event?.element
+  const col = resolveColumnFieldFromHeaderEl(headerEl)
+  if (!col) return
+
+  if (headerEl?.style) {
+    headerEl.style.minWidth = ''
+    headerEl.style.removeProperty?.('--sfa-col-width')
+  }
+
+  const startAttr = Number.parseFloat(headerEl?.getAttribute?.('data-sfa-start-width'))
+  headerEl?.removeAttribute?.('data-sfa-start-width')
+  const prevPx = Number.isFinite(startAttr) && startAttr > 0
+    ? startAttr
+    : parsePixelWidth(columnWidths.value[col])
+  const delta = Number(event?.delta)
+  let nextPx = null
+
+  if (prevPx != null && Number.isFinite(delta)) {
+    nextPx = clampColumnWidth(prevPx + delta)
+  } else {
+    const rectWidth = headerEl?.getBoundingClientRect?.().width
+    const stylePx = parsePixelWidth(headerEl?.style?.width)
+    const measuredWidth = Number.isFinite(rectWidth) && rectWidth > 0
+      ? rectWidth
+      : (stylePx ?? headerEl?.offsetWidth)
+    if (Number.isFinite(measuredWidth) && measuredWidth > 0) {
+      nextPx = clampColumnWidth(measuredWidth)
+    }
+  }
+
+  if (nextPx == null) return
+  const widthCss = `${nextPx}px`
+  if (headerEl?.style) {
+    headerEl.style.setProperty?.('--sfa-col-width', widthCss)
+    headerEl.style.width = widthCss
+    headerEl.style.maxWidth = widthCss
+  }
+  columnWidths.value = {
+    ...columnWidths.value,
+    [col]: widthCss
   }
   saveColumnWidths(columnWidths.value, columnWidthStoreKey.value)
 }
