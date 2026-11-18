@@ -939,6 +939,7 @@
               @click="openViewDialog(slotProps.data)" 
             />
             <!-- Gene - Nov, 16, 2026: Per-row action button on Applications to auto-locate and view the linked Job Order -->
+            <!--
             <Button
               v-if="isApplicationEndpoint"
               :icon="locatingJobOrderId === getApplicationLookupId(slotProps.data) ? 'pi pi-spin pi-spinner' : 'pi pi-clipboard'"
@@ -948,6 +949,36 @@
               :disabled="locatingJobOrderId !== null"
               @click="goToLinkedJobOrder(slotProps.data)"
             />
+            -->
+            <!-- Gene - Nov, 18, 2026: Dynamically render View Job Order when linked or Create Job Order when unlinked and eligible -->
+            <template v-if="isApplicationEndpoint">
+              <Button
+                v-if="getApplicationJobOrderLinkState(slotProps.data) === 'linked'"
+                :icon="locatingJobOrderId === getApplicationLookupId(slotProps.data) ? 'pi pi-spin pi-spinner' : 'pi pi-clipboard'"
+                class="p-button-text p-button-sm p-button-rounded p-button-info p-0 action-row-btn"
+                v-tooltip.top="'View Job Order'"
+                aria-label="View Job Order"
+                :disabled="locatingJobOrderId !== null || creatingJobOrderFromApp"
+                @click="goToLinkedJobOrder(slotProps.data)"
+              />
+              <Button
+                v-else-if="getApplicationJobOrderLinkState(slotProps.data) === 'checking'"
+                icon="pi pi-spin pi-spinner"
+                class="p-button-text p-button-sm p-button-rounded p-button-secondary p-0 action-row-btn"
+                v-tooltip.top="'Checking Job Order link'"
+                aria-label="Checking Job Order"
+                disabled
+              />
+              <Button
+                v-else-if="getApplicationJobOrderLinkState(slotProps.data) === 'unlinked' && isApplicationEligibleForJobOrder(slotProps.data) && !readOnly"
+                :icon="creatingJobOrderAppKey === getApplicationLookupId(slotProps.data) ? 'pi pi-spin pi-spinner' : 'pi pi-file-plus'"
+                class="p-button-text p-button-sm p-button-rounded p-button-success p-0 action-row-btn"
+                v-tooltip.top="'Create Job Order'"
+                aria-label="Create Job Order"
+                :disabled="creatingJobOrderFromApp || locatingJobOrderId !== null"
+                @click="openCreateJobOrderFromAppDialog(slotProps.data)"
+              />
+            </template>
             <!--
             <Button
               v-if="!readOnly"
@@ -3716,6 +3747,7 @@
           />
           -->
           <!-- Gene - Oct 31, 2026: Pass viewFormData.value to openEditDialog so existing loaded images and values transfer directly into Edit modal -->
+          <!--
           <Button
             v-if="!readOnly"
             label="Edit Record"
@@ -3726,6 +3758,44 @@
             @click="displayViewDialog = false; openEditDialog(viewFormData.value || viewFormData)"
           />
           <span v-else></span>
+          -->
+          <!-- Gene - Nov, 18, 2026: Add dynamic View Job Order / Create Job Order button in Application View Details modal footer -->
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <Button
+              v-if="!readOnly"
+              label="Edit Record"
+              icon="pi pi-pencil"
+              severity="primary"
+              outlined
+              class="p-button-outlined p-button-primary p-button-sm rounded-3 px-3"
+              @click="displayViewDialog = false; openEditDialog(viewFormData.value || viewFormData)"
+            />
+            <template v-if="isApplicationEndpoint">
+              <Button
+                v-if="getApplicationJobOrderLinkState(viewFormData) === 'linked'"
+                label="View Job Order"
+                icon="pi pi-clipboard"
+                class="p-button-outlined p-button-info p-button-sm rounded-3 px-3"
+                :disabled="locatingJobOrderId !== null || creatingJobOrderFromApp"
+                @click="displayViewDialog = false; goToLinkedJobOrder(viewFormData)"
+              />
+              <Button
+                v-else-if="getApplicationJobOrderLinkState(viewFormData) === 'checking'"
+                label="Checking Job Order..."
+                icon="pi pi-spin pi-spinner"
+                class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3"
+                disabled
+              />
+              <Button
+                v-else-if="getApplicationJobOrderLinkState(viewFormData) === 'unlinked' && isApplicationEligibleForJobOrder(viewFormData) && !readOnly"
+                label="Create Job Order"
+                icon="pi pi-file-plus"
+                class="p-button-success p-button-sm rounded-3 px-3 shadow-xs"
+                :loading="creatingJobOrderFromApp"
+                @click="openCreateJobOrderFromAppDialog(viewFormData)"
+              />
+            </template>
+          </div>
           <Button 
             label="Close" 
             icon="pi pi-times" 
@@ -5989,6 +6059,56 @@
       </template>
     </Dialog>
 
+    <!-- Gene - Nov, 18, 2026: Confirmation dialog to auto-create a Job Order directly from an unlinked Application -->
+    <Dialog
+      class="sfa-tracker-dialog-create-job-order"
+      v-model:visible="displayCreateJoFromAppDialog"
+      modal
+      header="Confirm Create Job Order"
+      :style="{ width: '90vw', maxWidth: '520px' }"
+    >
+      <div v-if="createJoFromAppError" class="alert alert-danger d-flex align-items-center rounded-3 p-2 mb-3 small sfa-tracker-dialog-create-jo-error">
+        <i class="pi pi-exclamation-triangle me-2"></i>
+        <span>{{ createJoFromAppError }}</span>
+      </div>
+
+      <div class="d-flex align-items-start gap-3 py-2">
+        <i class="pi pi-file-plus text-success fs-1"></i>
+        <div class="flex-grow-1">
+          <p class="mb-1 fw-medium text-body">Create a Job Order using this Application's details?</p>
+          <p class="small text-secondary mb-2">
+            All subscriber, address, plan, and contact details below will be automatically copied to the new Job Order.
+          </p>
+
+          <dl v-if="createJoFromAppSummary.length" class="small mt-2 mb-0 border rounded-3 p-2 bg-body-tertiary">
+            <div v-for="item in createJoFromAppSummary" :key="item.key" class="d-flex gap-2 py-1">
+              <dt class="text-secondary fw-normal flex-shrink-0" style="min-width: 140px;">{{ item.label }}:</dt>
+              <dd class="mb-0 fw-semibold text-body text-break">{{ item.value }}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="d-flex justify-content-end gap-2 mt-3 sfa-tracker-dialog-create-jo-footer">
+          <Button
+            label="Cancel"
+            icon="pi pi-times"
+            class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3"
+            :disabled="creatingJobOrderFromApp"
+            @click="displayCreateJoFromAppDialog = false"
+          />
+          <Button
+            label="Create Job Order"
+            icon="pi pi-check"
+            class="p-button-success p-button-sm rounded-3 px-3 shadow-xs"
+            :loading="creatingJobOrderFromApp"
+            @click="confirmCreateJobOrderFromApp"
+          />
+        </div>
+      </template>
+    </Dialog>
+
     <!-- Image Preview Lightbox Dialog for Table -->
     <!--
     <Dialog class="sfa-tracker-dialog-image-preview"
@@ -6183,6 +6303,13 @@ import { LcpNapLocationService } from '../services/lcpNapLocations'
 import { JobOrderService } from '../services/jobOrders'
 // Gene - Nov 5, 2026: Import ServiceOrderService for Service Order image viewing, caching, and multipart uploads
 import { ServiceOrderService } from '../services/serviceOrders'
+// Gene - Nov, 18, 2026: Import Application-to-JobOrder automation helpers
+import {
+  isApplicationEligibleForJobOrder,
+  mapApplicationToJobOrderSeed,
+  buildApplicationJobOrderSummary,
+  hasApplicationHouseFrontPhoto
+} from '../utils/applicationJobOrderAutomation'
 import {
   resolveMenuCodesFromName,
   isSuperAdminName,
@@ -19843,8 +19970,20 @@ const fetchData = async ({ silent = false } = {}) => {
     data.value = unwrappedData || []
     */
     // Gene - Oct 23, 2026: Set unwrapped data and clear stale image cache
+    /*
     data.value = unwrappedData || []
     recordImagesCache.clear()
+    */
+    // Gene - Nov, 18, 2026: Reset Application -> Job Order linkage cache and sync epoch alongside image cache on fresh fetchData
+    data.value = unwrappedData || []
+    recordImagesCache.clear()
+    if (isApplicationEndpoint.value) {
+      appJobOrderLinkMap.value = {}
+      inFlightAppJoChecks.clear()
+      appJoSyncEpoch += 1
+      bulkPreindexedEpoch = -1
+      bulkPreindexPromise = null
+    }
     // Gene - Nov, 16, 2026: Harvest assignedEmail from loaded JobOrders rows so dropdowns stay populated without an unbounded GET /JobOrders
     if (isJobOrderEndpoint.value && Array.isArray(data.value) && data.value.length > 0) {
       data.value.forEach(row => {
@@ -20814,6 +20953,30 @@ onUnmounted(() => {
 const locatingJobOrderId = ref(null)
 const consumedLocateKey = ref('')
 
+// Gene - Nov, 18, 2026: Linkage cache, confirmation dialog state, and hybrid sync for unlinked Application -> Job Order creation
+const appJobOrderLinkMap = ref({})
+const inFlightAppJoChecks = new Set()
+let appJoSyncEpoch = 0
+let bulkPreindexedEpoch = -1
+let bulkPreindexPromise = null
+
+const displayCreateJoFromAppDialog = ref(false)
+const appRecordForJobOrderCreate = ref(null)
+const creatingJobOrderFromApp = ref(false)
+const creatingJobOrderAppKey = ref(null)
+const createJoFromAppError = ref(null)
+
+const unwrapRecordArg = (record) => (
+  record && typeof record === 'object' && 'value' in record ? record.value : record
+)
+
+const createJoFromAppSummary = computed(() => (
+  appRecordForJobOrderCreate.value
+    ? buildApplicationJobOrderSummary(appRecordForJobOrderCreate.value, { plansList: plansList.value })
+    : []
+))
+
+/*
 const getApplicationLookupId = (record) => {
   if (!record || typeof record !== 'object') return ''
   return String(
@@ -20823,6 +20986,43 @@ const getApplicationLookupId = (record) => {
     getRecordId(record) ??
     ''
   ).trim()
+}
+*/
+// Gene - Nov, 18, 2026: Unwrap ref-like modal record arguments before resolving the Application lookup ID
+const getApplicationLookupId = (record) => {
+  const rec = unwrapRecordArg(record)
+  if (!rec || typeof rec !== 'object') return ''
+  return String(
+    rec.applicationid ??
+    rec.applicationId ??
+    rec.applicationIdValue ??
+    getRecordId(rec) ??
+    ''
+  ).trim()
+}
+
+const getApplicationCandidates = (record) => {
+  const rec = unwrapRecordArg(record)
+  if (!rec || typeof rec !== 'object') return []
+  const candidates = []
+  const pushCandidate = (v) => {
+    if (v !== undefined && v !== null) {
+      const s = String(v).trim()
+      if (s && !candidates.includes(s)) candidates.push(s)
+    }
+  }
+  pushCandidate(rec.applicationid)
+  pushCandidate(rec.applicationId)
+  pushCandidate(rec.applicationIdValue)
+  pushCandidate(getRecordId(rec))
+  return candidates
+}
+
+const getApplicationJobOrderLinkState = (record) => {
+  const rec = unwrapRecordArg(record)
+  const key = getApplicationLookupId(rec)
+  if (!key) return 'unlinked'
+  return appJobOrderLinkMap.value[key]?.state || 'checking'
 }
 
 const formatLocalYmd = (dateObj) => {
@@ -20888,6 +21088,7 @@ const extractJobOrderDateWindow = (jobOrder) => {
   }
 }
 
+/*
 const goToLinkedJobOrder = async (record) => {
   if (!record || locatingJobOrderId.value !== null) return
   const candidates = []
@@ -20979,6 +21180,521 @@ const goToLinkedJobOrder = async (record) => {
     })
   } finally {
     locatingJobOrderId.value = null
+  }
+}
+*/
+
+const goToLinkedJobOrder = async (record) => {
+  // Gene - Nov, 18, 2026: Support unwrapped View modal records and reuse cached Job Order from appJobOrderLinkMap before querying API
+  const rec = unwrapRecordArg(record)
+  if (!rec || locatingJobOrderId.value !== null) return
+  const candidates = getApplicationCandidates(rec)
+
+  if (candidates.length === 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Missing Application ID',
+      detail: 'Cannot look up Job Order without an Application ID.',
+      life: 3000
+    })
+    return
+  }
+
+  const rowKey = getApplicationLookupId(rec) || candidates[0]
+  locatingJobOrderId.value = rowKey
+
+  try {
+    let foundJobOrder = appJobOrderLinkMap.value[rowKey]?.jobOrder || null
+    let matchedCandidate = candidates[0]
+    let lastNon404Error = null
+
+    if (!foundJobOrder || typeof foundJobOrder !== 'object' || Object.keys(foundJobOrder).length === 0) {
+      foundJobOrder = null
+      for (const candidate of candidates) {
+        try {
+          const res = await JobOrderService.getJobOrderByApplicationId(candidate, { cancelOnNavigate: false })
+          let payload = unwrapApiPayload(res)
+          if (Array.isArray(payload)) payload = payload[0] || null
+          if (payload && typeof payload === 'object' && Object.keys(payload).length > 0) {
+            foundJobOrder = payload
+            matchedCandidate = candidate
+            break
+          }
+        } catch (err) {
+          const status = err?.status ?? err?.response?.status
+          if (status && status !== 404) {
+            lastNon404Error = err
+          }
+        }
+      }
+    }
+
+    if (!foundJobOrder) {
+      if (lastNon404Error) {
+        throw lastNon404Error
+      }
+      appJobOrderLinkMap.value = {
+        ...appJobOrderLinkMap.value,
+        [rowKey]: { state: 'unlinked', jobOrder: null }
+      }
+      toast.add({
+        severity: 'info',
+        summary: 'No Job Order Found',
+        detail: `No Job Order was found for Application #${candidates[0]}.`,
+        life: 3500
+      })
+      return
+    }
+
+    appJobOrderLinkMap.value = {
+      ...appJobOrderLinkMap.value,
+      [rowKey]: { state: 'linked', jobOrder: foundJobOrder }
+    }
+
+    const joId = getRecordId(foundJobOrder)
+    const joAppId = String(
+      foundJobOrder.applicationId ??
+      foundJobOrder.applicationIdValue ??
+      foundJobOrder.applicationid ??
+      matchedCandidate
+    ).trim()
+    const window = extractJobOrderDateWindow(foundJobOrder)
+
+    await router.push({
+      path: '/job-orders',
+      query: {
+        search: String(joId ?? joAppId ?? ''),
+        ...(joId !== null && joId !== undefined && String(joId).trim() !== '' ? { locateJobOrderId: String(joId).trim() } : {}),
+        ...(joAppId ? { locateApplicationId: joAppId } : {}),
+        ...(window ? { dateFrom: window.dateFrom, dateTo: window.dateTo } : {})
+      }
+    })
+  } catch (err) {
+    console.error('[DynamicApiTable] Error locating Job Order for Application:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Lookup Failed',
+      detail: err?.message || 'Unable to look up the linked Job Order.',
+      life: 4000
+    })
+  } finally {
+    locatingJobOrderId.value = null
+  }
+}
+
+// Gene - Nov, 18, 2026: Hybrid bulk + visible-row linkage checker for Applications -> Job Order actions
+const resolveBulkJobOrderWindowFromApplications = (rows) => {
+  const validDates = []
+  const pushDate = (raw) => {
+    if (!raw) return
+    const d = raw instanceof Date ? raw : (parseDateForPicker(raw) || new Date(raw))
+    if (!Number.isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2100) {
+      validDates.push(d)
+    }
+  }
+  if (Array.isArray(rows)) {
+    rows.forEach(row => {
+      if (!row || typeof row !== 'object') return
+      pushDate(row.timestamp)
+      pushDate(row.dateTime)
+      pushDate(row.createdDate)
+    })
+  }
+  pushDate(props.filterParams?.fromDate)
+  pushDate(props.filterParams?.dateFrom)
+
+  const earliest = validDates.length > 0
+    ? new Date(Math.min(...validDates.map(d => d.getTime())) - 86400000)
+    : new Date(Date.now() - 30 * 86400000)
+  const tomorrow = new Date(Date.now() + 86400000)
+  return {
+    dateFrom: formatLocalYmd(earliest),
+    dateTo: formatLocalYmd(tomorrow)
+  }
+}
+
+const checkSingleApplicationJobOrderLink = async (row, currentEpoch) => {
+  const key = getApplicationLookupId(row)
+  if (!key) return
+  const candidates = getApplicationCandidates(row)
+  if (candidates.length === 0) {
+    appJobOrderLinkMap.value = {
+      ...appJobOrderLinkMap.value,
+      [key]: { state: 'unlinked', jobOrder: null }
+    }
+    return
+  }
+
+  try {
+    let foundJobOrder = null
+    let lastNon404Error = null
+    let wasCanceled = false
+
+    for (const candidate of candidates) {
+      if (currentEpoch !== appJoSyncEpoch) {
+        wasCanceled = true
+        break
+      }
+      try {
+        const res = await JobOrderService.getJobOrderByApplicationId(candidate)
+        let payload = unwrapApiPayload(res)
+        if (Array.isArray(payload)) payload = payload[0] || null
+        if (payload && typeof payload === 'object' && Object.keys(payload).length > 0) {
+          foundJobOrder = payload
+          break
+        }
+      } catch (err) {
+        if (err?.isCanceled) {
+          wasCanceled = true
+          break
+        }
+        const status = err?.status ?? err?.response?.status
+        if (status && status !== 404) {
+          lastNon404Error = err
+        }
+      }
+    }
+
+    if (wasCanceled || currentEpoch !== appJoSyncEpoch) {
+      const next = { ...appJobOrderLinkMap.value }
+      if (next[key]?.state === 'checking') {
+        delete next[key]
+        appJobOrderLinkMap.value = next
+      }
+      return
+    }
+
+    if (foundJobOrder) {
+      appJobOrderLinkMap.value = {
+        ...appJobOrderLinkMap.value,
+        [key]: { state: 'linked', jobOrder: foundJobOrder }
+      }
+    } else if (lastNon404Error) {
+      appJobOrderLinkMap.value = {
+        ...appJobOrderLinkMap.value,
+        [key]: { state: 'error', jobOrder: null }
+      }
+    } else {
+      appJobOrderLinkMap.value = {
+        ...appJobOrderLinkMap.value,
+        [key]: { state: 'unlinked', jobOrder: null }
+      }
+    }
+  } finally {
+    inFlightAppJoChecks.delete(key)
+  }
+}
+
+const syncVisibleApplicationJobOrderLinks = async () => {
+  if (!isApplicationEndpoint.value || !hasFetched.value) return
+  const currentEpoch = appJoSyncEpoch
+
+  // Step A: 1-call bulk pre-index per fetch epoch to avoid per-row calls on already-linked rows
+  if (bulkPreindexedEpoch !== currentEpoch && Array.isArray(data.value) && data.value.length > 0) {
+    if (!bulkPreindexPromise) {
+      bulkPreindexPromise = (async () => {
+        try {
+          const { dateFrom, dateTo } = resolveBulkJobOrderWindowFromApplications(data.value)
+          const res = await JobOrderService.getJobOrdersByStatusDate({
+            dateFrom,
+            dateTo,
+            fromDate: dateFrom,
+            toDate: dateTo
+          })
+          if (currentEpoch !== appJoSyncEpoch) return
+          const payload = unwrapApiPayload(res)
+          const joList = unwrapList(payload)
+          if (joList.length > 0) {
+            const byAppId = new Map()
+            joList.forEach(jo => {
+              if (!jo || typeof jo !== 'object') return
+              const joAppId = String(jo.applicationId ?? jo.applicationIdValue ?? jo.applicationid ?? '').trim()
+              if (joAppId && !byAppId.has(joAppId)) {
+                byAppId.set(joAppId, jo)
+              }
+            })
+            const nextMap = { ...appJobOrderLinkMap.value }
+            let changed = false
+            data.value.forEach(row => {
+              const key = getApplicationLookupId(row)
+              if (!key) return
+              const candidates = getApplicationCandidates(row)
+              const matchedCand = candidates.find(c => byAppId.has(c))
+              if (matchedCand) {
+                nextMap[key] = { state: 'linked', jobOrder: byAppId.get(matchedCand) }
+                changed = true
+              }
+            })
+            if (changed) {
+              appJobOrderLinkMap.value = nextMap
+            }
+          }
+          bulkPreindexedEpoch = currentEpoch
+        } catch (err) {
+          if (!err?.isCanceled) {
+            bulkPreindexedEpoch = currentEpoch
+          }
+        } finally {
+          bulkPreindexPromise = null
+        }
+      })()
+    }
+    await bulkPreindexPromise
+    if (currentEpoch !== appJoSyncEpoch) return
+  }
+
+  // Step B: Verify visible slice (and currently open View Details Application) with bounded concurrency
+  const processed = dt.value?.processedData
+  const baseList = Array.isArray(processed) && processed.length > 0 ? processed : (filteredData.value || [])
+  const start = Number(firstRowIndex.value) || 0
+  const pageSize = Number(rowsPerPage.value) || 50
+  const targets = baseList.slice(start, start + pageSize)
+  if (displayViewDialog.value && viewFormData.value) {
+    const modalRec = unwrapRecordArg(viewFormData.value)
+    if (modalRec && typeof modalRec === 'object') {
+      targets.push(modalRec)
+    }
+  }
+
+  const queue = []
+  const seenKeys = new Set()
+  const checkingUpdates = {}
+
+  targets.forEach(row => {
+    const key = getApplicationLookupId(row)
+    if (!key || seenKeys.has(key)) return
+    seenKeys.add(key)
+    const existingState = appJobOrderLinkMap.value[key]?.state
+    if (existingState === 'linked' || existingState === 'unlinked' || existingState === 'error') return
+    if (inFlightAppJoChecks.has(key)) return
+    inFlightAppJoChecks.add(key)
+    checkingUpdates[key] = { state: 'checking', jobOrder: null }
+    queue.push(row)
+  })
+
+  if (Object.keys(checkingUpdates).length > 0) {
+    appJobOrderLinkMap.value = { ...appJobOrderLinkMap.value, ...checkingUpdates }
+  }
+
+  if (queue.length === 0) return
+
+  const concurrency = 3
+  let cursor = 0
+  const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+    while (cursor < queue.length) {
+      if (currentEpoch !== appJoSyncEpoch) break
+      const item = queue[cursor++]
+      if (!item) break
+      await checkSingleApplicationJobOrderLink(item, currentEpoch)
+    }
+  })
+  await Promise.allSettled(workers)
+}
+
+watch(
+  [isApplicationEndpoint, hasFetched, filteredData, firstRowIndex, rowsPerPage, sortField, sortOrder, displayViewDialog, viewingRecordId],
+  async () => {
+    if (!isApplicationEndpoint.value || !hasFetched.value) return
+    await nextTick()
+    syncVisibleApplicationJobOrderLinks()
+  },
+  { immediate: true }
+)
+
+// Gene - Nov, 18, 2026: Open confirmation dialog and auto-create a Job Order directly from an unlinked Application
+const openCreateJobOrderFromAppDialog = (record) => {
+  const rec = unwrapRecordArg(record)
+  if (!rec || !isApplicationEligibleForJobOrder(rec) || creatingJobOrderFromApp.value) return
+  if (!plansList.value.length) {
+    fetchFormLookups()
+  }
+  appRecordForJobOrderCreate.value = { ...rec }
+  createJoFromAppError.value = null
+  displayCreateJoFromAppDialog.value = true
+}
+
+const confirmCreateJobOrderFromApp = async () => {
+  const rec = appRecordForJobOrderCreate.value
+  if (!rec || creatingJobOrderFromApp.value) return
+
+  const candidates = getApplicationCandidates(rec)
+  const rowKey = getApplicationLookupId(rec) || candidates[0]
+  if (!rowKey) {
+    createJoFromAppError.value = 'Cannot create a Job Order without an Application ID.'
+    return
+  }
+
+  creatingJobOrderFromApp.value = true
+  creatingJobOrderAppKey.value = rowKey
+  createJoFromAppError.value = null
+
+  try {
+    // Duplicate-prevention pre-check against the live endpoint
+    let existingJobOrder = null
+    for (const candidate of candidates) {
+      try {
+        const res = await JobOrderService.getJobOrderByApplicationId(candidate, { cancelOnNavigate: false })
+        let payload = unwrapApiPayload(res)
+        if (Array.isArray(payload)) payload = payload[0] || null
+        if (payload && typeof payload === 'object' && Object.keys(payload).length > 0) {
+          existingJobOrder = payload
+          break
+        }
+      } catch (err) {
+        const status = err?.status ?? err?.response?.status
+        if (status && status !== 404) {
+          throw err
+        }
+      }
+    }
+
+    if (existingJobOrder) {
+      const existingId = getRecordId(existingJobOrder)
+      appJobOrderLinkMap.value = {
+        ...appJobOrderLinkMap.value,
+        [rowKey]: { state: 'linked', jobOrder: existingJobOrder }
+      }
+      displayCreateJoFromAppDialog.value = false
+      toast.add({
+        severity: 'info',
+        summary: 'Job Order Already Exists',
+        detail: existingId
+          ? `Application #${rowKey} is already linked to Job Order #${existingId}.`
+          : `Application #${rowKey} already has a linked Job Order.`,
+        life: 3500
+      })
+      return
+    }
+
+    if (!plansList.value.length) {
+      await fetchFormLookups()
+    }
+
+    const numericUserId = Number(authStore.user?.id) || 1
+    const loggedInUserId = String(authStore.user?.id || 1)
+    const seed = mapApplicationToJobOrderSeed(rec, { plansList: plansList.value })
+    const joPayload = buildJobOrderPayload(seed, 'create', numericUserId, loggedInUserId)
+    applyJobOrderCreationAudit(joPayload, numericUserId, 'create')
+
+    const createRes = await JobOrderService.createJobOrder(joPayload)
+    let createdJo = unwrapApiPayload(createRes)
+    if (Array.isArray(createdJo)) createdJo = createdJo[0] || null
+
+    if (!createdJo || typeof createdJo !== 'object' || !getRecordId(createdJo)) {
+      try {
+        const lookupRes = await JobOrderService.getJobOrderByApplicationId(seed.applicationId || rowKey, { cancelOnNavigate: false })
+        const fetched = unwrapApiPayload(lookupRes)
+        if (Array.isArray(fetched) && fetched[0]) {
+          createdJo = fetched[0]
+        } else if (fetched && typeof fetched === 'object' && Object.keys(fetched).length > 0) {
+          createdJo = fetched
+        }
+      } catch (_) {}
+    }
+
+    const createdId = getRecordId(createdJo)
+
+    // Best-effort automatic House Front photo transfer (non-fatal)
+    if (createdId && hasApplicationHouseFrontPhoto(rec)) {
+      try {
+        const rawInline = rec.houseFrontPicture ?? rec.housefrontpicture ?? rec.houseFront
+        let dataUrl = (typeof rawInline === 'string' && rawInline.startsWith('data:image/')) ? rawInline : ''
+        if (!dataUrl) {
+          const appImgLookupId = rec.applicationid || getRecordId(rec) || rowKey
+          let imgData = recordImagesCache.get(`app:${appImgLookupId}`)
+          if (!imgData) {
+            const rawImgRes = await ApplicationService.getApplicationImages(appImgLookupId)
+            imgData = unwrapApiPayload(rawImgRes)
+            if (imgData) recordImagesCache.set(`app:${appImgLookupId}`, imgData)
+          }
+          dataUrl = fileResultToDataUrl(imgData?.houseFrontPictureFile) || ''
+        }
+
+        if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/')) {
+          const blob = dataUriToBlob(dataUrl)
+          if (blob) {
+            const form = new FormData()
+            const numericOrDateKeys = new Set([
+              'itemquantity1', 'itemquantity2', 'itemquantity3', 'itemquantity4', 'itemquantity5',
+              'itemquantity6', 'itemquantity7', 'itemquantity8', 'itemquantity9', 'itemquantity10',
+              'installationfee', 'billingday', 'duration', 'lcpid', 'napid', 'vlanid', 'portid',
+              'lcpnapid', 'lcpnapportid', 'accountno',
+              'dateinstalled', 'installationdate', 'starttimestamp', 'endtimestamp',
+              'createdby', 'createddate', 'modifieddate'
+            ])
+            const joPhotoKeys = new Set([
+              'setupimage', 'clientsignature', 'signedcontractimage', 'boxreadingimage',
+              'routerreadingimage', 'portlabelimage', 'housefront', 'speedtestimage'
+            ])
+            const updateScalarPayload = buildJobOrderPayload(
+              {
+                ...seed,
+                id: createdId,
+                createdBy: createdJo?.createdBy ?? numericUserId,
+                createdDate: createdJo?.createdDate ?? null
+              },
+              'update',
+              numericUserId,
+              loggedInUserId
+            )
+            applyJobOrderCreationAudit(updateScalarPayload, numericUserId, 'update')
+            updateScalarPayload.createdBy = createdJo?.createdBy ?? numericUserId
+            if (!createdJo?.createdDate) {
+              updateScalarPayload.createdDate = null
+            }
+
+            Object.entries(updateScalarPayload).forEach(([key, val]) => {
+              const lowerKey = key.toLowerCase()
+              if (joPhotoKeys.has(lowerKey)) return
+              if (numericOrDateKeys.has(lowerKey)) {
+                if (val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim().toLowerCase() !== 'null') {
+                  form.append(key, String(val).trim())
+                }
+                return
+              }
+              if (val !== undefined && val !== null) {
+                const strVal = String(val).trim()
+                if (strVal.toLowerCase() !== 'null') {
+                  form.append(key, String(val))
+                }
+              }
+            })
+            form.append('HouseFront', blob, 'houseFront.jpg')
+            await JobOrderService.updateJobOrder(createdId, form)
+            setPersistedJobOrderImage(createdId, 'houseFront', dataUrl)
+            recordImagesCache.delete(`jo:${createdId}`)
+          }
+        }
+      } catch (joHouseFrontErr) {
+        console.warn('[DynamicApiTable] Best-effort HouseFront photo transfer warning:', joHouseFrontErr)
+      }
+    }
+
+    const linkedJobOrder = createdJo && typeof createdJo === 'object'
+      ? createdJo
+      : { ...joPayload, ...(createdId ? { id: createdId } : {}) }
+
+    appJobOrderLinkMap.value = {
+      ...appJobOrderLinkMap.value,
+      [rowKey]: { state: 'linked', jobOrder: linkedJobOrder }
+    }
+    displayCreateJoFromAppDialog.value = false
+
+    const displayAppId = seed.applicationId || rowKey
+    toast.add({
+      severity: 'success',
+      summary: 'Job Order Created',
+      detail: createdId
+        ? `Job Order #${createdId} created for Application #${displayAppId}.`
+        : `Job Order created for Application #${displayAppId}.`,
+      life: 4000
+    })
+  } catch (err) {
+    console.error('[DynamicApiTable] Error auto-creating Job Order from Application:', err)
+    createJoFromAppError.value = err?.message || 'Failed to create Job Order from Application.'
+  } finally {
+    creatingJobOrderFromApp.value = false
+    creatingJobOrderAppKey.value = null
   }
 }
 
