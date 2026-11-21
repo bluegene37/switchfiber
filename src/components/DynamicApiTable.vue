@@ -1967,6 +1967,7 @@
               />
 
               <!-- Repair Category Dropdown -->
+              <!--
               <Select 
                 v-else-if="getFieldType(col) === 'repaircategory_dropdown'" 
                 :id="col" 
@@ -1977,6 +1978,37 @@
                 :filter="true"
                 placeholder="Select Repair Category" 
                 class="w-100 p-inputtext-sm" 
+              />
+              -->
+              <!-- Gene - Nov, 21, 2026: Enable manual typing on Repair Category dropdown (:editable="true") -->
+              <Select 
+                v-else-if="getFieldType(col) === 'repaircategory_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="repairCategoryOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :showClear="true"
+                placeholder="Select or type Repair Category" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Gene - Nov, 21, 2026: Service Order Concern editable dropdown allowing preset selection or manual entry -->
+              <Select 
+                v-else-if="getFieldType(col) === 'concern_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="concernOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :showClear="true"
+                placeholder="Select or type Concern" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
               />
 
               <!-- Connection Type Dropdown -->
@@ -4699,6 +4731,7 @@
               />
 
               <!-- Support Status Dropdown -->
+              <!--
               <Select 
                 v-else-if="getFieldType(col) === 'supportstatus_dropdown'" 
                 :id="`edit-${col}`" 
@@ -4711,8 +4744,23 @@
                 placeholder="Select Support Status" 
                 class="w-100 p-inputtext-sm" 
               />
+              -->
+              <!-- Gene - Nov, 21, 2026: Bind Edit modal Support Status dropdown to editSupportStatusOptions (preserving legacy values) -->
+              <Select 
+                v-else-if="getFieldType(col) === 'supportstatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="editSupportStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select Support Status" 
+                class="w-100 p-inputtext-sm" 
+              />
 
               <!-- Visit Status Dropdown -->
+              <!--
               <Select 
                 v-else-if="getFieldType(col) === 'visitstatus_dropdown'" 
                 :id="`edit-${col}`" 
@@ -4725,8 +4773,23 @@
                 placeholder="Select Visit Status" 
                 class="w-100 p-inputtext-sm" 
               />
+              -->
+              <!-- Gene - Nov, 21, 2026: Bind Edit modal Visit Status dropdown to editVisitStatusOptions (preserving legacy values) -->
+              <Select 
+                v-else-if="getFieldType(col) === 'visitstatus_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="editVisitStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select Visit Status" 
+                class="w-100 p-inputtext-sm" 
+              />
 
               <!-- Repair Category Dropdown -->
+              <!--
               <Select 
                 v-else-if="getFieldType(col) === 'repaircategory_dropdown'" 
                 :id="`edit-${col}`" 
@@ -4738,6 +4801,39 @@
                 :disabled="isFieldDisabledInEdit(col)"
                 placeholder="Select Repair Category" 
                 class="w-100 p-inputtext-sm" 
+              />
+              -->
+              <!-- Gene - Nov, 21, 2026: Enable manual typing on Repair Category dropdown in Edit modal (:editable="true") -->
+              <Select 
+                v-else-if="getFieldType(col) === 'repaircategory_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="repairCategoryOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :showClear="true"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select or type Repair Category" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <!-- Gene - Nov, 21, 2026: Service Order Concern editable dropdown in Edit modal allowing preset selection or manual entry -->
+              <Select 
+                v-else-if="getFieldType(col) === 'concern_dropdown'" 
+                :id="`edit-${col}`" 
+                v-model="editFormData[col]" 
+                :options="concernOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :editable="true"
+                :showClear="true"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select or type Concern" 
+                class="w-100 p-inputtext-sm" 
+                :class="{ 'p-invalid': hasFieldError('edit', col) }"
               />
 
               <!-- Connection Type Dropdown -->
@@ -8736,6 +8832,10 @@ function getFieldType(col) {
   }
   if (lower === 'repaircategory' || lower === 'repair_category') {
     return 'repaircategory_dropdown'
+  }
+  // Gene - Nov, 21, 2026: Render Service Order concern as an editable searchable dropdown instead of a plain textarea
+  if (lower === 'concern') {
+    return 'concern_dropdown'
   }
   if (lower === 'connectiontype' || lower === 'connection_type') {
     return 'connectiontype_dropdown'
@@ -13132,6 +13232,7 @@ const isJobOrderActivated = computed(() => {
   return path.includes('activated') || qStatus === 'activated' || filterStatus === 'activated' || statusLabel === 'activated'
 })
 
+/*
 const statusOptions = computed(() => {
   if (isJobOrderEndpoint.value) {
     // Failed is offered on every Job Order view: a visit can fail from any
@@ -13178,6 +13279,83 @@ const statusOptions = computed(() => {
   const vocabulary = dataStatusVocabulary.value
   const list = vocabulary.length ? vocabulary : FALLBACK_STATUS_LIST
   return list.map(v => ({ label: v, value: v }))
+})
+*/
+// Gene - Nov, 21, 2026: Ensure For Confirmation, Confirmed, and Cancelled are always offered in Applications and Job Orders status dropdowns alongside existing statuses
+const APPLICATION_REQUIRED_STATUSES = [
+  'For Confirmation',
+  'Confirmed',
+  'Cancelled'
+]
+
+const statusOptions = computed(() => {
+  if (isJobOrderEndpoint.value) {
+    // Failed is offered on every Job Order view: a visit can fail from any
+    // stage, and a technician marking it must not have to leave the tab first.
+    if (isJobOrderInProgress.value) {
+      return [
+        { label: 'Inprogress', value: 'Inprogress' },
+        { label: 'Scheduled', value: 'Scheduled' },
+        { label: 'Failed', value: 'Failed' },
+        { label: 'For Confirmation', value: 'For Confirmation' },
+        { label: 'Confirmed', value: 'Confirmed' },
+        { label: 'Cancelled', value: 'Cancelled' }
+      ]
+    }
+    if (isJobOrderCompleted.value) {
+      return [
+        { label: 'Completed', value: 'Completed' },
+        { label: 'Activated', value: 'Activated' },
+        { label: 'For Confirmation', value: 'For Confirmation' },
+        { label: 'Confirmed', value: 'Confirmed' },
+        { label: 'Cancelled', value: 'Cancelled' }
+      ]
+    }
+    if (isJobOrderActivated.value) {
+      return [
+        { label: 'Activated', value: 'Activated' },
+        { label: 'Completed', value: 'Completed' },
+        { label: 'For Confirmation', value: 'For Confirmation' },
+        { label: 'Confirmed', value: 'Confirmed' },
+        { label: 'Cancelled', value: 'Cancelled' }
+      ]
+    }
+    return [
+      { label: 'Inprogress', value: 'Inprogress' },
+      { label: 'Scheduled', value: 'Scheduled' },
+      { label: 'Completed', value: 'Completed' },
+      { label: 'Activated', value: 'Activated' },
+      { label: 'Failed', value: 'Failed' },
+      { label: 'For Confirmation', value: 'For Confirmation' },
+      { label: 'Confirmed', value: 'Confirmed' },
+      { label: 'Cancelled', value: 'Cancelled' }
+    ]
+  }
+  // Gene - Oct, 16, 2026: Provide inventory transaction status options for InventoryLogs when table is empty
+  if (isInventoryLogEndpoint.value && !dataStatusVocabulary.value.length) {
+    return [
+      { label: 'Pending', value: 'Pending' },
+      { label: 'Approved', value: 'Approved' },
+      { label: 'Issued', value: 'Issued' },
+      { label: 'Returned', value: 'Returned' },
+      { label: 'Rejected', value: 'Rejected' }
+    ]
+  }
+  const vocabulary = dataStatusVocabulary.value
+  const baseList = vocabulary.length ? vocabulary : FALLBACK_STATUS_LIST
+  if (isApplicationEndpoint.value) {
+    const merged = []
+    const seen = new Set()
+    ;[...baseList, ...APPLICATION_REQUIRED_STATUSES].forEach(raw => {
+      const val = String(raw || '').trim()
+      const key = val.toLowerCase()
+      if (!val || seen.has(key)) return
+      seen.add(key)
+      merged.push(val)
+    })
+    return merged.map(v => ({ label: v, value: v }))
+  }
+  return baseList.map(v => ({ label: v, value: v }))
 })
 
 // Always keep the record's own status selectable, even when it is absent from the
@@ -13293,6 +13471,7 @@ const priorityOptions = ref([
 // Failed is spelled the way the data already spells it: 14 support and 18
 // visit rows carry 'Failed' today, so the lists must offer it or an edit that
 // touches anything else silently rewrites the status.
+/*
 const supportStatusOptions = ref([
   { label: 'Pending', value: 'Pending' },
   { label: 'In Progress', value: 'In Progress' },
@@ -13321,6 +13500,120 @@ const repairCategoryOptions = ref([
   { label: 'Relocation', value: 'Relocation' },
   { label: 'Maintenance', value: 'Maintenance' },
   { label: 'Other', value: 'Other' }
+])
+*/
+// Gene - Nov, 21, 2026: Add For Visit to Service Order Support Status dropdown with normalization and edit-mode legacy preservation
+const supportStatusOptions = ref([
+  { label: 'Pending', value: 'Pending' },
+  { label: 'In Progress', value: 'In Progress' },
+  { label: 'For Visit', value: 'For Visit' },
+  { label: 'Resolved', value: 'Resolved' },
+  { label: 'Closed', value: 'Closed' },
+  { label: 'Cancelled', value: 'Cancelled' },
+  { label: 'Failed', value: 'Failed' }
+])
+
+const normalizeSupportStatus = (val) => {
+  if (val === null || val === undefined) return ''
+  const raw = String(val).trim()
+  if (!raw) return ''
+  const compact = raw.toLowerCase().replace(/[\s_-]+/g, '')
+  if (compact === 'pending') return 'Pending'
+  if (compact === 'inprogress') return 'In Progress'
+  if (compact === 'forvisit') return 'For Visit'
+  if (compact === 'resolved') return 'Resolved'
+  if (compact === 'closed') return 'Closed'
+  if (compact === 'cancelled' || compact === 'canceled') return 'Cancelled'
+  if (compact === 'failed') return 'Failed'
+  return raw
+}
+
+const editSupportStatusOptions = computed(() => {
+  const record = editFormData.value || {}
+  const key = Object.keys(record).find(k => normalizeColKey(k) === 'supportstatus') || 'supportStatus'
+  const current = normalizeSupportStatus(record[key])
+  return getStableOptionsWithCurrent(supportStatusOptions.value, current)
+})
+
+// Gene - Nov, 21, 2026: Add Done and Reschedule to Service Order Visit Status dropdown with normalization and edit-mode legacy preservation
+const visitStatusOptions = ref([
+  { label: 'Scheduled', value: 'Scheduled' },
+  { label: 'Dispatched', value: 'Dispatched' },
+  { label: 'In Progress', value: 'In Progress' },
+  { label: 'Done', value: 'Done' },
+  { label: 'Completed', value: 'Completed' },
+  { label: 'Reschedule', value: 'Reschedule' },
+  { label: 'Cancelled', value: 'Cancelled' },
+  { label: 'Failed', value: 'Failed' }
+])
+
+const normalizeVisitStatus = (val) => {
+  if (val === null || val === undefined) return ''
+  const raw = String(val).trim()
+  if (!raw) return ''
+  const compact = raw.toLowerCase().replace(/[\s_-]+/g, '')
+  if (compact === 'scheduled') return 'Scheduled'
+  if (compact === 'dispatched') return 'Dispatched'
+  if (compact === 'inprogress') return 'In Progress'
+  if (compact === 'done') return 'Done'
+  if (compact === 'completed') return 'Completed'
+  if (compact === 'reschedule' || compact === 'rescheduled') return 'Reschedule'
+  if (compact === 'cancelled' || compact === 'canceled') return 'Cancelled'
+  if (compact === 'failed') return 'Failed'
+  return raw
+}
+
+const editVisitStatusOptions = computed(() => {
+  const record = editFormData.value || {}
+  const key = Object.keys(record).find(k => normalizeColKey(k) === 'visitstatus') || 'visitStatus'
+  const current = normalizeVisitStatus(record[key])
+  return getStableOptionsWithCurrent(visitStatusOptions.value, current)
+})
+
+// Gene - Nov, 21, 2026: Expand Service Order Repair Category dropdown with full field technician categories while retaining legacy options
+const repairCategoryOptions = ref([
+  { label: 'Resplice', value: 'Resplice' },
+  { label: 'Replace Patch Cord', value: 'Replace Patch Cord' },
+  { label: 'Fiber Relaying', value: 'Fiber Relaying' },
+  { label: 'Replace Router', value: 'Replace Router' },
+  { label: 'Transfer LCP / NAP / PORT', value: 'Transfer LCP / NAP / PORT' },
+  { label: 'Relocate Router', value: 'Relocate Router' },
+  { label: 'Update VLAN', value: 'Update VLAN' },
+  { label: 'Reboot/Reconfig Router', value: 'Reboot/Reconfig Router' },
+  { label: 'Migrate', value: 'Migrate' },
+  { label: 'Pullout', value: 'Pullout' },
+  { label: 'Others', value: 'Others' },
+  { label: 'Reconfig', value: 'Reconfig' },
+  { label: 'Retain', value: 'Retain' },
+  { label: 'Fiber Cut', value: 'Fiber Cut' },
+  { label: 'Modem Replacement', value: 'Modem Replacement' },
+  { label: 'Port Reassignment', value: 'Port Reassignment' },
+  { label: 'Configuration Issue', value: 'Configuration Issue' },
+  { label: 'Hardware Defect', value: 'Hardware Defect' },
+  { label: 'Relocation', value: 'Relocation' },
+  { label: 'Maintenance', value: 'Maintenance' },
+  { label: 'Other', value: 'Other' }
+])
+
+// Gene - Nov, 21, 2026: Add Service Order Concern dropdown options (editable combobox allows picking or typing manually)
+const concernOptions = ref([
+  { label: 'New', value: 'New' },
+  { label: 'No Internet', value: 'No Internet' },
+  { label: 'Slow Internet', value: 'Slow Internet' },
+  { label: 'Others', value: 'Others' },
+  { label: 'Migrate', value: 'Migrate' },
+  { label: 'Pullout', value: 'Pullout' },
+  { label: 'Upgrade/Downgrade Plan', value: 'Upgrade/Downgrade Plan' },
+  { label: 'Reconnect', value: 'Reconnect' },
+  { label: 'Disconnect', value: 'Disconnect' },
+  { label: 'Update Info', value: 'Update Info' },
+  { label: 'Relocation', value: 'Relocation' },
+  { label: 'Change Password', value: 'Change Password' },
+  { label: 'High Loss', value: 'High Loss' },
+  { label: 'Low Optical Reading', value: 'Low Optical Reading' },
+  { label: 'Retain', value: 'Retain' },
+  { label: 'High Power', value: 'High Power' },
+  { label: 'Statement of Account', value: 'Statement of Account' }
 ])
 
 const connectionTypeOptions = ref([
@@ -15355,6 +15648,7 @@ const getStatusBadgeConfig = (val) => {
   return { class: 'bg-info bg-opacity-10 text-info border-info border-opacity-25', label: str }
 }
 */
+/*
 // Gene - Oct 3, 2026: Differentiated Rescheduled / Reschedule status with dedicated purple badge styling so it differs from Scheduled (which remains blue).
 const getStatusBadgeConfig = (val) => {
   if (val === null || val === undefined || val === '') return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: '-' }
@@ -15383,6 +15677,74 @@ const getStatusBadgeConfig = (val) => {
   }
   if (
     lower === 'pending' || 
+    lower === 'in progress' || 
+    lower === 'inprogress' || 
+    lower === 'waiting' || 
+    lower === 'onsite pending' || 
+    lower === 'schedule' || 
+    lower === 'applied' ||
+    lower === 'processing'
+  ) {
+    return { class: 'bg-warning bg-opacity-15 text-warning-emphasis border-warning border-opacity-25', label: str }
+  }
+  if (
+    lower === 'unbilled' || 
+    lower === 'draft' || 
+    lower === 'inactive' || 
+    lower === 'unassigned'
+  ) {
+    return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: str }
+  }
+  if (
+    lower === 'failed' || 
+    lower === 'rejected' || 
+    lower === 'cancelled' || 
+    lower === 'canceled' || 
+    lower === 'denied' || 
+    lower === 'duplicate' || 
+    lower === 'no slot' || 
+    lower === 'noslot' ||
+    lower === 'no facility' ||
+    lower === 'nofacility'
+  ) {
+    return { class: 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25', label: str }
+  }
+  return { class: 'bg-info bg-opacity-10 text-info border-info border-opacity-25', label: str }
+}
+
+*/
+// Gene - Nov, 21, 2026: Style Confirmed/Resolved as green and For Confirmation/For Visit as amber alongside existing badge rules
+const getStatusBadgeConfig = (val) => {
+  if (val === null || val === undefined || val === '') return { class: 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25', label: '-' }
+  const str = String(val).trim()
+  const lower = str.toLowerCase()
+  
+  if (
+    lower === 'rescheduled' ||
+    lower === 'reschedule' ||
+    lower === 're-scheduled' ||
+    lower === 're-schedule'
+  ) {
+    return { class: 'sfa-status-rescheduled badge-purple text-purple border-purple', label: str }
+  }
+  if (
+    lower === 'done' || 
+    lower === 'completed' || 
+    lower === 'paid' || 
+    lower === 'approved' || 
+    lower === 'confirmed' || 
+    lower === 'resolved' || 
+    lower === 'active' || 
+    lower === 'activated' ||
+    lower === 'installed' ||
+    lower === 'delivered'
+  ) {
+    return { class: 'bg-success bg-opacity-10 text-success border-success border-opacity-25', label: str }
+  }
+  if (
+    lower === 'pending' || 
+    lower === 'for confirmation' || 
+    lower === 'for visit' || 
     lower === 'in progress' || 
     lower === 'inprogress' || 
     lower === 'waiting' || 
@@ -15915,8 +16277,13 @@ const openCreateDialog = () => {
       formData.value[col] = supportStatusOptions.value[0].value // 'Pending'
     } else if (type === 'visitstatus_dropdown' && visitStatusOptions.value.length > 0) {
       formData.value[col] = visitStatusOptions.value[0].value // 'Scheduled'
+    /*
     } else if (type === 'repaircategory_dropdown' && repairCategoryOptions.value.length > 0) {
       formData.value[col] = repairCategoryOptions.value[0].value
+    */
+    // Gene - Nov, 21, 2026: Leave Repair Category blank on Create so techs can either pick a preset or type manually
+    } else if (type === 'repaircategory_dropdown') {
+      formData.value[col] = ''
     } else if (type === 'connectiontype_dropdown' && connectionTypeOptions.value.length > 0) {
       formData.value[col] = connectionTypeOptions.value[0].value
     } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
@@ -16381,6 +16748,7 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
     billingDay: normNullOrStr(payload.billingDay),
     preferredDay: normStr(payload.preferredDay),
     joRemarks: normStr(payload.joRemarks),
+    /*
     status: (() => {
       const rawStatus = normStr(payload.status || defaultNewStatus.value || (isJobOrderCompleted.value ? 'Completed' : 'Scheduled'))
       const cleanKey = rawStatus.toLowerCase().replace(/[\s_-]+/g, '')
@@ -16389,6 +16757,21 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
       if (cleanKey === 'completed') return 'Completed'
       if (cleanKey === 'activated') return 'Activated'
       if (cleanKey === 'failed') return 'Failed'
+      return rawStatus
+    })(),
+    */
+    // Gene - Nov, 21, 2026: Normalize For Confirmation, Confirmed, and Cancelled in Job Order payload alongside existing statuses
+    status: (() => {
+      const rawStatus = normStr(payload.status || defaultNewStatus.value || (isJobOrderCompleted.value ? 'Completed' : 'Scheduled'))
+      const cleanKey = rawStatus.toLowerCase().replace(/[\s_-]+/g, '')
+      if (cleanKey === 'inprogress') return 'Inprogress'
+      if (cleanKey === 'scheduled') return 'Scheduled'
+      if (cleanKey === 'completed') return 'Completed'
+      if (cleanKey === 'activated') return 'Activated'
+      if (cleanKey === 'failed') return 'Failed'
+      if (cleanKey === 'forconfirmation') return 'For Confirmation'
+      if (cleanKey === 'confirmed') return 'Confirmed'
+      if (cleanKey === 'cancelled' || cleanKey === 'canceled') return 'Cancelled'
       return rawStatus
     })(),
     verifiedBy: normStr(payload.verifiedBy),
@@ -18265,6 +18648,13 @@ const openEditDialog = async (record) => {
     if (getFieldType(col) === 'onsitestatus_dropdown' && editFormData.value[col]) {
       editFormData.value[col] = normalizeOnsiteStatus(editFormData.value[col])
     }
+    // Gene - Nov, 21, 2026: Normalize Service Order Support Status and Visit Status casing/spacing variants in edit modal
+    if (getFieldType(col) === 'supportstatus_dropdown' && editFormData.value[col]) {
+      editFormData.value[col] = normalizeSupportStatus(editFormData.value[col])
+    }
+    if (getFieldType(col) === 'visitstatus_dropdown' && editFormData.value[col]) {
+      editFormData.value[col] = normalizeVisitStatus(editFormData.value[col])
+    }
     // Gene - Nov, 14, 2026: Match stored assignedEmail case-insensitively to canonical option value in edit modal
     if (getFieldType(col) === 'assignedemail_dropdown' && editFormData.value[col]) {
       const wanted = String(editFormData.value[col]).trim().toLowerCase()
@@ -18410,6 +18800,7 @@ const openEditDialog = async (record) => {
   // nothing reads back. Match only to normalize casing against the real vocabulary.
   const statusCol = formColumns.value.find(c => getFieldType(c) === 'status_dropdown') || 'status'
   const curStatus = record[statusCol]
+  /*
   if (isApplicationEndpoint.value && curStatus) {
     const match = dataStatusVocabulary.value.find(
       s => s.toLowerCase() === String(curStatus).trim().toLowerCase()
@@ -18425,6 +18816,33 @@ const openEditDialog = async (record) => {
       editFormData.value[statusCol] = 'Completed'
     } else if (raw === 'activated') {
       editFormData.value[statusCol] = 'Activated'
+    }
+  }
+  */
+  // Gene - Nov, 21, 2026: Normalize For Confirmation, Confirmed, and Cancelled in Applications and Job Orders edit modal
+  if (isApplicationEndpoint.value && curStatus) {
+    const match = [...dataStatusVocabulary.value, ...APPLICATION_REQUIRED_STATUSES].find(
+      s => s.toLowerCase() === String(curStatus).trim().toLowerCase()
+    )
+    editFormData.value[statusCol] = match || curStatus
+  } else if (isJobOrderEndpoint.value && curStatus) {
+    const raw = String(curStatus).trim().toLowerCase().replace(/[\s_-]+/g, '')
+    if (raw === 'inprogress') {
+      editFormData.value[statusCol] = 'Inprogress'
+    } else if (raw === 'scheduled') {
+      editFormData.value[statusCol] = 'Scheduled'
+    } else if (raw === 'completed') {
+      editFormData.value[statusCol] = 'Completed'
+    } else if (raw === 'activated') {
+      editFormData.value[statusCol] = 'Activated'
+    } else if (raw === 'failed') {
+      editFormData.value[statusCol] = 'Failed'
+    } else if (raw === 'forconfirmation') {
+      editFormData.value[statusCol] = 'For Confirmation'
+    } else if (raw === 'confirmed') {
+      editFormData.value[statusCol] = 'Confirmed'
+    } else if (raw === 'cancelled' || raw === 'canceled') {
+      editFormData.value[statusCol] = 'Cancelled'
     }
   }
 
@@ -18462,6 +18880,11 @@ const openEditDialog = async (record) => {
     // Gene - Nov, 14, 2026: Normalize legacy Onsite Status casing/spacing variants after lookup refresh in edit modal
     } else if (type === 'onsitestatus_dropdown' && record[col]) {
       editFormData.value[col] = normalizeOnsiteStatus(record[col])
+    // Gene - Nov, 21, 2026: Normalize Service Order Support Status and Visit Status variants after lookup refresh in edit modal
+    } else if (type === 'supportstatus_dropdown' && record[col]) {
+      editFormData.value[col] = normalizeSupportStatus(record[col])
+    } else if (type === 'visitstatus_dropdown' && record[col]) {
+      editFormData.value[col] = normalizeVisitStatus(record[col])
     /*
     } else if (record[col] === null || record[col] === undefined) {
       if (col !== regCol && col !== cCol && col !== bCol && col !== statusCol && col !== coordCol) {
@@ -18580,6 +19003,13 @@ const normalizeCompareValue = (col, val) => {
   // Gene - Nov, 14, 2026: Normalize Onsite Status variants during conflict comparison so legacy spellings do not trigger false edit conflicts
   if (type === 'onsitestatus_dropdown') {
     return normalizeOnsiteStatus(val)
+  }
+  // Gene - Nov, 21, 2026: Normalize Service Order Support Status and Visit Status variants during conflict comparison
+  if (type === 'supportstatus_dropdown') {
+    return normalizeSupportStatus(val)
+  }
+  if (type === 'visitstatus_dropdown') {
+    return normalizeVisitStatus(val)
   }
   // Gene - Nov, 14, 2026: Compare assignedEmail case-insensitively in conflict check
   if (type === 'assignedemail_dropdown') {
