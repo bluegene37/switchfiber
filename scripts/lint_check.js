@@ -77,6 +77,13 @@ for (const file of rootJsonFiles) {
   if (fs.existsSync(p)) lintFile(p, '.json')
 }
 
+// Gene - Nov, 21, 2026: Lint root Azure production server entrypoint (server.js)
+const rootJsFiles = ['server.js']
+for (const file of rootJsFiles) {
+  const p = path.join(rootDir, file)
+  if (fs.existsSync(p)) lintFile(p, '.js')
+}
+
 if (errors > 0) {
   console.error(`\n❌ Quality gate failed: ${errors} error(s) found across ${filesChecked} files.`)
   process.exit(1)
