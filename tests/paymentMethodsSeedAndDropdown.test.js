@@ -170,7 +170,45 @@ test('Standalone Seeder Script Verification', async (t) => {
   })
 })
 
+/*
 test('Live Server Verification for /api/PaymentMethods', async (t) => {
+  await t.test('GET /api/PaymentMethods returns seeded standard payment methods', async () => {
+    const res = await new Promise((resolve, reject) => {
+      https.get('https://admin.switchfiber.ph/api/PaymentMethods', (resp) => {
+        let d = ''
+        resp.on('data', chunk => d += chunk)
+        resp.on('end', () => {
+          try {
+            resolve({ status: resp.statusCode, body: JSON.parse(d) })
+          } catch (e) {
+            reject(e)
+          }
+        })
+      }).on('error', reject)
+    })
+
+    assert.equal(res.status, 200, 'GET /api/PaymentMethods should return 200 OK')
+    assert.ok(Array.isArray(res.body), 'Response body should be an array')
+    assert.ok(res.body.length >= 7, `Expected at least 7 payment methods, got ${res.body.length}`)
+
+    const names = res.body.map(item => item.name)
+    assert.ok(names.includes('Cash'), 'Server must contain Cash')
+    assert.ok(names.includes('GCash'), 'Server must contain GCash')
+    assert.ok(names.includes('Maya'), 'Server must contain Maya')
+    assert.ok(names.includes('Bank Transfer'), 'Server must contain Bank Transfer')
+    assert.ok(names.includes('Credit / Debit Card'), 'Server must contain Credit / Debit Card')
+    assert.ok(names.includes('Check'), 'Server must contain Check')
+    assert.ok(names.includes('Bayad Center / OTC'), 'Server must contain Bayad Center / OTC')
+  })
+})
+*/
+
+// Gene - Nov, 21, 2026: Skip live HTTPS verification in CI where Cloudflare WAF challenges GitHub-hosted runners
+const skipLiveInCi = (process.env.CI || process.env.GITHUB_ACTIONS)
+  ? 'Skipped in CI: Cloudflare WAF challenges GitHub-hosted runners on live API calls'
+  : false
+
+test('Live Server Verification for /api/PaymentMethods', { skip: skipLiveInCi }, async (t) => {
   await t.test('GET /api/PaymentMethods returns seeded standard payment methods', async () => {
     const res = await new Promise((resolve, reject) => {
       https.get('https://admin.switchfiber.ph/api/PaymentMethods', (resp) => {
