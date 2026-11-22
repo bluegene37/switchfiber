@@ -35,9 +35,90 @@
         document.documentElement.removeAttribute('data-bs-theme')
       }
     </script>
+    <!-- Gene - Nov, 22, 2026: Inline styles for the pre-mount initial page loader with immediate light/dark mode support -->
+    <style>
+      .sfa-initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        text-align: center;
+        background-color: #f8f9fa;
+        color: #212529;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+      html.dark .sfa-initial-loader,
+      html[data-bs-theme="dark"] .sfa-initial-loader {
+        background-color: #2b3035;
+        color: #f8f9fa;
+      }
+      .sfa-initial-loader-badge {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        background-color: rgba(231, 76, 90, 0.1);
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+      }
+      html.dark .sfa-initial-loader-badge,
+      html[data-bs-theme="dark"] .sfa-initial-loader-badge {
+        background-color: rgba(231, 76, 90, 0.22);
+      }
+      .sfa-initial-loader-spinner {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        border: 0.22rem solid rgba(231, 76, 90, 0.2);
+        border-top-color: #e74c5a;
+        margin-bottom: 1rem;
+        animation: sfa-initial-spin 0.75s linear infinite;
+      }
+      .sfa-initial-loader-title {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .sfa-initial-loader-sub {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #6c757d;
+      }
+      html.dark .sfa-initial-loader-sub,
+      html[data-bs-theme="dark"] .sfa-initial-loader-sub {
+        color: #9ea7b0;
+      }
+      @keyframes sfa-initial-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sfa-initial-loader-spinner {
+          animation-duration: 1.5s;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <!-- <div id="app"></div> -->
+    <!-- Gene - Nov, 22, 2026: Render a pre-mount branded loader inside #app so users see loading feedback immediately before Vue mounts -->
+    <div id="app">
+      <div class="sfa-initial-loader" role="status" aria-live="polite" aria-busy="true">
+        <div class="sfa-initial-loader-badge">
+          <img src="/logo.png" alt="SwitchFiber Logo" width="40" height="40" style="object-fit: contain;" />
+        </div>
+        <div class="sfa-initial-loader-spinner" aria-hidden="true"></div>
+        <p class="sfa-initial-loader-title">Loading SwitchFiber Admin…</p>
+        <p class="sfa-initial-loader-sub">Please wait while the page is loading.</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
