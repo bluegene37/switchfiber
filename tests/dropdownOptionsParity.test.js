@@ -32,7 +32,11 @@ function loadStatusOptions({
   isApplication = false,
   vocabulary = []
 } = {}) {
+  /*
   const startMarker = '// Gene - Nov, 21, 2026: Ensure For Confirmation, Confirmed, and Cancelled'
+  */
+  // Gene - Nov, 23, 2026: Point startMarker at updated APPLICATION_REQUIRED_STATUSES marker
+  const startMarker = '// Gene - Nov, 23, 2026: Ensure No Facility, Cancelled, No Slot, Duplicate, For Confirmation, and Confirmed'
   const start = activeScript.indexOf(startMarker)
   assert.notEqual(start, -1, 'active statusOptions block marker should exist')
   const end = activeScript.indexOf('const editStatusOptions', start)
@@ -139,6 +143,7 @@ function loadActiveGetStatusBadgeConfig() {
 }
 
 describe('Dropdown options parity & manual entry across Applications, Job Orders, and Service Orders', () => {
+  /*
   test('Applications statusOptions merges For Confirmation, Confirmed, Cancelled without duplicating Cancelled and preserves empty fallback', () => {
     const withData = loadStatusOptions({
       isApplication: true,
@@ -167,6 +172,45 @@ describe('Dropdown options parity & manual entry across Applications, Job Orders
       'Confirmed',
       'Cancelled'
     ])
+  })
+  */
+  // Gene - Nov, 23, 2026: Verify Applications statusOptions merges No Facility, Cancelled, No Slot, Duplicate, For Confirmation, and Confirmed without Clear Status
+  test('Applications statusOptions merges No Facility, Cancelled, No Slot, Duplicate, For Confirmation, Confirmed without duplicates or Clear Status', () => {
+    const withData = loadStatusOptions({
+      isApplication: true,
+      vocabulary: ['Schedule', 'Duplicate', 'Cancelled', 'No Facility']
+    })
+    const values = withData.statusOptions.value.map(o => o.value)
+    assert.deepEqual(values, [
+      'Schedule',
+      'Duplicate',
+      'Cancelled',
+      'No Facility',
+      'For Confirmation',
+      'Confirmed',
+      'No Slot'
+    ])
+    assert.equal(values.filter(v => v.toLowerCase() === 'cancelled').length, 1)
+    assert.equal(values.filter(v => v.toLowerCase() === 'duplicate').length, 1)
+    assert.equal(values.filter(v => v.toLowerCase() === 'no facility').length, 1)
+    assert.ok(!values.some(v => v.toLowerCase() === 'clear status'), 'Clear Status must not be included')
+
+    const emptyData = loadStatusOptions({
+      isApplication: true,
+      vocabulary: []
+    })
+    assert.deepEqual(emptyData.statusOptions.value.map(o => o.value), [
+      'Inprogress',
+      'Done',
+      'Approved',
+      'For Confirmation',
+      'Confirmed',
+      'No Facility',
+      'Cancelled',
+      'No Slot',
+      'Duplicate'
+    ])
+    assert.ok(!emptyData.statusOptions.value.some(o => o.value.toLowerCase() === 'clear status'))
   })
 
   test('Job Orders statusOptions includes For Confirmation, Confirmed, Cancelled while preserving route scoping and payload normalization', () => {

@@ -590,9 +590,41 @@
             </span>
             <span v-else class="text-muted">-</span>
           </div>
+          <!-- Gene - Nov, 23, 2026: Make Status cell clickable on Applications DataTable to open quick-edit status popover -->
+          <!--
           <div v-else-if="col.toLowerCase().includes('status')" class="d-flex justify-content-center">
             <span 
               v-if="slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== ''"
+              class="badge rounded-pill sfa-status-badge border"
+              :class="getStatusBadgeConfig(slotProps.data[col]).class"
+            >
+              {{ getStatusBadgeConfig(slotProps.data[col]).label }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </div>
+          -->
+          <div v-else-if="col.toLowerCase().includes('status')" class="d-flex justify-content-center">
+            <button
+              v-if="isApplicationQuickStatusCell(col)"
+              type="button"
+              class="badge rounded-pill sfa-status-badge sfa-status-quick-trigger border"
+              :class="[
+                getStatusBadgeConfig(slotProps.data[col]).class,
+                { 'sfa-status-quick-trigger-active': isQuickStatusActiveRow(slotProps.data) }
+              ]"
+              v-tooltip.top="'Click to change status'"
+              :aria-label="`Change status (current: ${slotProps.data[col] || 'None'})`"
+              aria-haspopup="dialog"
+              :aria-expanded="isQuickStatusActiveRow(slotProps.data)"
+              :disabled="quickStatusSaving && !isQuickStatusRowSaving(slotProps.data)"
+              @click.stop="openQuickStatusPopover($event, slotProps.data, col)"
+            >
+              <i v-if="isQuickStatusRowSaving(slotProps.data)" class="pi pi-spin pi-spinner me-1" style="font-size: 0.7rem;" aria-hidden="true"></i>
+              <span>{{ getStatusBadgeConfig(slotProps.data[col]).label }}</span>
+              <i v-if="!isQuickStatusRowSaving(slotProps.data)" class="pi pi-chevron-down sfa-status-quick-caret" aria-hidden="true"></i>
+            </button>
+            <span 
+              v-else-if="slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== ''"
               class="badge rounded-pill sfa-status-badge border"
               :class="getStatusBadgeConfig(slotProps.data[col]).class"
             >
@@ -6349,6 +6381,94 @@
         </div>
       </div>
     </Dialog>
+
+    <!-- Gene - Nov, 23, 2026: Fast inline Status quick-edit popover for Applications DataTable -->
+    <Popover
+      ref="quickStatusPopover"
+      class="sfa-tracker-table-quick-status-popover"
+      :dismissable="!quickStatusSaving"
+      :closeOnEscape="!quickStatusSaving"
+      @hide="onQuickStatusPopoverHide"
+    >
+      <div class="quick-status-popover-panel p-1" style="width: 265px;">
+        <div class="d-flex align-items-start justify-content-between gap-2 pb-2 mb-2 border-bottom">
+          <div class="min-w-0">
+            <div class="fw-bold small text-body lh-sm">Update Status</div>
+            <div v-if="quickStatusSubtitle" class="text-secondary text-truncate mt-0.5" style="font-size: 0.72rem;" :title="quickStatusSubtitle">
+              {{ quickStatusSubtitle }}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-secondary text-decoration-none lh-1 quick-status-close-btn"
+            aria-label="Close status popup"
+            :disabled="quickStatusSaving"
+            @click="closeQuickStatusPopover"
+          >
+            <i class="pi pi-times" style="font-size: 0.78rem;"></i>
+          </button>
+        </div>
+
+        <div v-if="quickStatusError" class="alert alert-danger py-1.5 px-2 mb-2 rounded-2 d-flex align-items-start gap-1.5" style="font-size: 0.75rem;">
+          <i class="pi pi-exclamation-circle mt-0.5 flex-shrink-0"></i>
+          <span>{{ quickStatusError }}</span>
+        </div>
+
+        <div class="small text-secondary fw-semibold mb-1.5" style="font-size: 0.72rem;">Select Status</div>
+        <div
+          class="quick-status-option-list d-flex flex-column gap-1 mb-2.5 overflow-y-auto"
+          role="radiogroup"
+          aria-label="Application status options"
+          style="max-height: 235px;"
+        >
+          <button
+            v-for="opt in quickStatusOptions"
+            :key="opt.value"
+            type="button"
+            role="radio"
+            class="quick-status-option-btn d-flex align-items-center justify-content-between gap-2 w-100 px-2 py-1.5 rounded-3 border text-start"
+            :class="{ 'quick-status-option-selected': isQuickStatusOptionSelected(opt.value) }"
+            :aria-checked="isQuickStatusOptionSelected(opt.value)"
+            :disabled="quickStatusSaving"
+            @click="selectQuickStatusOption(opt.value)"
+          >
+            <span
+              class="badge rounded-pill sfa-status-badge border"
+              :class="getStatusBadgeConfig(opt.value).class"
+            >
+              {{ getStatusBadgeConfig(opt.value).label }}
+            </span>
+            <i
+              v-if="isQuickStatusOptionSelected(opt.value)"
+              class="pi pi-check text-primary flex-shrink-0"
+              style="font-size: 0.78rem;"
+              aria-hidden="true"
+            ></i>
+          </button>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2 pt-2 border-top">
+          <Button
+            label="Cancel"
+            severity="secondary"
+            text
+            size="small"
+            class="rounded-3 px-2.5"
+            :disabled="quickStatusSaving"
+            @click="closeQuickStatusPopover"
+          />
+          <Button
+            label="Save"
+            icon="pi pi-check"
+            size="small"
+            class="p-button-primary rounded-3 px-3 shadow-xs"
+            :loading="quickStatusSaving"
+            :disabled="!canSaveQuickStatus"
+            @click="saveQuickStatus"
+          />
+        </div>
+      </div>
+    </Popover>
   </div>
 </template>
 
@@ -6406,6 +6526,13 @@ import {
   buildApplicationJobOrderSummary,
   hasApplicationHouseFrontPhoto
 } from '../utils/applicationJobOrderAutomation'
+// Gene - Nov, 23, 2026: Import Applications quick-status normalization and FormData helpers
+import {
+  normalizeApplicationStatusValue,
+  buildApplicationQuickStatusFormData,
+  applyApplicationStatusLocally,
+  formatQuickStatusSubtitle
+} from '../utils/applicationQuickStatus'
 import {
   resolveMenuCodesFromName,
   isSuperAdminName,
@@ -13281,11 +13408,22 @@ const statusOptions = computed(() => {
   return list.map(v => ({ label: v, value: v }))
 })
 */
+/*
 // Gene - Nov, 21, 2026: Ensure For Confirmation, Confirmed, and Cancelled are always offered in Applications and Job Orders status dropdowns alongside existing statuses
 const APPLICATION_REQUIRED_STATUSES = [
   'For Confirmation',
   'Confirmed',
   'Cancelled'
+]
+*/
+// Gene - Nov, 23, 2026: Ensure No Facility, Cancelled, No Slot, Duplicate, For Confirmation, and Confirmed are always offered in Applications status dropdowns and quick-status popover
+const APPLICATION_REQUIRED_STATUSES = [
+  'For Confirmation',
+  'Confirmed',
+  'No Facility',
+  'Cancelled',
+  'No Slot',
+  'Duplicate'
 ]
 
 const statusOptions = computed(() => {
@@ -18819,12 +18957,40 @@ const openEditDialog = async (record) => {
     }
   }
   */
+  /*
   // Gene - Nov, 21, 2026: Normalize For Confirmation, Confirmed, and Cancelled in Applications and Job Orders edit modal
   if (isApplicationEndpoint.value && curStatus) {
     const match = [...dataStatusVocabulary.value, ...APPLICATION_REQUIRED_STATUSES].find(
       s => s.toLowerCase() === String(curStatus).trim().toLowerCase()
     )
     editFormData.value[statusCol] = match || curStatus
+  } else if (isJobOrderEndpoint.value && curStatus) {
+    const raw = String(curStatus).trim().toLowerCase().replace(/[\s_-]+/g, '')
+    if (raw === 'inprogress') {
+      editFormData.value[statusCol] = 'Inprogress'
+    } else if (raw === 'scheduled') {
+      editFormData.value[statusCol] = 'Scheduled'
+    } else if (raw === 'completed') {
+      editFormData.value[statusCol] = 'Completed'
+    } else if (raw === 'activated') {
+      editFormData.value[statusCol] = 'Activated'
+    } else if (raw === 'failed') {
+      editFormData.value[statusCol] = 'Failed'
+    } else if (raw === 'forconfirmation') {
+      editFormData.value[statusCol] = 'For Confirmation'
+    } else if (raw === 'confirmed') {
+      editFormData.value[statusCol] = 'Confirmed'
+    } else if (raw === 'cancelled' || raw === 'canceled') {
+      editFormData.value[statusCol] = 'Cancelled'
+    }
+  }
+  */
+  // Gene - Nov, 23, 2026: Normalize Applications status variants (including No Facility, No Slot, Duplicate, Cancelled) alongside Job Orders in edit modal
+  if (isApplicationEndpoint.value && curStatus) {
+    editFormData.value[statusCol] = normalizeApplicationStatusValue(
+      curStatus,
+      [...dataStatusVocabulary.value, ...APPLICATION_REQUIRED_STATUSES]
+    ) || curStatus
   } else if (isJobOrderEndpoint.value && curStatus) {
     const raw = String(curStatus).trim().toLowerCase().replace(/[\s_-]+/g, '')
     if (raw === 'inprogress') {
@@ -20499,6 +20665,205 @@ const refreshData = async () => {
     }
   } finally {
     refreshing.value = false
+  }
+}
+
+// Gene - Nov, 23, 2026: Applications DataTable quick-edit status popover state and save handlers
+const quickStatusPopover = ref(null)
+const quickStatusRecord = ref(null)
+const quickStatusCol = ref('status')
+const quickStatusDraft = ref('')
+const quickStatusSaving = ref(false)
+const quickStatusSavingId = ref(null)
+const quickStatusError = ref(null)
+let isSwitchingQuickStatusTarget = false
+
+const isApplicationQuickStatusCell = (col) =>
+  isApplicationEndpoint.value && !props.readOnly && String(col || '').trim().toLowerCase() === 'status'
+
+const isQuickStatusActiveRow = (row) => {
+  if (!quickStatusRecord.value || !row) return false
+  const activeId = getRecordId(quickStatusRecord.value)
+  const rowId = getRecordId(row)
+  return activeId !== null && activeId !== undefined && rowId !== null && rowId !== undefined && String(activeId) === String(rowId)
+}
+
+const isQuickStatusRowSaving = (row) => {
+  if (!quickStatusSaving.value || quickStatusSavingId.value === null || !row) return false
+  const rowId = getRecordId(row)
+  return rowId !== null && rowId !== undefined && String(rowId) === String(quickStatusSavingId.value)
+}
+
+const quickStatusOptions = computed(() => {
+  const record = quickStatusRecord.value || {}
+  const statusKey =
+    Object.keys(record).find(k => k.toLowerCase() === String(quickStatusCol.value || 'status').toLowerCase()) ||
+    Object.keys(record).find(k => k.toLowerCase() === 'status') ||
+    (quickStatusCol.value || 'status')
+  const rawCurrent = record[statusKey]
+  const normalizedCurrent = normalizeApplicationStatusValue(rawCurrent, statusOptions.value)
+  return getStableOptionsWithCurrent(statusOptions.value, normalizedCurrent || rawCurrent)
+})
+
+const quickStatusSubtitle = computed(() =>
+  formatQuickStatusSubtitle(
+    quickStatusRecord.value,
+    quickStatusRecord.value ? getRecordId(quickStatusRecord.value) : ''
+  )
+)
+
+const canSaveQuickStatus = computed(() => {
+  if (!quickStatusRecord.value || quickStatusSaving.value) return false
+  const next = String(quickStatusDraft.value || '').trim()
+  if (!next) return false
+  const current = String(
+    quickStatusRecord.value?.[quickStatusCol.value] ??
+    quickStatusRecord.value?.status ??
+    quickStatusRecord.value?.Status ??
+    ''
+  ).trim()
+  return next !== current
+})
+
+const isQuickStatusOptionSelected = (val) =>
+  String(quickStatusDraft.value ?? '').trim().toLowerCase() === String(val ?? '').trim().toLowerCase()
+
+const selectQuickStatusOption = (val) => {
+  quickStatusDraft.value = val
+  quickStatusError.value = null
+}
+
+const openQuickStatusPopover = (event, row, col) => {
+  if (quickStatusSaving.value || !row || !isApplicationQuickStatusCell(col)) return
+  const targetEl = event?.currentTarget
+  if (!targetEl) return
+
+  const nextId = getRecordId(row)
+  const prevId = quickStatusRecord.value ? getRecordId(quickStatusRecord.value) : null
+  const isPopoverOpen = Boolean(quickStatusPopover.value?.visible)
+
+  if (isPopoverOpen && prevId !== null && nextId !== null && String(prevId) === String(nextId)) {
+    quickStatusPopover.value.hide()
+    return
+  }
+
+  const prepareState = () => {
+    const statusKey =
+      Object.keys(row).find(k => k.toLowerCase() === String(col || 'status').toLowerCase()) ||
+      col ||
+      'status'
+    const rawCurrent = row[statusKey] ?? row.status ?? row.Status ?? ''
+    quickStatusRecord.value = row
+    quickStatusCol.value = statusKey
+    quickStatusError.value = null
+    quickStatusDraft.value = normalizeApplicationStatusValue(rawCurrent, statusOptions.value)
+  }
+
+  if (isPopoverOpen) {
+    isSwitchingQuickStatusTarget = true
+    quickStatusPopover.value.hide()
+    nextTick(() => {
+      prepareState()
+      isSwitchingQuickStatusTarget = false
+      quickStatusPopover.value?.show({ currentTarget: targetEl }, targetEl)
+      nextTick(() => {
+        quickStatusPopover.value?.alignOverlay?.()
+      })
+    })
+    return
+  }
+
+  prepareState()
+  quickStatusPopover.value?.show(event, targetEl)
+}
+
+const closeQuickStatusPopover = () => {
+  if (quickStatusSaving.value) return
+  quickStatusPopover.value?.hide()
+}
+
+const onQuickStatusPopoverHide = () => {
+  if (isSwitchingQuickStatusTarget || quickStatusSaving.value || quickStatusPopover.value?.visible) {
+    return
+  }
+  quickStatusRecord.value = null
+  quickStatusCol.value = 'status'
+  quickStatusDraft.value = ''
+  quickStatusError.value = null
+}
+
+const saveQuickStatus = async () => {
+  if (!canSaveQuickStatus.value || !quickStatusRecord.value) return
+  const record = quickStatusRecord.value
+  const recordId = getRecordId(record)
+  const nextStatus = String(quickStatusDraft.value || '').trim()
+  const col = quickStatusCol.value || 'status'
+
+  if (!recordId) {
+    quickStatusError.value = 'This record has no identifier and cannot be updated.'
+    return
+  }
+
+  quickStatusSaving.value = true
+  quickStatusSavingId.value = recordId
+  quickStatusError.value = null
+
+  try {
+    const loggedInUserId = String(authStore.user?.id || 1)
+    const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
+    const nowIso = new Date().toISOString()
+
+    const form = buildApplicationQuickStatusFormData(record, nextStatus, {
+      loggedInUserId,
+      currentUserEmail,
+      nowIso,
+      normalizePhone: normalizePhoneNumber,
+      normalizeAgreement: normalizeAgreementValue,
+      capStr
+    })
+
+    await CrudService.update(props.endpoint, recordId, form)
+
+    fetchToken += 1
+    data.value = applyApplicationStatusLocally(data.value, recordId, col, nextStatus, {
+      modifiedBy: loggedInUserId,
+      modifiedDate: nowIso,
+      getRecordId
+    })
+
+    if (selectedRow.value && String(getRecordId(selectedRow.value)) === String(recordId)) {
+      selectedRow.value = data.value.find(r => String(getRecordId(r)) === String(recordId)) || selectedRow.value
+    }
+
+    if (viewFormData.value && String(viewingRecordId.value) === String(recordId)) {
+      viewFormData.value[col] = nextStatus
+    }
+
+    const displayId = record.applicationid || record.applicationId || recordId
+    quickStatusSaving.value = false
+    quickStatusSavingId.value = null
+    quickStatusPopover.value?.hide()
+
+    toast.add({
+      severity: 'success',
+      summary: 'Status updated',
+      detail: `Application #${displayId} status changed to "${nextStatus}".`,
+      life: 3000
+    })
+
+    fetchData({ silent: true }).catch(() => {})
+  } catch (err) {
+    console.error(`Error quick-updating status for ${props.endpoint} #${recordId}:`, err)
+    quickStatusError.value = err?.message || 'Failed to update status. Please try again.'
+    toast.add({
+      severity: 'error',
+      summary: 'Status update failed',
+      detail: quickStatusError.value,
+      life: 5000
+    })
+  } finally {
+    quickStatusSaving.value = false
+    quickStatusSavingId.value = null
   }
 }
 
@@ -23071,5 +23436,62 @@ defineExpose({
 
 .sfa-promo-media-header .btn {
   white-space: nowrap !important;
+}
+
+/* Gene - Nov, 23, 2026: Styling for Applications DataTable clickable status badge trigger and quick-edit popover */
+.sfa-status-quick-trigger {
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+  gap: 0.28rem;
+}
+
+.sfa-status-quick-trigger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  filter: brightness(0.97);
+}
+
+.sfa-status-quick-trigger:focus-visible,
+.sfa-status-quick-trigger-active {
+  outline: 2px solid var(--bs-primary, #e74c5a);
+  outline-offset: 2px;
+}
+
+.sfa-status-quick-trigger:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.sfa-status-quick-caret {
+  font-size: 0.6rem;
+  opacity: 0.72;
+  transition: transform 0.14s ease;
+}
+
+.sfa-status-quick-trigger-active .sfa-status-quick-caret {
+  transform: rotate(180deg);
+}
+
+.quick-status-option-list {
+  scrollbar-width: thin;
+}
+
+.quick-status-option-btn {
+  background-color: transparent;
+  border-color: transparent !important;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.quick-status-option-btn:hover:not(:disabled) {
+  background-color: var(--bs-secondary-bg, rgba(108, 117, 125, 0.1));
+}
+
+.quick-status-option-selected {
+  background-color: var(--bs-primary-bg-subtle, rgba(231, 76, 90, 0.08)) !important;
+  border-color: var(--bs-primary-border-subtle, rgba(231, 76, 90, 0.35)) !important;
+}
+
+.quick-status-close-btn:hover {
+  color: var(--bs-body-color) !important;
 }
 </style>
