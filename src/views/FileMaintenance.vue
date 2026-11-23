@@ -22,6 +22,8 @@
         :create-button-label="`Create ${title}`"
       />
       -->
+      <!-- Gene - Nov, 23, 2026: Pass route-aware tableKey and optional accessLevelNames filter to DynamicApiTable -->
+      <!--
       <DynamicApiTable
         ref="apiTableRef"
         v-if="endpoint"
@@ -29,6 +31,17 @@
         :key="endpoint"
         :read-only="readOnly"
         :hide-create-button="readOnly || hideCreate"
+        :create-button-label="`Create ${title}`"
+      />
+      -->
+      <DynamicApiTable
+        ref="apiTableRef"
+        v-if="endpoint"
+        :endpoint="endpoint"
+        :key="tableKey"
+        :read-only="readOnly"
+        :hide-create-button="readOnly || hideCreate"
+        :access-level-names="accessLevelNames"
         :create-button-label="`Create ${title}`"
       />
       <div v-else class="p-4 text-center text-muted">Invalid Configuration</div>
@@ -130,6 +143,14 @@ const routeMap = {
     endpoint: 'Users', 
     icon: 'pi-user', 
     description: 'Manage system user accounts, login credentials, assigned access roles, profiles, and administrative permissions.' 
+  },
+  // Gene - Nov, 23, 2026: Added Tech menu route under Users Management scoped to FIT1 / Field Installation Team access levels
+  '/tech': {
+    title: 'Tech',
+    endpoint: 'Users',
+    icon: 'pi-wrench',
+    accessLevelNames: ['FIT1', 'Field Installation Team'],
+    description: 'Manage field technicians and installers assigned to the FIT1 / Field Installation Team access level.'
   },
   '/menu': { 
     title: 'Menu', 
@@ -347,6 +368,11 @@ const icon = computed(() => config.value.icon || 'pi-list')
 const readOnly = computed(() => config.value.readOnly === true)
 // Gene - Nov, 16, 2026: Read hideCreate flag from route config
 const hideCreate = computed(() => config.value.hideCreate === true)
+// Gene - Nov, 23, 2026: Read optional accessLevelNames scope and compute route-aware table key so switching /user <-> /tech cleanly resets table state
+const accessLevelNames = computed(() =>
+  Array.isArray(config.value.accessLevelNames) ? config.value.accessLevelNames : []
+)
+const tableKey = computed(() => `${endpoint.value || ''}:${route.path}`)
 const description = computed(() => config.value.description || `Manage ${title.value} records and system configurations.`)
 
 const openCreateModal = () => {

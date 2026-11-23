@@ -54,6 +54,8 @@ const ROUTE_TITLES = {
   'inventory-logs': 'Inventory Logs',
   inventory_logs: 'Inventory Logs',
   user: 'User',
+  // Gene - Nov, 23, 2026: Route title for Tech menu under Users Management
+  tech: 'Tech',
   menu: 'Menu',
   access_level: 'Access Level',
   access_level_menu: 'Access Level Menu',
@@ -303,6 +305,13 @@ const router = createRouter({
     {
       path: '/user',
       name: 'user',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    // Gene - Nov, 23, 2026: Register /tech route under Users Management (FIT1 / Field Installation Team users)
+    {
+      path: '/tech',
+      name: 'tech',
       component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
     },

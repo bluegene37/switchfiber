@@ -411,6 +411,17 @@ export const MENU_CATALOG = [
         path: '/user',
         icon: 'pi-user'
       },
+      // Gene - Nov, 23, 2026: Added Tech submenu under Users Management for FIT1 / Field Installation Team users
+      {
+        code: 'users-management.tech',
+        shortCode: 'TECH1',
+        codeAliases: ['TECH', 'USERS_TECH', 'FIELD_TECH', 'FIT_USERS', 'TC1'],
+        name: 'Tech',
+        serverMenu: 'Tech',
+        aliases: ['Tech', 'Technicians', 'Tech Users', 'Field Tech', 'Field Technicians', 'Field Installation Team', 'Users Management - Tech'],
+        path: '/tech',
+        icon: 'pi-wrench'
+      },
       {
         code: 'users-management.access-level',
         shortCode: 'AL1',
@@ -820,7 +831,10 @@ const PATH_CODE_ALIASES = new Map([
   ['/promotions', 'file-maintenance.promo'],
   ['/inventory_category', 'file-maintenance.inventory-category'],
   ['/inventory_item', 'file-maintenance.inventory-item'],
-  ['/inventory_logs', 'file-maintenance.inventory-logs']
+  ['/inventory_logs', 'file-maintenance.inventory-logs'],
+  // Gene - Nov, 23, 2026: Added path aliases for Users Management Tech screen
+  ['/techs', 'users-management.tech'],
+  ['/technicians', 'users-management.tech']
 ])
 
 /**

@@ -48,6 +48,8 @@ export function useSearch() {
     { id: 'nav-router', category: 'Navigation', title: 'Router Management', subtitle: 'Core & edge router configurations', icon: 'pi pi-desktop', route: '/router' },
     { id: 'nav-plan', category: 'Navigation', title: 'Fiber Plans', subtitle: 'Bandwidth packages & pricing tiers', icon: 'pi pi-tags', route: '/plan' },
     { id: 'nav-user', category: 'Navigation', title: 'User Accounts', subtitle: 'System users & admin accounts', icon: 'pi pi-users', route: '/user' },
+    // Gene - Nov, 23, 2026: Added Tech navigation item under Users Management
+    { id: 'nav-tech', category: 'Navigation', title: 'Tech', subtitle: 'Field Installation Team (FIT1) technicians', icon: 'pi pi-wrench', route: '/tech' },
     { id: 'nav-access-level', category: 'Navigation', title: 'Access Levels & Permissions', subtitle: 'Role-based access control matrix', icon: 'pi pi-lock', route: '/access_level' },
     { id: 'nav-api-viewer', category: 'Navigation', title: 'API Data Viewer', subtitle: 'Inspect raw JSON endpoints & API tables', icon: 'pi pi-database', route: '/data-viewer' },
     { id: 'nav-models', category: 'Navigation', title: 'Models', subtitle: 'Table columns, data types, & required fields', icon: 'pi pi-table', route: '/models' },

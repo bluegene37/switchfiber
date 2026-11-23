@@ -6533,6 +6533,12 @@ import {
   applyApplicationStatusLocally,
   formatQuickStatusSubtitle
 } from '../utils/applicationQuickStatus'
+// Gene - Nov, 23, 2026: Import Access Level name-based user filtering helpers for scoped user views (e.g., Tech)
+import {
+  matchesAccessLevelTargetNames,
+  resolveMatchingAccessLevelIds,
+  filterUsersByAccessLevelNames
+} from '../utils/accessLevelUserFilter'
 import {
   resolveMenuCodesFromName,
   isSuperAdminName,
@@ -6667,6 +6673,11 @@ const props = defineProps({
   clientFilters: {
     type: Object,
     default: () => ({})
+  },
+  // Gene - Nov, 23, 2026: Optional Access Level name filter (e.g. ['FIT1', 'Field Installation Team'] for Tech)
+  accessLevelNames: {
+    type: Array,
+    default: () => []
   },
   // Send `filterParams.fromDate` / `toDate` upstream instead of resolving them in
   // the browser. Requires a /filter endpoint that honors date bounds — the
@@ -10171,6 +10182,7 @@ const accessLevelColumn = computed(() =>
   (columns.value || []).find(c => normalizeColKey(c) === 'accesslevelid') || ''
 )
 
+/*
 const hasAccessLevelFilter = computed(() => !!accessLevelColumn.value)
 
 const selectedAccessLevelFilter = ref('')
@@ -10180,6 +10192,43 @@ const accessLevelFilterOptions = computed(() =>
     .map(l => ({ label: l.nameOnly || l.label, value: l.value }))
     .sort((a, b) => String(a.label).localeCompare(String(b.label)))
 )
+*/
+// Gene - Nov, 23, 2026: Scope Users rows and Access Level dropdown options when accessLevelNames prop is provided (e.g., Tech -> FIT1 / Field Installation Team)
+const hasAccessLevelNameScope = computed(() =>
+  Array.isArray(props.accessLevelNames) && props.accessLevelNames.length > 0
+)
+
+const matchedScopedAccessLevels = computed(() => {
+  if (!hasAccessLevelNameScope.value) return []
+  return (accessLevels.value || []).filter(l =>
+    matchesAccessLevelTargetNames(l, props.accessLevelNames)
+  )
+})
+
+const matchedScopedAccessLevelIds = computed(() =>
+  resolveMatchingAccessLevelIds(accessLevels.value, props.accessLevelNames)
+)
+
+const scopedData = computed(() => {
+  const rows = Array.isArray(data.value) ? data.value : []
+  if (!hasAccessLevelNameScope.value) return rows
+  return filterUsersByAccessLevelNames(rows, accessLevels.value, props.accessLevelNames)
+})
+
+const selectedAccessLevelFilter = ref('')
+
+const accessLevelFilterOptions = computed(() =>
+  (accessLevels.value || [])
+    .filter(l => !hasAccessLevelNameScope.value || matchedScopedAccessLevelIds.value.has(String(l.value)))
+    .map(l => ({ label: l.nameOnly || l.label, value: l.value }))
+    .sort((a, b) => String(a.label).localeCompare(String(b.label)))
+)
+
+const hasAccessLevelFilter = computed(() => {
+  if (!accessLevelColumn.value) return false
+  if (hasAccessLevelNameScope.value && accessLevelFilterOptions.value.length <= 1) return false
+  return true
+})
 
 const statusFilterOptions = computed(() => {
   if (hasActiveColumn.value) {
@@ -10511,7 +10560,11 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
   return list
 }
 
+/*
 const filteredData = computed(() => applyFilters(data.value))
+*/
+// Gene - Nov, 23, 2026: Apply client filters on scopedData so Access Level scoped views (e.g., Tech) never leak non-matching rows
+const filteredData = computed(() => applyFilters(scopedData.value))
 
 const filteredRecordsCount = computed(() => (filteredData.value || []).length)
 
@@ -10529,7 +10582,11 @@ const matchesOutsideDateWindow = computed(() => {
   )
   if (!hasWindow || props.serverDateFilter) return 0
   if (filteredRecordsCount.value > 0) return 0
+  /*
   return applyFilters(data.value, { applyDateWindow: false }).length
+  */
+  // Gene - Nov, 23, 2026: Evaluate outside-date-window count on scopedData
+  return applyFilters(scopedData.value, { applyDateWindow: false }).length
 })
 
 // The window the empty state names back to the user, in the same YYYY-MM-DD spelling
@@ -10957,8 +11014,14 @@ const exportMenuItems = computed(() => [
   }
 ])
 
+/*
 const totalRecordsCount = computed(() => {
   return Array.isArray(data.value) ? data.value.length : 0
+})
+*/
+// Gene - Nov, 23, 2026: Reflect scopedData count in totalRecordsCount when accessLevelNames scope is active
+const totalRecordsCount = computed(() => {
+  return Array.isArray(scopedData.value) ? scopedData.value.length : 0
 })
 
 // View State
@@ -14129,6 +14192,7 @@ const fetchAccessLevelsLookup = () => {
   return accessLevelsPromise
 }
 */
+/*
 // Gene - Oct 13, 2026: Format Access Level options in dropdowns with shortCodes via getAccessLevelDisplayName
 const fetchAccessLevelsLookup = () => {
   if (accessLevelsPromise) return accessLevelsPromise
@@ -14139,6 +14203,29 @@ const fetchAccessLevelsLookup = () => {
         return {
           label: formatted,
           nameOnly: formatted,
+          value: item.id
+        }
+      })
+    })
+    .catch(err => {
+      console.error('Error fetching access levels:', err)
+      accessLevelsPromise = null
+    })
+  return accessLevelsPromise
+}
+*/
+// Gene - Nov, 23, 2026: Preserve raw backend Access Level name alongside formatted display label for strict name-based filtering
+const fetchAccessLevelsLookup = () => {
+  if (accessLevelsPromise) return accessLevelsPromise
+  accessLevelsPromise = CrudService.list('AccessLevel')
+    .then(res => {
+      accessLevels.value = unwrapList(res).map(item => {
+        const rawName = String(item.name || item.Name || '').trim()
+        const formatted = getAccessLevelDisplayName(item) || rawName || `ID: ${item.id}`
+        return {
+          label: formatted,
+          nameOnly: formatted,
+          rawName,
           value: item.id
         }
       })
@@ -16424,9 +16511,19 @@ const openCreateDialog = () => {
       formData.value[col] = ''
     } else if (type === 'connectiontype_dropdown' && connectionTypeOptions.value.length > 0) {
       formData.value[col] = connectionTypeOptions.value[0].value
+    /*
     } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
       const guestOption = accessLevels.value.find(opt => (opt.nameOnly || opt.label || '').toLowerCase().includes('guest'))
       formData.value[col] = guestOption ? guestOption.value : accessLevels.value[0].value
+    */
+    // Gene - Nov, 23, 2026: Pre-select matched scoped Access Level (e.g., FIT1 / Field Installation Team on Tech) in Create dialog
+    } else if (type === 'accesslevel_dropdown' && accessLevels.value.length > 0) {
+      if (hasAccessLevelNameScope.value && matchedScopedAccessLevels.value.length > 0) {
+        formData.value[col] = matchedScopedAccessLevels.value[0].value
+      } else {
+        const guestOption = accessLevels.value.find(opt => (opt.nameOnly || opt.label || '').toLowerCase().includes('guest'))
+        formData.value[col] = guestOption ? guestOption.value : accessLevels.value[0].value
+      }
     } else if (type === 'referredby_dropdown') {
       formData.value[col] = 'None'
     } else if (type === 'discountstatus_dropdown' && discountStatusOptions.value.length > 0) {
@@ -20456,7 +20553,13 @@ const fetchData = async ({ silent = false } = {}) => {
       params = undefined
     }
 
+    /*
     const response = await CrudService.list(url, params)
+    */
+    // Gene - Nov, 23, 2026: Ensure AccessLevel lookup settles alongside Users list before rendering scoped views (e.g., Tech) to prevent flashing non-matching rows
+    const [response] = hasAccessLevelNameScope.value
+      ? await Promise.all([CrudService.list(url, params), fetchAccessLevelsLookup()])
+      : [await CrudService.list(url, params)]
 
     // A newer fetch was started while this one was in flight — discard this result
     if (token !== fetchToken) return
@@ -20597,6 +20700,7 @@ const fetchData = async ({ silent = false } = {}) => {
 
     // Auto-park on the first row when nothing is selected, or when the selected
     // row belongs to a filter the fetch has just replaced
+    /*
     const selectedKey = rowKeyOf(selectedRow.value)
     const selectionSurvives = selectedKey !== undefined
       ? data.value.some(row => rowKeyOf(row) === selectedKey)
@@ -20612,6 +20716,27 @@ const fetchData = async ({ silent = false } = {}) => {
     // Gene - Nov 7, 2026: Refresh selectedRow reference to the newly fetched row object so toolbar View/Edit buttons always receive updated fields after saveEdit
     } else if (selectedKey !== undefined) {
       const freshMatch = data.value.find(row => rowKeyOf(row) === selectedKey)
+      if (freshMatch) {
+        selectedRow.value = freshMatch
+      }
+    }
+    */
+    // Gene - Nov, 23, 2026: Auto-select and preserve row selection from scopedData so scoped views (e.g., Tech) never select hidden rows
+    const visiblePool = scopedData.value
+    const selectedKey = rowKeyOf(selectedRow.value)
+    const selectionSurvives = selectedKey !== undefined
+      ? visiblePool.some(row => rowKeyOf(row) === selectedKey)
+      : visiblePool.includes(selectedRow.value)
+    if (!selectionSurvives) {
+      if (visiblePool.length > 0 && props.autoSelectFirstRow) {
+        selectedRow.value = visiblePool[0]
+        emit('row-select', visiblePool[0])
+      } else if (selectedRow.value) {
+        selectedRow.value = null
+        emit('row-unselect', null)
+      }
+    } else if (selectedKey !== undefined) {
+      const freshMatch = visiblePool.find(row => rowKeyOf(row) === selectedKey)
       if (freshMatch) {
         selectedRow.value = freshMatch
       }
