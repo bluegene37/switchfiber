@@ -79,6 +79,8 @@ const ROUTE_TITLES = {
   'service-orders-resolved': 'Resolved Service Orders',
   'service-orders-completed': 'Completed Service Orders',
   'service-orders-cancelled': 'Cancelled Service Orders',
+  // Gene - Nov, 23, 2026: Route title for Subscribers menu
+  subscribers: 'Subscribers',
   'api-management': 'API Management',
   'api-viewer': 'API Viewer',
   models: 'Models',
@@ -495,6 +497,13 @@ const router = createRouter({
       name: 'service-orders-cancelled',
       component: () => import('../views/ServiceOrderList.vue'),
       meta: { requiresAuth: true, title: 'Cancelled Service Orders' }
+    },
+    // Gene - Nov, 23, 2026: Register /subscribers route (empty / in-progress screen under Subscribers menu)
+    {
+      path: '/subscribers',
+      name: 'subscribers',
+      component: () => import('../views/Subscribers.vue'),
+      meta: { requiresAuth: true, title: 'Subscribers' }
     },
     {
       path: '/api-management',

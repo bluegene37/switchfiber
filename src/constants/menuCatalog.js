@@ -289,6 +289,54 @@ export const MENU_CATALOG = [
       }
     ]
   },
+  /*
+  // Gene - Nov, 23, 2026: Added Subscribers parent menu group with Subscribers child screen (WIP / In Progress) and Access Level rights support
+  {
+    code: 'subscribers',
+    shortCode: 'SUB1',
+    codeAliases: ['SUB', 'SUBSCRIBER_GROUP', 'SUBSCRIBERS_GROUP'],
+    name: 'Subscribers',
+    serverMenu: 'Subscribers',
+    aliases: ['Subscribers Group', 'Subscriber Management', 'Subscribers Management'],
+    icon: 'pi-users',
+    children: [
+      {
+        code: 'subscribers.list',
+        shortCode: 'SUBS1',
+        codeAliases: ['SUBLIST', 'SUB_LIST', 'ALL_SUBSCRIBERS', 'SUBSCRIBERS_LIST'],
+        name: 'Subscribers',
+        serverMenu: 'Subscribers',
+        aliases: ['Subscribers', 'Subscriber', 'All Subscribers', 'Subscribers List', 'Subscriber List', 'Subscribers - Subscribers'],
+        path: '/subscribers',
+        icon: 'pi-id-card',
+        description: 'Subscriber directory and account management (in progress).'
+      }
+    ]
+  },
+  */
+  // Gene - Nov, 23, 2026: Use distinct parent code subscribers-group and serverMenu 'Subscribers Group' so bare 'Subscribers' resolves to leaf screen subscribers.list
+  {
+    code: 'subscribers-group',
+    shortCode: 'SUB1',
+    codeAliases: ['SUB', 'SUBSCRIBER_GROUP', 'SUBSCRIBERS_GROUP'],
+    name: 'Subscribers',
+    serverMenu: 'Subscribers Group',
+    aliases: ['Subscribers Group', 'Subscriber Management', 'Subscribers Management'],
+    icon: 'pi-users',
+    children: [
+      {
+        code: 'subscribers.list',
+        shortCode: 'SUBS1',
+        codeAliases: ['SUBLIST', 'SUB_LIST', 'ALL_SUBSCRIBERS', 'SUBSCRIBERS_LIST'],
+        name: 'Subscribers',
+        serverMenu: 'Subscribers',
+        aliases: ['Subscribers', 'Subscriber', 'All Subscribers', 'Subscribers List', 'Subscriber List', 'Subscribers - Subscribers'],
+        path: '/subscribers',
+        icon: 'pi-id-card',
+        description: 'Subscriber directory and account management (in progress).'
+      }
+    ]
+  },
   {
     code: 'transaction',
     shortCode: 'TXN1',
@@ -834,7 +882,10 @@ const PATH_CODE_ALIASES = new Map([
   ['/inventory_logs', 'file-maintenance.inventory-logs'],
   // Gene - Nov, 23, 2026: Added path aliases for Users Management Tech screen
   ['/techs', 'users-management.tech'],
-  ['/technicians', 'users-management.tech']
+  ['/technicians', 'users-management.tech'],
+  // Gene - Nov, 23, 2026: Added path aliases for Subscribers screen
+  ['/subscriber', 'subscribers.list'],
+  ['/subscribers/list', 'subscribers.list']
 ])
 
 /**
@@ -1097,6 +1148,7 @@ export const resolveMenuCodesFromName = (rawName, options = { expandChildren: tr
 /**
  * Helper: Find the single best / primary catalog code for a menu name.
  */
+/*
 export const findPrimaryMenuCodeForName = (rawName) => {
   if (!rawName) return null
   const explicit = extractExplicitMenuCode(rawName)
@@ -1117,6 +1169,36 @@ export const findPrimaryMenuCodeForName = (rawName) => {
   const direct = codes.find(c => normalizeMenuName(c) === normRaw || c === normRaw)
   if (direct) return direct
   // Prefer leaf child codes over parent groups if both are returned
+  const leaf = codes.find(c => !PARENT_TO_CHILD_CODES.has(c))
+  return leaf || codes[0]
+}
+*/
+// Gene - Nov, 23, 2026: Prefer exact code match, then leaf screen over parent group when parent and child share the same display name (e.g., Subscribers)
+export const findPrimaryMenuCodeForName = (rawName) => {
+  if (!rawName) return null
+  const explicit = extractExplicitMenuCode(rawName)
+  if (explicit) return explicit
+
+  const normRaw = normalizeMenuName(rawName)
+  // Exact normalized code match takes first priority (e.g. 'Dashboard' -> 'dashboard', 'File Maintenance' -> 'file-maintenance')
+  const exactCodeEntry = ALL_MENU_ENTRIES.find(e => normalizeMenuName(e.code) === normRaw)
+  if (exactCodeEntry) return exactCodeEntry.code
+
+  // When both a parent group and a child screen share the same name (e.g. 'Subscribers'),
+  // prefer the leaf child code so menu display formatting and Access Level linking target the screen.
+  const exactNameMatches = ALL_MENU_ENTRIES.filter(e =>
+    normalizeMenuName(e.name) === normRaw ||
+    (e.serverMenu && normalizeMenuName(e.serverMenu) === normRaw)
+  )
+  if (exactNameMatches.length) {
+    const leafMatch = exactNameMatches.find(e => !PARENT_TO_CHILD_CODES.has(e.code))
+    return (leafMatch || exactNameMatches[0]).code
+  }
+
+  const codes = resolveMenuCodesFromName(rawName)
+  if (!codes.length) return null
+  const direct = codes.find(c => normalizeMenuName(c) === normRaw || c === normRaw)
+  if (direct) return direct
   const leaf = codes.find(c => !PARENT_TO_CHILD_CODES.has(c))
   return leaf || codes[0]
 }
@@ -1169,11 +1251,35 @@ export const isHomeMenu = (itemOrNameOrCode) => {
  * Check if a menu item, code, or name represents a parent category folder.
  * Parent categories automatically show/hide based on their children and are excluded from the Menu List.
  */
+/*
 export const isParentMenu = (itemOrNameOrCode) => {
   if (!itemOrNameOrCode) return false
   if (typeof itemOrNameOrCode === 'object' && itemOrNameOrCode !== null) {
     if (isMenuGroup(itemOrNameOrCode)) return true
     if (itemOrNameOrCode.code && PARENT_MENU_CODES.has(itemOrNameOrCode.code)) return true
+    const name = itemOrNameOrCode.name || itemOrNameOrCode.Name
+    if (name) return isParentMenu(name)
+    return false
+  }
+  const str = String(itemOrNameOrCode).trim()
+  if (!str) return false
+  if (PARENT_MENU_CODES.has(str)) return true
+
+  const explicit = extractExplicitMenuCode(str)
+  if (explicit && PARENT_MENU_CODES.has(explicit)) return true
+
+  const norm = normalizeMenuName(str)
+  if (PARENT_MENU_NAMES.has(norm)) return true
+
+  return false
+}
+*/
+// Gene - Nov, 23, 2026: Respect explicit entry code on objects before falling back to name so leaf entries sharing a parent name are not misclassified as parents
+export const isParentMenu = (itemOrNameOrCode) => {
+  if (!itemOrNameOrCode) return false
+  if (typeof itemOrNameOrCode === 'object' && itemOrNameOrCode !== null) {
+    if (isMenuGroup(itemOrNameOrCode)) return true
+    if (itemOrNameOrCode.code) return PARENT_MENU_CODES.has(itemOrNameOrCode.code)
     const name = itemOrNameOrCode.name || itemOrNameOrCode.Name
     if (name) return isParentMenu(name)
     return false

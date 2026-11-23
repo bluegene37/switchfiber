@@ -37,6 +37,8 @@ export function useSearch() {
     { id: 'nav-job-orders-inprogress', category: 'Navigation', title: 'In Progress Job Orders', subtitle: 'Dispatch tickets currently being worked', icon: 'pi pi-clock', route: '/job-orders/inprogress' },
     { id: 'nav-job-orders-completed', category: 'Navigation', title: 'Completed Job Orders', subtitle: 'Finished installation & repair tickets', icon: 'pi pi-check-circle', route: '/job-orders/completed' },
     { id: 'nav-job-orders-activated', category: 'Navigation', title: 'Activated Job Orders', subtitle: 'Tickets with activated subscriber service', icon: 'pi pi-verified', route: '/job-orders/activated' },
+    // Gene - Nov, 23, 2026: Added Subscribers navigation item under Subscribers menu
+    { id: 'nav-subscribers', category: 'Navigation', title: 'Subscribers', subtitle: 'Subscriber accounts & directory (In Progress)', icon: 'pi pi-id-card', route: '/subscribers' },
     { id: 'nav-billing', category: 'Navigation', title: 'Billing & Payments', subtitle: 'Customer billing details & invoices', icon: 'pi pi-credit-card', route: '/billing' },
     { id: 'nav-invoice', category: 'Navigation', title: 'Invoices', subtitle: 'Generated billing invoices & statements', icon: 'pi pi-receipt', route: '/invoice' },
     { id: 'nav-lcp', category: 'Navigation', title: 'LCP Maintenance', subtitle: 'Local Control Point cabinets', icon: 'pi pi-server', route: '/lcp' },
