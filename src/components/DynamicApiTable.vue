@@ -6517,8 +6517,18 @@ import { LcpNapLocationService } from '../services/lcpNapLocations'
 import { ApplicationService } from '../services/applications'
 import { LcpNapLocationService } from '../services/lcpNapLocations'
 import { JobOrderService } from '../services/jobOrders'
+/*
 // Gene - Nov 5, 2026: Import ServiceOrderService for Service Order image viewing, caching, and multipart uploads
 import { ServiceOrderService } from '../services/serviceOrders'
+*/
+// Gene - Nov, 24, 2026: Import Service Order image helpers alongside ServiceOrderService for Create and Edit multipart image uploads
+import {
+  ServiceOrderService,
+  SERVICE_ORDER_PHOTO_FIELDS,
+  sanitizeServiceOrderCreatePayload,
+  hasServiceOrderUploadableImages,
+  buildServiceOrderMultipartFormData
+} from '../services/serviceOrders'
 // Gene - Nov, 18, 2026: Import Application-to-JobOrder automation helpers
 import {
   isApplicationEligibleForJobOrder,
@@ -17958,6 +17968,9 @@ const saveData = async () => {
         if (finalPayload.accountBalance !== undefined && finalPayload.accountBalance !== null && finalPayload.accountBalance !== '') {
           finalPayload.accountBalance = Number(String(finalPayload.accountBalance).replace(/[^0-9.-]/g, '')) || 0
         }
+      // Gene - Nov, 24, 2026: Sanitize ServiceOrders JSON POST create payload so raw base64 images and empty numeric/date strings are omitted
+      } else if (isServiceOrderEndpoint.value) {
+        finalPayload = sanitizeServiceOrderCreatePayload(finalPayload)
       }
     }
 
@@ -18059,6 +18072,45 @@ const saveData = async () => {
           }
         } catch (joCreateImgErr) {
           console.warn('[DynamicApiTable] Follow-up JobOrder image upload after create warning:', joCreateImgErr)
+        }
+      }
+    // Gene - Nov, 24, 2026: Perform follow-up multipart PUT /api/ServiceOrders/{id} when images are uploaded during Service Order create
+    } else if (isServiceOrderEndpoint.value) {
+      const createFiles = selectedFilesByCol.value.create || {}
+      const createRemoved = removedImagesByCol.value.create || {}
+      if (hasServiceOrderUploadableImages(createFiles, formData.value || {}, createRemoved)) {
+        try {
+          const createdObj = unwrapApiPayload(createRes)
+          const createdId = getRecordId(createdObj)
+          if (createdId) {
+            const soPutScalarPayload = {
+              ...payload,
+              id: createdId,
+              createdDate: createdObj?.createdDate || finalPayload?.createdDate || payload.createdDate || nowIso,
+              modifiedBy: loggedInUserId,
+              modifiedDate: nowIso,
+              userEmail: authStore.user?.email || payload.userEmail || currentUserEmail
+            }
+            const createSoForm = buildServiceOrderMultipartFormData({
+              payload: soPutScalarPayload,
+              files: createFiles,
+              removed: createRemoved,
+              existingImages: formData.value || {},
+              serializeTime: serializeTimeForPayload,
+              getFieldType,
+              isAuditField
+            })
+            await CrudService.update(props.endpoint, createdId, createSoForm)
+            recordImagesCache.delete(`so:${createdId}`)
+          }
+        } catch (soCreateImgErr) {
+          console.warn('[DynamicApiTable] Follow-up ServiceOrder image upload after create warning:', soCreateImgErr)
+          toast.add({
+            severity: 'warn',
+            summary: 'Images not uploaded',
+            detail: 'Service Order was created, but uploading attached images failed. You can retry by editing the record.',
+            life: 6000
+          })
         }
       }
     }
@@ -19863,6 +19915,17 @@ const saveEdit = async () => {
         try { await pendingDialogImageFetch.edit } catch (_) {}
       }
 
+      // PUT /ServiceOrders/{id} is a full replace: preserve original createdDate from snapshot
+      const originalCreatedDate = editBaseSnapshot.value?.createdDate
+      if (originalCreatedDate !== undefined && originalCreatedDate !== null && originalCreatedDate !== '') {
+        payload.createdDate = originalCreatedDate
+      }
+      payload.modifiedBy = loggedInUserId
+      payload.modifiedDate = nowIso
+      // Gene - Nov, 11, 2026: Update userEmail to the logged-in user on ServiceOrders update
+      payload.userEmail = authStore.user?.email || payload.userEmail || currentUserEmail
+
+      /*
       const form = new FormData()
 
       // PUT /ServiceOrders/{id} is a full replace: preserve original createdDate from snapshot
@@ -19882,11 +19945,13 @@ const saveEdit = async () => {
         if (isAuditField(key) && key.toLowerCase() !== 'id' && key.toLowerCase() !== 'createddate' && key.toLowerCase() !== 'modifiedby' && key.toLowerCase() !== 'modifieddate') {
           return
         }
+      */
         /*
         if (val !== undefined && val !== null) {
           form.append(key, val instanceof Date ? val.toISOString() : String(val))
         }
         */
+      /*
         // Gene - Nov, 14, 2026: Serialize ServiceOrders time fields as local YYYY-MM-DDTHH:mm:ss and omit blank/null date & time keys in FormData
         const fieldType = getFieldType(key)
         if (fieldType === 'time') {
@@ -19937,6 +20002,17 @@ const saveEdit = async () => {
       attachSoPhoto('image3', 'Image3', 'image3.jpg')
       attachSoPhoto('houseFrontPicture', 'HouseFrontPicture', 'houseFrontPicture.jpg')
       finalPayload = form
+      */
+      // Gene - Nov, 24, 2026: Use shared buildServiceOrderMultipartFormData helper so empty numeric/date fields are omitted cleanly alongside 5 photo uploads
+      finalPayload = buildServiceOrderMultipartFormData({
+        payload,
+        files: selectedFilesByCol.value.edit || {},
+        removed: removedImagesByCol.value.edit || {},
+        existingImages: editFormData.value || {},
+        serializeTime: serializeTimeForPayload,
+        getFieldType,
+        isAuditField
+      })
     /*
     } else if (isAccessLevelEndpoint.value) {
       finalPayload = {
@@ -20374,8 +20450,27 @@ const saveEdit = async () => {
         })
         viewFormData.value = { ...viewFormData.value }
       }
+    /*
     } else if (isServiceOrderEndpoint.value) {
       recordImagesCache.delete(`so:${updatedId}`)
+    */
+    // Gene - Nov, 24, 2026: Invalidate Service Order image cache and sync open View modal when photos are updated or removed
+    } else if (isServiceOrderEndpoint.value) {
+      recordImagesCache.delete(`so:${updatedId}`)
+      if (viewFormData.value && String(viewingRecordId.value) === String(updatedId)) {
+        const editRemoved = removedImagesByCol.value.edit || {}
+        SERVICE_ORDER_PHOTO_FIELDS.forEach(([colKey, formField]) => {
+          const norm = normalizeColKey(colKey)
+          const normForm = normalizeColKey(formField)
+          if (editRemoved[colKey] || editRemoved[norm] || editRemoved[formField] || editRemoved[normForm]) {
+            viewFormData.value[colKey] = ''
+            viewFormData.value[norm] = ''
+            viewFormData.value[colKey.toLowerCase()] = ''
+          }
+        })
+        viewFormData.value = { ...viewFormData.value }
+        fetchAndAttachImagesForDialog('view', { ...viewFormData.value, id: updatedId }).catch(() => {})
+      }
     } else if (isLcpNapEndpoint.value) {
       recordImagesCache.delete(`lcp:${updatedId}`)
     } else if (isApplicationEndpoint.value) {

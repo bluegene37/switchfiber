@@ -1,7 +1,16 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { getDirectImageUrl, fileResultToDataUrl, unwrapApiPayload, dataUriToBlob, isRenderableImageUrl } from '../src/utils/imageActions.js'
+/*
 import { ServiceOrderService } from '../src/services/serviceOrders.js'
+*/
+// Gene - Nov, 24, 2026: Import Service Order image upload helpers for Create and Edit multipart regression tests
+import {
+  ServiceOrderService,
+  sanitizeServiceOrderCreatePayload,
+  hasServiceOrderUploadableImages,
+  buildServiceOrderMultipartFormData
+} from '../src/services/serviceOrders.js'
 import { useServiceOrderStore } from '../src/stores/serviceOrders.js'
 
 // Gene - Nov 5, 2026: Comprehensive test suite for Service Order Image API, caching, and multipart update integration
@@ -239,5 +248,172 @@ describe('Service Order Image API & Multipart Integration Suite', () => {
     assert.equal(isServiceOrderEndpoint('/api/serviceorders'), false)
     assert.equal(isServiceOrderEndpoint('JobOrders'), false)
     assert.equal(isServiceOrderEndpoint('Applications'), false)
+  })
+
+  // Gene - Nov, 24, 2026: Unit tests for Create sanitization, uploadable image detection, FormData builder, and header stripping
+  test('sanitizeServiceOrderCreatePayload strips base64/blob image strings and empty or literal-null numeric/date fields', () => {
+    const validDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ=='
+    const blob = new Blob(['img'], { type: 'image/png' })
+    const rawCreatePayload = {
+      fullName: 'Maria Santos',
+      visitStatus: 'Scheduled',
+      clientSignature: validDataUrl,
+      image1: 'blob:http://localhost/123',
+      image2: blob,
+      image3: 'https://cdn.example.com/existing.jpg',
+      houseFrontPicture: validDataUrl,
+      itemQuantity: '',
+      itemQuantity1: 'null',
+      itemQuantity2: null,
+      itemQuantity3: '2',
+      serviceCharge: '',
+      duration: 'null',
+      dateInstalled: '',
+      techModifiedDate: undefined,
+      assignedDate: '2026-11-24T10:00:00.000Z',
+      createdDate: '2026-11-24T15:00:00.000'
+    }
+
+    const sanitized = sanitizeServiceOrderCreatePayload(rawCreatePayload)
+
+    assert.equal(sanitized.fullName, 'Maria Santos')
+    assert.equal(sanitized.visitStatus, 'Scheduled')
+    assert.equal('clientSignature' in sanitized, false, 'base64 clientSignature must be stripped')
+    assert.equal('image1' in sanitized, false, 'blob: image1 must be stripped')
+    assert.equal('image2' in sanitized, false, 'Blob image2 must be stripped')
+    assert.equal(sanitized.image3, 'https://cdn.example.com/existing.jpg', 'non-base64 URL string may pass through')
+    assert.equal('houseFrontPicture' in sanitized, false, 'base64 houseFrontPicture must be stripped')
+
+    assert.equal('itemQuantity' in sanitized, false, 'empty itemQuantity must be omitted')
+    assert.equal('itemQuantity1' in sanitized, false, 'literal "null" itemQuantity1 must be omitted')
+    assert.equal('itemQuantity2' in sanitized, false, 'null itemQuantity2 must be omitted')
+    assert.equal(sanitized.itemQuantity3, '2', 'valid itemQuantity3 preserved')
+    assert.equal('serviceCharge' in sanitized, false, 'empty serviceCharge must be omitted')
+    assert.equal('duration' in sanitized, false, 'literal "null" duration must be omitted')
+    assert.equal('dateInstalled' in sanitized, false, 'empty dateInstalled must be omitted')
+    assert.equal('techModifiedDate' in sanitized, false, 'undefined techModifiedDate must be omitted')
+    assert.equal(sanitized.assignedDate, '2026-11-24T10:00:00.000Z')
+    assert.equal(sanitized.createdDate, '2026-11-24T15:00:00.000')
+  })
+
+  test('hasServiceOrderUploadableImages detects Files/Blobs and data URIs while respecting removed flags', () => {
+    const validDataUrl = 'data:image/png;base64,iVBORw0KGgo='
+    const fileBlob = new Blob(['bytes'], { type: 'image/jpeg' })
+
+    assert.equal(hasServiceOrderUploadableImages({}, {}, {}), false)
+    assert.equal(hasServiceOrderUploadableImages({}, { image1: 'https://example.com/a.jpg' }, {}), false)
+    assert.equal(hasServiceOrderUploadableImages({ image2: fileBlob }, {}, {}), true)
+    assert.equal(hasServiceOrderUploadableImages({}, { houseFrontPicture: validDataUrl }, {}), true)
+    assert.equal(hasServiceOrderUploadableImages({ image2: fileBlob }, { image2: validDataUrl }, { image2: true }), false)
+  })
+
+  test('buildServiceOrderMultipartFormData attaches all 5 IFormFile fields, preserves existing images, omits removed/empty numeric/date fields', () => {
+    const validDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='
+    const newPng = new Blob(['png-bytes'], { type: 'image/png' })
+    newPng.name = 'site1.png'
+
+    const payload = {
+      id: 901,
+      fullName: 'Pedro Penduko',
+      visitStatus: 'In Progress',
+      createdDate: '2026-11-24T08:00:00.000Z',
+      modifiedBy: '1',
+      modifiedDate: '2026-11-24T09:00:00.000Z',
+      dateInstalled: '',
+      techModifiedDate: 'null',
+      assignedDate: null,
+      startTimestamp: '09:30:00',
+      stopTimestamp: '',
+      duration: '',
+      itemQuantity: '',
+      itemQuantity1: '3',
+      itemQuantity2: 'null',
+      itemQuantity10: undefined,
+      serviceCharge: '',
+      clientSignature: validDataUrl,
+      image1: ''
+    }
+
+    const form = buildServiceOrderMultipartFormData({
+      payload,
+      files: { image1: newPng },
+      removed: { image3: true },
+      existingImages: {
+        clientSignature: validDataUrl,
+        image2: validDataUrl,
+        image3: validDataUrl,
+        houseFrontPicture: validDataUrl
+      },
+      serializeTime: (val) => (val ? `2026-11-24T${val}` : null),
+      getFieldType: (key) => {
+        const lower = key.toLowerCase()
+        if (lower === 'starttimestamp' || lower === 'stoptimestamp') return 'time'
+        if (lower === 'dateinstalled' || lower === 'techmodifieddate' || lower === 'assigneddate') return 'date'
+        return 'text'
+      },
+      isAuditField: (key) => ['id', 'createdby', 'createddate', 'modifiedby', 'modifieddate'].includes(key.toLowerCase())
+    })
+
+    // Scalar fields & omissions
+    assert.equal(form.get('id'), '901')
+    assert.equal(form.get('fullName'), 'Pedro Penduko')
+    assert.equal(form.get('createdDate'), '2026-11-24T08:00:00.000Z')
+    assert.equal(form.get('itemQuantity1'), '3')
+    assert.equal(form.get('startTimestamp'), '2026-11-24T09:30:00')
+
+    assert.equal(form.has('itemQuantity'), false, 'empty itemQuantity must be omitted')
+    assert.equal(form.has('itemQuantity2'), false, 'literal "null" itemQuantity2 must be omitted')
+    assert.equal(form.has('itemQuantity10'), false, 'undefined itemQuantity10 must be omitted')
+    assert.equal(form.has('serviceCharge'), false, 'empty serviceCharge must be omitted')
+    assert.equal(form.has('duration'), false, 'empty duration must be omitted')
+    assert.equal(form.has('dateInstalled'), false, 'empty dateInstalled must be omitted')
+    assert.equal(form.has('techModifiedDate'), false, 'literal "null" techModifiedDate must be omitted')
+    assert.equal(form.has('assignedDate'), false, 'null assignedDate must be omitted')
+    assert.equal(form.has('stopTimestamp'), false, 'empty stopTimestamp must be omitted')
+
+    // 5 IFormFile photo slots
+    assert.ok(form.get('Image1') instanceof Blob, 'Newly selected Image1 uploaded')
+    assert.equal(form.get('Image1').type, 'image/png')
+    assert.ok(form.get('ClientSignature') instanceof Blob, 'Existing ClientSignature preserved')
+    assert.ok(form.get('Image2') instanceof Blob, 'Existing Image2 preserved')
+    assert.equal(form.has('Image3'), false, 'Removed Image3 omitted')
+    assert.ok(form.get('HouseFrontPicture') instanceof Blob, 'Existing HouseFrontPicture preserved')
+  })
+
+  test('ServiceOrderService.updateServiceOrder strips manual Content-Type header on FormData', async () => {
+    const fs = await import('node:fs')
+    const content = fs.readFileSync('src/services/serviceOrders.js', 'utf8')
+    const activeContent = content.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    assert.equal(
+      activeContent.includes("'Content-Type': 'multipart/form-data'"),
+      false,
+      'Active updateServiceOrder must not hardcode multipart/form-data without boundary'
+    )
+    assert.ok(
+      activeContent.includes("delete cleanHeaders['Content-Type']") &&
+      activeContent.includes("delete cleanHeaders['content-type']"),
+      'Active updateServiceOrder must strip Content-Type headers for FormData'
+    )
+  })
+
+  test('DynamicApiTable wires ServiceOrders Create sanitization, follow-up multipart PUT, and shared Edit FormData builder', async () => {
+    const fs = await import('node:fs')
+    const content = fs.readFileSync('src/components/DynamicApiTable.vue', 'utf8')
+    const activeContent = content.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    assert.ok(
+      activeContent.includes('finalPayload = sanitizeServiceOrderCreatePayload(finalPayload)'),
+      'Create path must sanitize ServiceOrders payload before JSON POST'
+    )
+    assert.ok(
+      activeContent.includes('hasServiceOrderUploadableImages(createFiles, formData.value || {}, createRemoved)') &&
+      activeContent.includes('buildServiceOrderMultipartFormData'),
+      'Create path must perform follow-up multipart PUT via buildServiceOrderMultipartFormData when images are attached'
+    )
+    assert.ok(
+      activeContent.includes('existingImages: editFormData.value || {}'),
+      'Edit path must build ServiceOrders multipart FormData using buildServiceOrderMultipartFormData'
+    )
   })
 })
