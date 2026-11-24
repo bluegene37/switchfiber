@@ -400,6 +400,7 @@ export const EndpointColumns = {
     "provinceCode",
     "cityCode"
   ],
+  /*
   "RadiusUser": [
     "id",
     "name",
@@ -409,6 +410,21 @@ export const EndpointColumns = {
     "otp_secret",
     "shared_users",
     "attributes"
+  ],
+  */
+  // Gene - Nov, 24, 2026: Include live RadiusUser audit fields DateCreated, DateModified, and ModifiedBy
+  "RadiusUser": [
+    "id",
+    "name",
+    "password",
+    "group",
+    "disabled",
+    "otp_secret",
+    "shared_users",
+    "attributes",
+    "DateCreated",
+    "DateModified",
+    "ModifiedBy"
   ],
   "LCPNapLocations": [
     "id",

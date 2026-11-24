@@ -15,6 +15,8 @@ import {
   findPrimaryMenuCodeForName,
   resolveMenuCodesFromName
 } from '../src/constants/menuCatalog.js'
+// Gene - Nov, 24, 2026: Import EndpointColumns to verify RadiusUser fallback schema fields
+import { EndpointColumns } from '../src/models/columns.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const readRepoFile = (relPath) => fs.readFileSync(path.resolve(__dirname, '..', relPath), 'utf8')
@@ -125,9 +127,26 @@ describe('Subscribers Route, Global Search & Empty/In-Progress View Wiring', () 
     assert.match(useSearchSrc, /route:\s*'\/subscribers'/)
   })
 
+  /*
   test('Subscribers.vue renders empty In Progress placeholder with Subscribers (SUBS1) badge', () => {
     assert.match(subscribersViewSrc, /Subscribers \(SUBS1\)/)
     assert.match(subscribersViewSrc, /In Progress/)
     assert.match(subscribersViewSrc, /Subscribers Module In Progress/)
+  })
+  */
+  // Gene - Nov, 24, 2026: Verify Subscribers.vue is wired to GET /api/RadiusUser via DynamicApiTable and EndpointColumns includes live RadiusUser fields
+  test('Subscribers.vue renders DynamicApiTable backed by GET /api/RadiusUser (read-only) with Subscribers (SUBS1) badge', () => {
+    const activeHtml = subscribersViewSrc.replace(/<!--[\s\S]*?-->/g, '')
+    assert.match(activeHtml, /Subscribers \(SUBS1\)/)
+    assert.match(subscribersViewSrc, /import DynamicApiTable from '\.\.\/components\/DynamicApiTable\.vue'/)
+    assert.match(activeHtml, /<DynamicApiTable[\s\S]*endpoint="RadiusUser"[\s\S]*:read-only="true"[\s\S]*:hide-create-button="true"/)
+    assert.equal(activeHtml.includes('Subscribers Module In Progress'), false, 'Active template must no longer render In Progress placeholder')
+  })
+
+  test('EndpointColumns.RadiusUser includes live GET /api/RadiusUser columns and audit fields', () => {
+    const cols = EndpointColumns.RadiusUser || []
+    for (const expected of ['name', 'group', 'disabled', 'DateCreated', 'DateModified', 'ModifiedBy']) {
+      assert.ok(cols.includes(expected), `EndpointColumns.RadiusUser must include ${expected}`)
+    }
   })
 })

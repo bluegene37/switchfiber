@@ -333,7 +333,9 @@ export const MENU_CATALOG = [
         aliases: ['Subscribers', 'Subscriber', 'All Subscribers', 'Subscribers List', 'Subscriber List', 'Subscribers - Subscribers'],
         path: '/subscribers',
         icon: 'pi-id-card',
-        description: 'Subscriber directory and account management (in progress).'
+        // description: 'Subscriber directory and account management (in progress).'
+        // Gene - Nov, 24, 2026: Updated Subscribers menu description to reflect live RADIUS subscriber list
+        description: 'Manage RADIUS subscriber accounts, group profiles, and connection status.'
       }
     ]
   },
