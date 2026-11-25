@@ -10,6 +10,8 @@ import apiClient from '../src/services/api.js'
 import {
   ApplicationConfigurationService,
   APPLICATION_CONFIG_PRESETS,
+  findPresetByCode,
+  resolveAssetUrl,
   isValidHexColor,
   normalizeHexColor,
   normalizeConfigKey,
@@ -32,6 +34,12 @@ const apiViewSrc = read('src/views/Api.vue')
 const dashboardSrc = read('src/views/Dashboard.vue')
 const accountingDashboardSrc = read('src/views/AccountingDashboard.vue')
 const dynamicTableSrc = read('src/components/DynamicApiTable.vue')
+// Gene - Nov, 26, 2026: Verify UI shell wiring for dynamic branding, subtitles, logo, favicon, and footer settings
+const sidebarSrc = read('src/components/Sidebar.vue')
+const navbarSrc = read('src/components/Navbar.vue')
+const loginSrc = read('src/views/Login.vue')
+const authLayoutSrc = read('src/layouts/AuthLayout.vue')
+const landingSrc = read('src/views/Landing.vue')
 const openapiSpec = JSON.parse(read('openapi.json'))
 
 describe('ApplicationConfiguration Service & Payload Normalization', () => {
@@ -81,6 +89,7 @@ describe('ApplicationConfiguration Service & Payload Normalization', () => {
     })
   })
 
+/*
   test('APPLICATION_CONFIG_PRESETS includes theme color and general presets', () => {
     const names = APPLICATION_CONFIG_PRESETS.map(p => p.name)
     assert.ok(names.includes('THEME_PRIMARY_COLOR'))
@@ -91,6 +100,48 @@ describe('ApplicationConfiguration Service & Payload Normalization', () => {
     assert.ok(names.includes('THEME_DANGER_COLOR'))
     assert.ok(names.includes('THEME_INFO_COLOR'))
     assert.ok(names.includes('APP_TITLE'))
+  })
+*/
+  // Gene - Nov, 26, 2026: Verify all 16 short canonical Setting Codes, legacy alias resolution, and asset URL normalization
+  test('APPLICATION_CONFIG_PRESETS registers 16 canonical short Setting Codes and resolves legacy aliases', () => {
+    const names = APPLICATION_CONFIG_PRESETS.map(p => p.name)
+    const expectedCodes = [
+      'TITLE1',
+      'BRAND1',
+      'SUBTITLE1',
+      'LANDING1',
+      'FOOTER1',
+      'LOGO1',
+      'FAVICON1',
+      'COLOR1',
+      'MODE1',
+      'ROWHIGHLIGHT1',
+      'SUCCESS1',
+      'WARNING1',
+      'DANGER1',
+      'INFO1',
+      'ROWS1',
+      'SUPPORT1'
+    ]
+    assert.equal(names.length, 16)
+    for (const code of expectedCodes) {
+      assert.ok(names.includes(code), `Missing preset code ${code}`)
+      assert.equal(findPresetByCode(code)?.name, code)
+    }
+
+    assert.equal(findPresetByCode('THEME_PRIMARY_COLOR')?.name, 'COLOR1')
+    assert.equal(findPresetByCode('APP_TITLE')?.name, 'TITLE1')
+    assert.equal(findPresetByCode('theme_row_highlight')?.name, 'ROWHIGHLIGHT1')
+    assert.equal(findPresetByCode('NON_EXISTENT_CODE'), null)
+  })
+
+  test('resolveAssetUrl handles relative paths, root paths, full URLs, and data URIs', () => {
+    assert.equal(resolveAssetUrl('logo.png', '/'), '/logo.png')
+    assert.equal(resolveAssetUrl('logo.png', '/admin/'), '/admin/logo.png')
+    assert.equal(resolveAssetUrl('/custom/logo.png', '/admin/'), '/custom/logo.png')
+    assert.equal(resolveAssetUrl('https://cdn.example.com/logo.png', '/'), 'https://cdn.example.com/logo.png')
+    assert.equal(resolveAssetUrl('data:image/png;base64,AAA', '/'), 'data:image/png;base64,AAA')
+    assert.equal(resolveAssetUrl('   ', '/'), '')
   })
 
   describe('ApplicationConfigurationService REST contract (mocked client)', () => {
@@ -138,6 +189,27 @@ describe('ApplicationConfiguration Service & Payload Normalization', () => {
 
       assert.equal(calls[4][0], 'delete')
       assert.equal(calls[4][1], '/ApplicationConfiguration/CODE%2F1')
+    })
+
+    test('seedDefaultConfigs skips existing canonical/alias keys and creates only missing presets', async () => {
+      const createdBodies = []
+      apiClient.get = async () => [
+        { id: 1, name: 'TITLE1', code: 'C001', value: 'Custom Title', isEnable: true },
+        { id: 2, name: 'THEME_PRIMARY_COLOR', code: 'C002', value: '#0284c7', isEnable: true }
+      ]
+      apiClient.post = async (_url, body) => {
+        createdBodies.push(body)
+        return { id: createdBodies.length + 2, ...body }
+      }
+
+      const result = await ApplicationConfigurationService.seedDefaultConfigs()
+      assert.equal(result.skipped.length, 2)
+      assert.ok(result.skipped.includes('TITLE1'))
+      assert.ok(result.skipped.includes('COLOR1'))
+      assert.equal(result.created.length, 14)
+      assert.equal(result.failed.length, 0)
+      assert.equal(createdBodies.some(b => b.name === 'BRAND1' && b.accountNo === 'BRAND1'), true)
+      assert.equal(createdBodies.some(b => b.name === 'TITLE1' || b.name === 'COLOR1'), false)
     })
   })
 })
@@ -239,6 +311,60 @@ describe('Theme Engine & Pinia AppConfig Store', () => {
     assert.equal(mutations[1][0], 'post')
     assert.equal(mutations[1][1].name, 'THEME_WARNING_COLOR')
   })
+
+  test('useAppConfigStore applies short Setting Codes (TITLE1, BRAND1, SUBTITLE1, LANDING1, FOOTER1, LOGO1, FAVICON1, COLOR1, ROWS1, SUPPORT1) and batch saveSiteSetup', async () => {
+    let rows = [
+      { id: 1, name: 'TITLE1', code: 'S01', value: 'FiberNet NOC', description: 'Page Title', isEnable: true },
+      { id: 2, name: 'BRAND1', code: 'S02', value: 'FiberNet PH', description: 'Brand', isEnable: true },
+      { id: 3, name: 'SUBTITLE1', code: 'S03', value: 'Core Optical Operations', description: 'Subtitle', isEnable: true },
+      { id: 4, name: 'LANDING1', code: 'S04', value: 'Live NOC Operations', description: 'Hero', isEnable: true },
+      { id: 5, name: 'FOOTER1', code: 'S05', value: 'FiberNet Corp', description: 'Footer', isEnable: true },
+      { id: 6, name: 'LOGO1', code: 'S06', value: 'custom/logo.svg', description: 'Logo', isEnable: true },
+      { id: 7, name: 'FAVICON1', code: 'S07', value: 'custom/fav.ico', description: 'Favicon', isEnable: true },
+      { id: 8, name: 'COLOR1', code: 'S08', value: '#10b981', description: 'Primary', isEnable: true },
+      { id: 9, name: 'ROWS1', code: 'S09', value: '25', description: 'Rows', isEnable: true },
+      { id: 10, name: 'SUPPORT1', code: 'S10', value: 'noc@fibernet.example', description: 'Email', isEnable: true }
+    ]
+    const calls = []
+    apiClient.get = async () => rows
+    apiClient.put = async (url, body, cfg) => {
+      calls.push(['put', url, cfg?.params?.code, body])
+      rows = rows.map(r => (r.code === cfg?.params?.code ? { ...r, ...body } : r))
+      return body
+    }
+    apiClient.post = async (_url, body) => {
+      calls.push(['post', body])
+      const created = { ...body, id: rows.length + 1, code: `S${rows.length + 1}` }
+      rows = [...rows, created]
+      return created
+    }
+
+    const store = useAppConfigStore()
+    await store.loadConfigs()
+
+    assert.equal(store.appTitle, 'FiberNet NOC')
+    assert.equal(store.brandName, 'FiberNet PH')
+    assert.equal(store.loginSubtitle, 'Core Optical Operations')
+    assert.equal(store.landingSubtitle, 'Live NOC Operations')
+    assert.equal(store.footerText, 'FiberNet Corp')
+    assert.equal(store.logoPath, 'custom/logo.svg')
+    assert.equal(store.logoUrl, '/custom/logo.svg')
+    assert.equal(store.faviconPath, 'custom/fav.ico')
+    assert.equal(store.defaultTableRows, 25)
+    assert.equal(store.supportEmail, 'noc@fibernet.example')
+    assert.equal(useTheme().activePrimaryHex.value, '#10b981')
+
+    const saved = await store.saveSiteSetup({
+      TITLE1: 'FiberNet V2',
+      BRAND1: 'FiberNet V2 Brand',
+      CUSTOM_DYNAMIC_KEY: 'Enabled'
+    })
+    assert.deepEqual(saved, ['TITLE1', 'BRAND1', 'CUSTOM_DYNAMIC_KEY'])
+    assert.equal(calls.filter(c => c[0] === 'put').length, 2)
+    assert.equal(calls.filter(c => c[0] === 'post').length, 1)
+    assert.equal(store.appTitle, 'FiberNet V2')
+    assert.equal(store.brandName, 'FiberNet V2 Brand')
+  })
 })
 
 describe('OpenAPI, Metadata Registries & UI Wiring', () => {
@@ -264,22 +390,31 @@ describe('OpenAPI, Metadata Registries & UI Wiring', () => {
     assert.ok(apiViewSrc.includes("endpoint: 'ApplicationConfiguration'"))
   })
 
-  test('App.vue, router, dashboards, and DynamicApiTable wire global settings and reactive theme', () => {
+  test('App.vue, router, dashboards, UI shells, and DynamicApiTable wire global settings and reactive theme', () => {
     assert.ok(appVueSrc.includes('useAppConfigStore') && appVueSrc.includes('loadConfigs()'))
     assert.ok(routerSrc.includes('useAppConfigStore') && routerSrc.includes('appConfigStore?.appTitle'))
     assert.ok(dashboardSrc.includes('activePrimaryHex') && dashboardSrc.includes('BRAND.value.base'))
     assert.ok(accountingDashboardSrc.includes('activePrimaryHex') && accountingDashboardSrc.includes('brandRamp.value'))
     assert.ok(dynamicTableSrc.includes('activePalette') && dynamicTableSrc.includes('activePalette.value'))
+    assert.ok(dynamicTableSrc.includes('appConfigStore.defaultTableRows'))
+    assert.ok(sidebarSrc.includes('appConfigStore.logoUrl') && sidebarSrc.includes('appConfigStore.brandName'))
+    assert.ok(navbarSrc.includes('appConfigStore.brandName'))
+    assert.ok(loginSrc.includes('appConfigStore.logoUrl') && loginSrc.includes('appConfigStore.loginSubtitle') && loginSrc.includes('appConfigStore.footerText'))
+    assert.ok(authLayoutSrc.includes('appConfigStore.logoUrl') && authLayoutSrc.includes('appConfigStore.brandName'))
+    assert.ok(landingSrc.includes('appConfigStore.landingSubtitle'))
   })
 
-  test('Settings.vue includes Theme Customizer, Application Configuration CRUD, and read-only audit details', () => {
+  test('Settings.vue includes Theme Customizer, Dynamic Website Setup, Seed Defaults, Application Configuration CRUD, and read-only audit details', () => {
     assert.ok(settingsSrc.includes("activeSection === 'app-config'"))
     assert.ok(settingsSrc.includes('sfa-tracker-settings-theme-customizer'))
+    assert.ok(settingsSrc.includes('sfa-tracker-settings-site-setup'))
+    assert.ok(settingsSrc.includes('sfa-tracker-settings-seed-defaults'))
     assert.ok(settingsSrc.includes('sfa-tracker-settings-panel-app-config'))
     assert.ok(settingsSrc.includes('sfa-tracker-app-config-dialog'))
     assert.ok(settingsSrc.includes('sfa-tracker-app-config-view-dialog'))
     assert.ok(settingsSrc.includes('sfa-tracker-app-config-delete-dialog'))
     assert.ok(settingsSrc.includes('System Audit &amp; Timestamp Details'))
     assert.ok(settingsSrc.includes('Save to Application Configuration'))
+    assert.ok(settingsSrc.includes("upsertSetting('COLOR1'"))
   })
 })

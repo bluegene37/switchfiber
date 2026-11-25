@@ -1,11 +1,19 @@
 <template>
   <div class="card shadow-lg border-0 rounded-4 p-4 p-sm-5 bg-body sfa-tracker-login-card" style="width: 100%; max-width: 420px;">
     <div class="text-center mb-4">
+      <!--
       <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 shadow-sm p-2" style="width: 64px; height: 64px;">
         <img src="/logo.png" alt="Switch Fiber Logo" style="width: 40px; height: 40px; object-fit: contain;" />
       </div>
       <h2 class="fw-bolder text-body mb-1">Switch Fiber</h2>
       <p class="small text-secondary fw-medium">Distributed Fiber Network Management</p>
+      -->
+      <!-- Gene - Nov, 26, 2026: Dynamic logo, brand name, and subtitle from ApplicationConfiguration -->
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 shadow-sm p-2" style="width: 64px; height: 64px;">
+        <img :src="appConfigStore.logoUrl" :alt="`${appConfigStore.brandName} Logo`" style="width: 40px; height: 40px; object-fit: contain;" />
+      </div>
+      <h2 class="fw-bolder text-body mb-1">{{ appConfigStore.brandName }}</h2>
+      <p class="small text-secondary fw-medium">{{ appConfigStore.loginSubtitle }}</p>
     </div>
 
     <!-- Backend Unavailable Banner: the API host answered with a 5xx / IIS
@@ -101,7 +109,9 @@
     </form>
     
     <div class="mt-4 text-center small text-muted">
-      <p class="mb-0" style="font-size: 0.75rem;">Switch Fiber Network Operations &copy; 2026</p>
+      <!-- <p class="mb-0" style="font-size: 0.75rem;">Switch Fiber Network Operations &copy; 2026</p> -->
+      <!-- Gene - Nov, 26, 2026: Dynamic footer text from ApplicationConfiguration -->
+      <p class="mb-0" style="font-size: 0.75rem;">{{ appConfigStore.footerText }} &copy; 2026</p>
     </div>
   </div>
 </template>
@@ -110,6 +120,10 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+// Gene - Nov, 26, 2026: Read dynamic logo, brand name, subtitle, and footer from ApplicationConfiguration store
+import { useAppConfigStore } from '../stores/appConfig'
+
+const appConfigStore = useAppConfigStore()
 import { ensurePermissionsLoaded, canAccess, isApiDown } from '../composables/usePermissions'
 import apiClient from '../services/api'
 import InputText from 'primevue/inputtext'

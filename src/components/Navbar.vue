@@ -179,7 +179,9 @@
                   <span>&nbsp;Close</span>
                 </span>
               </div>
-              <span class="fw-semibold text-uppercase opacity-75" style="font-size: 0.65rem; letter-spacing: 0.5px;">SwitchFiber Omnibox</span>
+              <!-- <span class="fw-semibold text-uppercase opacity-75" style="font-size: 0.65rem; letter-spacing: 0.5px;">SwitchFiber Omnibox</span> -->
+              <!-- Gene - Nov, 26, 2026: Dynamic portal name in Omnibox footer -->
+              <span class="fw-semibold text-uppercase opacity-75" style="font-size: 0.65rem; letter-spacing: 0.5px;">{{ appConfigStore.brandName }} Omnibox</span>
             </div>
           </div>
         </Transition>
@@ -371,6 +373,10 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+// Gene - Nov, 26, 2026: Load dynamic branding from ApplicationConfiguration store
+import { useAppConfigStore } from '../stores/appConfig'
+
+const appConfigStore = useAppConfigStore()
 import { useTheme } from '../composables/useTheme'
 import { useSearch } from '../composables/useSearch'
 import { usePermissions } from '../composables/usePermissions'

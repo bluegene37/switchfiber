@@ -262,6 +262,19 @@
           <span class="d-none d-sm-inline">Seed Payment Types</span>
           <span class="d-sm-none">Seed</span>
         </Button>
+        <!-- Gene - Nov, 26, 2026: Seed all standard statuses & form dropdown values into /api/Status -->
+        <Button
+          v-if="isStatusEndpoint"
+          class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-seed-statuses-btn"
+          :class="{ 'ms-auto': !showTopCreateButton }"
+          :loading="isSeedingStatuses"
+          @click="seedStatusesViaApi"
+          v-tooltip.top="'Seed all status & dropdown options into /api/Status'"
+        >
+          <i class="pi pi-database"></i>
+          <span class="d-none d-sm-inline">Seed All Statuses</span>
+          <span class="d-sm-none">Seed</span>
+        </Button>
         <Button 
           v-if="showTopCreateButton" 
           class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-2 fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-table-topbar-create-btn" 
@@ -517,6 +530,18 @@
               <span class="d-none d-sm-inline">Seed Payment Types</span>
               <span class="d-sm-none">Seed</span>
             </Button>
+            <!-- Gene - Nov, 26, 2026: Seed all standard statuses & form dropdown values into /api/Status -->
+            <Button
+              v-if="isStatusEndpoint"
+              class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 ms-1 sfa-tracker-seed-statuses-btn"
+              :loading="isSeedingStatuses"
+              @click="seedStatusesViaApi"
+              v-tooltip.top="'Seed all status & dropdown options into /api/Status'"
+            >
+              <i class="pi pi-database"></i>
+              <span class="d-none d-sm-inline">Seed All Statuses</span>
+              <span class="d-sm-none">Seed</span>
+            </Button>
             <!-- Primary Action: Create Button -->
             <Button 
               v-if="showToolbarCreateButton" 
@@ -620,7 +645,9 @@
               @click.stop="openQuickStatusPopover($event, slotProps.data, col)"
             >
               <i v-if="isQuickStatusRowSaving(slotProps.data)" class="pi pi-spin pi-spinner me-1" style="font-size: 0.7rem;" aria-hidden="true"></i>
-              <span>{{ getStatusBadgeConfig(slotProps.data[col]).label }}</span>
+              <!-- <span>{{ getStatusBadgeConfig(slotProps.data[col]).label }}</span> -->
+              <!-- Gene - Nov, 26, 2026: Display Status description label (e.g. 'inprogress' -> 'In Progress') -->
+              <span>{{ getStatusDisplayLabel(slotProps.data[col], col) }}</span>
               <i v-if="!isQuickStatusRowSaving(slotProps.data)" class="pi pi-chevron-down sfa-status-quick-caret" aria-hidden="true"></i>
             </button>
             <span 
@@ -628,7 +655,8 @@
               class="badge rounded-pill sfa-status-badge border"
               :class="getStatusBadgeConfig(slotProps.data[col]).class"
             >
-              {{ getStatusBadgeConfig(slotProps.data[col]).label }}
+              <!-- {{ getStatusBadgeConfig(slotProps.data[col]).label }} -->
+              {{ getStatusDisplayLabel(slotProps.data[col], col) }}
             </span>
             <span v-else class="text-muted">-</span>
           </div>
@@ -1641,11 +1669,19 @@
               />
 
               <!-- Gene - Oct, 16, 2026: Promotion Placement MultiSelect in Create Modal -->
+              <!--
               <MultiSelect
                 v-else-if="getFieldType(col) === 'promotion_placement_multiselect'"
                 :id="col"
                 v-model="formData[col]"
                 :options="promotionPlacementOptions"
+              -->
+              <!-- Gene - Nov, 26, 2026: Source Promotion selects dynamically from /api/Status with static fallback -->
+              <MultiSelect
+                v-else-if="getFieldType(col) === 'promotion_placement_multiselect'"
+                :id="col"
+                v-model="formData[col]"
+                :options="promotionPlacementSelectOptions"
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Select Placement Surfaces"
@@ -1658,7 +1694,7 @@
                 v-else-if="getFieldType(col) === 'promotion_imagesize_select'"
                 :id="col"
                 v-model="formData[col]"
-                :options="promotionImageSizeOptions"
+                :options="promotionImageSizeSelectOptions"
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Select Image Size"
@@ -1670,7 +1706,7 @@
                 v-else-if="getFieldType(col) === 'promotion_themecolor_select'"
                 :id="col"
                 v-model="formData[col]"
-                :options="promotionThemeColorOptions"
+                :options="promotionThemeColorSelectOptions"
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
@@ -3799,7 +3835,9 @@
                   class="badge rounded-pill sfa-status-badge border"
                   :class="getStatusBadgeConfig(viewFormData[col]).class"
                 >
-                  {{ getStatusBadgeConfig(viewFormData[col]).label }}
+                  <!-- {{ getStatusBadgeConfig(viewFormData[col]).label }} -->
+                  <!-- Gene - Nov, 26, 2026: Display Status description label in View Details modal -->
+                  {{ getStatusDisplayLabel(viewFormData[col], col) }}
                 </span>
                 <span v-else class="text-muted">-</span>
               </div>
@@ -4418,7 +4456,7 @@
                 v-else-if="getFieldType(col) === 'promotion_placement_multiselect'"
                 :id="`edit-${col}`"
                 v-model="editFormData[col]"
-                :options="promotionPlacementOptions"
+                :options="promotionPlacementSelectOptions"
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Select Placement Surfaces"
@@ -4432,7 +4470,7 @@
                 v-else-if="getFieldType(col) === 'promotion_imagesize_select'"
                 :id="`edit-${col}`"
                 v-model="editFormData[col]"
-                :options="promotionImageSizeOptions"
+                :options="promotionImageSizeSelectOptions"
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Select Image Size"
@@ -4445,7 +4483,7 @@
                 v-else-if="getFieldType(col) === 'promotion_themecolor_select'"
                 :id="`edit-${col}`"
                 v-model="editFormData[col]"
-                :options="promotionThemeColorOptions"
+                :options="promotionThemeColorSelectOptions"
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
@@ -6475,7 +6513,9 @@
               class="badge rounded-pill sfa-status-badge border"
               :class="getStatusBadgeConfig(opt.value).class"
             >
-              {{ getStatusBadgeConfig(opt.value).label }}
+              <!-- {{ getStatusBadgeConfig(opt.value).label }} -->
+              <!-- Gene - Nov, 26, 2026: Show Status description label in Quick Status Popover -->
+              {{ opt.label || getStatusDisplayLabel(opt.value, 'status') }}
             </span>
             <i
               v-if="isQuickStatusOptionSelected(opt.value)"
@@ -6523,8 +6563,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { CrudService } from '../services/crud'
 import { RadiusUserService } from '../services/radiusUsers'
 import { normalizeServiceOrder } from '../services/serviceOrders'
+/*
 // Gene - Nov, 25, 2026: Import Status catalog, payload normalizer, and dropdown grouping helpers
 import { STATUS_TYPES, normalizeStatusPayload, groupStatusesByType } from '../services/status'
+*/
+// Gene - Nov, 26, 2026: Import expanded Status catalog, token normalizer, and label resolver
+import {
+  STATUS_TYPES,
+  normalizeStatusPayload,
+  normalizeStatusToken,
+  groupStatusesByType,
+  resolveStatusLabel
+} from '../services/status'
 // Gene - Nov, 25, 2026: Import RadiusUser flattening normalizer, concise columns, and View modal layout
 import {
   normalizeRadiusUserRow,
@@ -6640,6 +6690,10 @@ import { EndpointColumns } from '../models/columns'
 import { resolveRequiredFields, resolveEitherOrGroups } from '../models/requiredFields'
 import { useAuthStore } from '../stores/auth'
 import { useUserStore } from '../stores/users'
+// Gene - Nov, 26, 2026: Use configured default table page size from ApplicationConfiguration (ROWS1)
+import { useAppConfigStore } from '../stores/appConfig'
+// Gene - Nov, 26, 2026: Import shared Status Pinia store for centralized dropdowns
+import { useStatusStore } from '../stores/statuses'
 import { useTheme } from '../composables/useTheme'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, startOfDay, endOfDay } from '../utils/dateRangePresets'
 import { filterFormSections } from '../utils/formFieldSearch'
@@ -6650,6 +6704,8 @@ import * as XLSX from 'xlsx'
 const toast = useToast()
 const authStore = useAuthStore()
 const userStore = useUserStore()
+const appConfigStore = useAppConfigStore()
+const statusStore = useStatusStore()
 /*
 const { activeColorTheme, THEME_PALETTES } = useTheme()
 */
@@ -8405,7 +8461,8 @@ const parsePlacementArray = (val) => {
 }
 
 const getPlacementLabel = (val) => {
-  const found = promotionPlacementOptions.find(o => o.value === val)
+  const active = promotionPlacementSelectOptions.value
+  const found = active.find(o => o.value === val) || promotionPlacementOptions.find(o => o.value === val)
   return found ? found.label.split(' (')[0] : val
 }
 
@@ -8417,7 +8474,8 @@ const promotionImageSizeOptions = [
 ]
 
 const getImageSizeLabel = (val) => {
-  const found = promotionImageSizeOptions.find(o => o.value === val)
+  const active = promotionImageSizeSelectOptions.value
+  const found = active.find(o => o.value === val) || promotionImageSizeOptions.find(o => o.value === val)
   return found ? found.label : (val || '-')
 }
 
@@ -8437,13 +8495,28 @@ const promotionThemeColorOptions = [
   { label: 'Slate (Slate Neutral - Modern Minimal)', value: 'slate', hex: '#475569' }
 ]
 
+// Gene - Nov, 26, 2026: Overlay Promotions select options from /api/Status while preserving hex swatches & defaults
+const promotionPlacementSelectOptions = computed(() =>
+  statusStore.getOptions('PROMO_PLACEMENT', promotionPlacementOptions)
+)
+const promotionImageSizeSelectOptions = computed(() =>
+  statusStore.getOptions('PROMO_IMAGE_SIZE', promotionImageSizeOptions)
+)
+const promotionThemeColorSelectOptions = computed(() =>
+  statusStore.getOptions('PROMO_THEME_COLOR', promotionThemeColorOptions).map(opt => ({
+    ...opt,
+    hex: opt.hex || getThemeColorHex(opt.value)
+  }))
+)
+
 const getThemeColorHex = (val) => {
   const found = promotionThemeColorOptions.find(o => o.value === val || o.label === val)
   return found ? found.hex : (val || '#ee2824')
 }
 
 const getThemeColorLabel = (val) => {
-  const found = promotionThemeColorOptions.find(o => o.value === val)
+  const active = promotionThemeColorSelectOptions.value
+  const found = active.find(o => o.value === val) || promotionThemeColorOptions.find(o => o.value === val)
   return found ? found.label : (val || '-')
 }
 
@@ -9711,8 +9784,25 @@ const firstRowIndex = ref(0)
 // AccessLevelManagement renders two of these tables on one page.
 const tableId = useId()
 
+/*
 const rowsPerPage = ref(50)
+*/
+// Gene - Nov, 26, 2026: Initialize and sync default rowsPerPage from ApplicationConfiguration (ROWS1)
+const rowsPerPage = ref(appConfigStore.defaultTableRows || 50)
 const rowOptions = ref([5, 10, 20, 50, 100])
+watch(
+  () => appConfigStore.defaultTableRows,
+  (nextRows, prevRows) => {
+    if (!nextRows || nextRows <= 0) return
+    if (rowsPerPage.value === (prevRows || 50) || rowsPerPage.value === 50) {
+      rowsPerPage.value = nextRows
+    }
+    if (!rowOptions.value.includes(nextRows)) {
+      rowOptions.value = [...rowOptions.value, nextRows].sort((a, b) => a - b)
+    }
+  },
+  { immediate: true }
+)
 
 const route = useRoute()
 // Gene - Nov, 16, 2026: Router instance for navigating from Applications rows to linked Job Orders
@@ -13696,6 +13786,7 @@ const statusOptions = computed(() => {
   const apiStatusMap = typeof statusLookupByType !== 'undefined' && statusLookupByType?.value
     ? statusLookupByType.value
     : {}
+  /*
   const overlayApiStatusOptions = (fallbackItems, typeCode, { preserveFallbackOnly = false } = {}) => {
     const apiList = Array.isArray(apiStatusMap[typeCode]) ? apiStatusMap[typeCode] : []
     if (apiList.length === 0) return fallbackItems
@@ -13717,6 +13808,43 @@ const statusOptions = computed(() => {
       const k = val.toLowerCase()
       if (!val || seen.has(k)) return
       seen.add(k)
+      merged.push({ label: String(item?.label || val).trim(), value: val })
+    })
+    return merged
+  }
+  */
+  // Gene - Nov, 26, 2026: Deduplicate by compact token too so Status code 'inprogress' replaces legacy 'Inprogress'/'In Progress' cleanly
+  const overlayApiStatusOptions = (fallbackItems, typeCode, { preserveFallbackOnly = false } = {}) => {
+    const apiList = Array.isArray(apiStatusMap[typeCode]) ? apiStatusMap[typeCode] : []
+    if (apiList.length === 0) return fallbackItems
+    const apiByLower = new Map()
+    const apiByToken = new Map()
+    apiList.forEach(item => {
+      const val = String(item?.value || '').trim()
+      if (!val) return
+      const lower = val.toLowerCase()
+      const token = normalizeStatusToken(val)
+      if (!apiByLower.has(lower)) apiByLower.set(lower, item)
+      if (token && !apiByToken.has(token)) apiByToken.set(token, item)
+    })
+    if (preserveFallbackOnly) {
+      return fallbackItems.map(opt => {
+        const val = String(opt?.value || '').trim()
+        const lower = val.toLowerCase()
+        const token = normalizeStatusToken(val)
+        return apiByLower.get(lower) || (token ? apiByToken.get(token) : null) || opt
+      })
+    }
+    const merged = []
+    const seenLower = new Set()
+    const seenTokens = new Set()
+    ;[...apiList, ...fallbackItems].forEach(item => {
+      const val = String(item?.value || '').trim()
+      const lower = val.toLowerCase()
+      const token = normalizeStatusToken(val)
+      if (!val || seenLower.has(lower) || (token && seenTokens.has(token))) return
+      seenLower.add(lower)
+      if (token) seenTokens.add(token)
       merged.push({ label: String(item?.label || val).trim(), value: val })
     })
     return merged
@@ -14415,6 +14543,7 @@ const fetchPaymentTypesLookup = (force = false) => {
   return paymentTypesPromise
 }
 
+/*
 // Gene - Nov, 25, 2026: Centralized /api/Status lookup shared across status dropdowns (name = code/value, description = label, type = target module)
 let statusesLookupPromise = null
 
@@ -14443,6 +14572,52 @@ const fetchStatusesLookup = (force = false) => {
       statusesLookupPromise = null
     })
   return statusesLookupPromise
+}
+*/
+// Gene - Nov, 26, 2026: Hydrate all 18 form dropdown option lists from the centralized Status Pinia store (/api/Status)
+const syncDropdownOptionsFromStatuses = (grouped = {}) => {
+  if (!grouped || typeof grouped !== 'object' || Object.keys(grouped).length === 0) return
+  statusLookupByType.value = grouped
+  if (grouped.JO_ONSITE?.length) onsiteStatusOptions.value = grouped.JO_ONSITE
+  if (grouped.BILLING?.length) billingStatusOptions.value = grouped.BILLING
+  if (grouped.DELIVERY?.length) deliveryStatusOptions.value = grouped.DELIVERY
+  if (grouped.INVOICE?.length) invoiceStatusOptions.value = grouped.INVOICE
+  if (grouped.SO_SUPPORT?.length) supportStatusOptions.value = grouped.SO_SUPPORT
+  if (grouped.SO_VISIT?.length) visitStatusOptions.value = grouped.SO_VISIT
+  if (grouped.DISCOUNT?.length) discountStatusOptions.value = grouped.DISCOUNT
+  if (grouped.RENTER?.length) renterOptions.value = grouped.RENTER
+  if (grouped.APPLYING_FOR?.length) applyingForOptions.value = grouped.APPLYING_FOR
+  if (grouped.CONTRACT_TEMPLATE?.length) contractTemplateOptions.value = grouped.CONTRACT_TEMPLATE
+  if (grouped.USAGE_TYPE?.length) usageTypeOptions.value = grouped.USAGE_TYPE
+  if (grouped.PRIORITY?.length) priorityOptions.value = grouped.PRIORITY
+  if (grouped.REPAIR_CATEGORY?.length) repairCategoryOptions.value = grouped.REPAIR_CATEGORY
+  if (grouped.CONCERN?.length) concernOptions.value = grouped.CONCERN
+  if (grouped.CONNECTION_TYPE?.length) connectionTypeOptions.value = grouped.CONNECTION_TYPE
+}
+
+watch(
+  () => statusStore.groupedByType,
+  (nextGrouped) => {
+    if (nextGrouped && Object.keys(nextGrouped).length > 0) {
+      syncDropdownOptionsFromStatuses(nextGrouped)
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+const fetchStatusesLookup = async (force = false) => {
+  try {
+    const grouped = await statusStore.loadStatuses({ force })
+    if (grouped && Object.keys(grouped).length > 0) {
+      syncDropdownOptionsFromStatuses(grouped)
+    } else if (force) {
+      statusLookupByType.value = {}
+    }
+    return statusLookupByType.value
+  } catch (err) {
+    console.warn('[DynamicApiTable] Failed to fetch Status lookup:', err)
+    return statusLookupByType.value
+  }
 }
 
 // AccessLevel and Users resolve labels rendered in the TABLE body — the
@@ -16283,6 +16458,30 @@ const getStatusBadgeConfig = (val) => {
   return { class: 'bg-info bg-opacity-10 text-info border-info border-opacity-25', label: str }
 }
 
+// Gene - Nov, 26, 2026: Resolve Status description label for badge rendering (e.g. 'inprogress' -> 'In Progress')
+const resolveActiveStatusTypeCode = (col = '') => {
+  const lower = String(col || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+  if (lower === 'onsitestatus') return 'JO_ONSITE'
+  if (lower === 'billingstatus') return 'BILLING'
+  if (lower === 'deliverystatus') return 'DELIVERY'
+  if (lower === 'invoicestatus') return 'INVOICE'
+  if (lower === 'supportstatus') return 'SO_SUPPORT'
+  if (lower === 'visitstatus') return 'SO_VISIT'
+  if (lower === 'discountstatus') return 'DISCOUNT'
+  if (typeof isApplicationEndpoint !== 'undefined' && isApplicationEndpoint.value) return 'APPLICATION'
+  if (typeof isJobOrderEndpoint !== 'undefined' && isJobOrderEndpoint.value) return 'JOB_ORDER'
+  if (typeof isBillingEndpoint !== 'undefined' && isBillingEndpoint.value) return 'BILLING'
+  if (typeof isPaymentEndpoint !== 'undefined' && isPaymentEndpoint.value) return 'PAYMENT'
+  if (typeof isInventoryLogEndpoint !== 'undefined' && isInventoryLogEndpoint.value) return 'INVENTORY_LOG'
+  return ''
+}
+
+const getStatusDisplayLabel = (val, col = '') => {
+  if (val === null || val === undefined || val === '') return '-'
+  const typeCode = resolveActiveStatusTypeCode(col)
+  return resolveStatusLabel(statusLookupByType.value, typeCode, val)
+}
+
 const isUserRefField = (col) => {
   if (!col) return false
   const lower = col.toLowerCase().replace(/_/g, '')
@@ -16677,14 +16876,36 @@ const formatDisplayValue = (val, col) => {
   else if (type === 'paymentmethod_dropdown') targetList = paymentMethodOptions.value
   // Gene - Nov 7, 2026: Resolve paymenttype_dropdown display value against paymentTypeOptions (/api/PaymentTypes)
   else if (type === 'paymenttype_dropdown') targetList = paymentTypeOptions.value
+  // Gene - Nov, 26, 2026: Resolve human-readable labels for all Status-backed form dropdowns
+  else if (type === 'status_dropdown') targetList = statusOptions.value
+  else if (type === 'onsitestatus_dropdown') targetList = onsiteStatusOptions.value
+  else if (type === 'billingstatus_dropdown') targetList = billingStatusOptions.value
+  else if (type === 'deliverystatus_dropdown') targetList = deliveryStatusOptions.value
+  else if (type === 'invoicestatus_dropdown') targetList = invoiceStatusOptions.value
+  else if (type === 'supportstatus_dropdown') targetList = supportStatusOptions.value
+  else if (type === 'visitstatus_dropdown') targetList = visitStatusOptions.value
+  else if (type === 'discountstatus_dropdown') targetList = discountStatusOptions.value
+  else if (type === 'renter_dropdown') targetList = renterOptions.value
+  else if (type === 'applyingfor_dropdown') targetList = applyingForOptions.value
+  else if (type === 'contracttemplate_dropdown') targetList = contractTemplateOptions.value
+  else if (type === 'usagetype_dropdown') targetList = usageTypeOptions.value
+  else if (type === 'priority_dropdown') targetList = priorityOptions.value
+  else if (type === 'repaircategory_dropdown') targetList = repairCategoryOptions.value
+  else if (type === 'concern_dropdown') targetList = concernOptions.value
+  else if (type === 'connectiontype_dropdown') targetList = connectionTypeOptions.value
+  else if (type === 'status_type_dropdown') targetList = statusTypeOptions.value
+  else if (type === 'promotion_imagesize_select') targetList = promotionImageSizeSelectOptions.value
+  else if (type === 'promotion_themecolor_select') targetList = promotionThemeColorSelectOptions.value
 
   if (targetList && targetList.length > 0) {
+    const valToken = normalizeStatusToken(val)
     const found = targetList.find(opt => 
       opt.value === val || 
       opt.id === val || 
       opt.id === Number(val) ||
       opt.value === Number(val) ||
       String(opt.value).toLowerCase() === String(val).toLowerCase() ||
+      (valToken && normalizeStatusToken(opt.value) === valToken) ||
       (opt.name && String(opt.name).toLowerCase() === String(val).toLowerCase())
     )
     // Discount types are stored by id but read as a name, and the grid/view field
@@ -21794,6 +22015,54 @@ const seedPaymentTypesViaApi = async () => {
     })
   } finally {
     isSeedingPaymentTypes.value = false
+  }
+}
+
+// Gene - Nov, 26, 2026: Seed all standard application statuses and dropdown values into /api/Status
+const isSeedingStatuses = ref(false)
+
+const seedStatusesViaApi = async () => {
+  if (isSeedingStatuses.value) return
+  isSeedingStatuses.value = true
+  try {
+    const userId = String(authStore.user?.id || '1')
+    const { created, skipped, failed } = await statusStore.seedDefaults(userId)
+    await fetchData()
+    await fetchStatusesLookup(true)
+
+    if (failed.length > 0 && created.length === 0) {
+      const sampleErr = failed[0]?.error || (failed[0]?.status ? `HTTP ${failed[0].status}` : 'Backend API error')
+      toast.add({
+        severity: 'error',
+        summary: 'Status Seeding Failed',
+        detail: `Could not create statuses (${sampleErr}). Skipped ${skipped.length} existing.`,
+        life: 5500
+      })
+    } else if (created.length === 0) {
+      toast.add({
+        severity: 'info',
+        summary: 'Statuses Up to Date',
+        detail: `All ${skipped.length} standard Status & dropdown records are already seeded.`,
+        life: 4000
+      })
+    } else {
+      toast.add({
+        severity: failed.length > 0 ? 'warn' : 'success',
+        summary: 'Statuses Seeded',
+        detail: `Created ${created.length} status option(s); skipped ${skipped.length}${failed.length ? `; ${failed.length} failed` : ''}.`,
+        life: 4500
+      })
+    }
+  } catch (err) {
+    console.error('Error seeding statuses via API:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Seed Failed',
+      detail: err?.message || 'Failed to seed statuses via /api/Status.',
+      life: 5000
+    })
+  } finally {
+    isSeedingStatuses.value = false
   }
 }
 

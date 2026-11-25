@@ -20,8 +20,14 @@
           <h1 class="fs-2 fw-bolder text-body mb-2 tracking-tight">
             Welcome back, {{ userDisplayName }}
           </h1>
+          <!--
           <p class="text-secondary mb-3 fs-6 lead" style="max-width: 650px;">
             SwitchFiber Network Operations Hub. Real-time operations calendar, live field weather, and network telemetry.
+          </p>
+          -->
+          <!-- Gene - Nov, 26, 2026: Dynamic landing hero subtitle from ApplicationConfiguration -->
+          <p class="text-secondary mb-3 fs-6 lead" style="max-width: 650px;">
+            {{ appConfigStore.landingSubtitle }}
           </p>
 
           <div class="d-flex align-items-center gap-3 flex-wrap text-secondary small">
@@ -879,11 +885,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+// Gene - Nov, 26, 2026: Load dynamic landing copy from ApplicationConfiguration store
+import { useAppConfigStore } from '../stores/appConfig'
 import { usePermissions } from '../composables/usePermissions'
 // Gene - Oct 13, 2026: Import getAccessLevelDisplayName to display user role with shortCode
 import { getAccessLevelDisplayName } from '../constants/accessLevelCatalog'
 
 const authStore = useAuthStore()
+const appConfigStore = useAppConfigStore()
 const { canAccess } = usePermissions()
 
 // Real User Identity

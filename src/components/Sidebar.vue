@@ -19,9 +19,16 @@
         class="d-flex align-items-center gap-2.5 overflow-hidden text-decoration-none" 
         :class="{ 'justify-content-center w-100 px-0': isCollapsed }"
       >
+        <!--
         <img src="/logo.png" alt="Switch Fiber Logo" class="flex-shrink-0" style="width: 45px; height: 45px; object-fit: contain;" />
         <div v-if="!isCollapsed" class="d-flex align-items-center gap-2 overflow-hidden">
           <span class="text-body fs-5 fw-bold tracking-wide text-nowrap">Switch Fiber</span>
+        </div>
+        -->
+        <!-- Gene - Nov, 26, 2026: Render dynamic logo and brand name from ApplicationConfiguration store -->
+        <img :src="appConfigStore.logoUrl" :alt="`${appConfigStore.brandName} Logo`" class="flex-shrink-0" style="width: 45px; height: 45px; object-fit: contain;" />
+        <div v-if="!isCollapsed" class="d-flex align-items-center gap-2 overflow-hidden">
+          <span class="text-body fs-5 fw-bold tracking-wide text-nowrap">{{ appConfigStore.brandName }}</span>
         </div>
       </router-link>
       <button 
@@ -204,7 +211,9 @@
 
       <!-- Subtle Trademark -->
       <div v-if="!isCollapsed" class="text-center pt-2 pb-1 text-muted user-select-none" style="font-size: 0.68rem; opacity: 0.75;">
-        <span>SwitchFiber &bull; Crafted by <strong class="fw-semibold text-body-secondary">HarmonyITC</strong></span>
+        <!-- <span>SwitchFiber &bull; Crafted by <strong class="fw-semibold text-body-secondary">HarmonyITC</strong></span> -->
+        <!-- Gene - Nov, 26, 2026: Use dynamic brand name from ApplicationConfiguration -->
+        <span>{{ appConfigStore.brandName }} &bull; Crafted by <strong class="fw-semibold text-body-secondary">HarmonyITC</strong></span>
       </div>
     </div>
   </aside>
@@ -222,6 +231,10 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+// Gene - Nov, 26, 2026: Load dynamic branding/logo settings from ApplicationConfiguration store
+import { useAppConfigStore } from '../stores/appConfig'
+
+const appConfigStore = useAppConfigStore()
 import { usePermissions } from '../composables/usePermissions'
 import { MENU_CATALOG } from '../constants/menuCatalog'
 import apiClient from '../services/api'

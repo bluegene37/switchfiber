@@ -32,6 +32,7 @@ import AppLayout from './layouts/AppLayout.vue'
 const route = useRoute()
 const fatalError = ref(null)
 */
+/*
 // Gene - Nov, 25, 2026: Load centralized ApplicationConfiguration settings on app startup
 import { computed, ref, onErrorCaptured, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -45,6 +46,24 @@ const appConfigStore = useAppConfigStore()
 
 onMounted(() => {
   appConfigStore.loadConfigs()
+})
+*/
+// Gene - Nov, 26, 2026: Preload ApplicationConfiguration and centralized Status dropdown catalog on startup
+import { computed, ref, onErrorCaptured, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import AuthLayout from './layouts/AuthLayout.vue'
+import AppLayout from './layouts/AppLayout.vue'
+import { useAppConfigStore } from './stores/appConfig'
+import { useStatusStore } from './stores/statuses'
+
+const route = useRoute()
+const fatalError = ref(null)
+const appConfigStore = useAppConfigStore()
+const statusStore = useStatusStore()
+
+onMounted(() => {
+  appConfigStore.loadConfigs()
+  statusStore.loadStatuses()
 })
 
 // Determine layout based on route path metadata

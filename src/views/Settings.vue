@@ -114,7 +114,9 @@
               <span class="position-absolute bottom-0 end-0 p-2 bg-success border border-light rounded-circle" title="Online"></span>
             </div>
             <h5 class="fw-bold text-body mb-1">{{ userDisplayName }}</h5>
-            <p class="small text-secondary mb-3">{{ user?.email || 'admin@switchfiber.com' }}</p>
+            <!-- <p class="small text-secondary mb-3">{{ user?.email || 'admin@switchfiber.com' }}</p> -->
+            <!-- Gene - Nov, 26, 2026: Fall back to configured support email from ApplicationConfiguration (SUPPORT1) -->
+            <p class="small text-secondary mb-3">{{ user?.email || appConfigStore.supportEmail }}</p>
             <div class="d-inline-flex align-items-center px-3 py-1.5 bg-primary bg-opacity-10 text-primary rounded-pill small fw-semibold mx-auto">
               <i class="pi pi-shield me-2"></i>
               <span>{{ userRole }}</span>
@@ -793,7 +795,17 @@
                 </p>
               </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <!-- Gene - Nov, 26, 2026: One-click Seed Default Setup button for missing canonical Setting Codes -->
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-sm rounded-3 px-3 d-inline-flex align-items-center gap-1.5 sfa-tracker-settings-seed-defaults"
+                @click="handleSeedDefaultConfigs"
+                :disabled="isSeedingDefaults || isSavingAppConfig || isApiDown"
+              >
+                <i class="pi" :class="isSeedingDefaults ? 'pi-spin pi-spinner' : 'pi-sparkles'"></i>
+                <span>{{ isSeedingDefaults ? 'Seeding…' : 'Seed Default Setup' }}</span>
+              </button>
               <button
                 type="button"
                 class="btn btn-outline-secondary btn-sm rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
@@ -819,6 +831,100 @@
           <div v-if="isApiDown" class="alert alert-warning d-flex align-items-center gap-2 rounded-3 p-3 mb-3 small">
             <i class="pi pi-exclamation-triangle fs-5 flex-shrink-0"></i>
             <div>Backend API is currently offline. Connect to the server to view or modify Application Configuration records.</div>
+          </div>
+
+          <!-- Gene - Nov, 26, 2026: Dynamic Website Setup quick editor backed by short Setting Codes (TITLE1, BRAND1, etc.) -->
+          <div class="p-3 p-md-4 rounded-4 border bg-body-tertiary mb-4 sfa-tracker-settings-site-setup">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
+              <div>
+                <h6 class="fw-bold text-body mb-0 d-flex align-items-center gap-2">
+                  <i class="pi pi-globe text-primary"></i>
+                  <span>Dynamic Website Setup</span>
+                </h6>
+                <p class="small text-secondary mb-0">
+                  Customize live branding, titles, logos, and defaults stored as Setting Codes (<code>TITLE1</code>, <code>BRAND1</code>, <code>ROWS1</code>, etc.).
+                </p>
+              </div>
+              <Button
+                label="Save Website Setup"
+                icon="pi pi-save"
+                size="small"
+                :loading="isSavingSiteSetup || isSavingAppConfig"
+                :disabled="isApiDown"
+                @click="handleSaveSiteSetup"
+              />
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Page / Browser Title <code class="text-primary">TITLE1</code>
+                </label>
+                <InputText v-model="siteSetupForm.TITLE1" placeholder="SwitchFiber - Admin" class="w-100 p-inputtext-sm" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Brand / Portal Name <code class="text-primary">BRAND1</code>
+                </label>
+                <InputText v-model="siteSetupForm.BRAND1" placeholder="Switch Fiber" class="w-100 p-inputtext-sm" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Login Subtitle <code class="text-primary">SUBTITLE1</code>
+                </label>
+                <InputText v-model="siteSetupForm.SUBTITLE1" placeholder="Distributed Fiber Network Management" class="w-100 p-inputtext-sm" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Footer / Copyright Text <code class="text-primary">FOOTER1</code>
+                </label>
+                <InputText v-model="siteSetupForm.FOOTER1" placeholder="Switch Fiber Network Operations" class="w-100 p-inputtext-sm" />
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Landing Hero Subtitle <code class="text-primary">LANDING1</code>
+                </label>
+                <InputText v-model="siteSetupForm.LANDING1" placeholder="SwitchFiber Network Operations Hub..." class="w-100 p-inputtext-sm" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Logo URL / Path <code class="text-primary">LOGO1</code>
+                </label>
+                <InputText v-model="siteSetupForm.LOGO1" placeholder="logo.png" class="w-100 p-inputtext-sm font-monospace" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Favicon URL / Path <code class="text-primary">FAVICON1</code>
+                </label>
+                <InputText v-model="siteSetupForm.FAVICON1" placeholder="favicon.ico" class="w-100 p-inputtext-sm font-monospace" />
+              </div>
+              <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Default Table Rows <code class="text-primary">ROWS1</code>
+                </label>
+                <Select
+                  v-model="siteSetupForm.ROWS1"
+                  :options="siteRowsOptions"
+                  class="w-100"
+                />
+              </div>
+              <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Default Theme Mode <code class="text-primary">MODE1</code>
+                </label>
+                <Select
+                  v-model="siteSetupForm.MODE1"
+                  :options="['light', 'dark']"
+                  class="w-100"
+                />
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Support Email <code class="text-primary">SUPPORT1</code>
+                </label>
+                <InputText v-model="siteSetupForm.SUPPORT1" placeholder="admin@switchfiber.com" class="w-100 p-inputtext-sm" />
+              </div>
+            </div>
           </div>
 
           <!-- Search + Filter Bar -->
@@ -900,8 +1006,13 @@
             <table class="table table-hover align-middle mb-0 small">
               <thead class="table-light">
                 <tr>
+                  <!--
                   <th class="px-3 py-2.5">Setting Name</th>
                   <th class="px-3 py-2.5">Code</th>
+                  -->
+                  <!-- Gene - Nov, 26, 2026: Clarify Setting Code (name) vs server-generated Ref Code -->
+                  <th class="px-3 py-2.5">Setting Code</th>
+                  <th class="px-3 py-2.5">Server Ref</th>
                   <th class="px-3 py-2.5">Value</th>
                   <th class="px-3 py-2.5">Description</th>
                   <th class="px-3 py-2.5 text-center">Enabled</th>
@@ -1023,7 +1134,9 @@
 
           <div class="p-3 rounded-3 bg-body-tertiary border text-secondary small mb-3">
             <div class="row g-2">
-              <div class="col-6"><strong>Application:</strong> Switch Fiber Management Platform</div>
+              <!-- <div class="col-6"><strong>Application:</strong> Switch Fiber Management Platform</div> -->
+              <!-- Gene - Nov, 26, 2026: Render dynamic brand name in System Info -->
+              <div class="col-6"><strong>Application:</strong> {{ appConfigStore.brandName }} Management Platform</div>
               <div class="col-6"><strong>Version:</strong> v1.2.0-production</div>
             </div>
           </div>
@@ -1149,12 +1262,23 @@
         </div>
 
         <div>
+          <!--
           <label class="form-label small fw-semibold text-secondary">
             Setting Name / Key <span class="text-danger">*</span>
           </label>
           <InputText
             v-model="configForm.name"
             placeholder="e.g. THEME_PRIMARY_COLOR"
+            class="w-100 p-inputtext-sm font-monospace"
+          />
+          -->
+          <!-- Gene - Nov, 26, 2026: Guide users toward short Setting Codes (TITLE1, COLOR1, BRAND1) -->
+          <label class="form-label small fw-semibold text-secondary">
+            Setting Code (name) <span class="text-danger">*</span>
+          </label>
+          <InputText
+            v-model="configForm.name"
+            placeholder="e.g. TITLE1, COLOR1, BRAND1"
             class="w-100 p-inputtext-sm font-monospace"
           />
         </div>
@@ -1252,7 +1376,8 @@
       <div v-if="viewingConfig" class="d-flex flex-column gap-3 pt-1">
         <div class="row g-3">
           <div class="col-12 col-sm-6">
-            <label class="form-label small fw-semibold text-secondary">Setting Name</label>
+            <!-- <label class="form-label small fw-semibold text-secondary">Setting Name</label> -->
+            <label class="form-label small fw-semibold text-secondary">Setting Code (name)</label>
             <InputText :modelValue="viewingConfig.name || ''" readonly disabled class="w-100 p-inputtext-sm font-monospace" />
           </div>
           <div class="col-12 col-sm-6">
@@ -1365,8 +1490,18 @@ import { useAppConfigStore } from '../stores/appConfig'
 import { useTheme } from '../composables/useTheme'
 import { usePermissions } from '../composables/usePermissions'
 import apiClient from '../services/api'
+/*
 import {
   APPLICATION_CONFIG_PRESETS,
+  isValidHexColor,
+  normalizeHexColor,
+  normalizeConfigKey
+} from '../services/applicationConfiguration'
+*/
+// Gene - Nov, 26, 2026: Import findPresetByCode for short Setting Code and alias matching
+import {
+  APPLICATION_CONFIG_PRESETS,
+  findPresetByCode,
   isValidHexColor,
   normalizeHexColor,
   normalizeConfigKey
@@ -1573,6 +1708,7 @@ const onCustomHexTyped = (val) => {
   }
 }
 
+/*
 const handleSaveThemePrimaryColor = async () => {
   const hex = normalizeHexColor(customThemeHexInput.value)
   if (!hex) {
@@ -1615,6 +1751,50 @@ const handleResetDefaultThemeColor = async () => {
     toast.add({ severity: 'info', summary: 'Theme Reset', detail: `Restored default color ${MASTER_THEME_COLOR}.`, life: 3000 })
   }
 }
+*/
+// Gene - Nov, 26, 2026: Persist primary brand color under short Setting Code COLOR1 (updating legacy aliases transparently)
+const handleSaveThemePrimaryColor = async () => {
+  const hex = normalizeHexColor(customThemeHexInput.value)
+  if (!hex) {
+    toast.add({ severity: 'warn', summary: 'Invalid HEX Color', detail: 'Enter a valid 6-digit hex color like #e74c5a.', life: 3500 })
+    return
+  }
+  isSavingThemeColor.value = true
+  try {
+    await appConfigStore.upsertSetting('COLOR1', {
+      value: hex,
+      description: 'Primary brand theme color applied across SwitchFiber Admin',
+      isEnable: true
+    })
+    toast.add({ severity: 'success', summary: 'Theme Saved', detail: `Saved primary color ${hex} (COLOR1) to Application Configuration.`, life: 3500 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Save Failed', detail: err?.message || 'Unable to save theme color.', life: 4500 })
+  } finally {
+    isSavingThemeColor.value = false
+  }
+}
+
+const handleResetDefaultThemeColor = async () => {
+  customThemeHexInput.value = MASTER_THEME_COLOR
+  resetThemeColors({ persist: true })
+  if (!isApiDown.value && appConfigStore.findConfig('COLOR1')) {
+    isSavingThemeColor.value = true
+    try {
+      await appConfigStore.upsertSetting('COLOR1', {
+        value: MASTER_THEME_COLOR,
+        description: 'Primary brand theme color applied across SwitchFiber Admin',
+        isEnable: true
+      })
+      toast.add({ severity: 'info', summary: 'Theme Reset', detail: `Restored default color ${MASTER_THEME_COLOR} (COLOR1) and updated Application Configuration.`, life: 3500 })
+    } catch (err) {
+      toast.add({ severity: 'warn', summary: 'Reset Locally', detail: err?.message || 'Theme reset locally; server update failed.', life: 4000 })
+    } finally {
+      isSavingThemeColor.value = false
+    }
+  } else {
+    toast.add({ severity: 'info', summary: 'Theme Reset', detail: `Restored default color ${MASTER_THEME_COLOR}.`, life: 3000 })
+  }
+}
 
 // Gene - Nov, 25, 2026: Application Configuration Manager state, filtering, and CRUD handlers
 const appConfigs = computed(() => appConfigStore.configs || [])
@@ -1631,6 +1811,7 @@ const configFilterTabs = [
 ]
 
 const isHexValue = (val) => isValidHexColor(val)
+/*
 const isKnownRuntimePreset = (name) => {
   const key = normalizeConfigKey(name)
   return APPLICATION_CONFIG_PRESETS.some(p => normalizeConfigKey(p.name) === key)
@@ -1640,6 +1821,117 @@ const availablePresetsToAdd = computed(() => {
   const existingKeys = new Set(appConfigs.value.map(c => normalizeConfigKey(c?.name)))
   return APPLICATION_CONFIG_PRESETS.filter(p => !existingKeys.has(normalizeConfigKey(p.name)))
 })
+*/
+// Gene - Nov, 26, 2026: Match short Setting Codes and legacy aliases when detecting runtime presets and available presets
+const isKnownRuntimePreset = (name) => Boolean(findPresetByCode(name))
+
+const availablePresetsToAdd = computed(() => {
+  const existingKeys = new Set()
+  for (const row of appConfigs.value) {
+    const n = normalizeConfigKey(row?.name)
+    const c = normalizeConfigKey(row?.code)
+    if (n) existingKeys.add(n)
+    if (c) existingKeys.add(c)
+  }
+  return APPLICATION_CONFIG_PRESETS.filter((preset) => {
+    const keys = [preset.name, ...(preset.aliases || [])].map(normalizeConfigKey).filter(Boolean)
+    return !keys.some(k => existingKeys.has(k))
+  })
+})
+
+// Gene - Nov, 26, 2026: Dynamic Website Setup form state, sync watcher, seed defaults & batch save handlers
+const siteRowsOptions = ['10', '25', '50', '100']
+const isSeedingDefaults = ref(false)
+const isSavingSiteSetup = ref(false)
+const siteSetupForm = ref({
+  TITLE1: appConfigStore.appTitle,
+  BRAND1: appConfigStore.brandName,
+  SUBTITLE1: appConfigStore.loginSubtitle,
+  LANDING1: appConfigStore.landingSubtitle,
+  FOOTER1: appConfigStore.footerText,
+  LOGO1: appConfigStore.logoPath,
+  FAVICON1: appConfigStore.faviconPath,
+  ROWS1: String(appConfigStore.defaultTableRows || 50),
+  MODE1: appConfigStore.getFirstValue(['MODE1', 'THEME_DEFAULT_MODE', 'DEFAULT_THEME_MODE'], 'light'),
+  SUPPORT1: appConfigStore.supportEmail
+})
+
+const syncSiteSetupForm = () => {
+  siteSetupForm.value = {
+    TITLE1: appConfigStore.appTitle,
+    BRAND1: appConfigStore.brandName,
+    SUBTITLE1: appConfigStore.loginSubtitle,
+    LANDING1: appConfigStore.landingSubtitle,
+    FOOTER1: appConfigStore.footerText,
+    LOGO1: appConfigStore.logoPath,
+    FAVICON1: appConfigStore.faviconPath,
+    ROWS1: String(appConfigStore.defaultTableRows || 50),
+    MODE1: appConfigStore.getFirstValue(['MODE1', 'THEME_DEFAULT_MODE', 'DEFAULT_THEME_MODE'], 'light'),
+    SUPPORT1: appConfigStore.supportEmail
+  }
+}
+
+watch(() => appConfigStore.configs, syncSiteSetupForm, { immediate: true, deep: true })
+
+const handleSeedDefaultConfigs = async () => {
+  isSeedingDefaults.value = true
+  try {
+    const { created, skipped, failed } = await appConfigStore.seedDefaults()
+    if (failed.length > 0 && created.length === 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Seed Failed',
+        detail: `Could not create settings (${failed[0]?.error || 'API error'}).`,
+        life: 4500
+      })
+    } else if (created.length === 0) {
+      toast.add({
+        severity: 'info',
+        summary: 'Already Seeded',
+        detail: `All ${skipped.length} standard Setting Codes are already configured.`,
+        life: 3500
+      })
+    } else {
+      toast.add({
+        severity: 'success',
+        summary: 'Default Setup Seeded',
+        detail: `Created ${created.length} settings (${created.slice(0, 4).join(', ')}${created.length > 4 ? '…' : ''}); skipped ${skipped.length}.`,
+        life: 4500
+      })
+    }
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Seed Failed',
+      detail: err?.message || 'Unable to seed default settings.',
+      life: 4500
+    })
+  } finally {
+    isSeedingDefaults.value = false
+  }
+}
+
+const handleSaveSiteSetup = async () => {
+  isSavingSiteSetup.value = true
+  try {
+    const saved = await appConfigStore.saveSiteSetup(siteSetupForm.value)
+    toast.add({
+      severity: 'success',
+      summary: 'Website Setup Saved',
+      detail: `Saved ${saved.length} dynamic settings (${saved.join(', ')}).`,
+      life: 4000
+    })
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Save Failed',
+      detail: err?.message || 'Unable to save Dynamic Website Setup.',
+      life: 4500
+    })
+  } finally {
+    isSavingSiteSetup.value = false
+  }
+}
 
 const filteredAppConfigs = computed(() => {
   const q = configSearchQuery.value.trim().toLowerCase()
@@ -1668,11 +1960,16 @@ const configForm = ref({
 
 const isColorConfigForm = computed(() => {
   if (forceColorPicker.value) return true
+  const preset = findPresetByCode(configForm.value.name)
+  if (preset?.valueType === 'color') return true
   const nameUpper = String(configForm.value.name || '').toUpperCase()
-  return nameUpper.includes('COLOR') || isValidHexColor(configForm.value.value)
+  return nameUpper.includes('COLOR') || nameUpper.includes('HIGHLIGHT') || isValidHexColor(configForm.value.value)
 })
 
-const isModeConfigForm = computed(() => normalizeConfigKey(configForm.value.name).includes('MODE'))
+const isModeConfigForm = computed(() => {
+  const norm = normalizeConfigKey(configForm.value.name)
+  return norm === 'MODE1' || norm.includes('MODE')
+})
 
 const configColorPickerValue = computed(() =>
   normalizeHexColor(configForm.value.value) || MASTER_THEME_COLOR

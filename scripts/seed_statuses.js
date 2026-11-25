@@ -1,6 +1,10 @@
 // Gene - Nov, 25, 2026: Idempotent seeder script for all application statuses in /api/Status
 import https from 'node:https'
+/*
 import { DEFAULT_STATUSES, normalizeStatusType, normalizeStatusPayload } from '../src/services/status.js'
+*/
+// Gene - Nov, 26, 2026: Use token-aware matching so 'inprogress' matches legacy variants and fail fast on repeated 500 responses
+import { DEFAULT_STATUSES, normalizeStatusType, normalizeStatusToken, normalizeStatusPayload } from '../src/services/status.js'
 
 const API_BASE = 'https://admin.switchfiber.ph/api'
 
@@ -54,11 +58,12 @@ export async function seedStatuses(createdBy = process.env.SEED_CREATED_BY || 's
   let createdCount = 0
   let skippedCount = 0
   let failedCount = 0
+  let consecutiveServerErrors = 0
 
   for (const item of DEFAULT_STATUSES) {
     const match = existing.find(e =>
       normalizeStatusType(e?.type) === normalizeStatusType(item.type) &&
-      String(e?.name || '').trim().toLowerCase() === item.name.trim().toLowerCase()
+      normalizeStatusToken(e?.name) === normalizeStatusToken(item.name)
     )
     if (match) {
       skippedCount++
@@ -69,10 +74,21 @@ export async function seedStatuses(createdBy = process.env.SEED_CREATED_BY || 's
     const postRes = await makeRequest(`${API_BASE}/Status`, 'POST', payload)
     if (postRes.status === 200 || postRes.status === 201) {
       createdCount++
+      consecutiveServerErrors = 0
+      existing.push(postRes.data || payload)
       console.log(`  [CREATED] [${payload.type}] "${payload.name}" -> "${payload.description}"`)
     } else {
       failedCount++
       console.error(`  [FAILED] [${payload.type}] "${payload.name}" - HTTP ${postRes.status}:`, postRes.raw)
+      if (postRes.status >= 500) {
+        consecutiveServerErrors++
+        if (consecutiveServerErrors >= 3) {
+          console.error('  [ABORTED] Stopped early after 3 consecutive HTTP 5xx server errors on POST /api/Status.')
+          break
+        }
+      } else {
+        consecutiveServerErrors = 0
+      }
     }
   }
 

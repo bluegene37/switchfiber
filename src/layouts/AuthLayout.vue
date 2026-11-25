@@ -19,10 +19,13 @@
           class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3 shadow-sm p-2"
           style="width: 64px; height: 64px;"
         >
-          <img :src="logoUrl" alt="SwitchFiber Logo" width="40" height="40" style="object-fit: contain;" />
+          <!-- <img :src="logoUrl" alt="SwitchFiber Logo" width="40" height="40" style="object-fit: contain;" /> -->
+          <!-- Gene - Nov, 26, 2026: Use dynamic logo and brand name from ApplicationConfiguration -->
+          <img :src="dynamicLogoUrl" :alt="`${appConfigStore.brandName} Logo`" width="40" height="40" style="object-fit: contain;" />
         </div>
         <div class="spinner-border text-primary mb-3" style="width: 2rem; height: 2rem;" aria-hidden="true"></div>
-        <p class="fw-semibold text-body mb-1">Loading SwitchFiber Admin…</p>
+        <!-- <p class="fw-semibold text-body mb-1">Loading SwitchFiber Admin…</p> -->
+        <p class="fw-semibold text-body mb-1">Loading {{ appConfigStore.brandName || 'SwitchFiber Admin' }}…</p>
         <p class="small text-secondary mb-0">Please wait while the page is loading.</p>
       </div>
     </router-view>
@@ -30,8 +33,13 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
+// Gene - Nov, 26, 2026: Load dynamic branding/logo for auth shell and loader fallback
+import { useAppConfigStore } from '../stores/appConfig'
 
+const appConfigStore = useAppConfigStore()
 // Gene - Nov, 22, 2026: Resolve logo path relative to Vite BASE_URL so it works under both / and subpath deployments
 const logoUrl = `${import.meta.env.BASE_URL}logo.png`
+const dynamicLogoUrl = computed(() => appConfigStore.logoUrl || logoUrl)
 </script>
