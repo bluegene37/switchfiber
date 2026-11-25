@@ -906,12 +906,22 @@
             :class="{ 'connection-cell': SHOW_CONNECTION_STATE_LABEL }"
             @click.stop
           >
+            <!--
             <ToggleSwitch
               :modelValue="isRowConnected(slotProps.data)"
               :disabled="isConnectionPending(slotProps.data) || !radiusNameOf(slotProps.data)"
               @update:modelValue="value => toggleConnection(slotProps.data, value)"
               :aria-label="`Toggle connection for ${radiusNameOf(slotProps.data) || 'this account'}`"
               v-tooltip.top="isRowConnected(slotProps.data) ? 'Disconnect this account' : 'Connect this account'"
+            />
+            -->
+            <!-- Gene - Nov, 25, 2026: Respect disableConnectionToggle prop on RadiusUser connect/disconnect switch -->
+            <ToggleSwitch
+              :modelValue="isRowConnected(slotProps.data)"
+              :disabled="disableConnectionToggle || isConnectionPending(slotProps.data) || !radiusNameOf(slotProps.data)"
+              @update:modelValue="value => toggleConnection(slotProps.data, value)"
+              :aria-label="`Toggle connection for ${radiusNameOf(slotProps.data) || 'this account'}`"
+              v-tooltip.top="disableConnectionToggle ? 'Connect / Disconnect toggle is currently disabled' : (isRowConnected(slotProps.data) ? 'Disconnect this account' : 'Connect this account')"
             />
 
             <span v-if="SHOW_CONNECTION_STATE_LABEL" class="connection-state small fw-semibold">
@@ -6484,6 +6494,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { CrudService } from '../services/crud'
 import { RadiusUserService } from '../services/radiusUsers'
 import { normalizeServiceOrder } from '../services/serviceOrders'
+// Gene - Nov, 25, 2026: Import RadiusUser flattening normalizer, concise columns, and View modal layout
+import {
+  normalizeRadiusUserRow,
+  RADIUS_USER_CONCISE_COLUMNS,
+  RADIUS_USER_VIEW_LAYOUT
+} from '../utils/radiusUserNormalizer'
 import phAddressService from '../services/phAddressService'
 /*
 import defaultRegions from '../../public/data/philippines/regions.json'
@@ -6644,6 +6660,11 @@ const props = defineProps({
   // the View dialog. For endpoints that are read-only or whose records carry no
   // usable key to write back to.
   readOnly: {
+    type: Boolean,
+    default: false
+  },
+  // Gene - Nov, 25, 2026: Allow parents (e.g. Subscribers) to disable the RadiusUser connect/disconnect switch
+  disableConnectionToggle: {
     type: Boolean,
     default: false
   },
@@ -6953,6 +6974,7 @@ const isWideForm = computed(() => {
 })
 */
 // Gene - Oct, 16, 2026: Include Promotions in 3-column wide modal layout
+// Gene - Nov, 25, 2026: Include RadiusUser (Subscribers) in 3-column wide modal layout for full subscriber details
 const isWideForm = computed(() => {
   const ep = (props.endpoint || '').toLowerCase()
   return (
@@ -6976,6 +6998,7 @@ const isWideForm = computed(() => {
     ep === 'service_order' ||
     ep === 'discounts' ||
     ep === 'discount' ||
+    isRadiusUserEndpoint.value ||
     isPaymentEndpoint.value ||
     isPromotionEndpoint.value
   )
@@ -7886,6 +7909,17 @@ function formatLabel(col) {
   // name as a header reads as a contradiction: "Disabled: Enabled".
   if (isRadiusUserEndpoint.value && normalizeColKey(col) === 'disabled') {
     return 'Account State'
+  }
+  // Gene - Nov, 25, 2026: Clarify overlapping RADIUS & Billing field labels on flattened RadiusUser records
+  if (isRadiusUserEndpoint.value) {
+    const rk = normalizeColKey(col)
+    if (rk === 'name') return 'RADIUS Username'
+    if (rk === 'group') return 'RADIUS Group'
+    if (rk === 'username') return 'Billing Username'
+    if (rk === 'useremail') return 'User Email'
+    if (rk === 'radiusmodifiedby') return 'RADIUS Modified By'
+    if (rk === 'datecreated') return 'RADIUS Date Created'
+    if (rk === 'datemodified') return 'RADIUS Date Modified'
   }
 
   // The API's `region` column actually stores the PROVINCE (the backend named it
@@ -9242,11 +9276,15 @@ const APPLICATION_COLUMNS = [
   'applyingFor'
 ]
 
+/*
 const RADIUS_USER_COLUMNS = [
   'disabled',
   'group',
   'name'
 ]
+*/
+// Gene - Nov, 25, 2026: Show concise important subscriber columns in the DataTable while full details remain in View modal
+const RADIUS_USER_COLUMNS = RADIUS_USER_CONCISE_COLUMNS
 
 const BILLING_DETAILS_COLUMNS = [
   'id',
@@ -10939,6 +10977,8 @@ const isRowConnected = (row) => {
 // `connect` / `disconnect` are keyed by the account name, not by id — RadiusUser
 // records come back with an empty id.
 const toggleConnection = async (row, desiredConnected) => {
+  // Gene - Nov, 25, 2026: Guard against toggling connection when disabled by parent view (e.g. Subscribers)
+  if (props.disableConnectionToggle) return
   const name = radiusNameOf(row)
   if (!name) {
     toast.add({
@@ -11760,6 +11800,55 @@ const buildBillingSections = (cols, { includeAudit = false } = {}) => {
 
   const sections = []
   BILLING_FORM_LAYOUT.forEach(sec => {
+    const picked = []
+    sec.columns.forEach(wanted => {
+      const key = normalizeColKey(wanted)
+      if (pool.has(key)) {
+        picked.push(pool.get(key))
+        pool.delete(key)
+      }
+    })
+    if (picked.length > 0) {
+      sections.push({ ...sec, columns: picked })
+    }
+  })
+
+  const leftovers = [...pool.values()]
+  const extras = leftovers.filter(col => !isAuditField(col))
+  const auditCols = leftovers.filter(col => isAuditField(col))
+
+  if (extras.length > 0) {
+    sections.push({
+      key: 'extra',
+      title: 'Additional Details',
+      icon: 'pi pi-file',
+      badgeClass: 'text-secondary',
+      columns: extras
+    })
+  }
+  if (includeAudit && auditCols.length > 0) {
+    sections.push({
+      key: 'audit',
+      title: getSectionTitle('audit'),
+      icon: SECTION_META.audit.icon,
+      badgeClass: SECTION_META.audit.badgeClass,
+      columns: auditCols
+    })
+  }
+
+  return sections
+}
+
+// Gene - Nov, 25, 2026: Section builder for flattened RadiusUser (Subscribers) View Details modal
+const buildRadiusUserSections = (cols, { includeAudit = false } = {}) => {
+  const pool = new Map()
+  ;(cols || []).forEach(col => {
+    const key = normalizeColKey(col)
+    if (!pool.has(key)) pool.set(key, col)
+  })
+
+  const sections = []
+  RADIUS_USER_VIEW_LAYOUT.forEach(sec => {
     const picked = []
     sec.columns.forEach(wanted => {
       const key = normalizeColKey(wanted)
@@ -12877,6 +12966,10 @@ const viewFormSections = computed(() => {
   }
   if (isBillingEndpoint.value) {
     return buildBillingSections(viewFormColumns.value, { includeAudit: true })
+  }
+  // Gene - Nov, 25, 2026: Organize flattened RadiusUser (Subscribers) records into structured sections in View Details modal
+  if (isRadiusUserEndpoint.value) {
+    return buildRadiusUserSections(viewFormColumns.value, { includeAudit: true })
   }
   if (isJobOrderEndpoint.value) {
     return buildJobOrderSections(viewFormColumns.value, { includeAudit: true })
@@ -18704,7 +18797,13 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
 const openViewDialog = (record) => {
   clearFieldSearch('view')
   fetchFormLookups()
+  /*
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
+  */
+  // Gene - Nov, 25, 2026: Ensure RadiusUser records passed into View Details modal are normalized/flattened
+  const normRecord = isServiceOrderEndpoint.value
+    ? normalizeServiceOrder(record)
+    : (isRadiusUserEndpoint.value ? normalizeRadiusUserRow(record) : record)
   viewingRecordId.value = getRecordId(normRecord) || ''
   viewFormData.value = { ...normRecord }
   if (isMenuEndpoint.value && viewFormData.value) {
@@ -20754,6 +20853,11 @@ const fetchData = async ({ silent = false } = {}) => {
 
     if (isServiceOrderEndpoint.value && Array.isArray(unwrappedData)) {
       unwrappedData = unwrappedData.map(normalizeServiceOrder)
+    }
+
+    // Gene - Nov, 25, 2026: Flatten composite { radiusUser, billingDetails } objects returned by GET /api/RadiusUser
+    if (isRadiusUserEndpoint.value && Array.isArray(unwrappedData)) {
+      unwrappedData = unwrappedData.map(normalizeRadiusUserRow)
     }
 
     if (isDiscountTypeEndpoint.value && Array.isArray(unwrappedData)) {

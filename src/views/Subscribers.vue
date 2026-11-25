@@ -54,12 +54,25 @@
     </div>
     -->
     <!-- Gene - Nov, 24, 2026: Wire Subscribers screen to GET /api/RadiusUser via DynamicApiTable (read-only list with connection filters & toggle) -->
+    <!--
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-subscribers-table-card">
       <DynamicApiTable
         ref="apiTableRef"
         endpoint="RadiusUser"
         :read-only="true"
         :hide-create-button="true"
+        create-button-label="Create Subscriber"
+      />
+    </div>
+    -->
+    <!-- Gene - Nov, 25, 2026: Enforce strict view-only mode (no create/edit/delete) and disable connect/disconnect toggle for Subscribers -->
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-subscribers-table-card">
+      <DynamicApiTable
+        ref="apiTableRef"
+        endpoint="RadiusUser"
+        :read-only="true"
+        :hide-create-button="true"
+        :disable-connection-toggle="true"
         create-button-label="Create Subscriber"
       />
     </div>

@@ -17,6 +17,12 @@ import {
 } from '../src/constants/menuCatalog.js'
 // Gene - Nov, 24, 2026: Import EndpointColumns to verify RadiusUser fallback schema fields
 import { EndpointColumns } from '../src/models/columns.js'
+// Gene - Nov, 25, 2026: Import RadiusUser flattening normalizer, concise columns, and View layout
+import {
+  normalizeRadiusUserRow,
+  RADIUS_USER_CONCISE_COLUMNS,
+  RADIUS_USER_VIEW_LAYOUT
+} from '../src/utils/radiusUserNormalizer.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const readRepoFile = (relPath) => fs.readFileSync(path.resolve(__dirname, '..', relPath), 'utf8')
@@ -24,6 +30,7 @@ const readRepoFile = (relPath) => fs.readFileSync(path.resolve(__dirname, '..', 
 const routerSrc = readRepoFile('src/router/index.js')
 const useSearchSrc = readRepoFile('src/composables/useSearch.js')
 const subscribersViewSrc = readRepoFile('src/views/Subscribers.vue')
+const dynamicTableSrc = readRepoFile('src/components/DynamicApiTable.vue')
 
 describe('Subscribers Menu Catalog & Access Level Rights Integration', () => {
   /*
@@ -148,5 +155,109 @@ describe('Subscribers Route, Global Search & Empty/In-Progress View Wiring', () 
     for (const expected of ['name', 'group', 'disabled', 'DateCreated', 'DateModified', 'ModifiedBy']) {
       assert.ok(cols.includes(expected), `EndpointColumns.RadiusUser must include ${expected}`)
     }
+  })
+})
+
+// Gene - Nov, 25, 2026: Verify composite RadiusUser flattening, concise table columns, full View layout, and disabled connect/disconnect toggle
+describe('Subscribers Composite RadiusUser Profile, View-Only Mode & Disabled Toggle', () => {
+  test('normalizeRadiusUserRow flattens { radiusUser, billingDetails } without losing colliding fields', () => {
+    const composite = {
+      radiusUser: {
+        id: '',
+        attributes: 'Framed-Pool=main',
+        disabled: false,
+        group: 'SwitchLite-Disconnected',
+        name: 'sub_user_001',
+        otp_secret: '',
+        password: 'example_password',
+        shared_users: 1,
+        dateCreated: '2026-11-08T22:52:22.75',
+        dateModified: '2026-11-09T10:15:00.00',
+        modifiedBy: 'System GetUserConnectionStatus'
+      },
+      billingDetails: {
+        id: 861,
+        accountNo: '202309171',
+        fullName: 'Subscriber One',
+        contactNumber: '09170000001',
+        emailAddress: 'subscriber1@example.com',
+        address: '123 Example St',
+        city: 'Sample City',
+        region: 'Sample Province',
+        plan: 'SwitchLite - P699',
+        accountBalance: 0,
+        billingStatus: 'Done',
+        username: 'sub_user_001',
+        group: null,
+        routerModel: 'Model-X',
+        routerModemSn: 'SN123456',
+        lcp: 'LCP-01',
+        nap: 'NAP-01',
+        port: 'PORT-01',
+        vlan: '1000',
+        modifiedBy: 'operator@example.com',
+        modifiedDate: '2026-11-10T08:00:00.00'
+      }
+    }
+
+    const flat = normalizeRadiusUserRow(composite)
+    assert.equal(flat.id, 861, 'billingDetails.id must win over empty radiusUser.id')
+    assert.equal(flat.group, 'SwitchLite-Disconnected', 'radiusUser.group must win over null billingDetails.group')
+    assert.equal(flat.name, 'sub_user_001')
+    assert.equal(flat.username, 'sub_user_001')
+    assert.equal(flat.fullName, 'Subscriber One')
+    assert.equal(flat.accountNo, '202309171')
+    assert.equal(flat.routerModemSn, 'SN123456')
+    assert.equal(flat.modifiedBy, 'operator@example.com')
+    assert.equal(flat.radiusModifiedBy, 'System GetUserConnectionStatus')
+    assert.equal(flat.dateCreated, '2026-11-08T22:52:22.75')
+    assert.equal(flat.dateModified, '2026-11-09T10:15:00.00')
+    assert.equal('radiusUser' in flat, false, 'Nested radiusUser object must be removed')
+    assert.equal('billingDetails' in flat, false, 'Nested billingDetails object must be removed')
+  })
+
+  test('normalizeRadiusUserRow preserves legacy flat RadiusUser records cleanly', () => {
+    const legacy = { id: '', name: 'legacy_sub', group: 'SwitchMax', disabled: false }
+    assert.deepEqual(normalizeRadiusUserRow(legacy), legacy)
+  })
+
+  test('RADIUS_USER_CONCISE_COLUMNS keeps only important DataTable fields while View layout covers the rest', () => {
+    assert.deepEqual(RADIUS_USER_CONCISE_COLUMNS, [
+      'accountNo',
+      'fullName',
+      'name',
+      'contactNumber',
+      'plan',
+      'group',
+      'accountBalance',
+      'billingStatus',
+      'city',
+      'dateInstalled'
+    ])
+
+    for (const detailOnly of ['password', 'addressCoordinates', 'routerModemSn', 'attachment1', 'lcpNapPort', 'otp_secret']) {
+      assert.equal(RADIUS_USER_CONCISE_COLUMNS.includes(detailOnly), false, `${detailOnly} should stay out of DataTable`)
+    }
+
+    const layoutCols = new Set(RADIUS_USER_VIEW_LAYOUT.flatMap(sec => sec.columns))
+    for (const expectedDetail of ['emailAddress', 'secondContactNumber', 'addressCoordinates', 'routerModel', 'routerModemSn', 'lcp', 'nap', 'port', 'vlan', 'lcpNap', 'lcpNapPort', 'attachment1', 'password', 'attributes']) {
+      assert.ok(layoutCols.has(expectedDetail), `RADIUS_USER_VIEW_LAYOUT must include ${expectedDetail}`)
+    }
+  })
+
+  test('Subscribers.vue enforces view-only mode and disables connect/disconnect toggle', () => {
+    const activeHtml = subscribersViewSrc.replace(/<!--[\s\S]*?-->/g, '')
+    assert.match(activeHtml, /:read-only="true"/)
+    assert.match(activeHtml, /:hide-create-button="true"/)
+    assert.match(activeHtml, /:disable-connection-toggle="true"/)
+  })
+
+  test('DynamicApiTable wires disableConnectionToggle, normalizer, wide view modal, and section builder', () => {
+    assert.ok(dynamicTableSrc.includes('disableConnectionToggle:'))
+    assert.ok(dynamicTableSrc.includes('disableConnectionToggle || isConnectionPending(slotProps.data)'))
+    assert.ok(dynamicTableSrc.includes('if (props.disableConnectionToggle) return'))
+    assert.ok(dynamicTableSrc.includes('normalizeRadiusUserRow'))
+    assert.ok(dynamicTableSrc.includes('buildRadiusUserSections'))
+    assert.ok(dynamicTableSrc.includes('if (isRadiusUserEndpoint.value) {\n    return buildRadiusUserSections(viewFormColumns.value, { includeAudit: true })\n  }'))
   })
 })
