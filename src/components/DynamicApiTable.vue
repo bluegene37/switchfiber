@@ -262,7 +262,8 @@
           <span class="d-none d-sm-inline">Seed Payment Types</span>
           <span class="d-sm-none">Seed</span>
         </Button>
-        <!-- Gene - Nov, 26, 2026: Seed all standard statuses & form dropdown values into /api/Status -->
+        <!-- Gene - Nov, 26, 2026: Hidden Seed All Statuses button from Status UI; users use Add/Delete/Disable directly after seeding -->
+        <!--
         <Button
           v-if="isStatusEndpoint"
           class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-seed-statuses-btn"
@@ -275,6 +276,7 @@
           <span class="d-none d-sm-inline">Seed All Statuses</span>
           <span class="d-sm-none">Seed</span>
         </Button>
+        -->
         <Button 
           v-if="showTopCreateButton" 
           class="p-button-primary p-button-sm rounded-3 px-3 shadow-xs ms-2 fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0 sfa-tracker-table-topbar-create-btn" 
@@ -530,7 +532,8 @@
               <span class="d-none d-sm-inline">Seed Payment Types</span>
               <span class="d-sm-none">Seed</span>
             </Button>
-            <!-- Gene - Nov, 26, 2026: Seed all standard statuses & form dropdown values into /api/Status -->
+            <!-- Gene - Nov, 26, 2026: Hidden Seed All Statuses button from Status UI; users use Add/Delete/Disable directly after seeding -->
+            <!--
             <Button
               v-if="isStatusEndpoint"
               class="p-button-outlined p-button-secondary p-button-sm rounded-3 px-3 shadow-xs fw-semibold d-inline-flex align-items-center gap-1.5 ms-1 sfa-tracker-seed-statuses-btn"
@@ -542,6 +545,7 @@
               <span class="d-none d-sm-inline">Seed All Statuses</span>
               <span class="d-sm-none">Seed</span>
             </Button>
+            -->
             <!-- Primary Action: Create Button -->
             <Button 
               v-if="showToolbarCreateButton" 
@@ -22018,6 +22022,8 @@ const seedPaymentTypesViaApi = async () => {
   }
 }
 
+// Gene - Nov, 26, 2026: Disabled toolbar Seed All Statuses UI handler (statuses are seeded separately)
+/*
 // Gene - Nov, 26, 2026: Seed all standard application statuses and dropdown values into /api/Status
 const isSeedingStatuses = ref(false)
 
@@ -22065,6 +22071,7 @@ const seedStatusesViaApi = async () => {
     isSeedingStatuses.value = false
   }
 }
+*/
 
 const getToggleSwitchTitle = (menuRow) => {
   if (!props.selectedAccessLevel) return 'Select an Access Level on the left table first'

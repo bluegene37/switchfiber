@@ -386,6 +386,8 @@ export function mapStatusesToDropdownOptions(records = [], typeCode = '') {
 
   for (const row of records) {
     if (!row || typeof row !== 'object') continue
+    // Gene - Nov, 26, 2026: Exclude disabled Status rows from form dropdowns
+    if (row.isEnable === false || row.isActive === false) continue
     if (targetType && normalizeStatusType(row.type) !== targetType) continue
     const value = String(row.name ?? '').trim()
     if (!value) continue
@@ -409,6 +411,8 @@ export function groupStatusesByType(records = []) {
   const seenByType = {}
   for (const row of records) {
     if (!row || typeof row !== 'object') continue
+    // Gene - Nov, 26, 2026: Exclude disabled Status rows from form dropdowns
+    if (row.isEnable === false || row.isActive === false) continue
     const typeKey = normalizeStatusType(row.type)
     const value = String(row.name ?? '').trim()
     if (!typeKey || !value) continue

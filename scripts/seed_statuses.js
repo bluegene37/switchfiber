@@ -19,6 +19,7 @@ function makeRequest(url, method = 'GET', payload = null) {
       method,
       headers: {
         Accept: 'application/json',
+        ...(process.env.SEED_BEARER_TOKEN ? { Authorization: `Bearer ${process.env.SEED_BEARER_TOKEN}` } : {}),
         ...(bodyStr ? {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(bodyStr)
@@ -48,8 +49,12 @@ function makeRequest(url, method = 'GET', payload = null) {
 /*
 export async function seedStatuses(createdBy = '1') {
 */
+/*
 // Gene - Nov, 25, 2026: Default createdBy to SEED_CREATED_BY env var or 'system'
 export async function seedStatuses(createdBy = process.env.SEED_CREATED_BY || 'system') {
+*/
+// Gene - Nov, 26, 2026: Default createdBy to SEED_CREATED_BY env var or '1' (numeric user ID string)
+export async function seedStatuses(createdBy = process.env.SEED_CREATED_BY || '1') {
   console.log('--- Seeding Application Statuses (/api/Status) ---')
   const getRes = await makeRequest(`${API_BASE}/Status`)
   const existing = Array.isArray(getRes.data) ? getRes.data : []

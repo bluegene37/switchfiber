@@ -182,6 +182,15 @@ describe('Status Service, Types & Default Catalog', () => {
     const grouped = groupStatusesByType(sample)
     assert.deepEqual(grouped.APPLICATION, appOpts)
     assert.deepEqual(grouped.SO_VISIT, [{ label: 'Reschedule Visit', value: 'Reschedule' }])
+
+    // Gene - Nov, 26, 2026: Ensure disabled Status rows (isEnable: false / isActive: false) are excluded from dropdowns
+    const withDisabled = [
+      ...sample,
+      { id: 5, code: 'ST-005', type: 'APPLICATION', name: 'HiddenA', description: 'Hidden A', isEnable: false },
+      { id: 6, code: 'ST-006', type: 'SO_VISIT', name: 'HiddenB', description: 'Hidden B', isActive: false }
+    ]
+    assert.deepEqual(mapStatusesToDropdownOptions(withDisabled, 'APPLICATION'), appOpts)
+    assert.deepEqual(groupStatusesByType(withDisabled).SO_VISIT, [{ label: 'Reschedule Visit', value: 'Reschedule' }])
   })
 
   describe('StatusService REST contract (mocked client)', () => {
@@ -310,8 +319,14 @@ describe('Status File Maintenance Menu, Routing, Metadata & DynamicApiTable Wiri
     assert.ok(dynamicTableSrc.includes('promotionImageSizeSelectOptions'))
     assert.ok(dynamicTableSrc.includes('promotionThemeColorSelectOptions'))
     assert.ok(dynamicTableSrc.includes('const getStatusDisplayLabel ='))
+    /*
     assert.ok(dynamicTableSrc.includes('seedStatusesViaApi'))
     assert.ok(dynamicTableSrc.includes('sfa-tracker-seed-statuses-btn'))
+    */
+    // Gene - Nov, 26, 2026: Seed All Statuses button must remain hidden/commented in active template
+    const activeTableTemplate = dynamicTableSrc.split('<script setup>')[0].replace(/<!--[\s\S]*?-->/g, '')
+    assert.equal(activeTableTemplate.includes('sfa-tracker-seed-statuses-btn'), false)
+    assert.equal(activeTableTemplate.includes('Seed All Statuses'), false)
     assert.ok(dynamicTableSrc.includes("editBaseSnapshot.value?.code || editFormData.value?.code || editingRecordId.value"))
     assert.ok(dynamicTableSrc.includes("recordToDelete.value?.code || rawTargetId"))
   })
