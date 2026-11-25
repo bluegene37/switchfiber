@@ -237,7 +237,11 @@ import { useAppStore } from '../stores/app'
 import apiClient from '../services/api'
 import { ApplicationService } from '../services/applications'
 import { usePermissions } from '../composables/usePermissions'
+/*
 import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR } from '../composables/useTheme'
+*/
+// Gene - Nov, 25, 2026: Use reactive activePrimaryHex from useTheme for live dashboard chart coloring
+import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR, useTheme } from '../composables/useTheme'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
 import DashboardMapCard from '../components/DashboardMapCard.vue'
@@ -787,6 +791,7 @@ const handleExport = () => {
 //
 // Categorical series (plan tiers, node names) step through the brand hue. Only
 // genuinely semantic series keep fixed status colours.
+/*
 const brandRamp = buildCategoricalRamp(MASTER_THEME_COLOR, 5)
 const BRAND = {
   deep: brandRamp[0],
@@ -795,6 +800,17 @@ const BRAND = {
   light: brandRamp[3],
   pale: brandRamp[4]
 }
+*/
+// Gene - Nov, 25, 2026: Derive dashboard chart palette reactively from activePrimaryHex
+const { activePrimaryHex } = useTheme()
+const brandRamp = computed(() => buildCategoricalRamp(activePrimaryHex.value || MASTER_THEME_COLOR, 5))
+const BRAND = computed(() => ({
+  deep: brandRamp.value[0],
+  mid: brandRamp.value[1],
+  base: brandRamp.value[2],
+  light: brandRamp.value[3],
+  pale: brandRamp.value[4]
+}))
 const rgbaOf = (hex, alpha) => `rgba(${buildPaletteFromHex(hex).rgb}, ${alpha})`
 
 // Mirrors the semantic tokens in style.css; these must not follow the brand hue.
@@ -875,11 +891,21 @@ const applicationsTrendChartOption = computed(() => {
         type: 'line',
         smooth: true,
         data: buckets.map(b => b.count),
+        /*
         itemStyle: { color: BRAND.base },
         areaStyle: {
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [{ offset: 0, color: rgbaOf(BRAND.base, 0.35) }, { offset: 1, color: rgbaOf(BRAND.base, 0.02) }]
+          }
+        }
+        */
+        // Gene - Nov, 25, 2026: Read reactive BRAND.value.base for live theme updates
+        itemStyle: { color: BRAND.value.base },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: rgbaOf(BRAND.value.base, 0.35) }, { offset: 1, color: rgbaOf(BRAND.value.base, 0.02) }]
           }
         }
       }
@@ -905,7 +931,11 @@ const planDistributionChartOption = computed(() => {
   const TOP = 6
   const top = entries.slice(0, TOP)
   const othersCount = entries.slice(TOP).reduce((sum, [, n]) => sum + n, 0)
+  /*
   const ramp = buildCategoricalRamp(MASTER_THEME_COLOR, Math.min(entries.length, TOP + 1))
+  */
+  // Gene - Nov, 25, 2026: Use activePrimaryHex for reactive plan distribution chart ramp
+  const ramp = buildCategoricalRamp(activePrimaryHex.value || MASTER_THEME_COLOR, Math.min(entries.length, TOP + 1))
   const data = top.map(([name, value], i) => ({ value, name, itemStyle: { color: ramp[i % ramp.length] } }))
   if (othersCount > 0) data.push({ value: othersCount, name: 'Others', itemStyle: { color: '#9ca3af' } })
 
@@ -944,7 +974,11 @@ const buildStatusDoughnut = ({ counts, meta, sourceLabel, seriesName, noun }) =>
   let rampIndex = 0
   Object.entries(counts || {}).forEach(([key, value]) => {
     if (meta[key]) return
+    /*
     slices.push({ value, name: titleCaseStatus(key), itemStyle: { color: brandRamp[rampIndex++ % brandRamp.length] } })
+    */
+    // Gene - Nov, 25, 2026: Use reactive brandRamp.value
+    slices.push({ value, name: titleCaseStatus(key), itemStyle: { color: brandRamp.value[rampIndex++ % brandRamp.value.length] } })
   })
 
   if (slices.length === 0) {
@@ -995,12 +1029,21 @@ const jobOrdersChartOption = computed(() => buildStatusDoughnut({
   noun: 'job orders'
 }))
 */
+/*
 const jobOrdersChartOption = computed(() => buildStatusDoughnut({
   counts: statusTallies.value.jobOrders,
   meta: {
     inprogress: { label: 'In Progress', color: STATUS.warning },
     completed: { label: 'Completed', color: STATUS.success },
-    activated: { label: 'Activated', color: BRAND.base },
+    activated: { label: BRAND.base ? 'Activated' : 'Activated', color: BRAND.base },
+*/
+const jobOrdersChartOption = computed(() => buildStatusDoughnut({
+  counts: statusTallies.value.jobOrders,
+  meta: {
+    inprogress: { label: 'In Progress', color: STATUS.warning },
+    completed: { label: 'Completed', color: STATUS.success },
+    // Gene - Nov, 25, 2026: Use reactive BRAND.value.base
+    activated: { label: 'Activated', color: BRAND.value.base },
     reschedule: { label: 'Rescheduled', color: '#7c3aed' },
     rescheduled: { label: 'Rescheduled', color: '#7c3aed' }
   },
@@ -1031,8 +1074,9 @@ const applicationsChartOption = computed(() => buildStatusDoughnut({
   counts: statusTallies.value.applications,
   meta: {
     inprogress: { label: 'In Progress', color: STATUS.warning },
-    submitted: { label: 'Submitted', color: BRAND.light },
-    schedule: { label: 'Schedule', color: BRAND.base },
+    // Gene - Nov, 25, 2026: Use reactive BRAND.value colors
+    submitted: { label: 'Submitted', color: BRAND.value.light },
+    schedule: { label: 'Schedule', color: BRAND.value.base },
     reschedule: { label: 'Rescheduled', color: '#7c3aed' },
     rescheduled: { label: 'Rescheduled', color: '#7c3aed' },
     cancelled: { label: 'Cancelled', color: STATUS.danger },

@@ -266,7 +266,9 @@ const apiEndpoints = ref([
   { name: 'Audit Trail', endpoint: 'LogTrail', description: 'Recorded transaction history across the system' },
   { name: 'Audit Trail Entities', endpoint: 'LogTrail/GetEntityByDate', description: 'Distinct entity names present in the audit trail' },
   { name: 'Error Logs', endpoint: 'LogError', description: 'Errors recorded by the API' },
-  { name: 'Error Log Entities', endpoint: 'LogError/GetEntityByDate', description: 'Distinct entity names present in the error logs' }
+  { name: 'Error Log Entities', endpoint: 'LogError/GetEntityByDate', description: 'Distinct entity names present in the error logs' },
+  // Gene - Nov, 25, 2026: Registered ApplicationConfiguration endpoint in API Viewer
+  { name: 'Application Configuration', endpoint: 'ApplicationConfiguration', description: 'Centralized application settings, theme colors, and key-value configuration' }
 ])
 
 // Opening the viewer fetches the selected endpoint at once. Applications is

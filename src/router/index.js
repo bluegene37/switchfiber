@@ -1,5 +1,14 @@
+/*
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { abortPendingNavigationRequests } from '../services/api'
+import { menuCodeForPath, ALL_MENU_ENTRIES } from '../constants/menuCatalog'
+import { ensurePermissionsLoaded, canAccess, isApiDown } from '../composables/usePermissions'
+*/
+// Gene - Nov, 25, 2026: Import useAppConfigStore so browser tab title reflects configured APP_TITLE
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useAppConfigStore } from '../stores/appConfig'
 import { abortPendingNavigationRequests } from '../services/api'
 import { menuCodeForPath, ALL_MENU_ENTRIES } from '../constants/menuCatalog'
 import { ensurePermissionsLoaded, canAccess, isApiDown } from '../composables/usePermissions'
@@ -631,9 +640,23 @@ router.beforeEach(async (to, from) => {
 // where the user actually landed rather than where they aimed.
 //
 // Formats the tab header title as 'SwitchFiber - Admin | [Menu Name]' so the brand and admin role are prominent.
+/*
 router.afterEach((to) => {
   const label = ROUTE_TITLES[to.name]
   document.title = label ? `SwitchFiber - Admin | ${label}` : 'SwitchFiber - Admin'
+})
+*/
+// Gene - Nov, 25, 2026: Read dynamic APP_TITLE from ApplicationConfiguration store with safe fallback
+router.afterEach((to) => {
+  const label = ROUTE_TITLES[to.name]
+  let titlePrefix = APP_TITLE
+  try {
+    const appConfigStore = useAppConfigStore()
+    if (appConfigStore?.appTitle) titlePrefix = appConfigStore.appTitle
+  } catch {
+    // Pinia may not be initialized in standalone unit test contexts
+  }
+  document.title = label ? `${titlePrefix} | ${label}` : titlePrefix
 })
 
 // A stale lazy-chunk reference after a redeploy throws on navigation; a single

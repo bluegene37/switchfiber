@@ -44,6 +44,28 @@ export const EndpointSchemaMeta = {
       ]
     }
   },
+  "ApplicationConfiguration": {
+    "create": {
+      "schema": "AppCOnfig",
+      "required": [
+        "name",
+        "accountNo",
+        "value",
+        "description",
+        "isEnable"
+      ]
+    },
+    "update": {
+      "schema": "AppCOnfig",
+      "required": [
+        "name",
+        "accountNo",
+        "value",
+        "description",
+        "isEnable"
+      ]
+    }
+  },
   "Barangays": {
     "create": {
       "schema": "CreateBarangayRequest",
@@ -362,7 +384,33 @@ export const EndpointSchemaMeta = {
   "ServiceOrders": {
     "create": {
       "schema": "CreateServiceOrderRequest",
-      "required": []
+      "required": [
+        "clientSignature",
+        "image1",
+        "image2",
+        "image3",
+        "houseFrontPicture"
+      ]
+    }
+  },
+  "Status": {
+    "create": {
+      "schema": "StatusRequest",
+      "required": [
+        "type",
+        "name",
+        "description",
+        "createdBy"
+      ]
+    },
+    "update": {
+      "schema": "StatusRequest",
+      "required": [
+        "type",
+        "name",
+        "description",
+        "createdBy"
+      ]
     }
   },
   "Token": {

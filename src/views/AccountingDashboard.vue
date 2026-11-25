@@ -462,7 +462,11 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import apiClient from '../services/api'
+/*
 import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR } from '../composables/useTheme'
+*/
+// Gene - Nov, 25, 2026: Use reactive activePrimaryHex from useTheme for live accounting chart coloring
+import { buildCategoricalRamp, buildPaletteFromHex, MASTER_THEME_COLOR, useTheme } from '../composables/useTheme'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
 import DataTable from 'primevue/datatable'
@@ -1010,7 +1014,12 @@ const getPaymentMethodIcon = (method) => {
 }
 
 // Chart Colors & Ramp
+/*
 const brandRamp = buildCategoricalRamp(MASTER_THEME_COLOR, 5)
+*/
+// Gene - Nov, 25, 2026: Derive accounting chart palette reactively from activePrimaryHex
+const { activePrimaryHex } = useTheme()
+const brandRamp = computed(() => buildCategoricalRamp(activePrimaryHex.value || MASTER_THEME_COLOR, 5))
 const rgbaOf = (hex, alpha) => `rgba(${buildPaletteFromHex(hex).rgb}, ${alpha})`
 
 // 1. Revenue & Collections Trend Chart
@@ -1071,11 +1080,21 @@ const revenueTrendChartOption = computed(() => {
         type: 'line',
         smooth: true,
         data: billedData,
+        /*
         itemStyle: { color: brandRamp[0] },
         areaStyle: {
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [{ offset: 0, color: rgbaOf(brandRamp[0], 0.3) }, { offset: 1, color: rgbaOf(brandRamp[0], 0.02) }]
+          }
+        }
+        */
+        // Gene - Nov, 25, 2026: Use reactive brandRamp.value[0]
+        itemStyle: { color: brandRamp.value[0] },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: rgbaOf(brandRamp.value[0], 0.3) }, { offset: 1, color: rgbaOf(brandRamp.value[0], 0.02) }]
           }
         }
       }
@@ -1153,10 +1172,18 @@ const paymentMethodChartOption = computed(() => {
     methodTallies[m] = (methodTallies[m] || 0) + (Number(inv.receivedPayment) || 0)
   })
 
+  /*
   const data = Object.entries(methodTallies).map(([name, value], i) => ({
     name,
     value,
     itemStyle: { color: brandRamp[i % brandRamp.length] }
+  }))
+  */
+  // Gene - Nov, 25, 2026: Use reactive brandRamp.value
+  const data = Object.entries(methodTallies).map(([name, value], i) => ({
+    name,
+    value,
+    itemStyle: { color: brandRamp.value[i % brandRamp.value.length] }
   }))
 
   return {
@@ -1260,8 +1287,15 @@ const planRevenueChartOption = computed(() => {
         name: 'Revenue',
         type: 'bar',
         data: values,
+        /*
         itemStyle: {
           color: brandRamp[1],
+          borderRadius: [0, 4, 4, 0]
+        }
+        */
+        // Gene - Nov, 25, 2026: Use reactive brandRamp.value[1]
+        itemStyle: {
+          color: brandRamp.value[1],
           borderRadius: [0, 4, 4, 0]
         }
       }
@@ -1328,7 +1362,11 @@ const geoRevenueChartOption = computed(() => {
         name: 'Subscribers',
         type: 'bar',
         data: subscribersData,
+        /*
         itemStyle: { color: brandRamp[0], borderRadius: [4, 4, 0, 0] }
+        */
+        // Gene - Nov, 25, 2026: Use reactive brandRamp.value[0]
+        itemStyle: { color: brandRamp.value[0], borderRadius: [4, 4, 0, 0] }
       },
       {
         name: 'Estimated MRR',

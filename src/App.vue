@@ -23,6 +23,7 @@
 </template>
 
 <script setup>
+/*
 import { computed, ref, onErrorCaptured } from 'vue'
 import { useRoute } from 'vue-router'
 import AuthLayout from './layouts/AuthLayout.vue'
@@ -30,6 +31,21 @@ import AppLayout from './layouts/AppLayout.vue'
 
 const route = useRoute()
 const fatalError = ref(null)
+*/
+// Gene - Nov, 25, 2026: Load centralized ApplicationConfiguration settings on app startup
+import { computed, ref, onErrorCaptured, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import AuthLayout from './layouts/AuthLayout.vue'
+import AppLayout from './layouts/AppLayout.vue'
+import { useAppConfigStore } from './stores/appConfig'
+
+const route = useRoute()
+const fatalError = ref(null)
+const appConfigStore = useAppConfigStore()
+
+onMounted(() => {
+  appConfigStore.loadConfigs()
+})
 
 // Determine layout based on route path metadata
 const layout = computed(() => {

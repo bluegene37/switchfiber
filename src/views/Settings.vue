@@ -123,9 +123,10 @@
 
           <!-- Quick Navigation -->
           <div class="list-group shadow-sm border-0 rounded-4 overflow-hidden">
-            <button 
+            <!-- Gene - Nov, 25, 2026: Added Application Configuration tab in Settings navigation -->
+            <button
               v-if="canAccessTheme"
-              @click="activeSection = 'theme'" 
+              @click="activeSection = 'theme'"
               class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border-0"
               :class="{ 'bg-primary text-white fw-bold': activeSection === 'theme' }"
             >
@@ -134,6 +135,29 @@
                 <span>Theme & Appearance</span>
               </div>
               <i class="pi pi-chevron-right small"></i>
+            </button>
+
+            <button
+              @click="activeSection = 'app-config'"
+              class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border-0"
+              :class="{ 'bg-primary text-white fw-bold': activeSection === 'app-config' }"
+            >
+              <div class="d-flex align-items-center gap-3">
+                <i class="pi pi-sliders-h fs-5"></i>
+                <span>Application Configuration</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span v-if="isApiDown" class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">Offline</span>
+                <span
+                  v-else-if="appConfigs.length > 0"
+                  class="badge rounded-pill px-2 py-0.5"
+                  :class="activeSection === 'app-config' ? 'bg-white text-primary' : 'bg-primary bg-opacity-10 text-primary'"
+                  style="font-size: 0.68rem;"
+                >
+                  {{ appConfigs.length }}
+                </span>
+                <i class="pi pi-chevron-right small"></i>
+              </div>
             </button>
           
           <button 
@@ -208,7 +232,7 @@
               ></span>
               <div>
                 <div class="fw-bold small text-body d-flex align-items-center gap-2">
-                  <span>SwitchFiber Warm Rose Theme</span>
+                  <span>{{ activeThemeLabel }}</span>
                   <span class="badge bg-primary rounded-pill px-2.5 py-0.5" style="font-size: 0.7rem;">Active</span>
                 </div>
                 <div class="text-secondary small mt-0.5" style="font-size: 0.75rem;">
@@ -223,6 +247,96 @@
               <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'"></i>
               <span>Switch to {{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
             </button>
+          </div>
+
+          <!-- Gene - Nov, 25, 2026: Interactive Brand Theme Color Customizer backed by /api/ApplicationConfiguration -->
+          <div class="p-4 rounded-4 border bg-body-tertiary mb-4 sfa-tracker-settings-theme-customizer">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <div>
+                <h6 class="fw-bold text-body mb-1 d-flex align-items-center gap-2">
+                  <i class="pi pi-sparkles text-primary fs-6"></i>
+                  <span>Brand Theme Color Customization</span>
+                </h6>
+                <p class="small text-secondary mb-0">
+                  Pick a preset palette or enter a custom HEX color to preview live across buttons, tables, charts, and PDF exports, then save it to Application Configuration.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                @click="activeSection = 'app-config'"
+              >
+                <i class="pi pi-sliders-h me-1"></i> Open All Configs
+              </button>
+            </div>
+
+            <!-- Preset Color Swatches -->
+            <div class="row g-2 mb-3">
+              <div v-for="(palette, key) in THEME_PALETTES" :key="key" class="col-6 col-sm-4 col-xl-2">
+                <button
+                  type="button"
+                  class="w-100 p-2 rounded-3 border bg-body text-start d-flex align-items-center gap-2 transition-all theme-preset-pill"
+                  :class="isThemePresetSelected(palette.primary) ? 'border-primary shadow-sm' : ''"
+                  @click="selectPresetThemeColor(palette.primary)"
+                >
+                  <span
+                    class="rounded-circle flex-shrink-0 border"
+                    :style="{ width: '20px', height: '20px', backgroundColor: palette.primary }"
+                  ></span>
+                  <span class="min-w-0">
+                    <span class="d-block fw-semibold text-body text-truncate" style="font-size: 0.72rem;">{{ palette.name.replace('SwitchFiber ', '') }}</span>
+                    <code class="d-block text-secondary" style="font-size: 0.65rem;">{{ palette.primary }}</code>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom HEX Picker + Save / Reset Actions -->
+            <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 pt-2 border-top">
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div>
+                  <label class="form-label small fw-semibold text-secondary mb-1 d-block">Custom Color</label>
+                  <input
+                    type="color"
+                    :value="themeColorPickerValue"
+                    @input="onThemeColorPickerInput"
+                    class="form-control form-control-color p-1 rounded-3 border bg-body config-color-input"
+                    title="Pick custom primary brand color"
+                  />
+                </div>
+                <div>
+                  <label class="form-label small fw-semibold text-secondary mb-1 d-block">HEX Code</label>
+                  <InputText
+                    v-model="customThemeHexInput"
+                    @update:modelValue="onCustomHexTyped"
+                    placeholder="#e74c5a"
+                    class="p-inputtext-sm font-monospace"
+                    style="width: 130px;"
+                  />
+                </div>
+              </div>
+
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm rounded-3 px-3"
+                  @click="handleResetDefaultThemeColor"
+                  :disabled="isSavingThemeColor"
+                >
+                  <i class="pi pi-undo me-1"></i> Reset Default
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold d-inline-flex align-items-center gap-2"
+                  @click="handleSaveThemePrimaryColor"
+                  :disabled="isApiDown || isSavingThemeColor || !isCustomThemeHexValid"
+                >
+                  <span v-if="isSavingThemeColor" class="spinner-border spinner-border-sm" role="status"></span>
+                  <i v-else class="pi pi-save"></i>
+                  <span>{{ isSavingThemeColor ? 'Saving…' : 'Save to Application Configuration' }}</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- 1. Primary & Brand Color Palette -->
@@ -665,6 +779,206 @@
           </form>
         </div>
 
+        <!-- Gene - Nov, 25, 2026: Centralized Application Configuration Management Panel -->
+        <div v-else-if="activeSection === 'app-config'" class="card shadow-sm border-0 rounded-4 p-4 bg-body sfa-tracker-settings-panel-app-config">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+              <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
+                <i class="pi pi-sliders-h fs-4"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold text-body mb-1">Application Configuration</h5>
+                <p class="small text-secondary mb-0">
+                  Manage global key-value settings, theme colors, and runtime preferences stored in <code>/api/ApplicationConfiguration</code>.
+                </p>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                @click="refreshAppConfigs"
+                :disabled="isLoadingAppConfigs || isApiDown"
+              >
+                <i class="pi pi-refresh" :class="{ 'spin-icon': isLoadingAppConfigs }"></i>
+                <span>Refresh</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold d-inline-flex align-items-center gap-1.5"
+                @click="openCreateConfigDialog()"
+                :disabled="isApiDown"
+              >
+                <i class="pi pi-plus"></i>
+                <span>Add Configuration</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Offline Notice -->
+          <div v-if="isApiDown" class="alert alert-warning d-flex align-items-center gap-2 rounded-3 p-3 mb-3 small">
+            <i class="pi pi-exclamation-triangle fs-5 flex-shrink-0"></i>
+            <div>Backend API is currently offline. Connect to the server to view or modify Application Configuration records.</div>
+          </div>
+
+          <!-- Search + Filter Bar -->
+          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
+            <div class="position-relative flex-grow-1" style="max-width: 340px;">
+              <i class="pi pi-search position-absolute top-50 translate-middle-y text-secondary" style="left: 0.75rem; font-size: 0.85rem;"></i>
+              <InputText
+                v-model="configSearchQuery"
+                placeholder="Search by name, code, value, or description..."
+                class="w-100 p-inputtext-sm"
+                style="padding-left: 2.2rem;"
+              />
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+              <button
+                v-for="tab in configFilterTabs"
+                :key="tab.key"
+                type="button"
+                class="btn btn-sm rounded-pill px-3 py-1"
+                :class="configStatusFilter === tab.key ? 'btn-primary fw-semibold' : 'btn-outline-secondary'"
+                @click="configStatusFilter = tab.key"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick-Add Recommended Settings Strip -->
+          <div v-if="availablePresetsToAdd.length > 0 && !isApiDown" class="p-3 rounded-3 bg-body-tertiary border mb-3">
+            <div class="small fw-semibold text-secondary mb-2 d-flex align-items-center gap-1.5">
+              <i class="pi pi-bolt text-primary"></i>
+              <span>Quick-Add Recommended Settings</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button
+                v-for="preset in availablePresetsToAdd"
+                :key="preset.name"
+                type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1.5"
+                style="font-size: 0.75rem;"
+                @click="openCreateConfigDialog(preset)"
+              >
+                <span
+                  v-if="preset.valueType === 'color'"
+                  class="rounded-circle border"
+                  :style="{ width: '12px', height: '12px', backgroundColor: preset.defaultValue }"
+                ></span>
+                <i v-else class="pi pi-plus" style="font-size: 0.68rem;"></i>
+                <span>{{ preset.name }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="isLoadingAppConfigs && appConfigs.length === 0" class="text-center py-5 text-secondary">
+            <i class="pi pi-spin pi-spinner fs-3 text-primary mb-2 d-block"></i>
+            <span class="small">Loading Application Configuration settings…</span>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="filteredAppConfigs.length === 0" class="text-center py-5 border rounded-4 bg-body-tertiary">
+            <i class="pi pi-sliders-h fs-2 text-secondary opacity-50 mb-2 d-block"></i>
+            <h6 class="fw-bold text-body mb-1">No matching configurations found</h6>
+            <p class="small text-secondary mb-3">
+              {{ appConfigs.length === 0 ? 'Create your first application setting or pick one of the recommended presets above.' : 'Try clearing your search query or switching filter tabs.' }}
+            </p>
+            <button
+              v-if="!isApiDown"
+              type="button"
+              class="btn btn-primary btn-sm rounded-3 px-3"
+              @click="openCreateConfigDialog()"
+            >
+              <i class="pi pi-plus me-1"></i> Create Setting
+            </button>
+          </div>
+
+          <!-- Configurations Table -->
+          <div v-else class="table-responsive border rounded-4">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th class="px-3 py-2.5">Setting Name</th>
+                  <th class="px-3 py-2.5">Code</th>
+                  <th class="px-3 py-2.5">Value</th>
+                  <th class="px-3 py-2.5">Description</th>
+                  <th class="px-3 py-2.5 text-center">Enabled</th>
+                  <th class="px-3 py-2.5 text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in filteredAppConfigs" :key="item.id || item.code">
+                  <td class="px-3 py-2.5">
+                    <div class="fw-semibold text-body">{{ item.name }}</div>
+                    <span
+                      v-if="isKnownRuntimePreset(item.name)"
+                      class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-0.5 mt-1"
+                      style="font-size: 0.65rem;"
+                    >
+                      Live Setting
+                    </span>
+                  </td>
+                  <td class="px-3 py-2.5">
+                    <code class="small text-secondary">{{ item.code || '—' }}</code>
+                  </td>
+                  <td class="px-3 py-2.5">
+                    <div class="d-inline-flex align-items-center gap-2">
+                      <span
+                        v-if="isHexValue(item.value)"
+                        class="rounded-2 border shadow-xs flex-shrink-0"
+                        :style="{ width: '20px', height: '20px', backgroundColor: item.value }"
+                      ></span>
+                      <span class="font-monospace text-body">{{ item.value }}</span>
+                    </div>
+                  </td>
+                  <td class="px-3 py-2.5 text-secondary" style="max-width: 240px;">
+                    <span class="text-truncate d-inline-block" style="max-width: 230px;" :title="item.description">
+                      {{ item.description || '—' }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-2.5 text-center">
+                    <ToggleSwitch
+                      :modelValue="Boolean(item.isEnable)"
+                      :disabled="isSavingAppConfig || isApiDown"
+                      @update:modelValue="() => handleToggleConfig(item)"
+                    />
+                  </td>
+                  <td class="px-3 py-2.5 text-end text-nowrap">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-link text-secondary p-1 me-1"
+                      title="View Details"
+                      @click="openViewConfigDialog(item)"
+                    >
+                      <i class="pi pi-eye"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-link text-primary p-1 me-1"
+                      title="Edit Configuration"
+                      :disabled="isApiDown"
+                      @click="openEditConfigDialog(item)"
+                    >
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-link text-danger p-1"
+                      title="Delete Configuration"
+                      :disabled="isApiDown"
+                      @click="openDeleteConfigDialog(item)"
+                    >
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- 4. System & API Info -->
         <div v-else-if="activeSection === 'system'" class="card shadow-sm border-0 rounded-4 p-4 bg-body sfa-tracker-settings-panel-system">
           <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
@@ -811,11 +1125,225 @@
 
       </div>
     </div>
+
+    <!-- Gene - Nov, 25, 2026: Create / Edit Application Configuration Dialog (audit fields hidden per project rules) -->
+    <Dialog
+      v-model:visible="showConfigDialog"
+      modal
+      :header="isEditingConfig ? 'Edit Application Configuration' : 'Add Application Configuration'"
+      class="sfa-tracker-app-config-dialog"
+      :style="{ width: '92vw', maxWidth: '560px' }"
+    >
+      <div class="d-flex flex-column gap-3 pt-1">
+        <div v-if="!isEditingConfig">
+          <label class="form-label small fw-semibold text-secondary">Preset Template (Optional)</label>
+          <Select
+            v-model="selectedPresetOption"
+            :options="APPLICATION_CONFIG_PRESETS"
+            optionLabel="label"
+            placeholder="Choose a built-in setting preset..."
+            showClear
+            class="w-100"
+            @update:modelValue="applyPresetToConfigForm"
+          />
+        </div>
+
+        <div>
+          <label class="form-label small fw-semibold text-secondary">
+            Setting Name / Key <span class="text-danger">*</span>
+          </label>
+          <InputText
+            v-model="configForm.name"
+            placeholder="e.g. THEME_PRIMARY_COLOR"
+            class="w-100 p-inputtext-sm font-monospace"
+          />
+        </div>
+
+        <div>
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <label class="form-label small fw-semibold text-secondary mb-0">
+              Value <span class="text-danger">*</span>
+            </label>
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-decoration-none small"
+              @click="forceColorPicker = !forceColorPicker"
+            >
+              <i class="pi pi-palette me-1"></i>{{ isColorConfigForm ? 'Hide Color Picker' : 'Use Color Picker' }}
+            </button>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <input
+              v-if="isColorConfigForm"
+              type="color"
+              :value="configColorPickerValue"
+              @input="(e) => { configForm.value = e.target.value }"
+              class="form-control form-control-color p-1 rounded-3 border bg-body config-color-input flex-shrink-0"
+              title="Pick color value"
+            />
+            <InputText
+              v-model="configForm.value"
+              placeholder="e.g. #e74c5a or SwitchFiber - Admin"
+              class="w-100 p-inputtext-sm font-monospace"
+            />
+          </div>
+          <div v-if="isModeConfigForm" class="d-flex align-items-center gap-2 mt-2">
+            <button
+              type="button"
+              class="btn btn-sm rounded-pill px-3"
+              :class="String(configForm.value).toLowerCase() === 'light' ? 'btn-primary' : 'btn-outline-secondary'"
+              @click="configForm.value = 'light'"
+            >
+              <i class="pi pi-sun me-1"></i> Light
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm rounded-pill px-3"
+              :class="String(configForm.value).toLowerCase() === 'dark' ? 'btn-primary' : 'btn-outline-secondary'"
+              @click="configForm.value = 'dark'"
+            >
+              <i class="pi pi-moon me-1"></i> Dark
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label small fw-semibold text-secondary">Description</label>
+          <Textarea
+            v-model="configForm.description"
+            rows="2"
+            autoResize
+            placeholder="Describe what this configuration controls..."
+            class="w-100 p-inputtext-sm"
+          />
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-body-tertiary border">
+          <div>
+            <div class="fw-semibold small text-body">Enabled</div>
+            <div class="text-secondary" style="font-size: 0.75rem;">Only enabled configurations take effect at runtime.</div>
+          </div>
+          <ToggleSwitch v-model="configForm.isEnable" />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="d-flex justify-content-end gap-2">
+          <Button label="Cancel" severity="secondary" outlined size="small" @click="showConfigDialog = false" :disabled="isSavingAppConfig" />
+          <Button
+            :label="isEditingConfig ? 'Update Setting' : 'Create Setting'"
+            icon="pi pi-check"
+            size="small"
+            :loading="isSavingAppConfig"
+            @click="submitConfigForm"
+          />
+        </div>
+      </template>
+    </Dialog>
+
+    <!-- Gene - Nov, 25, 2026: View Details Application Configuration Dialog with read-only System Audit & Timestamp Details -->
+    <Dialog
+      v-model:visible="showViewConfigDialog"
+      modal
+      header="Application Configuration Details"
+      class="sfa-tracker-app-config-view-dialog"
+      :style="{ width: '92vw', maxWidth: '560px' }"
+    >
+      <div v-if="viewingConfig" class="d-flex flex-column gap-3 pt-1">
+        <div class="row g-3">
+          <div class="col-12 col-sm-6">
+            <label class="form-label small fw-semibold text-secondary">Setting Name</label>
+            <InputText :modelValue="viewingConfig.name || ''" readonly disabled class="w-100 p-inputtext-sm font-monospace" />
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label small fw-semibold text-secondary">Status</label>
+            <InputText :modelValue="viewingConfig.isEnable ? 'Enabled' : 'Disabled'" readonly disabled class="w-100 p-inputtext-sm" />
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold text-secondary">Value</label>
+            <div class="d-flex align-items-center gap-2">
+              <span
+                v-if="isHexValue(viewingConfig.value)"
+                class="rounded-2 border flex-shrink-0"
+                :style="{ width: '32px', height: '32px', backgroundColor: viewingConfig.value }"
+              ></span>
+              <InputText :modelValue="viewingConfig.value || ''" readonly disabled class="w-100 p-inputtext-sm font-monospace" />
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold text-secondary">Description</label>
+            <Textarea :modelValue="viewingConfig.description || ''" rows="2" readonly disabled class="w-100 p-inputtext-sm" />
+          </div>
+        </div>
+
+        <div class="pt-3 mt-1 border-top">
+          <div class="small fw-bold text-secondary text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+            System Audit &amp; Timestamp Details
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-sm-4">
+              <label class="form-label small text-secondary">ID</label>
+              <InputText :modelValue="String(viewingConfig.id ?? '—')" readonly disabled class="w-100 p-inputtext-sm font-monospace" />
+            </div>
+            <div class="col-12 col-sm-4">
+              <label class="form-label small text-secondary">Code</label>
+              <InputText :modelValue="viewingConfig.code || '—'" readonly disabled class="w-100 p-inputtext-sm font-monospace" />
+            </div>
+            <div class="col-12 col-sm-4">
+              <label class="form-label small text-secondary">Created Date</label>
+              <InputText :modelValue="formatAuditDate(viewingConfig.createdDate)" readonly disabled class="w-100 p-inputtext-sm" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button label="Close" severity="secondary" outlined size="small" @click="showViewConfigDialog = false" />
+      </template>
+    </Dialog>
+
+    <!-- Gene - Nov, 25, 2026: Delete Confirmation Dialog using record code -->
+    <Dialog
+      v-model:visible="showDeleteConfigDialog"
+      modal
+      header="Delete Application Configuration"
+      class="sfa-tracker-app-config-delete-dialog"
+      :style="{ width: '92vw', maxWidth: '440px' }"
+    >
+      <div class="d-flex align-items-start gap-3 pt-1">
+        <div class="p-2.5 bg-danger bg-opacity-10 text-danger rounded-circle flex-shrink-0">
+          <i class="pi pi-exclamation-triangle fs-5"></i>
+        </div>
+        <div>
+          <p class="small text-body mb-1">
+            Are you sure you want to delete <strong>{{ deletingConfig?.name }}</strong>?
+          </p>
+          <p class="small text-secondary mb-0">
+            Code: <code>{{ deletingConfig?.code }}</code>. Removing this setting reverts dependent behavior to application defaults.
+          </p>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="d-flex justify-content-end gap-2">
+          <Button label="Cancel" severity="secondary" outlined size="small" @click="showDeleteConfigDialog = false" :disabled="isSavingAppConfig" />
+          <Button
+            label="Delete"
+            icon="pi pi-trash"
+            severity="danger"
+            size="small"
+            :loading="isSavingAppConfig"
+            @click="confirmDeleteConfig"
+          />
+        </div>
+      </template>
+    </Dialog>
   </template>
 </div>
 </template>
 
 <script setup>
+/*
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
@@ -827,6 +1355,44 @@ import Password from 'primevue/password'
 
 const authStore = useAuthStore()
 const { isDark, toggleTheme } = useTheme()
+const { canAccessTheme, canAccessSettings, isSuperAdmin, isApiDown, apiErrorDetails, retryConnection } = usePermissions()
+const toast = useToast()
+*/
+// Gene - Nov, 25, 2026: Added ApplicationConfiguration store, theme customizer controls, and PrimeVue CRUD dialogs
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { useAppConfigStore } from '../stores/appConfig'
+import { useTheme } from '../composables/useTheme'
+import { usePermissions } from '../composables/usePermissions'
+import apiClient from '../services/api'
+import {
+  APPLICATION_CONFIG_PRESETS,
+  isValidHexColor,
+  normalizeHexColor,
+  normalizeConfigKey
+} from '../services/applicationConfiguration'
+import { useToast } from 'primevue/usetoast'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
+import Textarea from 'primevue/textarea'
+import ToggleSwitch from 'primevue/toggleswitch'
+import Select from 'primevue/select'
+
+const authStore = useAuthStore()
+const appConfigStore = useAppConfigStore()
+const {
+  isDark,
+  toggleTheme,
+  activePrimaryHex,
+  activePalette,
+  semanticColorOverrides,
+  setColorTheme,
+  resetThemeColors,
+  THEME_PALETTES,
+  MASTER_THEME_COLOR
+} = useTheme()
 const { canAccessTheme, canAccessSettings, isSuperAdmin, isApiDown, apiErrorDetails, retryConnection } = usePermissions()
 const toast = useToast()
 
@@ -959,9 +1525,278 @@ const tokenValue = (c) => (c.token && resolvedTokens.value[c.token]) || ''
 const displayHex = (c) => tokenValue(c) || c.hex
 const swatchColor = (c) => tokenValue(c) || c.previewColor || c.hex
 
+/*
 onMounted(refreshResolvedTokens)
 // Surface and tooltip tokens resolve differently per mode.
 watch(isDark, () => nextTick(refreshResolvedTokens))
+*/
+// Gene - Nov, 25, 2026: Refresh resolved CSS token swatches on theme mode, primary hex, or semantic override changes
+onMounted(refreshResolvedTokens)
+watch([isDark, activePrimaryHex, semanticColorOverrides], () => nextTick(refreshResolvedTokens), { deep: true })
+
+// Gene - Nov, 25, 2026: Brand Theme Color Customizer state and handlers
+const customThemeHexInput = ref(activePrimaryHex.value || MASTER_THEME_COLOR)
+const isSavingThemeColor = ref(false)
+
+watch(activePrimaryHex, (nextHex) => {
+  if (nextHex && normalizeHexColor(customThemeHexInput.value) !== normalizeHexColor(nextHex)) {
+    customThemeHexInput.value = nextHex
+  }
+})
+
+const activeThemeLabel = computed(() => activePalette.value?.name || 'SwitchFiber Warm Rose')
+const isCustomThemeHexValid = computed(() => isValidHexColor(customThemeHexInput.value))
+const themeColorPickerValue = computed(() =>
+  normalizeHexColor(customThemeHexInput.value) || normalizeHexColor(activePrimaryHex.value) || MASTER_THEME_COLOR
+)
+
+const isThemePresetSelected = (presetHex) =>
+  normalizeHexColor(activePrimaryHex.value) === normalizeHexColor(presetHex)
+
+const selectPresetThemeColor = (hex) => {
+  customThemeHexInput.value = hex
+  setColorTheme(hex, { persist: true })
+}
+
+const onThemeColorPickerInput = (event) => {
+  const hex = event?.target?.value
+  if (isValidHexColor(hex)) {
+    customThemeHexInput.value = hex
+    setColorTheme(hex, { persist: true })
+  }
+}
+
+const onCustomHexTyped = (val) => {
+  const normalized = normalizeHexColor(val)
+  if (normalized) {
+    setColorTheme(normalized, { persist: true })
+  }
+}
+
+const handleSaveThemePrimaryColor = async () => {
+  const hex = normalizeHexColor(customThemeHexInput.value)
+  if (!hex) {
+    toast.add({ severity: 'warn', summary: 'Invalid HEX Color', detail: 'Enter a valid 6-digit hex color like #e74c5a.', life: 3500 })
+    return
+  }
+  isSavingThemeColor.value = true
+  try {
+    await appConfigStore.upsertSetting('THEME_PRIMARY_COLOR', {
+      value: hex,
+      description: 'Primary brand theme color applied across SwitchFiber Admin',
+      isEnable: true
+    })
+    toast.add({ severity: 'success', summary: 'Theme Saved', detail: `Saved primary color ${hex} to Application Configuration.`, life: 3500 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Save Failed', detail: err?.message || 'Unable to save theme color.', life: 4500 })
+  } finally {
+    isSavingThemeColor.value = false
+  }
+}
+
+const handleResetDefaultThemeColor = async () => {
+  customThemeHexInput.value = MASTER_THEME_COLOR
+  resetThemeColors({ persist: true })
+  if (!isApiDown.value && appConfigStore.findConfig('THEME_PRIMARY_COLOR')) {
+    isSavingThemeColor.value = true
+    try {
+      await appConfigStore.upsertSetting('THEME_PRIMARY_COLOR', {
+        value: MASTER_THEME_COLOR,
+        description: 'Primary brand theme color applied across SwitchFiber Admin',
+        isEnable: true
+      })
+      toast.add({ severity: 'info', summary: 'Theme Reset', detail: `Restored default color ${MASTER_THEME_COLOR} and updated Application Configuration.`, life: 3500 })
+    } catch (err) {
+      toast.add({ severity: 'warn', summary: 'Reset Locally', detail: err?.message || 'Theme reset locally; server update failed.', life: 4000 })
+    } finally {
+      isSavingThemeColor.value = false
+    }
+  } else {
+    toast.add({ severity: 'info', summary: 'Theme Reset', detail: `Restored default color ${MASTER_THEME_COLOR}.`, life: 3000 })
+  }
+}
+
+// Gene - Nov, 25, 2026: Application Configuration Manager state, filtering, and CRUD handlers
+const appConfigs = computed(() => appConfigStore.configs || [])
+const isLoadingAppConfigs = computed(() => appConfigStore.isLoading)
+const isSavingAppConfig = computed(() => appConfigStore.isSaving)
+
+const configSearchQuery = ref('')
+const configStatusFilter = ref('all')
+const configFilterTabs = [
+  { key: 'all', label: 'All' },
+  { key: 'enabled', label: 'Enabled' },
+  { key: 'disabled', label: 'Disabled' },
+  { key: 'colors', label: 'Colors' }
+]
+
+const isHexValue = (val) => isValidHexColor(val)
+const isKnownRuntimePreset = (name) => {
+  const key = normalizeConfigKey(name)
+  return APPLICATION_CONFIG_PRESETS.some(p => normalizeConfigKey(p.name) === key)
+}
+
+const availablePresetsToAdd = computed(() => {
+  const existingKeys = new Set(appConfigs.value.map(c => normalizeConfigKey(c?.name)))
+  return APPLICATION_CONFIG_PRESETS.filter(p => !existingKeys.has(normalizeConfigKey(p.name)))
+})
+
+const filteredAppConfigs = computed(() => {
+  const q = configSearchQuery.value.trim().toLowerCase()
+  return appConfigs.value.filter((item) => {
+    if (configStatusFilter.value === 'enabled' && !item.isEnable) return false
+    if (configStatusFilter.value === 'disabled' && item.isEnable) return false
+    if (configStatusFilter.value === 'colors' && !isValidHexColor(item.value)) return false
+    if (!q) return true
+    return [item.name, item.code, item.value, item.description].some(
+      field => String(field || '').toLowerCase().includes(q)
+    )
+  })
+})
+
+const showConfigDialog = ref(false)
+const isEditingConfig = ref(false)
+const editingConfigMeta = ref({ id: null, code: '' })
+const selectedPresetOption = ref(null)
+const forceColorPicker = ref(false)
+const configForm = ref({
+  name: '',
+  value: '',
+  description: '',
+  isEnable: true
+})
+
+const isColorConfigForm = computed(() => {
+  if (forceColorPicker.value) return true
+  const nameUpper = String(configForm.value.name || '').toUpperCase()
+  return nameUpper.includes('COLOR') || isValidHexColor(configForm.value.value)
+})
+
+const isModeConfigForm = computed(() => normalizeConfigKey(configForm.value.name).includes('MODE'))
+
+const configColorPickerValue = computed(() =>
+  normalizeHexColor(configForm.value.value) || MASTER_THEME_COLOR
+)
+
+const applyPresetToConfigForm = (preset) => {
+  if (!preset) return
+  configForm.value.name = preset.name
+  configForm.value.value = preset.defaultValue
+  configForm.value.description = preset.description
+  configForm.value.isEnable = true
+  forceColorPicker.value = preset.valueType === 'color'
+}
+
+const openCreateConfigDialog = (preset = null) => {
+  isEditingConfig.value = false
+  editingConfigMeta.value = { id: null, code: '' }
+  selectedPresetOption.value = preset || null
+  forceColorPicker.value = Boolean(preset?.valueType === 'color')
+  configForm.value = {
+    name: preset?.name || '',
+    value: preset?.defaultValue || '',
+    description: preset?.description || '',
+    isEnable: true
+  }
+  showConfigDialog.value = true
+}
+
+const openEditConfigDialog = (item) => {
+  isEditingConfig.value = true
+  editingConfigMeta.value = { id: item.id, code: item.code }
+  selectedPresetOption.value = null
+  forceColorPicker.value = isValidHexColor(item.value)
+  configForm.value = {
+    name: item.name || '',
+    value: item.value || '',
+    description: item.description || '',
+    isEnable: item.isEnable !== false
+  }
+  showConfigDialog.value = true
+}
+
+const submitConfigForm = async () => {
+  const trimmedName = String(configForm.value.name || '').trim()
+  const trimmedValue = String(configForm.value.value || '').trim()
+  if (!trimmedName || !trimmedValue) {
+    toast.add({ severity: 'warn', summary: 'Required Fields', detail: 'Setting Name and Value are required.', life: 3500 })
+    return
+  }
+  try {
+    if (isEditingConfig.value) {
+      await appConfigStore.updateConfig(editingConfigMeta.value.id, editingConfigMeta.value.code, {
+        name: trimmedName,
+        accountNo: editingConfigMeta.value.code || trimmedName,
+        value: trimmedValue,
+        description: configForm.value.description,
+        isEnable: configForm.value.isEnable
+      })
+      toast.add({ severity: 'success', summary: 'Updated', detail: `Updated "${trimmedName}".`, life: 3500 })
+    } else {
+      await appConfigStore.createConfig({
+        name: trimmedName,
+        accountNo: trimmedName,
+        value: trimmedValue,
+        description: configForm.value.description,
+        isEnable: configForm.value.isEnable
+      })
+      toast.add({ severity: 'success', summary: 'Created', detail: `Created "${trimmedName}".`, life: 3500 })
+    }
+    showConfigDialog.value = false
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Save Failed', detail: err?.message || 'Unable to save configuration.', life: 4500 })
+  }
+}
+
+const handleToggleConfig = async (item) => {
+  try {
+    await appConfigStore.toggleConfig(item)
+    toast.add({
+      severity: 'success',
+      summary: item.isEnable ? 'Disabled' : 'Enabled',
+      detail: `"${item.name}" is now ${item.isEnable ? 'disabled' : 'enabled'}.`,
+      life: 3000
+    })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Update Failed', detail: err?.message || 'Could not toggle configuration.', life: 4500 })
+  }
+}
+
+const showViewConfigDialog = ref(false)
+const viewingConfig = ref(null)
+const openViewConfigDialog = (item) => {
+  viewingConfig.value = item
+  showViewConfigDialog.value = true
+}
+
+const formatAuditDate = (dateStr) => {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return isNaN(d.getTime()) ? String(dateStr) : d.toLocaleString()
+}
+
+const showDeleteConfigDialog = ref(false)
+const deletingConfig = ref(null)
+const openDeleteConfigDialog = (item) => {
+  deletingConfig.value = item
+  showDeleteConfigDialog.value = true
+}
+
+const confirmDeleteConfig = async () => {
+  if (!deletingConfig.value?.code) return
+  const deletedName = deletingConfig.value.name
+  try {
+    await appConfigStore.deleteConfig(deletingConfig.value.code)
+    showDeleteConfigDialog.value = false
+    toast.add({ severity: 'success', summary: 'Deleted', detail: `Deleted "${deletedName}".`, life: 3500 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Delete Failed', detail: err?.message || 'Unable to delete configuration.', life: 4500 })
+  }
+}
+
+const refreshAppConfigs = async () => {
+  await appConfigStore.loadConfigs({ force: true })
+}
 
 const userDisplayName = computed(() => {
   if (!user.value) return 'Admin User'
@@ -1012,8 +1847,17 @@ const loadUserProfile = async () => {
   }
 }
 
+/*
 onMounted(() => {
   loadUserProfile()
+})
+*/
+// Gene - Nov, 25, 2026: Ensure ApplicationConfiguration records are loaded when entering Settings
+onMounted(() => {
+  loadUserProfile()
+  if (!appConfigStore.isLoaded && !isApiDown.value) {
+    appConfigStore.loadConfigs()
+  }
 })
 
 const saveProfile = async () => {
@@ -1157,10 +2001,18 @@ const updatePassword = async () => {
 
 <style scoped>
 .theme-card:hover,
-.color-swatch-card:hover {
+.color-swatch-card:hover,
+.theme-preset-pill:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-color: var(--bs-primary-border-subtle) !important;
+}
+
+/* Gene - Nov, 25, 2026: Sizing for native color picker input inside Theme Customizer and Config Dialog */
+.config-color-input {
+  width: 44px;
+  height: 36px;
+  cursor: pointer;
 }
 
 /* Long token names used to be clipped mid-word against the card edge. They now

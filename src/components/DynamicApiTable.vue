@@ -6603,7 +6603,11 @@ import * as XLSX from 'xlsx'
 const toast = useToast()
 const authStore = useAuthStore()
 const userStore = useUserStore()
+/*
 const { activeColorTheme, THEME_PALETTES } = useTheme()
+*/
+// Gene - Nov, 25, 2026: Destructure activePalette so PDF exports respect custom hex colors from ApplicationConfiguration
+const { activeColorTheme, activePalette, THEME_PALETTES } = useTheme()
 const { canAccessModifyPassword, canAccessUnmaskPassword } = usePermissions()
 // Gene - Oct, 16, 2026: Reactive tick for tracking real-time client menu permission toggles
 const clientMenuTick = ref(0)
@@ -13065,8 +13069,13 @@ const exportPDF = () => {
     const targetCols = displayedColumns.value && displayedColumns.value.length > 0 ? displayedColumns.value : columns.value
 
     const doc = new jsPDF('landscape')
+/*
     const currentPalette = THEME_PALETTES[activeColorTheme.value] || THEME_PALETTES.green
     const pdfHeaderColor = currentPalette.pdfRgb || [16, 185, 129]
+*/
+    // Gene - Nov, 25, 2026: Use activePalette first so custom ApplicationConfiguration hex colors apply to PDF headers
+    const currentPalette = activePalette.value || THEME_PALETTES[activeColorTheme.value] || THEME_PALETTES.red
+    const pdfHeaderColor = currentPalette.pdfRgb || [231, 76, 90]
 
     const head = [targetCols.map(col => formatLabel(col))]
     

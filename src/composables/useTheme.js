@@ -88,6 +88,7 @@ export const THEME_PALETTES = {
   slate: buildPaletteFromHex('#475569', 'Slate Gray')
 }
 
+/*
 const isDark = ref(false)
 const activeColorTheme = ref('red')
 
@@ -164,6 +165,231 @@ export function useTheme() {
     toggleTheme,
     activeColorTheme,
     setColorTheme,
+    THEME_PALETTES,
+    MASTER_THEME_COLOR,
+    buildPaletteFromHex
+  }
+}
+*/
+// Gene - Nov, 25, 2026: Extended useTheme with reactive palette state, localStorage hydration, semantic color overrides, and explicit mode/reset helpers for ApplicationConfiguration integration
+export const THEME_COLOR_STORAGE_KEY = 'sfa_theme_primary_color'
+export const SEMANTIC_OVERRIDES_STORAGE_KEY = 'sfa_theme_semantic_overrides'
+
+const HEX_COLOR_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
+
+function normalizeThemeHex(hex) {
+  if (typeof hex !== 'string') return ''
+  const trimmed = hex.trim()
+  if (!HEX_COLOR_RE.test(trimmed)) return ''
+  let lower = trimmed.toLowerCase()
+  if (lower.length === 4) {
+    lower = `#${lower[1]}${lower[1]}${lower[2]}${lower[2]}${lower[3]}${lower[3]}`
+  }
+  return lower
+}
+
+function readLocalStorage(key) {
+  try {
+    if (typeof localStorage === 'undefined') return null
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeLocalStorage(key, value) {
+  try {
+    if (typeof localStorage === 'undefined') return
+    if (value === null || value === undefined || value === '') {
+      localStorage.removeItem(key)
+    } else {
+      localStorage.setItem(key, value)
+    }
+  } catch {
+    // Ignore storage quota or private mode errors
+  }
+}
+
+const defaultPalette = buildPaletteFromHex(MASTER_THEME_COLOR, 'SwitchFiber Warm Rose')
+const isDark = ref(false)
+const activeColorTheme = ref('red')
+const activePrimaryHex = ref(MASTER_THEME_COLOR)
+const activePalette = ref(defaultPalette)
+const semanticColorOverrides = ref({})
+
+function applyColorTheme(themeKeyOrHex, { persist = false } = {}) {
+  let palette
+  let resolvedKeyOrHex = themeKeyOrHex
+  const normalizedHex = normalizeThemeHex(themeKeyOrHex)
+
+  if (THEME_PALETTES[themeKeyOrHex]) {
+    palette = THEME_PALETTES[themeKeyOrHex]
+  } else if (normalizedHex) {
+    const matchedKey = Object.keys(THEME_PALETTES).find(
+      key => normalizeThemeHex(THEME_PALETTES[key].primary) === normalizedHex
+    )
+    if (matchedKey) {
+      palette = THEME_PALETTES[matchedKey]
+      resolvedKeyOrHex = matchedKey
+    } else {
+      palette = buildPaletteFromHex(normalizedHex, 'Custom Theme')
+      resolvedKeyOrHex = normalizedHex
+    }
+  } else {
+    palette = buildPaletteFromHex(MASTER_THEME_COLOR, 'SwitchFiber Warm Rose')
+    resolvedKeyOrHex = 'red'
+  }
+
+  activeColorTheme.value = resolvedKeyOrHex || 'red'
+  activePrimaryHex.value = palette.primary
+  activePalette.value = palette
+
+  if (persist) {
+    writeLocalStorage(THEME_COLOR_STORAGE_KEY, palette.primary)
+  }
+
+  if (typeof document !== 'undefined') {
+    const root = document.documentElement
+    root.style.setProperty('--color-primary', palette.primary)
+    root.style.setProperty('--color-primary-dark', palette.hover)
+
+    root.style.setProperty('--bs-primary', palette.primary)
+    root.style.setProperty('--bs-primary-rgb', palette.rgb)
+    root.style.setProperty('--bs-primary-hover', palette.hover)
+    root.style.setProperty('--bs-primary-active', palette.active)
+    root.style.setProperty('--bs-primary-bg-subtle', palette.bgSubtle)
+    root.style.setProperty('--bs-primary-border-subtle', palette.borderSubtle)
+    root.style.setProperty('--bs-link-color-rgb', palette.rgb)
+    root.style.setProperty('--theme-primary-on-dark', palette.onDark)
+
+    root.style.setProperty('--p-primary-color', palette.primary)
+    root.style.setProperty('--p-primary-hover-color', palette.hover)
+    root.style.setProperty('--p-primary-active-color', palette.active)
+
+    root.style.setProperty('--theme-primary', palette.primary)
+    root.style.setProperty('--theme-primary-hover', palette.hover)
+    const rowHighlightHex = normalizeThemeHex(semanticColorOverrides.value?.rowHighlight) || palette.primary
+    root.style.setProperty('--theme-row-highlight', rowHighlightHex)
+    root.style.setProperty('--theme-row-hover', `rgba(${palette.rgb}, 0.08)`)
+    root.style.setProperty('--theme-row-hover-solid', isDark.value ? palette.rowHoverSolidDark : palette.rowHoverSolidLight)
+    root.setAttribute('data-color-theme', typeof resolvedKeyOrHex === 'string' ? resolvedKeyOrHex : 'red')
+  }
+}
+
+function applySemanticColorOverrides(overrides = {}, { persist = false } = {}) {
+  const clean = {}
+  for (const key of ['success', 'warning', 'danger', 'info', 'rowHighlight']) {
+    const hex = normalizeThemeHex(overrides?.[key])
+    if (hex) clean[key] = hex
+  }
+  semanticColorOverrides.value = clean
+
+  if (persist) {
+    if (Object.keys(clean).length > 0) {
+      writeLocalStorage(SEMANTIC_OVERRIDES_STORAGE_KEY, JSON.stringify(clean))
+    } else {
+      writeLocalStorage(SEMANTIC_OVERRIDES_STORAGE_KEY, null)
+    }
+  }
+
+  if (typeof document === 'undefined') return
+  const root = document.documentElement
+
+  const applyFamily = (varPrefix, hex, includeHover = false) => {
+    if (hex) {
+      const p = buildPaletteFromHex(hex)
+      root.style.setProperty(`--bs-${varPrefix}`, p.primary)
+      root.style.setProperty(`--bs-${varPrefix}-rgb`, p.rgb)
+      if (includeHover) {
+        root.style.setProperty(`--bs-${varPrefix}-hover`, p.hover)
+      }
+      if (varPrefix !== 'info') {
+        root.style.setProperty(`--bs-${varPrefix}-bg-subtle`, p.bgSubtle)
+        root.style.setProperty(`--bs-${varPrefix}-border-subtle`, p.borderSubtle)
+      }
+    } else {
+      root.style.removeProperty(`--bs-${varPrefix}`)
+      root.style.removeProperty(`--bs-${varPrefix}-rgb`)
+      if (includeHover) {
+        root.style.removeProperty(`--bs-${varPrefix}-hover`)
+      }
+      if (varPrefix !== 'info') {
+        root.style.removeProperty(`--bs-${varPrefix}-bg-subtle`)
+        root.style.removeProperty(`--bs-${varPrefix}-border-subtle`)
+      }
+    }
+  }
+
+  applyFamily('success', clean.success, false)
+  applyFamily('warning', clean.warning, true)
+  applyFamily('danger', clean.danger, true)
+  applyFamily('info', clean.info, false)
+
+  if (clean.rowHighlight) {
+    root.style.setProperty('--theme-row-highlight', clean.rowHighlight)
+  } else {
+    root.style.setProperty('--theme-row-highlight', activePalette.value.primary)
+  }
+}
+
+function setThemeMode(mode, { persist = true } = {}) {
+  const nextDark = String(mode || '').trim().toLowerCase() === 'dark'
+  isDark.value = nextDark
+  if (typeof document !== 'undefined') {
+    if (nextDark) {
+      document.documentElement.classList.add('dark')
+      document.documentElement.setAttribute('data-bs-theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      document.documentElement.removeAttribute('data-bs-theme')
+    }
+  }
+  if (persist) {
+    writeLocalStorage('theme', nextDark ? 'dark' : 'light')
+  }
+  applyColorTheme(activeColorTheme.value)
+}
+
+function resetThemeColors({ persist = true } = {}) {
+  applySemanticColorOverrides({}, { persist })
+  applyColorTheme(MASTER_THEME_COLOR, { persist })
+}
+
+// Initial application & cached hydration
+if (typeof document !== 'undefined') {
+  isDark.value = document.documentElement.classList.contains('dark') || readLocalStorage('theme') === 'dark'
+  const savedPrimary = normalizeThemeHex(readLocalStorage(THEME_COLOR_STORAGE_KEY))
+  let savedOverrides = {}
+  try {
+    const rawOverrides = readLocalStorage(SEMANTIC_OVERRIDES_STORAGE_KEY)
+    if (rawOverrides) savedOverrides = JSON.parse(rawOverrides) || {}
+  } catch {
+    savedOverrides = {}
+  }
+  applySemanticColorOverrides(savedOverrides, { persist: false })
+  applyColorTheme(savedPrimary || MASTER_THEME_COLOR, { persist: false })
+}
+
+export function useTheme() {
+  const toggleTheme = () => {
+    setThemeMode(isDark.value ? 'light' : 'dark', { persist: true })
+  }
+
+  const setColorTheme = (themeKeyOrHex, options = {}) => {
+    applyColorTheme(themeKeyOrHex, options)
+  }
+
+  return {
+    isDark,
+    toggleTheme,
+    setThemeMode,
+    activeColorTheme,
+    activePrimaryHex,
+    activePalette,
+    semanticColorOverrides,
+    setColorTheme,
+    applySemanticColorOverrides,
+    resetThemeColors,
     THEME_PALETTES,
     MASTER_THEME_COLOR,
     buildPaletteFromHex

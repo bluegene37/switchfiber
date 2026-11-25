@@ -36,7 +36,9 @@ export const MONITORED_ENDPOINTS = [
   // Gene - Nov 7, 2026: Added Payments, Payment Methods, and Payment Types to monitored endpoints
   { key: 'payments', path: '/Payments', label: 'Payments' },
   { key: 'paymentMethods', path: '/PaymentMethods', label: 'Payment Methods' },
-  { key: 'paymentTypes', path: '/PaymentTypes', label: 'Payment Types' }
+  { key: 'paymentTypes', path: '/PaymentTypes', label: 'Payment Types' },
+  // Gene - Nov, 25, 2026: Added ApplicationConfiguration to monitored endpoints
+  { key: 'applicationConfiguration', path: '/ApplicationConfiguration', label: 'Application Configuration' }
 ]
 
 export const labelForPath = (path) =>
