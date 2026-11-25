@@ -344,6 +344,19 @@ const onManualDateChange = () => {
 // Default to 'This Week' filter on initial load
 applyDatePreset('this_week')
 
+// Gene - Nov, 26, 2026: Bypass default 'This Week' date window when navigating from Subscribers to active or historical Service Orders
+watch(
+  () => [route.query.allDates, route.query.locateServiceOrderId],
+  ([allDates, locateId]) => {
+    if (String(allDates || '') === '1' || String(locateId || '').trim() !== '') {
+      selectedDatePreset.value = ''
+      fromDate.value = null
+      toDate.value = null
+    }
+  },
+  { immediate: true }
+)
+
 const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''

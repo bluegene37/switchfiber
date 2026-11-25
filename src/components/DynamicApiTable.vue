@@ -981,7 +981,11 @@
       <!--
       <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : '105px', width: isMenuEndpoint ? '150px' : '105px' }" class="text-center frozen-actions-col sfa-tracker-table-col-actions">
       -->
+      <!--
       <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : (isApplicationEndpoint ? '145px' : '105px'), width: isMenuEndpoint ? '150px' : (isApplicationEndpoint ? '145px' : '105px') }" class="text-center frozen-actions-col sfa-tracker-table-col-actions">
+      -->
+      <!-- Gene - Nov, 26, 2026: Widen Actions column on RadiusUser/Subscribers for Go to Service Order & Create Service Order actions -->
+      <Column header="Actions" alignFrozen="right" :frozen="true" :style="{ minWidth: isMenuEndpoint ? '150px' : ((isApplicationEndpoint || isRadiusUserEndpoint) ? '150px' : '105px'), width: isMenuEndpoint ? '150px' : ((isApplicationEndpoint || isRadiusUserEndpoint) ? '150px' : '105px') }" class="text-center frozen-actions-col sfa-tracker-table-col-actions">
         <template #body="slotProps">
           <div class="d-flex gap-1 justify-content-center align-items-center" @click.stop>
             <!-- Interactive Toggle Switch & Status Pill in Actions Column for Menus -->
@@ -1051,6 +1055,32 @@
                 aria-label="Create Job Order"
                 :disabled="creatingJobOrderFromApp || locatingJobOrderId !== null"
                 @click="openCreateJobOrderFromAppDialog(slotProps.data)"
+              />
+            </template>
+            <!-- Gene - Nov, 26, 2026: Per-row Subscriber actions: jump to Active Service Order / History and auto-create & fill Service Order -->
+            <template v-if="isRadiusUserEndpoint">
+              <Button
+                v-if="getSubscriberSoSummary(slotProps.data).hasActive"
+                icon="pi pi-wrench"
+                class="p-button-text p-button-sm p-button-rounded p-button-warning p-0 action-row-btn sfa-tracker-subscriber-active-so-btn"
+                v-tooltip.top="`Active Service Order #${getSubscriberSoSummary(slotProps.data).latestActive?.id || ''} (${getStatusDisplayLabel(getSubscriberSoSummary(slotProps.data).latestActive?.visitStatus || getSubscriberSoSummary(slotProps.data).latestActive?.supportStatus || 'Active', 'visitStatus')}) — Click to view`"
+                aria-label="Go to Active Service Order"
+                @click="goToSubscriberServiceOrder(slotProps.data, getSubscriberSoSummary(slotProps.data).latestActive)"
+              />
+              <Button
+                v-else-if="getSubscriberSoSummary(slotProps.data).hasHistory"
+                icon="pi pi-history"
+                class="p-button-text p-button-sm p-button-rounded p-button-info p-0 action-row-btn sfa-tracker-subscriber-so-history-btn"
+                v-tooltip.top="`View ${getSubscriberSoSummary(slotProps.data).all.length} Service Order(s) in history`"
+                aria-label="View Service Order History"
+                @click="goToSubscriberServiceOrderHistory(slotProps.data)"
+              />
+              <Button
+                icon="pi pi-file-plus"
+                class="p-button-text p-button-sm p-button-rounded p-button-success p-0 action-row-btn sfa-tracker-subscriber-create-so-btn"
+                v-tooltip.top="'Create Service Order (Auto-fill Subscriber Info)'"
+                aria-label="Create Service Order"
+                @click="createServiceOrderFromSubscriber(slotProps.data)"
               />
             </template>
             <!--
@@ -3365,6 +3395,86 @@
       </div>
 
       <div class="pe-2 mt-2 sfa-tracker-dialog-view-body" style="max-height: 72vh; overflow-y: auto;">
+        <!-- Gene - Nov, 26, 2026: Show Subscriber Active Service Orders & History summary inside View Details modal -->
+        <div
+          v-if="isRadiusUserEndpoint"
+          class="card border rounded-3 p-3 mb-3 bg-body-tertiary shadow-sm sfa-tracker-subscriber-so-history-card"
+        >
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-2 mb-2 border-bottom">
+            <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2">
+              <i class="pi pi-wrench text-primary"></i>
+              <span>Service Order History</span>
+              <span
+                v-if="getSubscriberSoSummary(viewFormData).hasActive"
+                class="badge bg-warning bg-opacity-15 text-warning-emphasis border border-warning border-opacity-25 rounded-pill px-2 py-0.5 small fw-semibold"
+              >
+                {{ getSubscriberSoSummary(viewFormData).active.length }} Active
+              </span>
+              <span
+                v-else-if="getSubscriberSoSummary(viewFormData).hasHistory"
+                class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0.5 small fw-normal"
+              >
+                {{ getSubscriberSoSummary(viewFormData).all.length }} Total
+              </span>
+            </h6>
+            <div class="d-flex align-items-center gap-2">
+              <Button
+                v-if="getSubscriberSoSummary(viewFormData).hasHistory"
+                label="View All History"
+                icon="pi pi-history"
+                class="p-button-outlined p-button-info p-button-sm rounded-3 px-2.5"
+                @click="displayViewDialog = false; goToSubscriberServiceOrderHistory(viewFormData)"
+              />
+              <Button
+                label="Create Service Order"
+                icon="pi pi-file-plus"
+                class="p-button-success p-button-sm rounded-3 px-2.5 shadow-xs"
+                @click="displayViewDialog = false; createServiceOrderFromSubscriber(viewFormData)"
+              />
+            </div>
+          </div>
+
+          <div v-if="serviceOrderStore.isLoading && !serviceOrderStore.hasLoadedList" class="small text-secondary d-flex align-items-center gap-2 py-1">
+            <i class="pi pi-spin pi-spinner"></i>
+            <span>Checking Service Order history…</span>
+          </div>
+          <div v-else-if="getSubscriberSoSummary(viewFormData).hasActive" class="d-flex flex-column gap-2">
+            <div
+              v-for="so in getSubscriberSoSummary(viewFormData).active.slice(0, 3)"
+              :key="so.id || so.accountNumber || so.concern"
+              class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 rounded-3 bg-body border"
+            >
+              <div class="d-flex flex-wrap align-items-center gap-2 small">
+                <span class="fw-bold text-primary">#{{ so.id || 'N/A' }}</span>
+                <span class="text-body fw-medium">{{ so.concern || 'Service Request' }}</span>
+                <span
+                  class="badge rounded-pill sfa-status-badge border"
+                  :class="getStatusBadgeConfig(so.visitStatus || so.supportStatus).class"
+                >
+                  {{ getStatusDisplayLabel(so.visitStatus || so.supportStatus, so.visitStatus ? 'visitStatus' : 'supportStatus') }}
+                </span>
+              </div>
+              <Button
+                label="Go to Service Order"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                class="p-button-outlined p-button-warning p-button-sm rounded-3 px-2.5"
+                @click="displayViewDialog = false; goToSubscriberServiceOrder(viewFormData, so)"
+              />
+            </div>
+          </div>
+          <div v-else-if="getSubscriberSoSummary(viewFormData).hasHistory" class="small text-secondary d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span>
+              {{ getSubscriberSoSummary(viewFormData).all.length }} closed/past Service Order(s) on record (Latest:
+              <strong>#{{ getSubscriberSoSummary(viewFormData).latest?.id }}</strong>
+              — {{ getSubscriberSoSummary(viewFormData).latest?.concern || 'Service Order' }}).
+            </span>
+          </div>
+          <div v-else class="small text-secondary">
+            No Service Order history found for this subscriber.
+          </div>
+        </div>
+
         <div v-if="fieldSearchEmpty('view')" class="sfa-field-search-empty text-center text-muted small py-4 bg-body-tertiary rounded-3 border border-dashed mb-3">
           <i class="pi pi-search-minus me-1"></i> No fields match "{{ fieldSearch.view.trim() }}".
           <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" @click="clearFieldSearch('view')">Show all fields</button>
@@ -3923,6 +4033,29 @@
                 class="p-button-success p-button-sm rounded-3 px-3 shadow-xs"
                 :loading="creatingJobOrderFromApp"
                 @click="openCreateJobOrderFromAppDialog(viewFormData)"
+              />
+            </template>
+            <!-- Gene - Nov, 26, 2026: Go to Active Service Order & Auto-Create Service Order buttons in Subscriber View Details footer -->
+            <template v-if="isRadiusUserEndpoint">
+              <Button
+                v-if="getSubscriberSoSummary(viewFormData).hasActive"
+                label="Go to Active Service Order"
+                icon="pi pi-wrench"
+                class="p-button-outlined p-button-warning p-button-sm rounded-3 px-3 sfa-tracker-subscriber-view-active-so-btn"
+                @click="displayViewDialog = false; goToSubscriberServiceOrder(viewFormData, getSubscriberSoSummary(viewFormData).latestActive)"
+              />
+              <Button
+                v-else-if="getSubscriberSoSummary(viewFormData).hasHistory"
+                label="View Service Order History"
+                icon="pi pi-history"
+                class="p-button-outlined p-button-info p-button-sm rounded-3 px-3 sfa-tracker-subscriber-view-history-btn"
+                @click="displayViewDialog = false; goToSubscriberServiceOrderHistory(viewFormData)"
+              />
+              <Button
+                label="Create Service Order"
+                icon="pi pi-file-plus"
+                class="p-button-success p-button-sm rounded-3 px-3 shadow-xs sfa-tracker-subscriber-view-create-so-btn"
+                @click="displayViewDialog = false; createServiceOrderFromSubscriber(viewFormData)"
               />
             </template>
           </div>
@@ -6698,6 +6831,13 @@ import { useUserStore } from '../stores/users'
 import { useAppConfigStore } from '../stores/appConfig'
 // Gene - Nov, 26, 2026: Import shared Status Pinia store for centralized dropdowns
 import { useStatusStore } from '../stores/statuses'
+// Gene - Nov, 26, 2026: Import ServiceOrder store and Subscriber-to-ServiceOrder helpers
+import { useServiceOrderStore } from '../stores/serviceOrders'
+import {
+  indexServiceOrdersBySubscriber,
+  getSubscriberServiceOrderHistory,
+  mapSubscriberToServiceOrderDraft
+} from '../utils/subscriberServiceOrder'
 import { useTheme } from '../composables/useTheme'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, startOfDay, endOfDay } from '../utils/dateRangePresets'
 import { filterFormSections } from '../utils/formFieldSearch'
@@ -6710,6 +6850,7 @@ const authStore = useAuthStore()
 const userStore = useUserStore()
 const appConfigStore = useAppConfigStore()
 const statusStore = useStatusStore()
+const serviceOrderStore = useServiceOrderStore()
 /*
 const { activeColorTheme, THEME_PALETTES } = useTheme()
 */
@@ -16954,7 +17095,20 @@ const getLoggedInProcessedBy = () => {
   return ''
 }
 
+/*
 const openCreateDialog = () => {
+*/
+// Gene - Nov, 26, 2026: Accept optional prefill draft (e.g. auto-filling Service Order from Subscribers)
+const openCreateDialog = (prefill = null) => {
+  const prefillData = (
+    prefill &&
+    typeof prefill === 'object' &&
+    !Array.isArray(prefill) &&
+    !('preventDefault' in prefill) &&
+    !('target' in prefill)
+  )
+    ? prefill
+    : null
   clearFieldSearch('create')
   resetAddressPin('create')
   fetchAddressData()
@@ -17290,6 +17444,40 @@ const openCreateDialog = () => {
     if (rizal) {
       formData.value[createRegCol] = rizal.value
       updateCitiesForProvince(rizal.value)
+    }
+  }
+
+  // Gene - Nov, 26, 2026: Apply prefill values (e.g. subscriber-to-Service-Order draft) after defaults
+  if (prefillData) {
+    const prefillByNorm = new Map()
+    Object.entries(prefillData).forEach(([k, v]) => {
+      if (v === undefined || v === null) return
+      const normKey = normalizeColKey(k)
+      if (normKey) prefillByNorm.set(normKey, v)
+    })
+
+    formColumns.value.forEach((col) => {
+      const normCol = normalizeColKey(col)
+      if (!prefillByNorm.has(normCol)) return
+      const val = prefillByNorm.get(normCol)
+      const strVal = typeof val === 'string' ? val.trim() : val
+      if (strVal === '' || strVal === null || strVal === undefined) return
+
+      const fType = getFieldType(col)
+      if (fType === 'date') {
+        const parsed = parseDateForPicker(val)
+        if (parsed) formData.value[col] = parsed
+      } else {
+        formData.value[col] = strVal
+      }
+    })
+
+    if (createRegCol && formData.value[createRegCol]) {
+      updateCitiesForProvince(formData.value[createRegCol])
+      const createCityCol = formColumns.value.find(c => getFieldType(c) === 'city_dropdown')
+      if (createCityCol && formData.value[createCityCol]) {
+        updateBarangaysForSelectedCity(formData.value[createCityCol])
+      }
     }
   }
 
@@ -18618,6 +18806,8 @@ const saveData = async () => {
     if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
     // Gene - Nov, 25, 2026: Refresh centralized Status lookup when creating Status records
     if (isStatusEndpoint.value) await fetchStatusesLookup(true)
+    // Gene - Nov, 26, 2026: Invalidate cached Service Order list on create so Subscribers history stays fresh
+    if (isServiceOrderEndpoint.value) serviceOrderStore.invalidateListCache()
     displayCreateDialog.value = false
     toast.add({
       severity: 'success',
@@ -20978,6 +21168,8 @@ const saveEdit = async () => {
     if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
     // Gene - Nov, 25, 2026: Refresh centralized Status lookup when updating Status records
     if (isStatusEndpoint.value) await fetchStatusesLookup(true)
+    // Gene - Nov, 26, 2026: Invalidate cached Service Order list on update so Subscribers history stays fresh
+    if (isServiceOrderEndpoint.value) serviceOrderStore.invalidateListCache()
     displayEditDialog.value = false
     toast.add({
       severity: 'success',
@@ -21094,6 +21286,8 @@ const deleteRecord = async () => {
     if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
     // Gene - Nov, 25, 2026: Refresh centralized Status lookup when deleting Status records
     if (isStatusEndpoint.value) await fetchStatusesLookup(true)
+    // Gene - Nov, 26, 2026: Invalidate cached Service Order list on delete so Subscribers history stays fresh
+    if (isServiceOrderEndpoint.value) serviceOrderStore.invalidateListCache()
     displayDeleteDialog.value = false
     toast.add({
       severity: 'success',
@@ -23287,6 +23481,150 @@ const confirmCreateJobOrderFromApp = async () => {
 }
 
 const locateTargetRecordFromRoute = async () => {
+  if (isServiceOrderEndpoint.value) {
+    const targetSoId = String(route?.query?.locateServiceOrderId || '').trim()
+    if (!targetSoId) {
+      consumedLocateKey.value = ''
+      return
+    }
+    const locateKey = `so|${targetSoId}`
+    if (consumedLocateKey.value === locateKey) return
+    consumedLocateKey.value = locateKey
+
+    const findSoInRows = (rows) =>
+      Array.isArray(rows)
+        ? rows.find(row => String(getRecordId(row) ?? '').trim() === targetSoId)
+        : null
+
+    let match = findSoInRows(data.value)
+    if (!match) {
+      try {
+        const fetched = await ServiceOrderService.getServiceOrderById(targetSoId)
+        const unwrapped = unwrapApiPayload(fetched)
+        const row = Array.isArray(unwrapped) ? unwrapped[0] : unwrapped
+        if (row && typeof row === 'object' && Object.keys(row).length > 0) {
+          match = findSoInRows(data.value) || row
+          if (!findSoInRows(data.value)) {
+            data.value = [row, ...(Array.isArray(data.value) ? data.value : [])]
+          }
+        }
+      } catch (err) {
+        console.warn('[DynamicApiTable] Could not fetch located Service Order:', err)
+      }
+    }
+
+    if (match) {
+      selectedRow.value = match
+      emit('row-select', match)
+      await nextTick()
+      const matchKey = rowKeyOf(match)
+      const idx = (filteredData.value || []).findIndex(r => rowKeyOf(r) === matchKey)
+      if (idx >= 0 && rowsPerPage.value > 0) {
+        firstRowIndex.value = Math.floor(idx / rowsPerPage.value) * rowsPerPage.value
+      }
+      openViewDialog(match)
+      if (router?.replace && route?.query?.locateServiceOrderId !== undefined) {
+        const nextQuery = { ...route.query }
+        delete nextQuery.locateServiceOrderId
+        router.replace({ path: route.path, query: nextQuery }).catch(() => {})
+      }
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'Service Order Not Found',
+        detail: `Could not locate Service Order #${targetSoId}.`,
+        life: 3500
+      })
+    }
+    return
+  }
+
+  if (!isJobOrderEndpoint.value) return
+  const targetJoId = String(route?.query?.locateJobOrderId || '').trim()
+  const targetAppId = String(route?.query?.locateApplicationId || '').trim()
+  if (!targetJoId && !targetAppId) {
+    consumedLocateKey.value = ''
+    return
+  }
+  const locateKey = `${targetJoId}|${targetAppId}`
+  if (consumedLocateKey.value === locateKey) return
+  consumedLocateKey.value = locateKey
+
+  const findInRows = (rows) => {
+    if (!Array.isArray(rows)) return null
+    let found = null
+    if (targetJoId) {
+      found = rows.find(row => String(getRecordId(row) ?? '').trim() === targetJoId)
+    }
+    if (!found && targetAppId) {
+      found = rows.find(row => {
+        const rowAppId = String(row?.applicationId ?? row?.applicationIdValue ?? row?.applicationid ?? '').trim()
+        return rowAppId && rowAppId === targetAppId
+      })
+    }
+    return found
+  }
+
+  let match = findInRows(data.value)
+  if (!match) {
+    try {
+      let fetched = null
+      if (targetJoId) {
+        const res = await JobOrderService.getJobOrderById(targetJoId)
+        fetched = unwrapApiPayload(res)
+      }
+      if ((!fetched || (Array.isArray(fetched) && fetched.length === 0)) && targetAppId) {
+        const res = await JobOrderService.getJobOrderByApplicationId(targetAppId)
+        fetched = unwrapApiPayload(res)
+      }
+      if (Array.isArray(fetched)) fetched = fetched[0] || null
+      if (fetched && typeof fetched === 'object' && Object.keys(fetched).length > 0) {
+        match = findInRows(data.value) || fetched
+        if (!findInRows(data.value)) {
+          data.value = [fetched, ...(Array.isArray(data.value) ? data.value : [])]
+        }
+      }
+    } catch (err) {
+      console.warn('[DynamicApiTable] Could not fetch located Job Order:', err)
+    }
+  }
+
+  if (match) {
+    selectedRow.value = match
+    emit('row-select', match)
+    await nextTick()
+    const matchKey = rowKeyOf(match)
+    const idx = (filteredData.value || []).findIndex(r => rowKeyOf(r) === matchKey)
+    if (idx >= 0 && rowsPerPage.value > 0) {
+      firstRowIndex.value = Math.floor(idx / rowsPerPage.value) * rowsPerPage.value
+    }
+    openViewDialog(match)
+    // Gene - Nov, 16, 2026: Strip one-shot locate query params after opening the View modal so page refresh does not re-open it
+    if (router?.replace && route?.query && (route.query.locateJobOrderId !== undefined || route.query.locateApplicationId !== undefined)) {
+      const nextQuery = { ...route.query }
+      delete nextQuery.locateJobOrderId
+      delete nextQuery.locateApplicationId
+      router.replace({ path: route.path, query: nextQuery }).catch(() => {})
+    }
+  } else {
+    toast.add({
+      severity: 'warn',
+      summary: 'Job Order Not Found',
+      detail: `Could not locate Job Order ${targetJoId ? `#${targetJoId}` : `for Application #${targetAppId}`}.`,
+      life: 3500
+    })
+  }
+}
+
+watch(() => [route?.query?.locateJobOrderId, route?.query?.locateApplicationId, route?.query?.locateServiceOrderId], () => {
+  if (hasFetched.value) {
+    locateTargetRecordFromRoute()
+  }
+})
+
+// Gene - Nov, 26, 2026: Preserved previous locateTargetRecordFromRoute implementation for reference
+/*
+const locateTargetRecordFromRoute = async () => {
   if (!isJobOrderEndpoint.value) return
   const targetJoId = String(route?.query?.locateJobOrderId || '').trim()
   const targetAppId = String(route?.query?.locateApplicationId || '').trim()
@@ -23369,6 +23707,110 @@ watch(() => [route?.query?.locateJobOrderId, route?.query?.locateApplicationId],
     locateTargetRecordFromRoute()
   }
 })
+*/
+// Gene - Nov, 26, 2026: Subscriber Service Order history lookup, auto-fill draft navigation, and pending draft consumer
+const subscriberServiceOrderIndex = computed(() =>
+  indexServiceOrdersBySubscriber(serviceOrderStore.serviceOrders)
+)
+
+const getSubscriberSoSummary = (record) => {
+  const rec = unwrapRecordArg(record)
+  return getSubscriberServiceOrderHistory(rec, subscriberServiceOrderIndex.value)
+}
+
+watch(
+  [isRadiusUserEndpoint, hasFetched],
+  ([isRadius, fetched]) => {
+    if (isRadius && fetched) {
+      serviceOrderStore.ensureServiceOrdersLoaded()
+    }
+  },
+  { immediate: true }
+)
+
+const createServiceOrderFromSubscriber = (record) => {
+  const rec = unwrapRecordArg(record)
+  if (!rec || typeof rec !== 'object') return
+  const currentUser =
+    getLoggedInProcessedBy() ||
+    (authStore.user?.fname
+      ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim()
+      : (authStore.user?.name || authStore.user?.username || authStore.user?.email || ''))
+  const draft = mapSubscriberToServiceOrderDraft(rec, {
+    currentUser,
+    currentUserEmail: authStore.user?.email || ''
+  })
+  serviceOrderStore.setPendingCreateDraft(draft)
+  const refTag = draft.accountNumber || draft.username || '1'
+  router.push({
+    path: '/service-orders',
+    query: { createFromSubscriber: String(refTag) }
+  })
+}
+
+const goToSubscriberServiceOrder = (record, serviceOrder = null) => {
+  const rec = unwrapRecordArg(record)
+  const targetSo = serviceOrder || getSubscriberSoSummary(rec).latestActive
+  if (!targetSo) {
+    goToSubscriberServiceOrderHistory(rec)
+    return
+  }
+  const soId = getRecordId(targetSo)
+  const searchTerm = String(
+    targetSo.accountNumber || rec?.accountNo || rec?.accountNumber || rec?.username || rec?.name || ''
+  ).trim()
+  router.push({
+    path: '/service-orders',
+    query: {
+      ...(soId ? { locateServiceOrderId: String(soId) } : {}),
+      ...(searchTerm ? { search: searchTerm } : {}),
+      allDates: '1'
+    }
+  })
+}
+
+const goToSubscriberServiceOrderHistory = (record) => {
+  const rec = unwrapRecordArg(record)
+  const draft = mapSubscriberToServiceOrderDraft(rec)
+  const searchTerm = String(draft.accountNumber || draft.username || rec?.fullName || '').trim()
+  router.push({
+    path: '/service-orders',
+    query: {
+      ...(searchTerm ? { search: searchTerm } : {}),
+      allDates: '1'
+    }
+  })
+}
+
+const consumePendingServiceOrderDraft = async () => {
+  if (!isServiceOrderEndpoint.value || !hasFetched.value) return
+  if (!serviceOrderStore.pendingCreateDraft) return
+  const draft = serviceOrderStore.consumePendingCreateDraft()
+  if (!draft) return
+  await nextTick()
+  openCreateDialog(draft)
+  toast.add({
+    severity: 'info',
+    summary: 'Subscriber Pre-Filled',
+    detail: `Auto-filled Service Order for ${draft.fullName || draft.accountNumber || draft.username || 'Subscriber'}. Complete concern/dispatch details to save.`,
+    life: 4000
+  })
+  if (router?.replace && route?.query?.createFromSubscriber !== undefined) {
+    const nextQuery = { ...route.query }
+    delete nextQuery.createFromSubscriber
+    router.replace({ path: route.path, query: nextQuery }).catch(() => {})
+  }
+}
+
+watch(
+  [isServiceOrderEndpoint, hasFetched, () => route?.query?.createFromSubscriber],
+  () => {
+    if (isServiceOrderEndpoint.value && hasFetched.value && serviceOrderStore.pendingCreateDraft) {
+      consumePendingServiceOrderDraft()
+    }
+  },
+  { immediate: true }
+)
 
 defineExpose({
   openCreateDialog,

@@ -7,7 +7,12 @@ import { ServiceOrderService } from '../services/serviceOrders.js'
 export const useServiceOrderStore = defineStore('serviceOrders', () => {
   const serviceOrders = ref([])
   const isLoading = ref(false)
+  // Gene - Nov, 26, 2026: Track loaded cache and one-shot Service Order draft handoff from Subscribers
+  const hasLoadedList = ref(false)
+  const pendingCreateDraft = ref(null)
   const error = ref(null)
+
+  let pendingEnsurePromise = null
 
   const fetchServiceOrders = async () => {
     isLoading.value = true
@@ -15,11 +20,38 @@ export const useServiceOrderStore = defineStore('serviceOrders', () => {
     try {
       const response = await ServiceOrderService.getServiceOrders()
       serviceOrders.value = response || []
+      hasLoadedList.value = true
     } catch (err) {
       error.value = err.message || 'Failed to fetch service orders'
     } finally {
       isLoading.value = false
     }
+  }
+
+  const ensureServiceOrdersLoaded = async ({ force = false } = {}) => {
+    if (pendingEnsurePromise && !force) return pendingEnsurePromise
+    if (hasLoadedList.value && !force) return serviceOrders.value
+
+    pendingEnsurePromise = fetchServiceOrders()
+      .finally(() => {
+        pendingEnsurePromise = null
+      })
+    await pendingEnsurePromise
+    return serviceOrders.value
+  }
+
+  const setPendingCreateDraft = (draft) => {
+    pendingCreateDraft.value = draft && typeof draft === 'object' ? { ...draft } : null
+  }
+
+  const consumePendingCreateDraft = () => {
+    const draft = pendingCreateDraft.value
+    pendingCreateDraft.value = null
+    return draft
+  }
+
+  const invalidateListCache = () => {
+    hasLoadedList.value = false
   }
 
   const getServiceOrderById = async (id) => {
@@ -93,8 +125,14 @@ export const useServiceOrderStore = defineStore('serviceOrders', () => {
   return {
     serviceOrders,
     isLoading,
+    hasLoadedList,
+    pendingCreateDraft,
     error,
     fetchServiceOrders,
+    ensureServiceOrdersLoaded,
+    setPendingCreateDraft,
+    consumePendingCreateDraft,
+    invalidateListCache,
     getServiceOrderById,
     fetchServiceOrderImage,
     createServiceOrder,
