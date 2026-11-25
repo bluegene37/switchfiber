@@ -49,6 +49,8 @@ export function useSearch() {
     { id: 'nav-vlan', category: 'Navigation', title: 'VLAN Settings', subtitle: 'Virtual LAN network segmentation', icon: 'pi pi-shield', route: '/vlan' },
     { id: 'nav-router', category: 'Navigation', title: 'Router Management', subtitle: 'Core & edge router configurations', icon: 'pi pi-desktop', route: '/router' },
     { id: 'nav-plan', category: 'Navigation', title: 'Fiber Plans', subtitle: 'Bandwidth packages & pricing tiers', icon: 'pi pi-tags', route: '/plan' },
+    // Gene - Nov, 25, 2026: Added Status File Maintenance entry to global search
+    { id: 'nav-status', category: 'Navigation', title: 'Status', subtitle: 'Manage status codes, descriptions, and module type mappings', icon: 'pi pi-flag', route: '/status' },
     { id: 'nav-user', category: 'Navigation', title: 'User Accounts', subtitle: 'System users & admin accounts', icon: 'pi pi-users', route: '/user' },
     // Gene - Nov, 23, 2026: Added Tech navigation item under Users Management
     { id: 'nav-tech', category: 'Navigation', title: 'Tech', subtitle: 'Field Installation Team (FIT1) technicians', icon: 'pi pi-wrench', route: '/tech' },

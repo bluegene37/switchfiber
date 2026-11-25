@@ -358,6 +358,19 @@ const routeMap = {
     endpoint: 'InventoryLogs',
     icon: 'pi-history',
     description: 'Track inventory stock requests, item dispatches, quantities, technicians, statuses, and remarks.'
+  },
+  // Gene - Nov, 25, 2026: Added File Maintenance route mappings for Status (/api/Status)
+  '/status': {
+    title: 'Status',
+    endpoint: 'Status',
+    icon: 'pi-flag',
+    description: 'Manage system status codes (name), display labels (description), and module type codes (type).'
+  },
+  '/statuses': {
+    title: 'Status',
+    endpoint: 'Status',
+    icon: 'pi-flag',
+    description: 'Manage system status codes (name), display labels (description), and module type codes (type).'
   }
 }
 

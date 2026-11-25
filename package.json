@@ -18,7 +18,8 @@
     "gen:soa": "node scripts/generate_soa_deliverables.js",
     "sync:menus": "node scripts/sync_menu_codes_api.js",
     "sync:access-levels": "node scripts/configure_access_levels_api.js",
-    "sync:access-level-codes": "node scripts/sync_access_level_codes_api.js"
+    "sync:access-level-codes": "node scripts/sync_access_level_codes_api.js",
+    "seed:statuses": "node scripts/seed_statuses.js"
   },
   "dependencies": {
     "@primevue/themes": "^4.5.4",

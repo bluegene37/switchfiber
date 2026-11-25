@@ -62,6 +62,9 @@ const ROUTE_TITLES = {
   inventory_item: 'Inventory Item',
   'inventory-logs': 'Inventory Logs',
   inventory_logs: 'Inventory Logs',
+  // Gene - Nov, 25, 2026: Added route titles for Status File Maintenance
+  status: 'Status',
+  statuses: 'Status',
   user: 'User',
   // Gene - Nov, 23, 2026: Route title for Tech menu under Users Management
   tech: 'Tech',
@@ -258,6 +261,26 @@ const router = createRouter({
       name: 'inventory_logs',
       component: () => import('../views/FileMaintenance.vue'),
       meta: { requiresAuth: true }
+    },
+    // Gene - Nov, 25, 2026: Registered /status and /statuses File Maintenance routes
+    {
+      path: '/status',
+      name: 'status',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    /*
+    {
+      path: '/statuses',
+      name: 'statuses',
+      component: () => import('../views/FileMaintenance.vue'),
+      meta: { requiresAuth: true }
+    },
+    */
+    // Gene - Nov, 25, 2026: Redirect /statuses alias to governed /status route
+    {
+      path: '/statuses',
+      redirect: '/status'
     },
     {
       path: '/application',

@@ -37,8 +37,9 @@ export const MONITORED_ENDPOINTS = [
   { key: 'payments', path: '/Payments', label: 'Payments' },
   { key: 'paymentMethods', path: '/PaymentMethods', label: 'Payment Methods' },
   { key: 'paymentTypes', path: '/PaymentTypes', label: 'Payment Types' },
-  // Gene - Nov, 25, 2026: Added ApplicationConfiguration to monitored endpoints
-  { key: 'applicationConfiguration', path: '/ApplicationConfiguration', label: 'Application Configuration' }
+  // Gene - Nov, 25, 2026: Added ApplicationConfiguration and Status to monitored endpoints
+  { key: 'applicationConfiguration', path: '/ApplicationConfiguration', label: 'Application Configuration' },
+  { key: 'status', path: '/Status', label: 'Statuses' }
 ]
 
 export const labelForPath = (path) =>

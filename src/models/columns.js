@@ -735,7 +735,7 @@ export const EndpointColumns = {
     "status",
     "remarks"
   ],
-  // Gene - Nov, 25, 2026: Added fallback column schema for ApplicationConfiguration
+  // Gene - Nov, 25, 2026: Added fallback column schema for ApplicationConfiguration and Status
   "ApplicationConfiguration": [
     "id",
     "name",
@@ -743,6 +743,15 @@ export const EndpointColumns = {
     "value",
     "description",
     "isEnable",
+    "createdDate"
+  ],
+  "Status": [
+    "id",
+    "code",
+    "type",
+    "name",
+    "description",
+    "createdBy",
     "createdDate"
   ]
 }

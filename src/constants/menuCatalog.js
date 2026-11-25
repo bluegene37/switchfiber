@@ -636,6 +636,17 @@ export const MENU_CATALOG = [
         aliases: ['Inventory Logs', 'Inventory Log', 'InventoryLogs', 'InventoryLog', 'Stock Logs', 'Inventory History', 'File Maintenance - Inventory Logs'],
         path: '/inventory-logs',
         icon: 'pi-history'
+      },
+      // Gene - Nov, 25, 2026: Added Status File Maintenance menu entry (ST1, /status)
+      {
+        code: 'file-maintenance.status',
+        shortCode: 'ST1',
+        codeAliases: ['FMSTATUS', 'STATUS', 'STATUSES', 'FM_STATUS', 'STAT1'],
+        name: 'Status',
+        serverMenu: 'Status',
+        aliases: ['Status', 'Statuses', 'Status Maintenance', 'System Statuses', 'Status Codes', 'File Maintenance - Status'],
+        path: '/status',
+        icon: 'pi-flag'
       }
     ]
   },
@@ -887,7 +898,9 @@ const PATH_CODE_ALIASES = new Map([
   ['/technicians', 'users-management.tech'],
   // Gene - Nov, 23, 2026: Added path aliases for Subscribers screen
   ['/subscriber', 'subscribers.list'],
-  ['/subscribers/list', 'subscribers.list']
+  ['/subscribers/list', 'subscribers.list'],
+  // Gene - Nov, 25, 2026: Added path alias for Status File Maintenance
+  ['/statuses', 'file-maintenance.status']
 ])
 
 /**

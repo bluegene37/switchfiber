@@ -146,9 +146,15 @@ const ENDPOINT_OVERRIDES = {
   paymenttypes: [
     'name'
   ],
-  // Gene - Nov, 25, 2026: Mandatory fields override for ApplicationConfiguration
+  // Gene - Nov, 25, 2026: Mandatory fields override for ApplicationConfiguration and Status
   applicationconfiguration: [
     'name', 'value'
+  ],
+  status: [
+    'type', 'name', 'description'
+  ],
+  statuses: [
+    'type', 'name', 'description'
   ]
 }
 

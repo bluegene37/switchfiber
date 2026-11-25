@@ -1626,6 +1626,20 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Gene - Nov, 25, 2026: Status Type Code Dropdown in Create Modal -->
+              <Select
+                v-else-if="getFieldType(col) === 'status_type_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="statusTypeOptions"
+                optionLabel="label"
+                optionValue="value"
+                :editable="true"
+                :filter="true"
+                placeholder="Select or enter Type Code (e.g. APPLICATION)"
+                class="w-100 p-inputtext-sm"
+              />
+
               <!-- Gene - Oct, 16, 2026: Promotion Placement MultiSelect in Create Modal -->
               <MultiSelect
                 v-else-if="getFieldType(col) === 'promotion_placement_multiselect'"
@@ -4384,6 +4398,21 @@
                 class="w-100 p-inputtext-sm" 
               />
 
+              <!-- Gene - Nov, 25, 2026: Status Type Code Dropdown in Edit Modal -->
+              <Select
+                v-else-if="getFieldType(col) === 'status_type_dropdown'"
+                :id="`edit-${col}`"
+                v-model="editFormData[col]"
+                :options="statusTypeOptions"
+                optionLabel="label"
+                optionValue="value"
+                :editable="true"
+                :filter="true"
+                :disabled="isFieldDisabledInEdit(col)"
+                placeholder="Select or enter Type Code (e.g. APPLICATION)"
+                class="w-100 p-inputtext-sm"
+              />
+
               <!-- Gene - Oct, 16, 2026: Promotion Placement MultiSelect in Edit Modal -->
               <MultiSelect
                 v-else-if="getFieldType(col) === 'promotion_placement_multiselect'"
@@ -6494,6 +6523,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { CrudService } from '../services/crud'
 import { RadiusUserService } from '../services/radiusUsers'
 import { normalizeServiceOrder } from '../services/serviceOrders'
+// Gene - Nov, 25, 2026: Import Status catalog, payload normalizer, and dropdown grouping helpers
+import { STATUS_TYPES, normalizeStatusPayload, groupStatusesByType } from '../services/status'
 // Gene - Nov, 25, 2026: Import RadiusUser flattening normalizer, concise columns, and View modal layout
 import {
   normalizeRadiusUserRow,
@@ -6920,6 +6951,12 @@ const isPaymentMethodEndpoint = computed(() => {
 const isPaymentTypeEndpoint = computed(() => {
   const ep = (props.endpoint || '').trim().toLowerCase()
   return ep === 'paymenttypes' || ep === 'paymenttype' || ep === 'payment_types' || ep === 'payment_type'
+})
+
+// Gene - Nov, 25, 2026: Endpoint flag for centralized Status File Maintenance (/api/Status)
+const isStatusEndpoint = computed(() => {
+  const ep = (props.endpoint || '').trim().toLowerCase()
+  return ep === 'status' || ep === 'statuses'
 })
 
 // Gene - Oct, 16, 2026: Added endpoint flags for Promotions, Inventory Category, Inventory Item, and Inventory Logs
@@ -7945,6 +7982,14 @@ function formatLabel(col) {
     return 'Modified Date & Time'
   }
 
+  // Gene - Nov, 25, 2026: Clear semantic labels for Status File Maintenance columns (name = Code/Value, description = Display Label, type = Type Code)
+  if (typeof isStatusEndpoint !== 'undefined' && isStatusEndpoint.value) {
+    const sk = normalizeColKey(col)
+    if (sk === 'type') return 'Type Code'
+    if (sk === 'name') return 'Code / Value (Name)'
+    if (sk === 'description') return 'Display Label (Description)'
+  }
+
   /*
   if (isPaymentEndpoint.value) {
     const k = normalizeColKey(col)
@@ -8669,6 +8714,11 @@ function getFieldType(col) {
     if (lower === 'image' || lower === 'imageurl' || lower === 'image_url') {
       return 'inventory_item_image'
     }
+  }
+
+  // Gene - Nov, 25, 2026: Render Type Code selector for Status.type in Create and Edit forms
+  if (typeof isStatusEndpoint !== 'undefined' && isStatusEndpoint.value && lower === 'type') {
+    return 'status_type_dropdown'
   }
 
   /*
@@ -9417,6 +9467,15 @@ const PAYMENT_TYPE_COLUMNS = [
   'description'
 ]
 
+// Gene - Nov, 25, 2026: Concise table columns for Status File Maintenance
+const STATUS_COLUMNS = [
+  'id',
+  'code',
+  'type',
+  'name',
+  'description'
+]
+
 const CONCISE_ENDPOINT_COLUMNS = {
   Applications: APPLICATION_COLUMNS,
   applications: APPLICATION_COLUMNS,
@@ -9500,7 +9559,12 @@ const CONCISE_ENDPOINT_COLUMNS = {
   PaymentType: PAYMENT_TYPE_COLUMNS,
   paymenttype: PAYMENT_TYPE_COLUMNS,
   payment_types: PAYMENT_TYPE_COLUMNS,
-  payment_type: PAYMENT_TYPE_COLUMNS
+  payment_type: PAYMENT_TYPE_COLUMNS,
+  // Gene - Nov, 25, 2026: Register Status concise columns
+  Status: STATUS_COLUMNS,
+  status: STATUS_COLUMNS,
+  Statuses: STATUS_COLUMNS,
+  statuses: STATUS_COLUMNS
 }
 
 // Columns for the main DataTable (filters out Created, Modified & sensitive Password fields)
@@ -9624,6 +9688,8 @@ function isAuditField(col) {
   return (
     lower === 'id' ||
     (isApplicationEndpoint.value && (lower === 'applicationid' || lower === 'applicationidvalue')) ||
+    // Gene - Nov, 25, 2026: Treat server-generated Status.code as an audit field (hidden in Create/Edit, shown in View Audit)
+    (typeof isStatusEndpoint !== 'undefined' && isStatusEndpoint.value && lower === 'code') ||
     isCreatedOrModifiedField(col) ||
     lower === 'timestamp' ||
     lower === 'rowversion' ||
@@ -12620,8 +12686,20 @@ const PAYMENT_TYPE_FORM_LAYOUT = [
   }
 ]
 
+// Gene - Nov, 25, 2026: Form section layout for Status File Maintenance
+const STATUS_FORM_LAYOUT = [
+  {
+    key: 'status_config',
+    title: 'Status Configuration',
+    icon: 'pi pi-flag',
+    badgeClass: 'text-primary',
+    columns: ['type', 'name', 'description']
+  }
+]
+
 const buildPaymentMethodSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_METHOD_FORM_LAYOUT, opts)
 const buildPaymentTypeSections = (cols, opts) => buildLayoutSections(cols, PAYMENT_TYPE_FORM_LAYOUT, opts)
+const buildStatusSections = (cols, opts) => buildLayoutSections(cols, STATUS_FORM_LAYOUT, opts)
 // Gene - Oct, 16, 2026: Section builders for Promotions and Inventory endpoints
 const buildPromotionSections = (cols, opts) => buildLayoutSections(cols, PROMOTION_FORM_LAYOUT, opts)
 const buildInventoryCategorySections = (cols, opts) => buildLayoutSections(cols, INVENTORY_CATEGORY_FORM_LAYOUT, opts)
@@ -12884,6 +12962,10 @@ const baseFormSections = computed(() => {
   if (isPaymentTypeEndpoint.value) {
     return buildPaymentTypeSections(formColumns.value)
   }
+  // Gene - Nov, 25, 2026: Use dedicated section builder for Status Create/Edit forms
+  if (isStatusEndpoint.value) {
+    return buildStatusSections(formColumns.value)
+  }
   // Gene - Oct, 16, 2026: Use dedicated section builders for Promotions and Inventory endpoints
   if (isPromotionEndpoint.value) {
     return buildPromotionSections(formColumns.value)
@@ -13013,6 +13095,10 @@ const viewFormSections = computed(() => {
   }
   if (isPaymentTypeEndpoint.value) {
     return buildPaymentTypeSections(viewFormColumns.value, { includeAudit: true })
+  }
+  // Gene - Nov, 25, 2026: Use dedicated section builder for Status View Details modal (audit includes id and code)
+  if (isStatusEndpoint.value) {
+    return buildStatusSections(viewFormColumns.value, { includeAudit: true })
   }
   // Gene - Oct, 16, 2026: Use dedicated section builders for Promotions and Inventory endpoints in View modal
   if (isPromotionEndpoint.value) {
@@ -13591,6 +13677,10 @@ const APPLICATION_REQUIRED_STATUSES = [
   'Cancelled'
 ]
 */
+// Gene - Nov, 25, 2026: Status type selector options and live /api/Status dropdown lookup cache
+const statusTypeOptions = ref(STATUS_TYPES.map(t => ({ label: `${t.code} — ${t.label}`, value: t.code })))
+const statusLookupByType = ref({})
+
 // Gene - Nov, 23, 2026: Ensure No Facility, Cancelled, No Slot, Duplicate, For Confirmation, and Confirmed are always offered in Applications status dropdowns and quick-status popover
 const APPLICATION_REQUIRED_STATUSES = [
   'For Confirmation',
@@ -13602,38 +13692,68 @@ const APPLICATION_REQUIRED_STATUSES = [
 ]
 
 const statusOptions = computed(() => {
+  // Gene - Nov, 25, 2026: Safely overlay live /api/Status options (value = name, label = description) when loaded
+  const apiStatusMap = typeof statusLookupByType !== 'undefined' && statusLookupByType?.value
+    ? statusLookupByType.value
+    : {}
+  const overlayApiStatusOptions = (fallbackItems, typeCode, { preserveFallbackOnly = false } = {}) => {
+    const apiList = Array.isArray(apiStatusMap[typeCode]) ? apiStatusMap[typeCode] : []
+    if (apiList.length === 0) return fallbackItems
+    const apiByNorm = new Map()
+    apiList.forEach(item => {
+      const k = String(item?.value || '').trim().toLowerCase()
+      if (k) apiByNorm.set(k, item)
+    })
+    if (preserveFallbackOnly) {
+      return fallbackItems.map(opt => {
+        const k = String(opt?.value || '').trim().toLowerCase()
+        return apiByNorm.get(k) || opt
+      })
+    }
+    const merged = []
+    const seen = new Set()
+    ;[...apiList, ...fallbackItems].forEach(item => {
+      const val = String(item?.value || '').trim()
+      const k = val.toLowerCase()
+      if (!val || seen.has(k)) return
+      seen.add(k)
+      merged.push({ label: String(item?.label || val).trim(), value: val })
+    })
+    return merged
+  }
+
   if (isJobOrderEndpoint.value) {
     // Failed is offered on every Job Order view: a visit can fail from any
     // stage, and a technician marking it must not have to leave the tab first.
     if (isJobOrderInProgress.value) {
-      return [
+      return overlayApiStatusOptions([
         { label: 'Inprogress', value: 'Inprogress' },
         { label: 'Scheduled', value: 'Scheduled' },
         { label: 'Failed', value: 'Failed' },
         { label: 'For Confirmation', value: 'For Confirmation' },
         { label: 'Confirmed', value: 'Confirmed' },
         { label: 'Cancelled', value: 'Cancelled' }
-      ]
+      ], 'JOB_ORDER', { preserveFallbackOnly: true })
     }
     if (isJobOrderCompleted.value) {
-      return [
+      return overlayApiStatusOptions([
         { label: 'Completed', value: 'Completed' },
         { label: 'Activated', value: 'Activated' },
         { label: 'For Confirmation', value: 'For Confirmation' },
         { label: 'Confirmed', value: 'Confirmed' },
         { label: 'Cancelled', value: 'Cancelled' }
-      ]
+      ], 'JOB_ORDER', { preserveFallbackOnly: true })
     }
     if (isJobOrderActivated.value) {
-      return [
+      return overlayApiStatusOptions([
         { label: 'Activated', value: 'Activated' },
         { label: 'Completed', value: 'Completed' },
         { label: 'For Confirmation', value: 'For Confirmation' },
         { label: 'Confirmed', value: 'Confirmed' },
         { label: 'Cancelled', value: 'Cancelled' }
-      ]
+      ], 'JOB_ORDER', { preserveFallbackOnly: true })
     }
-    return [
+    return overlayApiStatusOptions([
       { label: 'Inprogress', value: 'Inprogress' },
       { label: 'Scheduled', value: 'Scheduled' },
       { label: 'Completed', value: 'Completed' },
@@ -13642,17 +13762,17 @@ const statusOptions = computed(() => {
       { label: 'For Confirmation', value: 'For Confirmation' },
       { label: 'Confirmed', value: 'Confirmed' },
       { label: 'Cancelled', value: 'Cancelled' }
-    ]
+    ], 'JOB_ORDER')
   }
   // Gene - Oct, 16, 2026: Provide inventory transaction status options for InventoryLogs when table is empty
   if (isInventoryLogEndpoint.value && !dataStatusVocabulary.value.length) {
-    return [
+    return overlayApiStatusOptions([
       { label: 'Pending', value: 'Pending' },
       { label: 'Approved', value: 'Approved' },
       { label: 'Issued', value: 'Issued' },
       { label: 'Returned', value: 'Returned' },
       { label: 'Rejected', value: 'Rejected' }
-    ]
+    ], 'INVENTORY_LOG')
   }
   const vocabulary = dataStatusVocabulary.value
   const baseList = vocabulary.length ? vocabulary : FALLBACK_STATUS_LIST
@@ -13666,9 +13786,19 @@ const statusOptions = computed(() => {
       seen.add(key)
       merged.push(val)
     })
-    return merged.map(v => ({ label: v, value: v }))
+    return overlayApiStatusOptions(merged.map(v => ({ label: v, value: v })), 'APPLICATION')
   }
-  return baseList.map(v => ({ label: v, value: v }))
+  const fallbackMapped = baseList.map(v => ({ label: v, value: v }))
+  if (typeof isPaymentEndpoint !== 'undefined' && isPaymentEndpoint.value) {
+    return overlayApiStatusOptions(fallbackMapped, 'PAYMENT')
+  }
+  if (typeof isBillingEndpoint !== 'undefined' && isBillingEndpoint.value) {
+    return overlayApiStatusOptions(fallbackMapped, 'BILLING')
+  }
+  if (typeof isInventoryLogEndpoint !== 'undefined' && isInventoryLogEndpoint.value) {
+    return overlayApiStatusOptions(fallbackMapped, 'INVENTORY_LOG')
+  }
+  return fallbackMapped
 })
 
 // Always keep the record's own status selectable, even when it is absent from the
@@ -14168,6 +14298,12 @@ const fetchFormLookups = () => {
     } catch (err) {
       console.warn('[DynamicApiTable] Failed to load PaymentTypes lookup in fetchFormLookups:', err)
     }
+    // Gene - Nov, 25, 2026: Fetch centralized /api/Status lookup to populate module status dropdowns
+    try {
+      await fetchStatusesLookup()
+    } catch (err) {
+      console.warn('[DynamicApiTable] Failed to load Status lookup in fetchFormLookups:', err)
+    }
   })().catch(err => {
     console.error('Error fetching form lookups:', err)
     formLookupsPromise = null
@@ -14277,6 +14413,36 @@ const fetchPaymentTypesLookup = (force = false) => {
     })
 
   return paymentTypesPromise
+}
+
+// Gene - Nov, 25, 2026: Centralized /api/Status lookup shared across status dropdowns (name = code/value, description = label, type = target module)
+let statusesLookupPromise = null
+
+const fetchStatusesLookup = (force = false) => {
+  if (!force && statusesLookupPromise) return statusesLookupPromise
+  statusesLookupPromise = CrudService.list('Status')
+    .then(res => {
+      const raw = unwrapList(res)
+      if (Array.isArray(raw) && raw.length > 0) {
+        const grouped = groupStatusesByType(raw)
+        statusLookupByType.value = grouped
+        if (grouped.JO_ONSITE?.length) onsiteStatusOptions.value = grouped.JO_ONSITE
+        if (grouped.BILLING?.length) billingStatusOptions.value = grouped.BILLING
+        if (grouped.DELIVERY?.length) deliveryStatusOptions.value = grouped.DELIVERY
+        if (grouped.INVOICE?.length) invoiceStatusOptions.value = grouped.INVOICE
+        if (grouped.SO_SUPPORT?.length) supportStatusOptions.value = grouped.SO_SUPPORT
+        if (grouped.SO_VISIT?.length) visitStatusOptions.value = grouped.SO_VISIT
+        if (grouped.DISCOUNT?.length) discountStatusOptions.value = grouped.DISCOUNT
+      } else if (force) {
+        statusLookupByType.value = {}
+      }
+      return statusLookupByType.value
+    })
+    .catch(err => {
+      console.warn('[DynamicApiTable] Failed to fetch Status lookup:', err)
+      statusesLookupPromise = null
+    })
+  return statusesLookupPromise
 }
 
 // AccessLevel and Users resolve labels rendered in the TABLE body — the
@@ -18073,6 +18239,9 @@ const saveData = async () => {
       // Gene - Nov, 24, 2026: Sanitize ServiceOrders JSON POST create payload so raw base64 images and empty numeric/date strings are omitted
       } else if (isServiceOrderEndpoint.value) {
         finalPayload = sanitizeServiceOrderCreatePayload(finalPayload)
+      // Gene - Nov, 25, 2026: Normalize Status POST payload to match StatusRequest schema
+      } else if (isStatusEndpoint.value) {
+        finalPayload = normalizeStatusPayload(finalPayload, String(loggedInUserId))
       }
     }
 
@@ -18222,6 +18391,8 @@ const saveData = async () => {
     // Gene - Nov 7, 2026: Refresh PaymentMethods / PaymentTypes dropdown caches when creating records in those tables
     if (isPaymentMethodEndpoint.value) await fetchPaymentMethodsLookup(true)
     if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
+    // Gene - Nov, 25, 2026: Refresh centralized Status lookup when creating Status records
+    if (isStatusEndpoint.value) await fetchStatusesLookup(true)
     displayCreateDialog.value = false
     toast.add({
       severity: 'success',
@@ -20509,30 +20680,22 @@ const saveEdit = async () => {
           finalPayload.password = editBaseSnapshot.value.password
         }
       }
+      // Gene - Nov, 25, 2026: Normalize Status PUT payload preserving original createdBy
+      if (isStatusEndpoint.value) {
+        finalPayload = normalizeStatusPayload(
+          { ...finalPayload, createdBy: editBaseSnapshot.value?.createdBy || String(loggedInUserId) },
+          String(loggedInUserId)
+        )
+      }
     }
 
     console.log(`[DynamicApiTable] Submitting PUT to endpoint: /api/${props.endpoint}/${editingRecordId.value}`, finalPayload)
-    const updatedId = editingRecordId.value
+    // Gene - Nov, 25, 2026: Resolve record code path parameter on PUT /api/Status/{code}
+    const updatedId = isStatusEndpoint.value
+      ? encodeURIComponent(String(editBaseSnapshot.value?.code || editFormData.value?.code || editingRecordId.value).trim())
+      : editingRecordId.value
     /*
     await CrudService.update(props.endpoint, updatedId, finalPayload)
-    */
-    /*
-    // Gene - Nov 5, 2026: Explicitly pass multipart/form-data header config on FormData payload to prevent Axios 415 error
-    const updateReqConfig = (typeof FormData !== 'undefined' && finalPayload instanceof FormData)
-      ? { headers: { 'Content-Type': 'multipart/form-data' } }
-      : {}
-    */
-    /*
-    // Gene - Nov 6, 2026: Add clean transactionid string query parameter on Payments PUT and preserve multipart/form-data headers
-    const paymentTxnId = isPaymentEndpoint.value
-      ? String(finalPayload?.transactionID || editBaseSnapshot.value?.transactionID || payload?.transactionID || '').trim()
-      : ''
-    const updateReqConfig = {
-      ...((typeof FormData !== 'undefined' && finalPayload instanceof FormData)
-        ? { headers: { 'Content-Type': 'multipart/form-data' } }
-        : {}),
-      ...(paymentTxnId ? { params: { transactionid: finalPayload.transactionID || editBaseSnapshot.value?.transactionID || paymentTxnId } } : {})
-    }
     */
     // Gene - Nov 6, 2026: Do not set Content-Type header on FormData so browser XHR / fetch automatically sets dynamic boundary delimiter (preventing 400 Missing content-type boundary error)
     const paymentTxnId = isPaymentEndpoint.value
@@ -20588,6 +20751,8 @@ const saveEdit = async () => {
     // Gene - Nov 7, 2026: Refresh PaymentMethods / PaymentTypes dropdown caches when updating records in those tables
     if (isPaymentMethodEndpoint.value) await fetchPaymentMethodsLookup(true)
     if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
+    // Gene - Nov, 25, 2026: Refresh centralized Status lookup when updating Status records
+    if (isStatusEndpoint.value) await fetchStatusesLookup(true)
     displayEditDialog.value = false
     toast.add({
       severity: 'success',
@@ -20672,12 +20837,16 @@ const deleteRecordIdentity = computed(() => {
 })
 
 const deleteRecord = async () => {
-  const targetId = getRecordId(recordToDelete.value)
-  if (targetId === null || targetId === undefined) {
+  const rawTargetId = getRecordId(recordToDelete.value)
+  if (rawTargetId === null || rawTargetId === undefined) {
     console.error('[deleteRecord] Could not resolve record ID:', recordToDelete.value)
     deleteError.value = 'Failed to identify record ID for deletion.'
     return
   }
+  // Gene - Nov, 25, 2026: Resolve record code path parameter on DELETE /api/Status/{code}
+  const targetId = isStatusEndpoint.value
+    ? encodeURIComponent(String(recordToDelete.value?.code || rawTargetId).trim())
+    : rawTargetId
 
   deleting.value = true
   deleteError.value = null
@@ -20698,6 +20867,8 @@ const deleteRecord = async () => {
     // Gene - Nov 7, 2026: Refresh PaymentMethods / PaymentTypes dropdown caches when deleting records in those tables
     if (isPaymentMethodEndpoint.value) await fetchPaymentMethodsLookup(true)
     if (isPaymentTypeEndpoint.value) await fetchPaymentTypesLookup(true)
+    // Gene - Nov, 25, 2026: Refresh centralized Status lookup when deleting Status records
+    if (isStatusEndpoint.value) await fetchStatusesLookup(true)
     displayDeleteDialog.value = false
     toast.add({
       severity: 'success',
@@ -22067,6 +22238,19 @@ onMounted(() => {
   fetchData()
   fetchAccessLevelMenus()
   fetchCurrentUserPermissions()
+  // Gene - Nov, 25, 2026: Preload centralized /api/Status options on status-bearing endpoints
+  if (
+    isApplicationEndpoint.value ||
+    isJobOrderEndpoint.value ||
+    isServiceOrderEndpoint.value ||
+    isInvoiceEndpoint.value ||
+    isPaymentEndpoint.value ||
+    isBillingEndpoint.value ||
+    isDiscountEndpoint.value ||
+    isInventoryLogEndpoint.value
+  ) {
+    fetchStatusesLookup()
+  }
   window.addEventListener('accesslevelmenu-updated', fetchCurrentUserPermissions)
 })
 
