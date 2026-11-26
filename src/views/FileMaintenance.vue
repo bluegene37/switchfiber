@@ -9,31 +9,129 @@
     </div>
 
     <!-- Data Viewer -->
+    <!-- Gene - Nov, 27, 2026: Replaced single-pane Status table with 33% / 67% Type Code group split on /status while keeping all other File Maintenance routes full-width -->
+    <!--
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-file-maintenance-table-card">
-      <!-- Gene - Nov, 16, 2026: Support hideCreate flag per route so Job Orders hides manual Create -->
-      <!--
       <DynamicApiTable
         ref="apiTableRef"
         v-if="endpoint"
         :endpoint="endpoint"
-        :key="endpoint"
-        :read-only="readOnly"
-        :hide-create-button="readOnly"
-        :create-button-label="`Create ${title}`"
-      />
-      -->
-      <!-- Gene - Nov, 23, 2026: Pass route-aware tableKey and optional accessLevelNames filter to DynamicApiTable -->
-      <!--
-      <DynamicApiTable
-        ref="apiTableRef"
-        v-if="endpoint"
-        :endpoint="endpoint"
-        :key="endpoint"
+        :key="tableKey"
         :read-only="readOnly"
         :hide-create-button="readOnly || hideCreate"
+        :access-level-names="accessLevelNames"
         :create-button-label="`Create ${title}`"
       />
-      -->
+      <div v-else class="p-4 text-center text-muted">Invalid Configuration</div>
+    </div>
+    -->
+    <div v-if="isStatusPage" class="row g-4 align-items-start sfa-tracker-status-split">
+      <!-- Left Column (33%): Status Type Codes Group List -->
+      <div class="col-12 col-xl-4 sfa-tracker-status-groups-col">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body sfa-tracker-status-groups-card">
+          <div class="card-header bg-body border-bottom p-3 d-flex align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="pi pi-tags text-primary"></i>
+              <h5 class="fw-bold text-body mb-0 fs-6">Status Type Codes</h5>
+            </div>
+            <span class="badge rounded-pill text-bg-secondary bg-opacity-25 text-body fw-semibold">
+              {{ statusTypeGroups.length }}
+            </span>
+          </div>
+
+          <div class="p-2 border-bottom bg-body-tertiary bg-opacity-50">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-body border-end-0 text-secondary">
+                <i class="pi pi-search" style="font-size: 0.78rem;"></i>
+              </span>
+              <input
+                v-model="statusTypeSearch"
+                type="text"
+                class="form-control border-start-0 shadow-none"
+                placeholder="Filter type codes..."
+                aria-label="Filter status type codes"
+              />
+              <button
+                v-if="statusTypeSearch"
+                type="button"
+                class="btn btn-outline-secondary"
+                aria-label="Clear type code filter"
+                @click="clearStatusTypeSearch"
+              >
+                <i class="pi pi-times" style="font-size: 0.75rem;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="list-group list-group-flush sfa-status-type-list" role="listbox" aria-label="Status type groups">
+            <button
+              v-if="showAllGroupItem"
+              type="button"
+              role="option"
+              :aria-selected="selectedStatusType === ''"
+              class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-0 border-bottom sfa-status-type-item"
+              :class="{ 'sfa-status-type-item-active': selectedStatusType === '' }"
+              @click="selectStatusType('')"
+            >
+              <span class="font-monospace fw-semibold small text-truncate">ALL</span>
+              <span
+                class="badge rounded-pill sfa-status-type-count"
+                :class="selectedStatusType === '' ? 'bg-white bg-opacity-25 text-white' : 'bg-secondary bg-opacity-10 text-secondary'"
+              >
+                {{ statusTotalCount }}
+              </span>
+            </button>
+
+            <button
+              v-for="group in filteredStatusTypeGroups"
+              :key="group.code"
+              type="button"
+              role="option"
+              :aria-selected="selectedStatusType === group.code"
+              class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-0 border-bottom sfa-status-type-item"
+              :class="{ 'sfa-status-type-item-active': selectedStatusType === group.code }"
+              @click="selectStatusType(group.code)"
+            >
+              <span class="font-monospace fw-semibold small text-truncate">{{ group.code }}</span>
+              <span
+                class="badge rounded-pill sfa-status-type-count"
+                :class="selectedStatusType === group.code ? 'bg-white bg-opacity-25 text-white' : 'bg-secondary bg-opacity-10 text-secondary'"
+              >
+                {{ group.count }}
+              </span>
+            </button>
+
+            <div
+              v-if="!showAllGroupItem && filteredStatusTypeGroups.length === 0"
+              class="p-3 text-center small text-secondary"
+            >
+              No matching type code
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column (67%): Filtered Status Details Table -->
+      <div class="col-12 col-xl-8 sfa-tracker-status-table-col">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-file-maintenance-table-card">
+          <DynamicApiTable
+            ref="apiTableRef"
+            v-if="endpoint"
+            :endpoint="endpoint"
+            :key="tableKey"
+            :read-only="readOnly"
+            :hide-create-button="readOnly || hideCreate"
+            :access-level-names="accessLevelNames"
+            :client-filters="statusClientFilters"
+            :create-button-label="`Create ${title}`"
+            @reset-filters="handleStatusFilterReset"
+          />
+          <div v-else class="p-4 text-center text-muted">Invalid Configuration</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="card shadow-sm border-0 rounded-4 overflow-hidden bg-body p-3 sfa-tracker-file-maintenance-table-card">
       <DynamicApiTable
         ref="apiTableRef"
         v-if="endpoint"
@@ -50,10 +148,19 @@
 </template>
 
 <script setup>
+/*
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
+*/
+// Gene - Nov, 27, 2026: Import useStatusStore and buildStatusTypeGroups for left Type Code group navigation on /status
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import Button from 'primevue/button'
+import DynamicApiTable from '../components/DynamicApiTable.vue'
+import { useStatusStore } from '../stores/statuses'
+import { STATUS_TYPES, buildStatusTypeGroups } from '../services/status'
 
 const route = useRoute()
 const apiTableRef = ref(null)
@@ -393,6 +500,88 @@ const openCreateModal = () => {
     apiTableRef.value.openCreateDialog()
   }
 }
+
+// Gene - Nov, 27, 2026: Status Type Code group state, client filter binding, and live store preload for /status
+const statusStore = useStatusStore()
+const isStatusPage = computed(() => endpoint.value === 'Status')
+const selectedStatusType = ref('')
+const statusTypeSearch = ref('')
+
+const statusGroupSummary = computed(() => buildStatusTypeGroups(statusStore.statuses, STATUS_TYPES))
+const statusTypeGroups = computed(() => statusGroupSummary.value.groups)
+const statusTotalCount = computed(() => statusGroupSummary.value.totalCount)
+
+const filteredStatusTypeGroups = computed(() => {
+  const q = statusTypeSearch.value.trim().toLowerCase()
+  if (!q) return statusTypeGroups.value
+  return statusTypeGroups.value.filter(group => group.code.toLowerCase().includes(q))
+})
+
+const showAllGroupItem = computed(() => {
+  const q = statusTypeSearch.value.trim().toLowerCase()
+  return !q || 'all'.includes(q)
+})
+
+const statusClientFilters = computed(() =>
+  isStatusPage.value && selectedStatusType.value ? { type: selectedStatusType.value } : {}
+)
+
+const selectStatusType = (code) => {
+  selectedStatusType.value = String(code || '').trim()
+}
+
+const handleStatusFilterReset = () => {
+  selectedStatusType.value = ''
+}
+
+const clearStatusTypeSearch = () => {
+  statusTypeSearch.value = ''
+}
+
+watch(() => route.path, () => {
+  selectedStatusType.value = ''
+  statusTypeSearch.value = ''
+})
+
+watch(isStatusPage, (active) => {
+  if (active && !statusStore.isLoaded) {
+    statusStore.loadStatuses()
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  if (isStatusPage.value && !statusStore.isLoaded) {
+    statusStore.loadStatuses()
+  }
+})
 </script>
+
+<style scoped>
+.sfa-status-type-list {
+  max-height: 65vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sfa-status-type-item {
+  background-color: transparent;
+  color: var(--bs-body-color);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sfa-status-type-item:hover:not(.sfa-status-type-item-active) {
+  background-color: var(--bs-tertiary-bg);
+}
+
+.sfa-status-type-item-active {
+  background-color: var(--bs-primary) !important;
+  color: #ffffff !important;
+}
+
+.sfa-status-type-count {
+  font-size: 0.7rem;
+  min-width: 1.75rem;
+}
+</style>
 
 

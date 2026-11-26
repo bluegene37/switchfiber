@@ -504,6 +504,53 @@ export function getFallbackStatusOptions(typeCode = '') {
   return mapStatusesToDropdownOptions(DEFAULT_STATUSES, typeCode)
 }
 
+// Gene - Nov, 27, 2026: Build ordered Status Type Code group summary (all canonical types + any extra live types) with total row counts
+export function buildStatusTypeGroups(records = [], canonicalTypes = STATUS_TYPES) {
+  const counts = new Map()
+  let totalCount = 0
+
+  if (Array.isArray(records)) {
+    for (const row of records) {
+      if (!row || typeof row !== 'object') continue
+      const code = normalizeStatusType(row.type)
+      if (!code) continue
+      totalCount += 1
+      counts.set(code, (counts.get(code) || 0) + 1)
+    }
+  }
+
+  const seen = new Set()
+  const groups = []
+
+  if (Array.isArray(canonicalTypes)) {
+    for (const item of canonicalTypes) {
+      const code = normalizeStatusType(item?.code ?? item)
+      if (!code || seen.has(code)) continue
+      seen.add(code)
+      groups.push({
+        code,
+        count: counts.get(code) || 0,
+        isCanonical: true
+      })
+    }
+  }
+
+  const extraCodes = [...counts.keys()]
+    .filter(code => !seen.has(code))
+    .sort((a, b) => a.localeCompare(b))
+
+  for (const code of extraCodes) {
+    seen.add(code)
+    groups.push({
+      code,
+      count: counts.get(code) || 0,
+      isCanonical: false
+    })
+  }
+
+  return { totalCount, groups }
+}
+
 // Gene - Nov, 26, 2026: Resolve human-readable description label for a stored status code using live grouped Status map or DEFAULT_STATUSES
 export function resolveStatusLabel(groupedOrRecords, typeCode = '', rawValue = '') {
   if (rawValue === null || rawValue === undefined) return ''

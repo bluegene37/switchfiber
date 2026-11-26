@@ -20,7 +20,7 @@ import {
   resolveStatusLabel
 } from '../src/services/status.js'
 */
-// Gene - Nov, 27, 2026: Also import STATUS_FALLBACK_DATA and getFallbackStatusOptions backed by src/data/statusFallback.json
+// Gene - Nov, 27, 2026: Also import STATUS_FALLBACK_DATA, getFallbackStatusOptions, and buildStatusTypeGroups
 import {
   StatusService,
   STATUS_FALLBACK_DATA,
@@ -32,6 +32,7 @@ import {
   mapStatusesToDropdownOptions,
   groupStatusesByType,
   getFallbackStatusOptions,
+  buildStatusTypeGroups,
   resolveStatusLabel
 } from '../src/services/status.js'
 import { useStatusStore } from '../src/stores/statuses.js'
@@ -448,5 +449,44 @@ describe('Status File Maintenance Menu, Routing, Metadata & DynamicApiTable Wiri
     assert.equal(activeTableTemplate.includes('Seed All Statuses'), false)
     assert.ok(dynamicTableSrc.includes("editBaseSnapshot.value?.code || editFormData.value?.code || editingRecordId.value"))
     assert.ok(dynamicTableSrc.includes("recordToDelete.value?.code || rawTargetId"))
+  })
+
+  // Gene - Nov, 27, 2026: Verify Status Type Code grouping helper, 33/67 split layout in FileMaintenance, and type pre-fill on Create
+  test('buildStatusTypeGroups counts live rows (including disabled), keeps canonical types, and appends unmapped live types', () => {
+    const emptySummary = buildStatusTypeGroups([], STATUS_TYPES)
+    assert.equal(emptySummary.totalCount, 0)
+    assert.equal(emptySummary.groups.length, 22)
+    assert.equal(emptySummary.groups.every(g => g.count === 0 && g.isCanonical === true), true)
+
+    const liveRows = [
+      { id: 1, type: 'JO', name: 'schedule', description: 'test description' },
+      { id: 2, type: 'APPLICATION', name: 'inprogress', description: 'In Progress' },
+      { id: 3, type: 'APPLICATION', name: 'DisabledApp', description: 'Disabled', isEnable: false },
+      { id: 4, type: 'CUSTOM_X', name: 'CustomA', description: 'Custom A' },
+      { id: 5, type: 'so_visit', name: 'Scheduled', description: 'Scheduled' }
+    ]
+    const summary = buildStatusTypeGroups(liveRows, STATUS_TYPES)
+    assert.equal(summary.totalCount, 5)
+    assert.equal(summary.groups.length, 24)
+    assert.equal(summary.groups.find(g => g.code === 'APPLICATION')?.count, 2)
+    assert.equal(summary.groups.find(g => g.code === 'SO_VISIT')?.count, 1)
+
+    const extraGroups = summary.groups.filter(g => !g.isCanonical)
+    assert.deepEqual(extraGroups, [
+      { code: 'CUSTOM_X', count: 1, isCanonical: false },
+      { code: 'JO', count: 1, isCanonical: false }
+    ])
+  })
+
+  test('FileMaintenance renders 33/67 Status Type Code split pane and DynamicApiTable pre-fills type from clientFilters', () => {
+    assert.ok(fileMaintenanceSrc.includes('isStatusPage'))
+    assert.ok(fileMaintenanceSrc.includes('selectedStatusType'))
+    assert.ok(fileMaintenanceSrc.includes('statusClientFilters'))
+    assert.ok(fileMaintenanceSrc.includes('col-12 col-xl-4 sfa-tracker-status-groups-col'))
+    assert.ok(fileMaintenanceSrc.includes('col-12 col-xl-8 sfa-tracker-status-table-col'))
+    assert.ok(fileMaintenanceSrc.includes('{{ group.code }}'))
+    assert.ok(fileMaintenanceSrc.includes(':client-filters="statusClientFilters"'))
+    assert.ok(fileMaintenanceSrc.includes('@reset-filters="handleStatusFilterReset"'))
+    assert.match(dynamicTableSrc, /isStatusEndpoint\.value\s*&&\s*props\.clientFilters\?\.type/)
   })
 })

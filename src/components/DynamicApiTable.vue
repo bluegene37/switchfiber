@@ -17481,6 +17481,15 @@ const openCreateDialog = (prefill = null) => {
     }
   }
 
+  // Gene - Nov, 27, 2026: Pre-fill Status type code in Create dialog when a Status Type group is active
+  if (isStatusEndpoint.value && props.clientFilters?.type) {
+    const selectedType = String(props.clientFilters.type).trim()
+    const typeCol = formColumns.value.find(c => c.toLowerCase() === 'type')
+    if (typeCol && selectedType) {
+      formData.value[typeCol] = selectedType
+    }
+  }
+
   /*
   // Gene - Oct, 16, 2026: Pre-fill sensible defaults for Promotions, Inventory Item, and Inventory Logs create dialogs
   if (isPromotionEndpoint.value) {
