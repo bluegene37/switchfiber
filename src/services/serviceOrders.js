@@ -308,11 +308,28 @@ export const ServiceOrderService = {
   getServiceOrderImage(id) {
     return apiClient.get(`/ServiceOrders/${id}/GetServiceOrderImage`)
   },
+  // /**
+  //  * @param {import('../models/types').CreateServiceOrderRequest} data
+  //  */
+  // createServiceOrder(data) {
+  //   return apiClient.post('/ServiceOrders', data)
+  // },
+  // Gene - Nov, 27, 2026: Strip manual Content-Type header on FormData createServiceOrder payload so browser XHR/Axios sets multipart/form-data with dynamic boundary
   /**
-   * @param {import('../models/types').CreateServiceOrderRequest} data
+   * @param {import('../models/types').CreateServiceOrderRequest|FormData} data
+   * @param {Object} [config]
    */
-  createServiceOrder(data) {
-    return apiClient.post('/ServiceOrders', data)
+  createServiceOrder(data, config = {}) {
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      const cleanHeaders = { ...(config && config.headers) }
+      delete cleanHeaders['Content-Type']
+      delete cleanHeaders['content-type']
+      return apiClient.post('/ServiceOrders', data, {
+        ...config,
+        headers: cleanHeaders
+      })
+    }
+    return apiClient.post('/ServiceOrders', data, config)
   },
   /**
    * @param {string|number} id

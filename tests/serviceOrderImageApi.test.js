@@ -397,6 +397,7 @@ describe('Service Order Image API & Multipart Integration Suite', () => {
     )
   })
 
+  /*
   test('DynamicApiTable wires ServiceOrders Create sanitization, follow-up multipart PUT, and shared Edit FormData builder', async () => {
     const fs = await import('node:fs')
     const content = fs.readFileSync('src/components/DynamicApiTable.vue', 'utf8')
@@ -415,5 +416,100 @@ describe('Service Order Image API & Multipart Integration Suite', () => {
       activeContent.includes('existingImages: editFormData.value || {}'),
       'Edit path must build ServiceOrders multipart FormData using buildServiceOrderMultipartFormData'
     )
+  })
+  */
+  // Gene - Nov, 27, 2026: Assert multipart FormData on ServiceOrderService.createServiceOrder, CrudService.create, DynamicApiTable Create path, and Create FormData builder
+  test('ServiceOrderService.createServiceOrder and CrudService.create strip manual Content-Type headers on FormData', async () => {
+    const fs = await import('node:fs')
+    const soContent = fs.readFileSync('src/services/serviceOrders.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    const crudContent = fs.readFileSync('src/services/crud.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+
+    assert.equal(
+      soContent.includes("'Content-Type': 'multipart/form-data'"),
+      false,
+      'Active serviceOrders.js must not hardcode multipart/form-data without boundary'
+    )
+    assert.ok(
+      soContent.includes('createServiceOrder(data, config = {})') &&
+      soContent.includes("delete cleanHeaders['Content-Type']") &&
+      soContent.includes("delete cleanHeaders['content-type']"),
+      'Active createServiceOrder must strip Content-Type headers for FormData'
+    )
+    assert.ok(
+      crudContent.includes('export const create = (endpoint, payload, config = {})') &&
+      crudContent.includes('payload instanceof FormData') &&
+      crudContent.includes("delete cleanHeaders['Content-Type']") &&
+      crudContent.includes("delete cleanHeaders['content-type']"),
+      'Active CrudService.create must strip Content-Type headers for FormData'
+    )
+  })
+
+  test('DynamicApiTable wires ServiceOrders Create as single multipart FormData POST without follow-up PUT', async () => {
+    const fs = await import('node:fs')
+    const content = fs.readFileSync('src/components/DynamicApiTable.vue', 'utf8')
+    const activeContent = content.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    assert.ok(
+      activeContent.includes('const sanitizedSoCreate = sanitizeServiceOrderCreatePayload(finalPayload)') &&
+      activeContent.includes('delete sanitizedSoCreate.id') &&
+      activeContent.includes('files: selectedFilesByCol.value.create || {}'),
+      'Create path must sanitize ServiceOrders scalar payload, omit id, and build multipart FormData with create files'
+    )
+    assert.equal(
+      activeContent.includes('hasServiceOrderUploadableImages(createFiles, formData.value || {}, createRemoved)'),
+      false,
+      'Create path must not perform a separate follow-up PUT now that POST /api/ServiceOrders sends multipart/form-data'
+    )
+    assert.ok(
+      activeContent.includes('existingImages: editFormData.value || {}'),
+      'Edit path must continue building ServiceOrders multipart FormData using buildServiceOrderMultipartFormData'
+    )
+  })
+
+  test('buildServiceOrderMultipartFormData produces valid FormData for Create payloads with or without images', () => {
+    const basePayload = {
+      fullName: 'Ana Reyes',
+      contactNumber: '09171234567',
+      visitStatus: 'Scheduled',
+      createdBy: '1',
+      createdDate: '2026-11-27T06:20:00.000Z',
+      modifiedBy: '1',
+      modifiedDate: '2026-11-27T06:20:00.000Z',
+      userEmail: 'admin@switchfiber.com',
+      itemQuantity: '',
+      serviceCharge: ''
+    }
+    const sanitized = sanitizeServiceOrderCreatePayload(basePayload)
+    delete sanitized.id
+
+    const formWithoutImages = buildServiceOrderMultipartFormData({
+      payload: sanitized,
+      files: {},
+      removed: {},
+      existingImages: {},
+      isAuditField: (key) => ['id', 'createdby', 'createddate', 'modifiedby', 'modifieddate'].includes(key.toLowerCase())
+    })
+
+    assert.ok(formWithoutImages instanceof FormData)
+    assert.equal(formWithoutImages.has('id'), false, 'Create FormData must omit id')
+    assert.equal(formWithoutImages.has('createdBy'), false, 'Create FormData must omit createdBy')
+    assert.equal(formWithoutImages.get('createdDate'), '2026-11-27T06:20:00.000Z')
+    assert.equal(formWithoutImages.get('modifiedBy'), '1')
+    assert.equal(formWithoutImages.get('modifiedDate'), '2026-11-27T06:20:00.000Z')
+    assert.equal(formWithoutImages.get('fullName'), 'Ana Reyes')
+    assert.equal(formWithoutImages.has('itemQuantity'), false)
+    assert.equal(formWithoutImages.has('Image1'), false)
+
+    const imgBlob = new Blob(['create-photo'], { type: 'image/jpeg' })
+    imgBlob.name = 'site-photo.jpg'
+    const formWithImage = buildServiceOrderMultipartFormData({
+      payload: sanitized,
+      files: { image1: imgBlob },
+      removed: {},
+      existingImages: {},
+      isAuditField: (key) => ['id', 'createdby', 'createddate', 'modifiedby', 'modifieddate'].includes(key.toLowerCase())
+    })
+
+    assert.ok(formWithImage.get('Image1') instanceof Blob, 'Create FormData must attach Image1 when selected')
   })
 })

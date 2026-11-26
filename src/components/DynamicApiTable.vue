@@ -18846,9 +18846,27 @@ const saveData = async () => {
         if (finalPayload.accountBalance !== undefined && finalPayload.accountBalance !== null && finalPayload.accountBalance !== '') {
           finalPayload.accountBalance = Number(String(finalPayload.accountBalance).replace(/[^0-9.-]/g, '')) || 0
         }
+      /*
       // Gene - Nov, 24, 2026: Sanitize ServiceOrders JSON POST create payload so raw base64 images and empty numeric/date strings are omitted
       } else if (isServiceOrderEndpoint.value) {
         finalPayload = sanitizeServiceOrderCreatePayload(finalPayload)
+      */
+      // Gene - Nov, 27, 2026: Build multipart/form-data FormData for POST /api/ServiceOrders so the ASP.NET [FromForm] endpoint accepts scalar fields and all 5 IFormFile images without HTTP 415
+      } else if (isServiceOrderEndpoint.value) {
+        const sanitizedSoCreate = sanitizeServiceOrderCreatePayload(finalPayload)
+        delete sanitizedSoCreate.id
+        if (!sanitizedSoCreate.userEmail) {
+          sanitizedSoCreate.userEmail = currentUserEmail
+        }
+        finalPayload = buildServiceOrderMultipartFormData({
+          payload: sanitizedSoCreate,
+          files: selectedFilesByCol.value.create || {},
+          removed: removedImagesByCol.value.create || {},
+          existingImages: formData.value || {},
+          serializeTime: serializeTimeForPayload,
+          getFieldType,
+          isAuditField
+        })
       // Gene - Nov, 25, 2026: Normalize Status POST payload to match StatusRequest schema
       } else if (isStatusEndpoint.value) {
         finalPayload = normalizeStatusPayload(finalPayload, String(loggedInUserId))
@@ -18955,8 +18973,11 @@ const saveData = async () => {
           console.warn('[DynamicApiTable] Follow-up JobOrder image upload after create warning:', joCreateImgErr)
         }
       }
+    }
+    /*
     // Gene - Nov, 24, 2026: Perform follow-up multipart PUT /api/ServiceOrders/{id} when images are uploaded during Service Order create
-    } else if (isServiceOrderEndpoint.value) {
+    // Gene - Nov, 27, 2026: Service Order images are now sent directly in the multipart/form-data POST /api/ServiceOrders request, so the follow-up PUT is no longer needed
+    else if (isServiceOrderEndpoint.value) {
       const createFiles = selectedFilesByCol.value.create || {}
       const createRemoved = removedImagesByCol.value.create || {}
       if (hasServiceOrderUploadableImages(createFiles, formData.value || {}, createRemoved)) {
@@ -18995,6 +19016,7 @@ const saveData = async () => {
         }
       }
     }
+    */
 
     // Refresh table
     await fetchData()

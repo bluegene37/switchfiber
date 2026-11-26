@@ -43,8 +43,22 @@ export const getById = (endpoint, id, config = {}) => {
   return apiClient.get(`${toPath(endpoint)}/${id}`, config)
 }
 
+// /** POST /{endpoint} */
+// export const create = (endpoint, payload, config = {}) => {
+//   return apiClient.post(toPath(endpoint), payload, config)
+// }
+// Gene - Nov, 27, 2026: Strip manual Content-Type header when creating with FormData payload so Axios and browser XHR generate the dynamic multipart boundary delimiter
 /** POST /{endpoint} */
 export const create = (endpoint, payload, config = {}) => {
+  if (typeof FormData !== 'undefined' && payload instanceof FormData) {
+    const cleanHeaders = { ...(config && config.headers) }
+    delete cleanHeaders['Content-Type']
+    delete cleanHeaders['content-type']
+    return apiClient.post(toPath(endpoint), payload, {
+      ...config,
+      headers: cleanHeaders
+    })
+  }
   return apiClient.post(toPath(endpoint), payload, config)
 }
 
