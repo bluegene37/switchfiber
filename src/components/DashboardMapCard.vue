@@ -102,15 +102,22 @@ import { LcpNapLocationService, parseCoordinates } from '../services/lcpNapLocat
 // one download of the locations feeds both the markers and the counts.
 const emit = defineEmits(['stats'])
 import { useTheme } from '../composables/useTheme'
+// Gene - Nov, 27, 2026: Import shared Leaflet map helpers (tile layers, XSS-safe escapeHtml, LCP palette color)
+import {
+  FALLBACK_MAP_CENTER,
+  escapeHtml,
+  applyLeafletBaseLayer,
+  hashLcpColor
+} from '../utils/leafletMapHelpers'
 
 const { isDark } = useTheme()
 
 // Location names and addresses come from the API, and Leaflet renders a string
 // tooltip via innerHTML, so any markup in them would execute in the admin's
 // session. Escape before interpolating — matches LcpNapMap.vue.
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
-  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-}[ch]))
+// const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+//   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+// }[ch]))
 
 const mapContainer = ref(null)
 const isLoading = ref(true)
@@ -124,53 +131,15 @@ let activeBaseLayer = null
 let resizeObserver = null
 
 // Binangonan, Rizal default center
-const FALLBACK_CENTER = [14.4655, 121.1922]
+// const FALLBACK_CENTER = [14.4655, 121.1922]
+const FALLBACK_CENTER = FALLBACK_MAP_CENTER
 
-const TILE_LAYERS = {
-  streetLight: {
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-    }
-  },
-  streetDark: {
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 19,
-      className: 'osm-dark-tiles',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-    }
-  },
-  satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      maxZoom: 19,
-      attribution: 'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
-    }
-  }
-}
-
-const PALETTE = [
-  '#e74c5a', '#6f42c1', '#d63384', '#dc3545',
-  '#fd7e14', '#ffc107', '#10b981', '#20c997',
-  '#0ea5e9', '#8b5cf6', '#ec4899', '#f97316'
-]
-
-const hashString = (str) => {
-  let hash = 0
-  for (let i = 0; i < str.length; i += 1) {
-    hash = (hash << 5) - hash + str.charCodeAt(i)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-const lcpColor = (lcpName) => {
-  if (!lcpName) return '#6c757d'
-  const idx = hashString(String(lcpName).trim().toLowerCase()) % PALETTE.length
-  return PALETTE[idx]
-}
+// const TILE_LAYERS = { ... } moved to src/utils/leafletMapHelpers.js
+// const PALETTE = [ ... ]
+// const hashString = (str) => { ... }
+// const lcpColor = (lcpName) => { ... }
+// Gene - Nov, 27, 2026: Alias lcpColor to shared hashLcpColor helper
+const lcpColor = hashLcpColor
 
 const siteIcon = (site) => {
   const color = site.color || '#e74c5a'
@@ -196,22 +165,27 @@ const totalPorts = computed(() => sites.value.reduce((sum, s) => sum + (Number(s
 
 const setBaseLayer = (mode) => {
   baseLayerMode.value = mode
-  if (!map) return
-
-  if (activeBaseLayer) {
-    map.removeLayer(activeBaseLayer)
-    activeBaseLayer = null
-  }
-
-  let layerKey = 'streetLight'
-  if (mode === 'satellite') {
-    layerKey = 'satellite'
-  } else if (isDark.value) {
-    layerKey = 'streetDark'
-  }
-
-  const spec = TILE_LAYERS[layerKey]
-  activeBaseLayer = L.tileLayer(spec.url, spec.options).addTo(map)
+  // if (!map) return
+  // if (activeBaseLayer) {
+  //   map.removeLayer(activeBaseLayer)
+  //   activeBaseLayer = null
+  // }
+  // let layerKey = 'streetLight'
+  // if (mode === 'satellite') {
+  //   layerKey = 'satellite'
+  // } else if (isDark.value) {
+  //   layerKey = 'streetDark'
+  // }
+  // const spec = TILE_LAYERS[layerKey]
+  // activeBaseLayer = L.tileLayer(spec.url, spec.options).addTo(map)
+  // Gene - Nov, 27, 2026: Delegate Leaflet base layer switching to shared applyLeafletBaseLayer helper
+  activeBaseLayer = applyLeafletBaseLayer({
+    L,
+    map,
+    currentLayer: activeBaseLayer,
+    mode,
+    isDark: isDark.value
+  })
 }
 
 const renderMarkers = () => {

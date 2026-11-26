@@ -251,15 +251,19 @@ import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+// Gene - Nov, 27, 2026: Import shared column resizer composable, startOfDay, and rgbaOf formatter (Phase 1 modular refactor)
+import { useColumnResizer } from '../composables/useColumnResizer'
+import { startOfDay } from '../utils/dateRangePresets'
+import { rgbaOf } from '../utils/formatters'
 
 const appStore = useAppStore()
 const router = useRouter()
 const toast = useToast()
 
 // Gene - Nov, 14, 2026: Prevent column resizer clicks from triggering header sorting on Recent Applications DataTable.
-const stopColumnResizerClick = (event) => {
-  event?.stopPropagation?.()
-}
+// const stopColumnResizerClick = (event) => {
+//   event?.stopPropagation?.()
+// }
 
 // Gene - Nov, 17, 2026: Clamp column resize drag indicator to [72, 960] px and clear inline minWidth so columns can shrink reliably.
 /*
@@ -271,69 +275,71 @@ const dataTableResizePt = {
   }
 }
 */
-const MIN_RESIZABLE_COL_WIDTH = 72
-const MAX_RESIZABLE_COL_WIDTH = 960
-
-const onColumnResizerMouseDown = (event) => {
-  const resizerEl = event?.currentTarget || event?.target
-  const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
-  if (!headerEl) return
-
-  if (headerEl.style) {
-    headerEl.style.minWidth = ''
-  }
-
-  if (typeof window === 'undefined') return
-  const dtEl = headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
-  const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
-  if (!dtEl || !resizeHelperEl) return
-
-  const rectWidth = headerEl.getBoundingClientRect?.().width
-  const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
-    ? rectWidth
-    : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
-
-  const dtRect = dtEl.getBoundingClientRect?.()
-  if (!dtRect) return
-  const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
-  const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
-  const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
-  const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
-  const minHelperX = startHelperX + minDelta
-  const maxHelperX = startHelperX + maxDelta
-
-  const clampHelperPosition = (moveEvent) => {
-    if (resizeHelperEl.style.display !== 'block') return
-    const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
-    const fallbackX = typeof moveEvent?.pageX === 'number'
-      ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
-      : startHelperX
-    const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
-    const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
-    resizeHelperEl.style.left = `${clampedX}px`
-  }
-
-  const onMouseUpCapture = (upEvent) => {
-    clampHelperPosition(upEvent)
-    if (headerEl.style) {
-      headerEl.style.minWidth = ''
-    }
-    window.removeEventListener('mousemove', clampHelperPosition)
-    window.removeEventListener('mouseup', onMouseUpCapture, true)
-  }
-
-  window.addEventListener('mousemove', clampHelperPosition)
-  window.addEventListener('mouseup', onMouseUpCapture, true)
-}
-
-const dataTableResizePt = {
-  column: {
-    columnResizer: {
-      onClick: stopColumnResizerClick,
-      onMousedown: onColumnResizerMouseDown
-    }
-  }
-}
+// const MIN_RESIZABLE_COL_WIDTH = 72
+// const MAX_RESIZABLE_COL_WIDTH = 960
+//
+// const onColumnResizerMouseDown = (event) => {
+//   const resizerEl = event?.currentTarget || event?.target
+//   const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
+//   if (!headerEl) return
+//
+//   if (headerEl.style) {
+//     headerEl.style.minWidth = ''
+//   }
+//
+//   if (typeof window === 'undefined') return
+//   const dtEl = headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
+//   const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
+//   if (!dtEl || !resizeHelperEl) return
+//
+//   const rectWidth = headerEl.getBoundingClientRect?.().width
+//   const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
+//     ? rectWidth
+//     : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
+//
+//   const dtRect = dtEl.getBoundingClientRect?.()
+//   if (!dtRect) return
+//   const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
+//   const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
+//   const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
+//   const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
+//   const minHelperX = startHelperX + minDelta
+//   const maxHelperX = startHelperX + maxDelta
+//
+//   const clampHelperPosition = (moveEvent) => {
+//     if (resizeHelperEl.style.display !== 'block') return
+//     const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
+//     const fallbackX = typeof moveEvent?.pageX === 'number'
+//       ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
+//       : startHelperX
+//     const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
+//     const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
+//     resizeHelperEl.style.left = `${clampedX}px`
+//   }
+//
+//   const onMouseUpCapture = (upEvent) => {
+//     clampHelperPosition(upEvent)
+//     if (headerEl.style) {
+//       headerEl.style.minWidth = ''
+//     }
+//     window.removeEventListener('mousemove', clampHelperPosition)
+//     window.removeEventListener('mouseup', onMouseUpCapture, true)
+//   }
+//
+//   window.addEventListener('mousemove', clampHelperPosition)
+//   window.addEventListener('mouseup', onMouseUpCapture, true)
+// }
+//
+// const dataTableResizePt = {
+//   column: {
+//     columnResizer: {
+//       onClick: stopColumnResizerClick,
+//       onMousedown: onColumnResizerMouseDown
+//     }
+//   }
+// }
+// Gene - Nov, 27, 2026: Delegate PrimeVue column resizer clamping to shared useColumnResizer composable
+const { stopColumnResizerClick, onColumnResizerMouseDown, dataTableResizePt } = useColumnResizer()
 const { canAccess, isApiDown } = usePermissions()
 
 // Live counts pulled from the API. `null` means "not loaded / unavailable" and
@@ -496,7 +502,8 @@ const activeTimeframeLabel = computed(() =>
 // Bounds for the selected window, half-open on today so "Today" means today.
 const timeframeBounds = (value) => {
   const now = new Date()
-  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  // const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  // Gene - Nov, 27, 2026: Uses shared startOfDay() from ../utils/dateRangePresets
   let from
   if (value === '1d') from = startOfDay(now)
   else if (value === '7d') from = startOfDay(new Date(now.getTime() - 6 * 86400000))
@@ -811,7 +818,8 @@ const BRAND = computed(() => ({
   light: brandRamp.value[3],
   pale: brandRamp.value[4]
 }))
-const rgbaOf = (hex, alpha) => `rgba(${buildPaletteFromHex(hex).rgb}, ${alpha})`
+// const rgbaOf = (hex, alpha) => `rgba(${buildPaletteFromHex(hex).rgb}, ${alpha})`
+// Gene - Nov, 27, 2026: Uses shared rgbaOf() from ../utils/formatters
 
 // Mirrors the semantic tokens in style.css; these must not follow the brand hue.
 const STATUS = {

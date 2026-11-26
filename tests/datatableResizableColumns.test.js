@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
+// Gene - Nov, 27, 2026: Import shared useColumnResizer composable for DynamicApiTable resize harness
+import { useColumnResizer } from '../src/composables/useColumnResizer.js'
 
 const TABLE_PATH = path.resolve('src/components/DynamicApiTable.vue')
 const DASHBOARD_PATH = path.resolve('src/views/Dashboard.vue')
@@ -104,6 +106,7 @@ function createResizeHarness({
     'dt',
     'displayedColumns',
     'localStorage',
+    'useColumnResizer',
     `${resizeSrc}
     return {
       COLUMN_WIDTHS_STORAGE_KEY,
@@ -145,7 +148,8 @@ function createResizeHarness({
     authStore,
     dt,
     displayedColumns,
-    localStorageStub
+    localStorageStub,
+    useColumnResizer
   )
 
   return {

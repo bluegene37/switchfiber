@@ -13,10 +13,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const dashboardMap = path.resolve(__dirname, '../src/components/DashboardMapCard.vue')
 const lcpNapMap = path.resolve(__dirname, '../src/views/LcpNapMap.vue')
 
-// The escapeHtml both map components use, extracted for a live behavioural check.
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
-  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-}[ch]))
+// // The escapeHtml both map components use, extracted for a live behavioural check.
+// const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+//   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+// }[ch]))
+// Gene - Nov, 27, 2026: Test the real shared escapeHtml helper directly from src/utils/leafletMapHelpers.js
+import { escapeHtml } from '../src/utils/leafletMapHelpers.js'
 
 describe('Map tooltip XSS (regression F-S1)', () => {
   test('escapeHtml neutralises an onerror payload', () => {
@@ -35,7 +37,12 @@ describe('Map tooltip XSS (regression F-S1)', () => {
 
   test('DashboardMapCard escapes tooltip content before binding it', () => {
     const src = fs.readFileSync(dashboardMap, 'utf8')
-    assert.ok(src.includes('const escapeHtml'), 'DashboardMapCard must define escapeHtml')
+    // assert.ok(src.includes('const escapeHtml'), 'DashboardMapCard must define escapeHtml')
+    // Gene - Nov, 27, 2026: DashboardMapCard and LcpNapMap now import shared escapeHtml from leafletMapHelpers
+    assert.ok(
+      src.includes("from '../utils/leafletMapHelpers'") && src.includes('escapeHtml'),
+      'DashboardMapCard must import shared escapeHtml from leafletMapHelpers'
+    )
     // The tooltip name/address must be run through escapeHtml, not interpolated raw.
     assert.ok(
       /const locationName = escapeHtml\(/.test(src),

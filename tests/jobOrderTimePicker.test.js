@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
+// Gene - Nov, 27, 2026: Import shared pad formatter for DynamicApiTable time serialization harnesses
+import { pad } from '../src/utils/formatters.js'
 
 const TABLE_PATH = path.resolve('src/components/DynamicApiTable.vue')
 const tableSrc = fs.readFileSync(TABLE_PATH, 'utf8')
@@ -118,7 +120,7 @@ function makeSerializeTimeForPayload() {
     'const serializeTimeForPayload = (val, anchorVal = null) => {',
     '\n\nconst getRowCoordinateValue'
   )
-  return new Function(`${fnSrc}\nreturn serializeTimeForPayload`)()
+  return new Function('pad', `${fnSrc}\nreturn serializeTimeForPayload`)(pad)
 }
 
 function makeDateTimeAndDisplayHelpers(endpoint = 'JobOrders') {
@@ -239,6 +241,7 @@ function makeBuildJobOrderPayload(overrides = {}) {
     true
   )
   return new Function(
+    'pad',
     'normalizePhoneNumber',
     'editingRecordId',
     'defaultNewStatus',
@@ -247,6 +250,7 @@ function makeBuildJobOrderPayload(overrides = {}) {
     'isJobOrderCompleted',
     `${fnSrc}\nreturn buildJobOrderPayload`
   )(
+    pad,
     (v) => v || '',
     { value: overrides.editingId ?? null },
     () => 'Pending',

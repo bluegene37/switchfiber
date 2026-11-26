@@ -476,15 +476,18 @@ import Button from 'primevue/button'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { usePermissions } from '../composables/usePermissions'
+// Gene - Nov, 27, 2026: Import shared useColumnResizer composable and formatters (Phase 1 modular refactor)
+import { useColumnResizer } from '../composables/useColumnResizer'
+import { pad, formatShortDate, rgbaOf } from '../utils/formatters'
 
 const router = useRouter()
 const toast = useToast()
 const { isApiDown } = usePermissions()
 
 // Gene - Nov, 14, 2026: Prevent column resizer clicks from triggering header sorting on AccountingDashboard DataTables.
-const stopColumnResizerClick = (event) => {
-  event?.stopPropagation?.()
-}
+// const stopColumnResizerClick = (event) => {
+//   event?.stopPropagation?.()
+// }
 
 // Gene - Nov, 17, 2026: Clamp column resize drag indicator to [72, 960] px and clear inline minWidth so columns can shrink reliably.
 /*
@@ -496,69 +499,71 @@ const dataTableResizePt = {
   }
 }
 */
-const MIN_RESIZABLE_COL_WIDTH = 72
-const MAX_RESIZABLE_COL_WIDTH = 960
-
-const onColumnResizerMouseDown = (event) => {
-  const resizerEl = event?.currentTarget || event?.target
-  const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
-  if (!headerEl) return
-
-  if (headerEl.style) {
-    headerEl.style.minWidth = ''
-  }
-
-  if (typeof window === 'undefined') return
-  const dtEl = headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
-  const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
-  if (!dtEl || !resizeHelperEl) return
-
-  const rectWidth = headerEl.getBoundingClientRect?.().width
-  const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
-    ? rectWidth
-    : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
-
-  const dtRect = dtEl.getBoundingClientRect?.()
-  if (!dtRect) return
-  const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
-  const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
-  const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
-  const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
-  const minHelperX = startHelperX + minDelta
-  const maxHelperX = startHelperX + maxDelta
-
-  const clampHelperPosition = (moveEvent) => {
-    if (resizeHelperEl.style.display !== 'block') return
-    const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
-    const fallbackX = typeof moveEvent?.pageX === 'number'
-      ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
-      : startHelperX
-    const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
-    const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
-    resizeHelperEl.style.left = `${clampedX}px`
-  }
-
-  const onMouseUpCapture = (upEvent) => {
-    clampHelperPosition(upEvent)
-    if (headerEl.style) {
-      headerEl.style.minWidth = ''
-    }
-    window.removeEventListener('mousemove', clampHelperPosition)
-    window.removeEventListener('mouseup', onMouseUpCapture, true)
-  }
-
-  window.addEventListener('mousemove', clampHelperPosition)
-  window.addEventListener('mouseup', onMouseUpCapture, true)
-}
-
-const dataTableResizePt = {
-  column: {
-    columnResizer: {
-      onClick: stopColumnResizerClick,
-      onMousedown: onColumnResizerMouseDown
-    }
-  }
-}
+// const MIN_RESIZABLE_COL_WIDTH = 72
+// const MAX_RESIZABLE_COL_WIDTH = 960
+//
+// const onColumnResizerMouseDown = (event) => {
+//   const resizerEl = event?.currentTarget || event?.target
+//   const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
+//   if (!headerEl) return
+//
+//   if (headerEl.style) {
+//     headerEl.style.minWidth = ''
+//   }
+//
+//   if (typeof window === 'undefined') return
+//   const dtEl = headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
+//   const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
+//   if (!dtEl || !resizeHelperEl) return
+//
+//   const rectWidth = headerEl.getBoundingClientRect?.().width
+//   const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
+//     ? rectWidth
+//     : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
+//
+//   const dtRect = dtEl.getBoundingClientRect?.()
+//   if (!dtRect) return
+//   const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
+//   const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
+//   const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
+//   const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
+//   const minHelperX = startHelperX + minDelta
+//   const maxHelperX = startHelperX + maxDelta
+//
+//   const clampHelperPosition = (moveEvent) => {
+//     if (resizeHelperEl.style.display !== 'block') return
+//     const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
+//     const fallbackX = typeof moveEvent?.pageX === 'number'
+//       ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
+//       : startHelperX
+//     const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
+//     const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
+//     resizeHelperEl.style.left = `${clampedX}px`
+//   }
+//
+//   const onMouseUpCapture = (upEvent) => {
+//     clampHelperPosition(upEvent)
+//     if (headerEl.style) {
+//       headerEl.style.minWidth = ''
+//     }
+//     window.removeEventListener('mousemove', clampHelperPosition)
+//     window.removeEventListener('mouseup', onMouseUpCapture, true)
+//   }
+//
+//   window.addEventListener('mousemove', clampHelperPosition)
+//   window.addEventListener('mouseup', onMouseUpCapture, true)
+// }
+//
+// const dataTableResizePt = {
+//   column: {
+//     columnResizer: {
+//       onClick: stopColumnResizerClick,
+//       onMousedown: onColumnResizerMouseDown
+//     }
+//   }
+// }
+// Gene - Nov, 27, 2026: Delegate PrimeVue column resizer clamping to shared useColumnResizer composable
+const { stopColumnResizerClick, onColumnResizerMouseDown, dataTableResizePt } = useColumnResizer()
 
 const isLoading = ref(false)
 const isExporting = ref(false)
@@ -867,12 +872,16 @@ const formatCurrency = (val) => {
   return `₱${num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
+/*
 const formatDate = (dateStr) => {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return String(dateStr).slice(0, 10)
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+*/
+// Gene - Nov, 27, 2026: Delegate short date formatting to shared formatShortDate helper
+const formatDate = (dateStr) => formatShortDate(dateStr)
 
 const isOverdue = (invoice) => {
   if (String(invoice?.invoiceStatus).toLowerCase() === 'paid') return false
@@ -1020,7 +1029,8 @@ const brandRamp = buildCategoricalRamp(MASTER_THEME_COLOR, 5)
 // Gene - Nov, 25, 2026: Derive accounting chart palette reactively from activePrimaryHex
 const { activePrimaryHex } = useTheme()
 const brandRamp = computed(() => buildCategoricalRamp(activePrimaryHex.value || MASTER_THEME_COLOR, 5))
-const rgbaOf = (hex, alpha) => `rgba(${buildPaletteFromHex(hex).rgb}, ${alpha})`
+// const rgbaOf = (hex, alpha) => `rgba(${buildPaletteFromHex(hex).rgb}, ${alpha})`
+// Gene - Nov, 27, 2026: Uses shared rgbaOf() from ../utils/formatters
 
 // 1. Revenue & Collections Trend Chart
 const revenueTrendChartOption = computed(() => {
@@ -1387,7 +1397,8 @@ const handleExport = () => {
   try {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
     const now = new Date()
-    const pad = (n) => String(n).padStart(2, '0')
+    // const pad = (n) => String(n).padStart(2, '0')
+    // Gene - Nov, 27, 2026: Uses shared pad() from ../utils/formatters
     const timestampStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
     const displayDate = now.toLocaleString()
 

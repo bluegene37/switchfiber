@@ -162,6 +162,9 @@ import DatePicker from 'primevue/datepicker'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, currentWeekBounds } from '../utils/dateRangePresets'
 import { createdRecordHiddenBy } from '../utils/createdRecordVisibility'
+// Gene - Nov, 27, 2026: Import shared list date/status filter composable and date formatters (Phase 1 modular refactor)
+import { useListDateFilters, useStatusTabNavigation } from '../composables/useListDateStatusFilters'
+import { formatDateParam, formatLocalYmd } from '../utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
@@ -170,16 +173,16 @@ const apiTableRef = ref(null)
 // The create form lives in DynamicApiTable; the filter-bar button is just
 // another way in to the dialog it already exposes.
 const openCreateDialog = () => apiTableRef.value?.openCreateDialog()
-const fromDatePicker = ref(null)
-
-// PrimeVue opens the overlay when the input takes focus, so focusing it is what
-// makes "Custom" do something visible instead of only moving a highlight.
-const focusFromDate = () => {
-  nextTick(() => {
-    const input = fromDatePicker.value?.$el?.querySelector('input')
-    if (input) input.focus()
-  })
-}
+// const fromDatePicker = ref(null)
+//
+// // PrimeVue opens the overlay when the input takes focus, so focusing it is what
+// // makes "Custom" do something visible instead of only moving a highlight.
+// const focusFromDate = () => {
+//   nextTick(() => {
+//     const input = fromDatePicker.value?.$el?.querySelector('input')
+//     if (input) input.focus()
+//   })
+// }
 
 // The Applications data spells this status as one word — an `Inprogress` row is
 // what /api/Applications/filter returns, not 'In Progress' — and the status match
@@ -190,9 +193,9 @@ const APPLICATION_IN_PROGRESS = 'Inprogress'
 
 // Default to 'This Week' on initial load to avoid fetching/rendering massive datasets at once
 const selectedStatus = ref('')
-const fromDate = ref(null)
-const toDate = ref(null)
-const selectedDatePreset = ref('')
+// const fromDate = ref(null)
+// const toDate = ref(null)
+// const selectedDatePreset = ref('')
 
 // Built from the statuses the data actually carries rather than a hand-written
 // lifecycle. The old list promised In Progress / Done / Approved against a set
@@ -211,8 +214,8 @@ const statusTabs = computed(() => [
 
 // The active value may arrive from a route slug in different casing than the
 // data uses ('schedule' vs 'Schedule'), so tabs match case-insensitively.
-const isActiveTab = (value) =>
-  String(selectedStatus.value || '').trim().toLowerCase() === String(value || '').trim().toLowerCase()
+// const isActiveTab = (value) =>
+//   String(selectedStatus.value || '').trim().toLowerCase() === String(value || '').trim().toLowerCase()
 
 // The date window is mandatory so the page never renders the whole table at
 // once, but a window with nothing in it reads as "the system lost my data": at
@@ -224,9 +227,32 @@ const DATE_FALLBACK_STEPS = [
   { preset: 'last_12_months', label: 'the last 12 months' }
 ]
 
-const autoWidenStep = ref(-1)        // -1 = still on the default window
-const autoWidenEnabled = ref(true)   // a hand-picked range is never overridden
-const autoWidenLabel = ref('')
+// Gene - Nov, 27, 2026: Delegate mandatory date preset, auto-widen fallback, and status tab navigation to shared composables
+const {
+  fromDate,
+  toDate,
+  selectedDatePreset,
+  fromDatePicker,
+  autoWidenLabel,
+  focusFromDate,
+  setDateRange,
+  applyDatePreset,
+  onManualDateChange,
+  searchAllDates,
+  useDefaultWeek,
+  resetDateFilters
+} = useListDateFilters({
+  defaultPreset: 'this_week',
+  mandatoryDate: true,
+  fallbackSteps: DATE_FALLBACK_STEPS,
+  apiTableRef,
+  selectedStatus,
+  resetWatchSources: [selectedStatus]
+})
+
+// const autoWidenStep = ref(-1)        // -1 = still on the default window
+// const autoWidenEnabled = ref(true)   // a hand-picked range is never overridden
+// const autoWidenLabel = ref('')
 
 // Named for the tab in view, so a status route does not claim there were no
 // applications at all when what it means is none with that status.
@@ -237,21 +263,18 @@ const autoWidenSubject = computed(() => {
 
 // Widen only on a settled fetch: `hasFetched` goes false for the duration of a
 // request, so an in-flight window is never mistaken for an empty one.
-watchEffect(() => {
-  const table = apiTableRef.value
-  if (!table || !table.hasFetched || !autoWidenEnabled.value) return
-  const counts = table.statusCounts
-  if (!counts) return
-  // The count the active tab would render, not the row count for the window: the
-  // loaded set spans every status, so a window can hold rows while the tab shows none.
-  if ((counts.countFor(selectedStatus.value) ?? 0) > 0) return
-  if (autoWidenStep.value >= DATE_FALLBACK_STEPS.length - 1) return
-
-  const next = DATE_FALLBACK_STEPS[autoWidenStep.value + 1]
-  autoWidenStep.value += 1
-  autoWidenLabel.value = next.label
-  setDateRange(next.preset)
-})
+// watchEffect(() => {
+//   const table = apiTableRef.value
+//   if (!table || !table.hasFetched || !autoWidenEnabled.value) return
+//   const counts = table.statusCounts
+//   if (!counts) return
+//   if ((counts.countFor(selectedStatus.value) ?? 0) > 0) return
+//   if (autoWidenStep.value >= DATE_FALLBACK_STEPS.length - 1) return
+//   const next = DATE_FALLBACK_STEPS[autoWidenStep.value + 1]
+//   autoWidenStep.value += 1
+//   autoWidenLabel.value = next.label
+//   setDateRange(next.preset)
+// })
 
 const statusCounts = computed(() => {
   if (isDedicatedStatusRoute.value) return null
@@ -263,6 +286,13 @@ const statusCounts = computed(() => {
 const isDedicatedStatusRoute = computed(() => {
   const p = route.path.toLowerCase()
   return p.includes('/in-progress') || p.includes('/done') || p.includes('/approved')
+})
+
+const { isActiveTab, setStatusFilter, onSelectStatus } = useStatusTabNavigation({
+  selectedStatus,
+  isDedicatedStatusRoute,
+  router,
+  basePath: '/application'
 })
 
 const pageTitle = computed(() => {
@@ -301,16 +331,16 @@ watch([() => route.path, () => route.query.status], () => {
 
 // Clicking a tab filters in place. On a legacy /application/<status> route it
 // also leaves that route behind, so the URL never disagrees with the tab strip.
-const setStatusFilter = (status) => {
-  if (isDedicatedStatusRoute.value) {
-    router.push(status ? { path: '/application', query: { status } } : { path: '/application' })
-    return
-  }
-  selectedStatus.value = status
-}
-
-// Picked from the empty-state hint — same destination as clicking its tab.
-const onSelectStatus = (status) => setStatusFilter(status)
+// const setStatusFilter = (status) => {
+//   if (isDedicatedStatusRoute.value) {
+//     router.push(status ? { path: '/application', query: { status } } : { path: '/application' })
+//     return
+//   }
+//   selectedStatus.value = status
+// }
+//
+// // Picked from the empty-state hint — same destination as clicking its tab.
+// const onSelectStatus = (status) => setStatusFilter(status)
 
 // A record saved from a filtered view can land outside it: an Inprogress
 // application created from the Cancelled tab or the /application/done route,
@@ -334,38 +364,39 @@ const onCreated = ({ payload } = {}) => {
   if (isDedicatedStatusRoute.value) router.push({ path: '/application' })
 }
 
-const formatDateParam = (dateVal, isEnd = false) => {
-  if (!dateVal) return undefined
-  let d = dateVal
-  if (typeof dateVal === 'string') {
-    const trimmed = dateVal.trim()
-    if (!trimmed) return undefined
-    if (trimmed.includes('T')) return trimmed
-    d = new Date(trimmed)
-  }
-  if (d instanceof Date && !isNaN(d.getTime())) {
-    if (isEnd) {
-      const endDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
-      return endDay.toISOString()
-    } else {
-      const startDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
-      return startDay.toISOString()
-    }
-  }
-  return undefined
-}
-
-const formatDisplayDate = (dateVal) => {
-  if (!dateVal) return ''
-  const d = dateVal instanceof Date ? dateVal : new Date(dateVal)
-  if (d instanceof Date && !isNaN(d.getTime())) {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  }
-  return String(dateVal)
-}
+// const formatDateParam = (dateVal, isEnd = false) => {
+//   if (!dateVal) return undefined
+//   let d = dateVal
+//   if (typeof dateVal === 'string') {
+//     const trimmed = dateVal.trim()
+//     if (!trimmed) return undefined
+//     if (trimmed.includes('T')) return trimmed
+//     d = new Date(trimmed)
+//   }
+//   if (d instanceof Date && !isNaN(d.getTime())) {
+//     if (isEnd) {
+//       const endDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+//       return endDay.toISOString()
+//     } else {
+//       const startDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
+//       return startDay.toISOString()
+//     }
+//   }
+//   return undefined
+// }
+//
+// const formatDisplayDate = (dateVal) => {
+//   if (!dateVal) return ''
+//   const d = dateVal instanceof Date ? dateVal : new Date(dateVal)
+//   if (d instanceof Date && !isNaN(d.getTime())) {
+//     const y = d.getFullYear()
+//     const m = String(d.getMonth() + 1).padStart(2, '0')
+//     const day = String(d.getDate()).padStart(2, '0')
+//     return `${y}-${m}-${day}`
+//   }
+//   return String(dateVal)
+// }
+const formatDisplayDate = formatLocalYmd
 
 const activeFilterParams = computed(() => {
   const params = {}
@@ -405,94 +436,21 @@ const activeFilterSummary = computed(() => {
   return parts.join(' | ')
 })
 
-const setDateRange = (preset) => {
-  selectedDatePreset.value = preset
-  // 'custom' has no range of its own: the pickers already hold what the user chose.
-  const range = resolveDatePreset(preset)
-  if (!range) return
-  fromDate.value = range.from
-  toDate.value = range.to
-}
-
-const applyDatePreset = (preset) => {
-  // Custom hands the range to the From/To pickers. Re-clicking it re-opens the
-  // From picker rather than doing nothing, so the button always has an effect.
-  if (preset === CUSTOM_PRESET) {
-    autoWidenEnabled.value = false
-    autoWidenLabel.value = ''
-    selectedDatePreset.value = CUSTOM_PRESET
-    focusFromDate()
-    return
-  }
-
-  // The date filter is mandatory, so re-clicking the active preset keeps it
-  // instead of clearing the range
-  if (selectedDatePreset.value === preset) return
-
-  // Picking a window by hand pins it: an empty result is then the answer, not a
-  // problem to fix, so the fallback stands down until the filters are reset.
-  autoWidenEnabled.value = false
-  autoWidenLabel.value = ''
-  setDateRange(preset)
-}
-
-/**
- * Open the window to the widest preset so a search stops being silently bounded by
- * dates. Pins the range like any manual pick, so the auto-widen fallback does not
- * immediately reel it back in.
- */
-const searchAllDates = () => {
-  autoWidenEnabled.value = false
-  autoWidenLabel.value = ''
-  setDateRange('last_12_months')
-}
-
-/** Drop the widened window and stay on the default week, empty or not. */
-const useDefaultWeek = () => {
-  autoWidenEnabled.value = false
-  autoWidenLabel.value = ''
-  setDateRange('this_week')
-}
-
-// A manual pick IS the Custom range, so the highlight moves to that button.
-// (Programmatic assignment from setDateRange does not emit this event.)
-const onManualDateChange = () => {
-  selectedDatePreset.value = CUSTOM_PRESET
-  autoWidenEnabled.value = false
-  autoWidenLabel.value = ''
-}
-
-// The date filter can never be absent: clearing a picker falls back to the week
-watch([fromDate, toDate], ([f, t]) => {
-  if (!f || !t) {
-    // No explicit range is the default state, fallback included
-    autoWidenEnabled.value = true
-    autoWidenStep.value = -1
-    autoWidenLabel.value = ''
-    setDateRange('this_week')
-  }
-})
-
-// Switching tabs re-opens the question of which window holds that tab's rows.
-watch(selectedStatus, () => {
-  if (!autoWidenEnabled.value) return
-  autoWidenStep.value = -1
-  autoWidenLabel.value = ''
-  setDateRange('this_week')
-})
-
-// Default to 'This Week' filter on initial load
-setDateRange('this_week')
+// const setDateRange = (preset) => { ... }
+// const applyDatePreset = (preset) => { ... }
+// const searchAllDates = () => { ... }
+// const useDefaultWeek = () => { ... }
+// const onManualDateChange = () => { ... }
+// watch([fromDate, toDate], ...)
+// watch(selectedStatus, ...)
+// setDateRange('this_week')
 
 const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''
   }
   // "Cleared" dates mean the default week, never an unbounded range
-  autoWidenEnabled.value = true
-  autoWidenStep.value = -1
-  autoWidenLabel.value = ''
-  setDateRange('this_week')
+  resetDateFilters()
 }
 </script>
 

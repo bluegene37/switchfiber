@@ -549,6 +549,14 @@ import { useTheme } from '../composables/useTheme'
 import ExifPanel from '../components/ExifPanel.vue'
 // Gene - Oct 23, 2026: Import image actions for LcpNapMap photo handling including blobToDataUrl
 import { openImageInNewTab, downloadImage, unwrapApiPayload, fileResultToDataUrl, getDirectImageUrl, blobToDataUrl } from '../utils/imageActions'
+// Gene - Nov, 27, 2026: Import shared Leaflet map helpers and dateTime formatter (Phase 1 modular refactor)
+import {
+  FALLBACK_MAP_CENTER,
+  escapeHtml,
+  applyLeafletBaseLayer,
+  lcpHslColor
+} from '../utils/leafletMapHelpers'
+import { formatDateTime } from '../utils/formatters'
 
 const { isDark } = useTheme()
 
@@ -580,48 +588,40 @@ const markersByKey = new Map()
 const siteByKey = new Map()
 
 // Binangonan, Rizal — the network's home turf; only shown before data arrives
-const FALLBACK_CENTER = [14.4655, 121.1922]
+// const FALLBACK_CENTER = [14.4655, 121.1922]
+// Gene - Nov, 27, 2026: Use shared FALLBACK_MAP_CENTER, applyLeafletBaseLayer, lcpHslColor, and escapeHtml helpers
+const FALLBACK_CENTER = FALLBACK_MAP_CENTER
 
 // ---------------------------------------------------------------------------
 // Base layers. All keyless: Carto for street (light + dark variants so the map
 // follows the console theme), Esri World Imagery for the satellite view field
 // techs use to find an actual pole or wall.
 // ---------------------------------------------------------------------------
-const TILE_LAYERS = {
-  streetLight: {
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-    }
-  },
-  streetDark: {
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 19,
-      className: 'osm-dark-tiles',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-    }
-  },
-  satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      maxZoom: 19,
-      attribution: 'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
-    }
-  }
-}
-
-const resolveTileLayer = () => {
-  if (baseLayerMode.value === 'satellite') return TILE_LAYERS.satellite
-  return isDark.value ? TILE_LAYERS.streetDark : TILE_LAYERS.streetLight
-}
-
+// const TILE_LAYERS = {
+//   streetLight: { ... },
+//   streetDark: { ... },
+//   satellite: { ... }
+// }
+//
+// const resolveTileLayer = () => {
+//   if (baseLayerMode.value === 'satellite') return TILE_LAYERS.satellite
+//   return isDark.value ? TILE_LAYERS.streetDark : TILE_LAYERS.streetLight
+// }
+//
+// const applyBaseLayer = () => {
+//   if (!map) return
+//   const def = resolveTileLayer()
+//   if (activeBaseLayer) map.removeLayer(activeBaseLayer)
+//   activeBaseLayer = L.tileLayer(def.url, def.options).addTo(map)
+// }
 const applyBaseLayer = () => {
-  if (!map) return
-  const def = resolveTileLayer()
-  if (activeBaseLayer) map.removeLayer(activeBaseLayer)
-  activeBaseLayer = L.tileLayer(def.url, def.options).addTo(map)
+  activeBaseLayer = applyLeafletBaseLayer({
+    L,
+    map,
+    currentLayer: activeBaseLayer,
+    mode: baseLayerMode.value,
+    isDark: isDark.value
+  })
 }
 
 const setBaseLayer = (mode) => {
@@ -636,15 +636,16 @@ watch(isDark, () => applyBaseLayer())
 // cabinet reads as one family at a glance. Golden-angle spacing keeps ~250 LCPs
 // visually distinct without a lookup table.
 // ---------------------------------------------------------------------------
-const lcpHue = (lcpName) => {
-  const digits = String(lcpName || '').replace(/\D/g, '')
-  let seed = digits ? Number(digits) : 0
-  if (!seed) {
-    for (const ch of String(lcpName || '')) seed = (seed * 31 + ch.charCodeAt(0)) % 100000
-  }
-  return Math.round((seed * 137.508) % 360)
-}
-const lcpColor = (lcpName) => `hsl(${lcpHue(lcpName)}, 62%, 44%)`
+// const lcpHue = (lcpName) => {
+//   const digits = String(lcpName || '').replace(/\D/g, '')
+//   let seed = digits ? Number(digits) : 0
+//   if (!seed) {
+//     for (const ch of String(lcpName || '')) seed = (seed * 31 + ch.charCodeAt(0)) % 100000
+//   }
+//   return Math.round((seed * 137.508) % 360)
+// }
+// const lcpColor = (lcpName) => `hsl(${lcpHue(lcpName)}, 62%, 44%)`
+const lcpColor = lcpHslColor
 
 const napShortLabel = (napName) => {
   const digits = String(napName || '').replace(/\D/g, '')
@@ -653,9 +654,9 @@ const napShortLabel = (napName) => {
 
 // Marker HTML is built as a string, so anything coming from the API has to be
 // escaped before it lands in it.
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
-  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-}[ch]))
+// const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+//   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+// }[ch]))
 
 // The selected pin carries its own name tag and a pulsing halo — picking a row
 // in the list has to point at one pin unambiguously, not just tint it.
@@ -1150,12 +1151,14 @@ const copyCoordinates = async () => {
   }
 }
 
-const formatDate = (value) => {
-  if (!value) return 'unknown date'
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return String(value)
-  return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-}
+// const formatDate = (value) => {
+//   if (!value) return 'unknown date'
+//   const d = new Date(value)
+//   if (isNaN(d.getTime())) return String(value)
+//   return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+// }
+// Gene - Nov, 27, 2026: Delegate date-time formatting to shared formatDateTime helper
+const formatDate = (value) => formatDateTime(value)
 
 onMounted(() => {
   map = L.map(mapContainer.value, {

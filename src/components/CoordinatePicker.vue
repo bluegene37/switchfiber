@@ -134,6 +134,8 @@ import 'leaflet/dist/leaflet.css'
 import { parseCoordinates } from '../services/lcpNapLocations'
 import { searchPlaces } from '../services/geocoding'
 import { useTheme } from '../composables/useTheme'
+// Gene - Nov, 27, 2026: Import shared Leaflet base-layer and fallback-center helpers (Phase 1 modular refactor)
+import { FALLBACK_MAP_CENTER, applyLeafletBaseLayer } from '../utils/leafletMapHelpers'
 
 const props = defineProps({
   // The API's storage format: "lat, lng" as one string
@@ -169,7 +171,8 @@ let searchTimer = null
 let searchAbort = null
 
 // Binangonan, Rizal default center
-const FALLBACK_CENTER = [14.4655, 121.1922]
+// const FALLBACK_CENTER = [14.4655, 121.1922]
+const FALLBACK_CENTER = FALLBACK_MAP_CENTER
 
 // Quick territory presets in SwitchFiber coverage
 const TERRITORY_CHIPS = [
@@ -188,34 +191,31 @@ let resizeObserver = null
 const parsed = computed(() => parseCoordinates(props.modelValue))
 const hasPin = computed(() => !!parsed.value)
 
-const TILES = {
-  light: {
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-  },
-  dark: {
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    maxZoom: 19,
-    className: 'osm-dark-tiles',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-  },
-  satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    maxZoom: 19,
-    attribution: 'Imagery &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
-  }
-}
-
+// const TILES = {
+//   light: { ... },
+//   dark: { ... },
+//   satellite: { ... }
+// }
+//
+// const applyBaseLayer = () => {
+//   if (!map) return
+//   const def = satellite.value ? TILES.satellite : (isDark.value ? TILES.dark : TILES.light)
+//   if (baseLayer) map.removeLayer(baseLayer)
+//   baseLayer = L.tileLayer(def.url, {
+//     maxZoom: def.maxZoom,
+//     className: def.className || '',
+//     attribution: def.attribution
+//   }).addTo(map)
+// }
+// Gene - Nov, 27, 2026: Delegate Leaflet base-layer switching to shared applyLeafletBaseLayer helper
 const applyBaseLayer = () => {
-  if (!map) return
-  const def = satellite.value ? TILES.satellite : (isDark.value ? TILES.dark : TILES.light)
-  if (baseLayer) map.removeLayer(baseLayer)
-  baseLayer = L.tileLayer(def.url, {
-    maxZoom: def.maxZoom,
-    className: def.className || '',
-    attribution: def.attribution
-  }).addTo(map)
+  baseLayer = applyLeafletBaseLayer({
+    L,
+    map,
+    currentLayer: baseLayer,
+    mode: satellite.value ? 'satellite' : 'street',
+    isDark: isDark.value
+  })
 }
 
 watch(satellite, applyBaseLayer)

@@ -153,6 +153,10 @@ import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRangePresets'
+// Gene - Nov, 27, 2026: Import shared list date/status filter composable, formatDateParam, and normalizeStatusToken (Phase 1 modular refactor)
+import { useListDateFilters, useStatusTabNavigation } from '../composables/useListDateStatusFilters'
+import { formatDateParam } from '../utils/formatters'
+import { normalizeStatusToken } from '../services/status'
 
 const route = useRoute()
 const router = useRouter()
@@ -163,9 +167,22 @@ const apiTableRef = ref(null)
 const openCreateDialog = () => apiTableRef.value?.openCreateDialog()
 
 const selectedStatus = ref('')
-const fromDate = ref(null)
-const toDate = ref(null)
-const selectedDatePreset = ref('')
+// const fromDate = ref(null)
+// const toDate = ref(null)
+// const selectedDatePreset = ref('')
+// Gene - Nov, 27, 2026: Delegate date preset and picker focus state to shared useListDateFilters composable
+const {
+  fromDate,
+  toDate,
+  selectedDatePreset,
+  fromDatePicker,
+  applyDatePreset,
+  onManualDateChange,
+  resetDateFilters
+} = useListDateFilters({
+  defaultPreset: 'this_week',
+  mandatoryDate: false
+})
 
 // Assigned filter: the dropdown reads by name, the rows are matched on the email
 // the record actually stores (`assignedEmail`). Options come from the table,
@@ -201,14 +218,15 @@ const ROUTE_STATUS = {
   cancelled: 'Cancelled'
 }
 
-const normStatus = (s) => String(s || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+// const normStatus = (s) => String(s || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+const normStatus = normalizeStatusToken
 
 const routeStatusSlug = () => {
   const m = String(route.path || '').toLowerCase().match(/^\/service-orders\/([^/?#]+)/)
   return m ? m[1] : ''
 }
 
-const isActiveTab = (value) => normStatus(selectedStatus.value) === normStatus(value)
+// const isActiveTab = (value) => normStatus(selectedStatus.value) === normStatus(value)
 
 // Counts for the status tabs, computed by the table over the set it already holds
 const statusCounts = computed(() => {
@@ -219,6 +237,14 @@ const statusCounts = computed(() => {
 })
 
 const isDedicatedStatusRoute = computed(() => !!ROUTE_STATUS[routeStatusSlug()])
+
+const { isActiveTab, setStatusFilter, onSelectStatus } = useStatusTabNavigation({
+  selectedStatus,
+  isDedicatedStatusRoute,
+  router,
+  basePath: '/service-orders',
+  normalize: normStatus
+})
 
 const pageTitle = computed(() => {
   const status = String(selectedStatus.value || '').trim()
@@ -257,37 +283,9 @@ watch([() => route.path, () => route.query.status], () => {
 
 // Clicking a tab filters in place. On a dedicated /service-orders/<status> route it
 // also leaves that route behind, so the URL never disagrees with the tab strip.
-const setStatusFilter = (status) => {
-  if (isDedicatedStatusRoute.value) {
-    router.push(status ? { path: '/service-orders', query: { status } } : { path: '/service-orders' })
-    return
-  }
-  selectedStatus.value = status
-}
-
-// Picked from the empty-state hint — same destination as clicking its tab.
-const onSelectStatus = (status) => setStatusFilter(status)
-
-const formatDateParam = (dateVal, isEnd = false) => {
-  if (!dateVal) return undefined
-  let d = dateVal
-  if (typeof dateVal === 'string') {
-    const trimmed = dateVal.trim()
-    if (!trimmed) return undefined
-    if (trimmed.includes('T')) return trimmed
-    d = new Date(trimmed)
-  }
-  if (d instanceof Date && !isNaN(d.getTime())) {
-    if (isEnd) {
-      const endDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
-      return endDay.toISOString()
-    } else {
-      const startDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
-      return startDay.toISOString()
-    }
-  }
-  return undefined
-}
+// const setStatusFilter = (status) => { ... }
+// const onSelectStatus = (status) => setStatusFilter(status)
+// const formatDateParam = (dateVal, isEnd = false) => { ... }
 
 const activeFilterParams = computed(() => {
   const params = {}
@@ -301,57 +299,18 @@ const activeFilterParams = computed(() => {
   return params
 })
 
-const fromDatePicker = ref(null)
-
-// PrimeVue opens the overlay when the input takes focus, so focusing it is what
-// makes "Custom" do something visible instead of only moving a highlight.
-const focusFromDate = () => {
-  nextTick(() => {
-    const input = fromDatePicker.value?.$el?.querySelector('input')
-    if (input) input.focus()
-  })
-}
-
-const applyDatePreset = (preset) => {
-  // Custom hands the range to the From/To pickers, so it keeps whatever is in
-  // them and re-opens the From picker instead of clearing on a second click.
-  if (preset === CUSTOM_PRESET) {
-    selectedDatePreset.value = CUSTOM_PRESET
-    focusFromDate()
-    return
-  }
-
-  if (selectedDatePreset.value === preset) {
-    selectedDatePreset.value = ''
-    fromDate.value = null
-    toDate.value = null
-    return
-  }
-
-  selectedDatePreset.value = preset
-  const range = resolveDatePreset(preset)
-  if (!range) return
-  fromDate.value = range.from
-  toDate.value = range.to
-}
-
-// A manual pick IS the Custom range, so the highlight moves to that button.
-// (Programmatic assignment from applyDatePreset does not emit this event.)
-const onManualDateChange = () => {
-  selectedDatePreset.value = CUSTOM_PRESET
-}
-
-// Default to 'This Week' filter on initial load
-applyDatePreset('this_week')
+// const fromDatePicker = ref(null)
+// const focusFromDate = () => { ... }
+// const applyDatePreset = (preset) => { ... }
+// const onManualDateChange = () => { ... }
+// applyDatePreset('this_week')
 
 // Gene - Nov, 26, 2026: Bypass default 'This Week' date window when navigating from Subscribers to active or historical Service Orders
 watch(
   () => [route.query.allDates, route.query.locateServiceOrderId],
   ([allDates, locateId]) => {
     if (String(allDates || '') === '1' || String(locateId || '').trim() !== '') {
-      selectedDatePreset.value = ''
-      fromDate.value = null
-      toDate.value = null
+      resetDateFilters()
     }
   },
   { immediate: true }
@@ -361,10 +320,8 @@ const clearAllFilters = () => {
   if (!isDedicatedStatusRoute.value) {
     selectedStatus.value = ''
   }
-  selectedDatePreset.value = ''
   selectedAssignedEmail.value = null
-  fromDate.value = null
-  toDate.value = null
+  resetDateFilters()
 }
 </script>
 

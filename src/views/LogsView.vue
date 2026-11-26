@@ -135,6 +135,9 @@ import Select from 'primevue/select'
 import DynamicApiTable from '../components/DynamicApiTable.vue'
 import { useUserStore } from '../stores/users'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRangePresets'
+// Gene - Nov, 27, 2026: Import shared list date filter composable and formatDateParam (Phase 1 modular refactor)
+import { useListDateFilters } from '../composables/useListDateStatusFilters'
+import { formatDateParam } from '../utils/formatters'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -243,9 +246,22 @@ const entityOptionsLoading = computed(() => entityRows.value === null)
 
 const selectedEntity = ref(null)
 const selectedUsername = ref(null)
-const fromDate = ref(null)
-const toDate = ref(null)
-const selectedDatePreset = ref('')
+// const fromDate = ref(null)
+// const toDate = ref(null)
+// const selectedDatePreset = ref('')
+// Gene - Nov, 27, 2026: Delegate date preset and picker focus state to shared useListDateFilters composable
+const {
+  fromDate,
+  toDate,
+  selectedDatePreset,
+  fromDatePicker,
+  applyDatePreset,
+  onManualDateChange,
+  resetDateFilters
+} = useListDateFilters({
+  defaultPreset: 'this_month',
+  mandatoryDate: false
+})
 
 const usernameOptions = computed(() =>
   (userStore.users || [])
@@ -258,24 +274,24 @@ const usernameOptions = computed(() =>
     .filter(Boolean)
 )
 
-/** Start of day / end of day as an ISO string, matching the API's DateFrom / DateTo. */
-const formatDateParam = (dateVal, isEnd = false) => {
-  if (!dateVal) return undefined
-  let d = dateVal
-  if (typeof dateVal === 'string') {
-    const trimmed = dateVal.trim()
-    if (!trimmed) return undefined
-    if (trimmed.includes('T')) return trimmed
-    d = new Date(trimmed)
-  }
-  if (d instanceof Date && !isNaN(d.getTime())) {
-    const bound = isEnd
-      ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
-      : new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
-    return bound.toISOString()
-  }
-  return undefined
-}
+// /** Start of day / end of day as an ISO string, matching the API's DateFrom / DateTo. */
+// const formatDateParam = (dateVal, isEnd = false) => {
+//   if (!dateVal) return undefined
+//   let d = dateVal
+//   if (typeof dateVal === 'string') {
+//     const trimmed = dateVal.trim()
+//     if (!trimmed) return undefined
+//     if (trimmed.includes('T')) return trimmed
+//     d = new Date(trimmed)
+//   }
+//   if (d instanceof Date && !isNaN(d.getTime())) {
+//     const bound = isEnd
+//       ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+//       : new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
+//     return bound.toISOString()
+//   }
+//   return undefined
+// }
 
 const activeFilterParams = computed(() => {
   if (config.value.filter === 'none') return {}
@@ -320,56 +336,46 @@ const filterPrompt = computed(() =>
     : 'Select a user to load their log records.'
 )
 
-const fromDatePicker = ref(null)
-
-// PrimeVue opens the overlay when the input takes focus, so focusing it is what
-// makes "Custom" do something visible instead of only moving a highlight.
-const focusFromDate = () => {
-  nextTick(() => {
-    const input = fromDatePicker.value?.$el?.querySelector('input')
-    if (input) input.focus()
-  })
-}
-
-const applyDatePreset = (preset) => {
-  // Custom hands the range to the From/To pickers, so it keeps whatever is in
-  // them and re-opens the From picker instead of clearing on a second click.
-  if (preset === CUSTOM_PRESET) {
-    selectedDatePreset.value = CUSTOM_PRESET
-    focusFromDate()
-    return
-  }
-
-  if (selectedDatePreset.value === preset) {
-    selectedDatePreset.value = ''
-    fromDate.value = null
-    toDate.value = null
-    return
-  }
-
-  selectedDatePreset.value = preset
-  const range = resolveDatePreset(preset)
-  if (!range) return
-  fromDate.value = range.from
-  toDate.value = range.to
-}
-
-// A manual pick IS the Custom range, so the highlight moves to that button.
-// (Programmatic assignment from applyDatePreset does not emit this event.)
-const onManualDateChange = () => {
-  selectedDatePreset.value = CUSTOM_PRESET
-}
-
-// Default to 'This Month' — logs accumulate per request, so a wider default
-// window than the Job Orders screens still lands on a readable set.
-applyDatePreset('this_month')
+// const fromDatePicker = ref(null)
+//
+// // PrimeVue opens the overlay when the input takes focus, so focusing it is what
+// // makes "Custom" do something visible instead of only moving a highlight.
+// const focusFromDate = () => {
+//   nextTick(() => {
+//     const input = fromDatePicker.value?.$el?.querySelector('input')
+//     if (input) input.focus()
+//   })
+// }
+//
+// const applyDatePreset = (preset) => {
+//   if (preset === CUSTOM_PRESET) {
+//     selectedDatePreset.value = CUSTOM_PRESET
+//     focusFromDate()
+//     return
+//   }
+//   if (selectedDatePreset.value === preset) {
+//     selectedDatePreset.value = ''
+//     fromDate.value = null
+//     toDate.value = null
+//     return
+//   }
+//   selectedDatePreset.value = preset
+//   const range = resolveDatePreset(preset)
+//   if (!range) return
+//   fromDate.value = range.from
+//   toDate.value = range.to
+// }
+//
+// const onManualDateChange = () => {
+//   selectedDatePreset.value = CUSTOM_PRESET
+// }
+//
+// applyDatePreset('this_month')
 
 const clearAllFilters = () => {
   selectedEntity.value = null
   selectedUsername.value = null
-  selectedDatePreset.value = ''
-  fromDate.value = null
-  toDate.value = null
+  resetDateFilters()
 }
 
 watch(() => route.path, () => {

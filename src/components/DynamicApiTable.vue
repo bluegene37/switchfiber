@@ -6852,6 +6852,9 @@ import {
 import { useTheme } from '../composables/useTheme'
 import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset, startOfDay, endOfDay } from '../utils/dateRangePresets'
 import { filterFormSections } from '../utils/formFieldSearch'
+// Gene - Nov, 27, 2026: Import shared pad formatter and PrimeVue column resizer composable (Phase 1 modular refactor)
+import { pad } from '../utils/formatters'
+import { useColumnResizer } from '../composables/useColumnResizer'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -8588,7 +8591,8 @@ const serializeTimeForPayload = (val, anchorVal = null) => {
     if (!isNaN(ad.getTime())) anchor = ad
   }
   const base = anchor || fallbackDate || new Date()
-  const pad = (n) => String(n).padStart(2, '0')
+  // const pad = (n) => String(n).padStart(2, '0')
+  // Gene - Nov, 27, 2026: Uses shared pad() from ../utils/formatters
   return `${base.getFullYear()}-${pad(base.getMonth() + 1)}-${pad(base.getDate())}T${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
 }
 
@@ -10287,9 +10291,9 @@ watch(columnWidthStoreKey, (nextKey) => {
   clearImperativeResizeStyles()
 }, { immediate: true })
 
-const stopColumnResizerClick = (event) => {
-  event?.stopPropagation?.()
-}
+// const stopColumnResizerClick = (event) => {
+//   event?.stopPropagation?.()
+// }
 
 // Gene - Nov, 17, 2026: Remove inline minWidth from column styles (using --sfa-col-width CSS variable instead) and clamp drag guide in onColumnResizerMouseDown so columns can always shrink as well as expand.
 /*
@@ -10320,67 +10324,78 @@ const getDynamicColumnStyle = (col) => {
   }
 }
 */
-const onColumnResizerMouseDown = (event) => {
-  const resizerEl = event?.currentTarget || event?.target
-  const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
-  if (!headerEl) return
-
-  if (headerEl.style) {
-    headerEl.style.minWidth = ''
-  }
-
-  const rectWidth = headerEl.getBoundingClientRect?.().width
-  const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
-    ? rectWidth
-    : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
-  headerEl.setAttribute?.('data-sfa-start-width', String(Math.round(startWidth)))
-
-  if (typeof window === 'undefined') return
-  const dtEl = dt.value?.$el || headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
-  const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
-  if (!dtEl || !resizeHelperEl) return
-
-  const dtRect = dtEl.getBoundingClientRect?.()
-  if (!dtRect) return
-  const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
-  const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
-  const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
-  const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
-  const minHelperX = startHelperX + minDelta
-  const maxHelperX = startHelperX + maxDelta
-
-  const clampHelperPosition = (moveEvent) => {
-    if (resizeHelperEl.style.display !== 'block') return
-    const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
-    const fallbackX = typeof moveEvent?.pageX === 'number'
-      ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
-      : startHelperX
-    const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
-    const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
-    resizeHelperEl.style.left = `${clampedX}px`
-  }
-
-  const onMouseUpCapture = (upEvent) => {
-    clampHelperPosition(upEvent)
-    if (headerEl.style) {
-      headerEl.style.minWidth = ''
-    }
-    window.removeEventListener('mousemove', clampHelperPosition)
-    window.removeEventListener('mouseup', onMouseUpCapture, true)
-  }
-
-  window.addEventListener('mousemove', clampHelperPosition)
-  window.addEventListener('mouseup', onMouseUpCapture, true)
-}
-
-const dataTableResizePt = {
-  column: {
-    columnResizer: {
-      onClick: stopColumnResizerClick,
-      onMousedown: onColumnResizerMouseDown
-    }
-  }
-}
+// const onColumnResizerMouseDown = (event) => {
+//   const resizerEl = event?.currentTarget || event?.target
+//   const headerEl = resizerEl?.closest?.('th') || resizerEl?.parentElement
+//   if (!headerEl) return
+//
+//   if (headerEl.style) {
+//     headerEl.style.minWidth = ''
+//   }
+//
+//   const rectWidth = headerEl.getBoundingClientRect?.().width
+//   const startWidth = Number.isFinite(rectWidth) && rectWidth > 0
+//     ? rectWidth
+//     : (headerEl.offsetWidth || MIN_RESIZABLE_COL_WIDTH)
+//   headerEl.setAttribute?.('data-sfa-start-width', String(Math.round(startWidth)))
+//
+//   if (typeof window === 'undefined') return
+//   const dtEl = dt.value?.$el || headerEl.closest?.('[data-pc-name="datatable"], .p-datatable')
+//   const resizeHelperEl = dtEl?.querySelector?.('.p-datatable-column-resize-indicator, [data-pc-section="columnresizeindicator"]')
+//   if (!dtEl || !resizeHelperEl) return
+//
+//   const dtRect = dtEl.getBoundingClientRect?.()
+//   if (!dtRect) return
+//   const containerLeft = dtRect.left + (window.scrollX || window.pageXOffset || 0)
+//   const startHelperX = (event?.pageX ?? 0) - containerLeft + (dtEl.scrollLeft || 0)
+//   const minDelta = Math.min(0, MIN_RESIZABLE_COL_WIDTH - startWidth)
+//   const maxDelta = Math.max(0, MAX_RESIZABLE_COL_WIDTH - startWidth)
+//   const minHelperX = startHelperX + minDelta
+//   const maxHelperX = startHelperX + maxDelta
+//
+//   const clampHelperPosition = (moveEvent) => {
+//     if (resizeHelperEl.style.display !== 'block') return
+//     const currentLeft = Number.parseFloat(resizeHelperEl.style.left)
+//     const fallbackX = typeof moveEvent?.pageX === 'number'
+//       ? moveEvent.pageX - containerLeft + (dtEl.scrollLeft || 0)
+//       : startHelperX
+//     const rawX = Number.isFinite(currentLeft) ? currentLeft : fallbackX
+//     const clampedX = Math.min(maxHelperX, Math.max(minHelperX, rawX))
+//     resizeHelperEl.style.left = `${clampedX}px`
+//   }
+//
+//   const onMouseUpCapture = (upEvent) => {
+//     clampHelperPosition(upEvent)
+//     if (headerEl.style) {
+//       headerEl.style.minWidth = ''
+//     }
+//     window.removeEventListener('mousemove', clampHelperPosition)
+//     window.removeEventListener('mouseup', onMouseUpCapture, true)
+//   }
+//
+//   window.addEventListener('mousemove', clampHelperPosition)
+//   window.addEventListener('mouseup', onMouseUpCapture, true)
+// }
+//
+// const dataTableResizePt = {
+//   column: {
+//     columnResizer: {
+//       onClick: stopColumnResizerClick,
+//       onMousedown: onColumnResizerMouseDown
+//     }
+//   }
+// }
+// Gene - Nov, 27, 2026: Delegate PrimeVue column resizer clamping to shared useColumnResizer composable
+const {
+  stopColumnResizerClick,
+  onColumnResizerMouseDown,
+  dataTableResizePt
+} = useColumnResizer({
+  dt,
+  minWidth: MIN_RESIZABLE_COL_WIDTH,
+  maxWidth: MAX_RESIZABLE_COL_WIDTH,
+  recordStartWidthAttr: true
+})
 
 const getDynamicColumnPt = (col) => ({
   headerCell: {
@@ -10961,7 +10976,8 @@ const asLocalDateLabel = (value) => {
   if (!value) return ''
   const d = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(d.getTime())) return String(value).slice(0, 10)
-  const pad = (n) => String(n).padStart(2, '0')
+  // const pad = (n) => String(n).padStart(2, '0')
+  // Gene - Nov, 27, 2026: Uses shared pad() from ../utils/formatters
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
@@ -17842,7 +17858,8 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
       if (!isNaN(ad.getTime())) baseDate = ad
     }
     if (!baseDate) baseDate = fallbackDate || new Date()
-    const pad = (n) => String(n).padStart(2, '0')
+    // const pad = (n) => String(n).padStart(2, '0')
+    // Gene - Nov, 27, 2026: Uses shared pad() from ../utils/formatters
     return `${baseDate.getFullYear()}-${pad(baseDate.getMonth() + 1)}-${pad(baseDate.getDate())}T${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
   }
 
@@ -18020,7 +18037,8 @@ const buildJobOrderPayload = (payload, mode, numericUserId, loggedInUserId) => {
 // each edit 8 hours in the past — an audit trail that is wrong is worse than an
 // empty one.
 const localAuditTimestamp = (d = new Date()) => {
-  const pad = (n, w = 2) => String(n).padStart(w, '0')
+  // const pad = (n, w = 2) => String(n).padStart(w, '0')
+  // Gene - Nov, 27, 2026: Uses shared pad(n, width) from ../utils/formatters
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
     `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`
 }
@@ -20292,7 +20310,8 @@ const normalizeCompareValue = (col, val) => {
   if (type === 'time') {
     const t = parseTimeForPicker(val)
     if (!t) return String(val).trim()
-    const pad = (n) => String(n).padStart(2, '0')
+    // const pad = (n) => String(n).padStart(2, '0')
+    // Gene - Nov, 27, 2026: Uses shared pad() from ../utils/formatters
     return `${pad(t.getHours())}:${pad(t.getMinutes())}`
   }
   // Gene - Nov, 14, 2026: Normalize Onsite Status variants during conflict comparison so legacy spellings do not trigger false edit conflicts

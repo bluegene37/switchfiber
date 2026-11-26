@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const jobOrderView = path.resolve(__dirname, '../src/views/JobOrderList.vue')
+const listFiltersComposable = path.resolve(__dirname, '../src/composables/useListDateStatusFilters.js')
 const presetsFile = path.resolve(__dirname, '../src/utils/dateRangePresets.js')
 
 // The widen loop as the view runs it: step the window out until the ACTIVE TAB
@@ -80,12 +81,18 @@ describe('Job Orders date-window fallback (regression R-02)', () => {
 describe('JobOrderList.vue is wired to the fallback', () => {
   test('the widen check consults the active tab, not the window total', () => {
     const content = fs.readFileSync(jobOrderView, 'utf8')
+    const composableSrc = fs.readFileSync(listFiltersComposable, 'utf8')
     assert.ok(
-      content.includes('counts.countFor(selectedStatus.value)'),
+      content.includes('fallbackSteps: DATE_FALLBACK_STEPS') &&
+      content.includes('selectedStatus'),
+      'JobOrderList must wire DATE_FALLBACK_STEPS and selectedStatus into useListDateFilters'
+    )
+    assert.ok(
+      composableSrc.includes('counts.countFor(selectedStatus?.value'),
       'Widen must key off the count the active tab would render'
     )
     assert.ok(
-      !content.includes('statusCounts?.total'),
+      !content.includes('statusCounts?.total') && !composableSrc.includes('statusCounts?.total'),
       'A window-total check would reintroduce R-02'
     )
   })
