@@ -1,5 +1,7 @@
 // Gene - Nov, 25, 2026: Centralized REST API service, canonical type codes, and default catalog for /api/Status
 import apiClient from './api.js'
+// Gene - Nov, 27, 2026: Load canonical status types and fallback catalog from saved JSON file
+import statusFallbackJson from '../data/statusFallback.json' with { type: 'json' }
 
 /*
 export const STATUS_TYPES = [
@@ -16,6 +18,7 @@ export const STATUS_TYPES = [
   { code: 'INVENTORY_LOG', label: 'Inventory Logs (status)' }
 ]
 */
+/*
 // Gene - Nov, 26, 2026: Expand STATUS_TYPES to cover all 22 status and form dropdown option lists across SwitchFiber
 export const STATUS_TYPES = [
   { code: 'APPLICATION', label: 'Applications (status)' },
@@ -41,6 +44,10 @@ export const STATUS_TYPES = [
   { code: 'PROMO_IMAGE_SIZE', label: 'Promotion Image Size (imageSize)' },
   { code: 'PROMO_THEME_COLOR', label: 'Promotion Theme Color (themeColor)' }
 ]
+*/
+// Gene - Nov, 27, 2026: Export STATUS_TYPES directly from saved JSON fallback catalog
+export const STATUS_FALLBACK_DATA = statusFallbackJson
+export const STATUS_TYPES = Array.isArray(statusFallbackJson?.statusTypes) ? statusFallbackJson.statusTypes : []
 
 /**
  * Default status catalog covering all modules across SwitchFiber:
@@ -147,6 +154,7 @@ export const DEFAULT_STATUSES = [
   { type: 'INVENTORY_LOG', name: 'Rejected', description: 'Rejected' }
 ]
 */
+/*
 // Gene - Nov, 26, 2026: Complete 154-item catalog across 22 types covering all statuses & form dropdown values (using code 'inprogress' -> 'In Progress')
 export const DEFAULT_STATUSES = [
   // APPLICATION (12)
@@ -347,6 +355,9 @@ export const DEFAULT_STATUSES = [
   { type: 'PROMO_THEME_COLOR', name: 'lime', description: 'Lime (Lime Neon - Speed Boost)' },
   { type: 'PROMO_THEME_COLOR', name: 'slate', description: 'Slate (Slate Neutral - Modern Minimal)' }
 ]
+*/
+// Gene - Nov, 27, 2026: Export DEFAULT_STATUSES directly from saved JSON fallback catalog
+export const DEFAULT_STATUSES = Array.isArray(statusFallbackJson?.statuses) ? statusFallbackJson.statuses : []
 
 export function normalizeStatusType(type) {
   return String(type ?? '').trim().toUpperCase().replace(/[\s-]+/g, '_')
@@ -378,6 +389,7 @@ export function normalizeStatusPayload(input = {}, fallbackUser = '1') {
  * Filter Status records by `typeCode` and map `{ label: description, value: name }`,
  * deduplicating case-insensitively by `name`.
  */
+/*
 export function mapStatusesToDropdownOptions(records = [], typeCode = '') {
   if (!Array.isArray(records) || records.length === 0) return []
   const targetType = normalizeStatusType(typeCode)
@@ -401,9 +413,6 @@ export function mapStatusesToDropdownOptions(records = [], typeCode = '') {
   return out
 }
 
-/**
- * Group Status records by normalized `type` code into `{ [TYPE]: [{ label, value }, ...] }`.
- */
 export function groupStatusesByType(records = []) {
   const grouped = {}
   if (!Array.isArray(records)) return grouped
@@ -430,6 +439,69 @@ export function groupStatusesByType(records = []) {
   }
 
   return grouped
+}
+*/
+// Gene - Nov, 27, 2026: Preserve optional hex swatch metadata when present and provide getFallbackStatusOptions helper
+export function mapStatusesToDropdownOptions(records = [], typeCode = '') {
+  if (!Array.isArray(records) || records.length === 0) return []
+  const targetType = normalizeStatusType(typeCode)
+  const seen = new Set()
+  const out = []
+
+  for (const row of records) {
+    if (!row || typeof row !== 'object') continue
+    if (row.isEnable === false || row.isActive === false) continue
+    if (targetType && normalizeStatusType(row.type) !== targetType) continue
+    const value = String(row.name ?? '').trim()
+    if (!value) continue
+    const dedupKey = value.toLowerCase()
+    if (seen.has(dedupKey)) continue
+    seen.add(dedupKey)
+    const label = String(row.description ?? '').trim() || value
+    const option = { label, value }
+    if (typeof row.hex === 'string' && row.hex.trim()) {
+      option.hex = row.hex.trim()
+    }
+    out.push(option)
+  }
+
+  return out
+}
+
+export function groupStatusesByType(records = []) {
+  const grouped = {}
+  if (!Array.isArray(records)) return grouped
+
+  const seenByType = {}
+  for (const row of records) {
+    if (!row || typeof row !== 'object') continue
+    if (row.isEnable === false || row.isActive === false) continue
+    const typeKey = normalizeStatusType(row.type)
+    const value = String(row.name ?? '').trim()
+    if (!typeKey || !value) continue
+    if (!grouped[typeKey]) {
+      grouped[typeKey] = []
+      seenByType[typeKey] = new Set()
+    }
+    const dedupKey = value.toLowerCase()
+    if (seenByType[typeKey].has(dedupKey)) continue
+    seenByType[typeKey].add(dedupKey)
+    const option = {
+      label: String(row.description ?? '').trim() || value,
+      value
+    }
+    if (typeof row.hex === 'string' && row.hex.trim()) {
+      option.hex = row.hex.trim()
+    }
+    grouped[typeKey].push(option)
+  }
+
+  return grouped
+}
+
+// Gene - Nov, 27, 2026: Return fallback dropdown options for a status type from saved JSON catalog
+export function getFallbackStatusOptions(typeCode = '') {
+  return mapStatusesToDropdownOptions(DEFAULT_STATUSES, typeCode)
 }
 
 // Gene - Nov, 26, 2026: Resolve human-readable description label for a stored status code using live grouped Status map or DEFAULT_STATUSES

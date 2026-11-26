@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { createPinia, setActivePinia } from 'pinia'
 
 import apiClient from '../src/services/api.js'
+/*
 import {
   StatusService,
   STATUS_TYPES,
@@ -16,6 +17,21 @@ import {
   normalizeStatusPayload,
   mapStatusesToDropdownOptions,
   groupStatusesByType,
+  resolveStatusLabel
+} from '../src/services/status.js'
+*/
+// Gene - Nov, 27, 2026: Also import STATUS_FALLBACK_DATA and getFallbackStatusOptions backed by src/data/statusFallback.json
+import {
+  StatusService,
+  STATUS_FALLBACK_DATA,
+  STATUS_TYPES,
+  DEFAULT_STATUSES,
+  normalizeStatusType,
+  normalizeStatusToken,
+  normalizeStatusPayload,
+  mapStatusesToDropdownOptions,
+  groupStatusesByType,
+  getFallbackStatusOptions,
   resolveStatusLabel
 } from '../src/services/status.js'
 import { useStatusStore } from '../src/stores/statuses.js'
@@ -119,6 +135,27 @@ describe('Status Service, Types & Default Catalog', () => {
       assert.ok(entry, `${inProgressType} must define code 'inprogress'`)
       assert.equal(entry.description, 'In Progress')
     }
+  })
+
+  // Gene - Nov, 27, 2026: Verify saved JSON fallback catalog in src/data/statusFallback.json and getFallbackStatusOptions helper
+  test('src/data/statusFallback.json stores 22 statusTypes, 154 statuses, Promo hex swatches, and backs STATUS_TYPES/DEFAULT_STATUSES', () => {
+    const rawJson = JSON.parse(read('src/data/statusFallback.json'))
+    assert.equal(rawJson.version, '1.0')
+    assert.equal(rawJson.statusTypes.length, 22)
+    assert.equal(rawJson.statuses.length, 154)
+    assert.deepEqual(STATUS_FALLBACK_DATA, rawJson)
+    assert.deepEqual(STATUS_TYPES, rawJson.statusTypes)
+    assert.deepEqual(DEFAULT_STATUSES, rawJson.statuses)
+
+    const promoColors = rawJson.statuses.filter(s => s.type === 'PROMO_THEME_COLOR')
+    assert.equal(promoColors.length, 12)
+    for (const color of promoColors) {
+      assert.match(color.hex, /^#[0-9a-f]{6}$/i, `PROMO_THEME_COLOR ${color.name} must keep hex swatch`)
+    }
+
+    const soVisitFallback = getFallbackStatusOptions('SO_VISIT')
+    assert.equal(soVisitFallback.length, 8)
+    assert.deepEqual(soVisitFallback.find(o => o.value === 'inprogress'), { label: 'In Progress', value: 'inprogress' })
   })
 
   test('normalizeStatusToken and resolveStatusLabel map stored codes to human descriptions', () => {
@@ -230,6 +267,7 @@ describe('Status Service, Types & Default Catalog', () => {
     })
   })
 
+  /*
   test('useStatusStore loads statuses, deduplicates compact tokens cleanly, resolves labels, and seeds missing entries', async () => {
     setActivePinia(createPinia())
     const originalGet = apiClient.get
@@ -266,6 +304,83 @@ describe('Status Service, Types & Default Catalog', () => {
       assert.equal(seedRes.skipped.length, 2)
       assert.equal(seedRes.created.length, DEFAULT_STATUSES.length - 2)
       assert.equal(posted.length, DEFAULT_STATUSES.length - 2)
+    } finally {
+      apiClient.get = originalGet
+      apiClient.post = originalPost
+    }
+  })
+  */
+  // Gene - Nov, 27, 2026: Verify live /api/Status authoritative options, promo hex enrichment, preserveFallbackOnly scoping, and JSON fallback when API fails or is empty
+  test('useStatusStore uses live /api/Status authoritatively when available and falls back to JSON when empty or failed', async () => {
+    setActivePinia(createPinia())
+    const originalGet = apiClient.get
+    const originalPost = apiClient.post
+    try {
+      // 1. Offline / API error fallback mode
+      apiClient.get = async () => { throw new Error('Network error') }
+      const offlineStore = useStatusStore()
+      assert.equal(offlineStore.isUsingFallback, true)
+      await offlineStore.loadStatuses()
+      assert.equal(offlineStore.isUsingFallback, true)
+      assert.equal(offlineStore.getOptions('SO_VISIT').length, 8)
+      assert.equal(offlineStore.getOptions('PROMO_THEME_COLOR').find(o => o.value === 'red')?.hex, '#ee2824')
+
+      // 2. Live API authoritative mode
+      setActivePinia(createPinia())
+      let storeRows = [
+        { type: 'APPLICATION', name: 'inprogress', description: 'In Progress' },
+        { type: 'RENTER', name: 'No', description: 'No (Owner)' },
+        { type: 'JOB_ORDER', name: 'inprogress', description: 'In Progress' },
+        { type: 'JOB_ORDER', name: 'Scheduled', description: 'Scheduled' },
+        { type: 'PROMO_THEME_COLOR', name: 'red', description: 'Switch Red' }
+      ]
+      const posted = []
+      apiClient.get = async () => storeRows
+      apiClient.post = async (_url, body) => {
+        posted.push(body)
+        storeRows = [...storeRows, body]
+        return body
+      }
+
+      const store = useStatusStore()
+      await store.loadStatuses()
+      assert.equal(store.isLoaded, true)
+      assert.equal(store.isUsingFallback, false)
+      assert.equal(store.getLabel('APPLICATION', 'inprogress'), 'In Progress')
+      assert.equal(store.getLabel('RENTER', 'No'), 'No (Owner)')
+
+      // Live API is authoritative: deleted/omitted fallback items ('Done') must NOT resurrect
+      const liveAppOptions = store.getOptions('APPLICATION', [
+        { label: 'Inprogress', value: 'Inprogress' },
+        { label: 'Done', value: 'Done' }
+      ])
+      assert.deepEqual(liveAppOptions, [
+        { label: 'In Progress', value: 'inprogress' }
+      ])
+
+      // Stage-scoped preserveFallbackOnly keeps only matched live stage options
+      const scopedJo = store.getOptions('JOB_ORDER', [
+        { label: 'Inprogress', value: 'Inprogress' },
+        { label: 'Scheduled', value: 'Scheduled' },
+        { label: 'Cancelled', value: 'Cancelled' }
+      ], { preserveFallbackOnly: true })
+      assert.deepEqual(scopedJo, [
+        { label: 'In Progress', value: 'inprogress' },
+        { label: 'Scheduled', value: 'Scheduled' }
+      ])
+
+      // Promo theme color keeps hex swatch from JSON fallback even though API omits hex
+      assert.deepEqual(store.getOptions('PROMO_THEME_COLOR'), [
+        { label: 'Switch Red', value: 'red', hex: '#ee2824' }
+      ])
+
+      // Type with 0 live API rows automatically falls back to saved JSON catalog
+      assert.equal(store.getOptions('SO_VISIT').length, 8)
+
+      const seedRes = await store.seedDefaults('1')
+      assert.equal(seedRes.skipped.length, 5)
+      assert.equal(seedRes.created.length, DEFAULT_STATUSES.length - 5)
+      assert.equal(posted.length, DEFAULT_STATUSES.length - 5)
     } finally {
       apiClient.get = originalGet
       apiClient.post = originalPost
@@ -319,6 +434,10 @@ describe('Status File Maintenance Menu, Routing, Metadata & DynamicApiTable Wiri
     assert.ok(dynamicTableSrc.includes('promotionImageSizeSelectOptions'))
     assert.ok(dynamicTableSrc.includes('promotionThemeColorSelectOptions'))
     assert.ok(dynamicTableSrc.includes('const getStatusDisplayLabel ='))
+    // Gene - Nov, 27, 2026: Verify JSON fallback helper import, Select value alignment, and Promotions/Status preload wiring
+    assert.ok(dynamicTableSrc.includes('getFallbackStatusOptions'))
+    assert.ok(dynamicTableSrc.includes('const alignValueToSelectOptions ='))
+    assert.ok(dynamicTableSrc.includes('isPromotionEndpoint.value') && dynamicTableSrc.includes('isStatusEndpoint.value'))
     /*
     assert.ok(dynamicTableSrc.includes('seedStatusesViaApi'))
     assert.ok(dynamicTableSrc.includes('sfa-tracker-seed-statuses-btn'))

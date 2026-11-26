@@ -6704,12 +6704,23 @@ import { normalizeServiceOrder } from '../services/serviceOrders'
 // Gene - Nov, 25, 2026: Import Status catalog, payload normalizer, and dropdown grouping helpers
 import { STATUS_TYPES, normalizeStatusPayload, groupStatusesByType } from '../services/status'
 */
+/*
 // Gene - Nov, 26, 2026: Import expanded Status catalog, token normalizer, and label resolver
 import {
   STATUS_TYPES,
   normalizeStatusPayload,
   normalizeStatusToken,
   groupStatusesByType,
+  resolveStatusLabel
+} from '../services/status'
+*/
+// Gene - Nov, 27, 2026: Also import getFallbackStatusOptions for saved JSON fallback resolution
+import {
+  STATUS_TYPES,
+  normalizeStatusPayload,
+  normalizeStatusToken,
+  groupStatusesByType,
+  getFallbackStatusOptions,
   resolveStatusLabel
 } from '../services/status'
 // Gene - Nov, 25, 2026: Import RadiusUser flattening normalizer, concise columns, and View modal layout
@@ -13958,6 +13969,7 @@ const statusOptions = computed(() => {
     return merged
   }
   */
+  /*
   // Gene - Nov, 26, 2026: Deduplicate by compact token too so Status code 'inprogress' replaces legacy 'Inprogress'/'In Progress' cleanly
   const overlayApiStatusOptions = (fallbackItems, typeCode, { preserveFallbackOnly = false } = {}) => {
     const apiList = Array.isArray(apiStatusMap[typeCode]) ? apiStatusMap[typeCode] : []
@@ -13993,6 +14005,55 @@ const statusOptions = computed(() => {
       merged.push({ label: String(item?.label || val).trim(), value: val })
     })
     return merged
+  }
+  */
+  // Gene - Nov, 27, 2026: Use live /api/Status authoritatively when available (no resurrecting deleted/disabled items) while falling back to fallbackItems when empty
+  const overlayApiStatusOptions = (fallbackItems, typeCode, { preserveFallbackOnly = false } = {}) => {
+    const apiList = Array.isArray(apiStatusMap[typeCode]) ? apiStatusMap[typeCode] : []
+    if (apiList.length === 0) return fallbackItems
+    const apiByLower = new Map()
+    const apiByToken = new Map()
+    apiList.forEach(item => {
+      const val = String(item?.value || '').trim()
+      if (!val) return
+      const lower = val.toLowerCase()
+      const token = normalizeStatusToken(val)
+      if (!apiByLower.has(lower)) apiByLower.set(lower, item)
+      if (token && !apiByToken.has(token)) apiByToken.set(token, item)
+    })
+    if (preserveFallbackOnly) {
+      const matched = []
+      const seenLower = new Set()
+      const seenTokens = new Set()
+      fallbackItems.forEach(opt => {
+        const val = String(opt?.value || '').trim()
+        const lower = val.toLowerCase()
+        const token = normalizeStatusToken(val)
+        const apiMatch = apiByLower.get(lower) || (token ? apiByToken.get(token) : null)
+        if (!apiMatch) return
+        const matchVal = String(apiMatch?.value || '').trim()
+        const matchLower = matchVal.toLowerCase()
+        const matchToken = normalizeStatusToken(matchVal)
+        if (!matchVal || seenLower.has(matchLower) || (matchToken && seenTokens.has(matchToken))) return
+        seenLower.add(matchLower)
+        if (matchToken) seenTokens.add(matchToken)
+        matched.push({ label: String(apiMatch?.label || matchVal).trim(), value: matchVal })
+      })
+      return matched.length > 0 ? matched : fallbackItems
+    }
+    const authoritative = []
+    const seenLower = new Set()
+    const seenTokens = new Set()
+    apiList.forEach(item => {
+      const val = String(item?.value || '').trim()
+      const lower = val.toLowerCase()
+      const token = normalizeStatusToken(val)
+      if (!val || seenLower.has(lower) || (token && seenTokens.has(token))) return
+      seenLower.add(lower)
+      if (token) seenTokens.add(token)
+      authoritative.push({ label: String(item?.label || val).trim(), value: val })
+    })
+    return authoritative.length > 0 ? authoritative : fallbackItems
   }
 
   if (isJobOrderEndpoint.value) {
@@ -14719,6 +14780,7 @@ const fetchStatusesLookup = (force = false) => {
   return statusesLookupPromise
 }
 */
+/*
 // Gene - Nov, 26, 2026: Hydrate all 18 form dropdown option lists from the centralized Status Pinia store (/api/Status)
 const syncDropdownOptionsFromStatuses = (grouped = {}) => {
   if (!grouped || typeof grouped !== 'object' || Object.keys(grouped).length === 0) return
@@ -14738,6 +14800,57 @@ const syncDropdownOptionsFromStatuses = (grouped = {}) => {
   if (grouped.REPAIR_CATEGORY?.length) repairCategoryOptions.value = grouped.REPAIR_CATEGORY
   if (grouped.CONCERN?.length) concernOptions.value = grouped.CONCERN
   if (grouped.CONNECTION_TYPE?.length) connectionTypeOptions.value = grouped.CONNECTION_TYPE
+}
+*/
+// Gene - Nov, 27, 2026: Hydrate dropdown option lists from live /api/Status with saved JSON fallback per type, and align values to PrimeVue Select options
+const syncDropdownOptionsFromStatuses = (grouped = {}) => {
+  const safeGrouped = grouped && typeof grouped === 'object' ? grouped : {}
+  statusLookupByType.value = safeGrouped
+  const resolveList = (typeCode) => (
+    Array.isArray(safeGrouped[typeCode]) && safeGrouped[typeCode].length > 0
+      ? safeGrouped[typeCode]
+      : getFallbackStatusOptions(typeCode)
+  )
+  onsiteStatusOptions.value = resolveList('JO_ONSITE')
+  billingStatusOptions.value = resolveList('BILLING')
+  deliveryStatusOptions.value = resolveList('DELIVERY')
+  invoiceStatusOptions.value = resolveList('INVOICE')
+  supportStatusOptions.value = resolveList('SO_SUPPORT')
+  visitStatusOptions.value = resolveList('SO_VISIT')
+  discountStatusOptions.value = resolveList('DISCOUNT')
+  renterOptions.value = resolveList('RENTER')
+  applyingForOptions.value = resolveList('APPLYING_FOR')
+  contractTemplateOptions.value = resolveList('CONTRACT_TEMPLATE')
+  usageTypeOptions.value = resolveList('USAGE_TYPE')
+  priorityOptions.value = resolveList('PRIORITY')
+  repairCategoryOptions.value = resolveList('REPAIR_CATEGORY')
+  concernOptions.value = resolveList('CONCERN')
+  connectionTypeOptions.value = resolveList('CONNECTION_TYPE')
+}
+
+const alignValueToSelectOptions = (optionsList, rawVal) => {
+  if (rawVal === null || rawVal === undefined) return rawVal
+  const str = String(rawVal).trim()
+  if (!str) return rawVal
+  const list = Array.isArray(optionsList) ? optionsList : []
+  if (list.length === 0) return rawVal
+
+  const exact = list.find(o => String(o?.value ?? '').trim() === str)
+  if (exact) return exact.value
+
+  const lower = str.toLowerCase()
+  const byLower = list.find(o => String(o?.value ?? '').trim().toLowerCase() === lower)
+  if (byLower) return byLower.value
+
+  const token = normalizeStatusToken(str)
+  if (token) {
+    const byToken = list.find(o =>
+      normalizeStatusToken(o?.value ?? '') === token ||
+      normalizeStatusToken(o?.label ?? '') === token
+    )
+    if (byToken) return byToken.value
+  }
+  return rawVal
 }
 
 watch(
@@ -17220,6 +17333,7 @@ const openCreateDialog = (prefill = null) => {
     }
   })
 
+  /*
   if (isApplicationEndpoint.value) {
     const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
     if (statusCol) {
@@ -17282,6 +17396,80 @@ const openCreateDialog = (prefill = null) => {
     const visitCol = formColumns.value.find(c => c.toLowerCase() === 'visitstatus')
     if (visitCol && !formData.value[visitCol]) {
       formData.value[visitCol] = 'Scheduled'
+    }
+    const reqByCol = formColumns.value.find(c => c.toLowerCase() === 'requestedby')
+    if (reqByCol && !formData.value[reqByCol] && currentUser) {
+      formData.value[reqByCol] = currentUser
+    }
+    const uEmailCol = formColumns.value.find(c => normalizeColKey(c) === 'useremail')
+    if (uEmailCol && !formData.value[uEmailCol]) {
+      formData.value[uEmailCol] = authStore.user?.email || 'admin@switchfiber.com'
+    }
+  }
+  */
+  // Gene - Nov, 27, 2026: Align Create dialog default statuses & dropdown values to active /api/Status Select options
+  if (isApplicationEndpoint.value) {
+    const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
+    if (statusCol) {
+      formData.value[statusCol] = alignValueToSelectOptions(statusOptions.value, defaultNewStatus.value)
+    }
+  }
+
+  if (isJobOrderEndpoint.value) {
+    const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
+    if (statusCol && statusOptions.value.length > 0) {
+      if (isJobOrderCompleted.value) {
+        formData.value[statusCol] = 'Completed'
+      } else if (isJobOrderActivated.value) {
+        formData.value[statusCol] = 'Activated'
+      } else if (isJobOrderInProgress.value) {
+        formData.value[statusCol] = 'Inprogress'
+      } else {
+        formData.value[statusCol] = statusOptions.value[0].value
+      }
+      formData.value[statusCol] = alignValueToSelectOptions(statusOptions.value, formData.value[statusCol])
+    }
+    const bDayCol = formColumns.value.find(c => normalizeColKey(c) === 'billingday') || 'billingDay'
+    if (formData.value[bDayCol] === '' || formData.value[bDayCol] === null || formData.value[bDayCol] === undefined) {
+      formData.value[bDayCol] = '1'
+    }
+  }
+
+  if (isBillingEndpoint.value) {
+    const statusCol = formColumns.value.find(c => c.toLowerCase() === 'status')
+    if (statusCol && !formData.value[statusCol]) {
+      formData.value[statusCol] = alignValueToSelectOptions(statusOptions.value, 'Active')
+    }
+    const billingStatusCol = formColumns.value.find(c => c.toLowerCase() === 'billingstatus')
+    if (billingStatusCol && !formData.value[billingStatusCol]) {
+      formData.value[billingStatusCol] = alignValueToSelectOptions(billingStatusOptions.value, 'Pending')
+    }
+    const deliveryStatusCol = formColumns.value.find(c => c.toLowerCase() === 'deliverystatus')
+    if (deliveryStatusCol && !formData.value[deliveryStatusCol]) {
+      formData.value[deliveryStatusCol] = alignValueToSelectOptions(deliveryStatusOptions.value, 'Delivered')
+    }
+    const renterCol = formColumns.value.find(c => c.toLowerCase() === 'renter')
+    if (renterCol && !formData.value[renterCol]) {
+      formData.value[renterCol] = alignValueToSelectOptions(renterOptions.value, 'No')
+    }
+    const uEmailCol = formColumns.value.find(c => normalizeColKey(c) === 'useremail')
+    if (uEmailCol && !formData.value[uEmailCol]) {
+      formData.value[uEmailCol] = authStore.user?.email || 'admin@switchfiber.com'
+    }
+  }
+
+  if (isServiceOrderEndpoint.value) {
+    const supportCol = formColumns.value.find(c => c.toLowerCase() === 'supportstatus')
+    if (supportCol && !formData.value[supportCol]) {
+      formData.value[supportCol] = alignValueToSelectOptions(supportStatusOptions.value, 'Pending')
+    }
+    const priorityCol = formColumns.value.find(c => c.toLowerCase() === 'prioritylevel')
+    if (priorityCol && !formData.value[priorityCol]) {
+      formData.value[priorityCol] = alignValueToSelectOptions(priorityOptions.value, 'Medium')
+    }
+    const visitCol = formColumns.value.find(c => c.toLowerCase() === 'visitstatus')
+    if (visitCol && !formData.value[visitCol]) {
+      formData.value[visitCol] = alignValueToSelectOptions(visitStatusOptions.value, 'Scheduled')
     }
     const reqByCol = formColumns.value.find(c => c.toLowerCase() === 'requestedby')
     if (reqByCol && !formData.value[reqByCol] && currentUser) {
@@ -19625,6 +19813,7 @@ const openEditDialog = async (record) => {
     if (getFieldType(col) === 'time') {
       editFormData.value[col] = editFormData.value[col] ? parseTimeForPicker(editFormData.value[col]) : null
     }
+    /*
     // Gene - Nov, 14, 2026: Normalize legacy Onsite Status casing/spacing variants to canonical dropdown values in edit modal
     if (getFieldType(col) === 'onsitestatus_dropdown' && editFormData.value[col]) {
       editFormData.value[col] = normalizeOnsiteStatus(editFormData.value[col])
@@ -19635,6 +19824,17 @@ const openEditDialog = async (record) => {
     }
     if (getFieldType(col) === 'visitstatus_dropdown' && editFormData.value[col]) {
       editFormData.value[col] = normalizeVisitStatus(editFormData.value[col])
+    }
+    */
+    // Gene - Nov, 27, 2026: Normalize and align Onsite, Support, and Visit status values to active Select options before lookup resolves
+    if (getFieldType(col) === 'onsitestatus_dropdown' && editFormData.value[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(onsiteStatusOptions.value, normalizeOnsiteStatus(editFormData.value[col]))
+    }
+    if (getFieldType(col) === 'supportstatus_dropdown' && editFormData.value[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(supportStatusOptions.value, normalizeSupportStatus(editFormData.value[col]))
+    }
+    if (getFieldType(col) === 'visitstatus_dropdown' && editFormData.value[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(visitStatusOptions.value, normalizeVisitStatus(editFormData.value[col]))
     }
     // Gene - Nov, 14, 2026: Match stored assignedEmail case-insensitively to canonical option value in edit modal
     if (getFieldType(col) === 'assignedemail_dropdown' && editFormData.value[col]) {
@@ -19828,6 +20028,7 @@ const openEditDialog = async (record) => {
     }
   }
   */
+  /*
   // Gene - Nov, 23, 2026: Normalize Applications status variants (including No Facility, No Slot, Duplicate, Cancelled) alongside Job Orders in edit modal
   if (isApplicationEndpoint.value && curStatus) {
     editFormData.value[statusCol] = normalizeApplicationStatusValue(
@@ -19853,6 +20054,37 @@ const openEditDialog = async (record) => {
     } else if (raw === 'cancelled' || raw === 'canceled') {
       editFormData.value[statusCol] = 'Cancelled'
     }
+  }
+  */
+  // Gene - Nov, 27, 2026: Align Applications, Job Orders, and generic status dropdown values to active /api/Status Select options
+  if (isApplicationEndpoint.value && curStatus) {
+    const appCandidates = statusOptions.value.length
+      ? statusOptions.value
+      : [...dataStatusVocabulary.value, ...APPLICATION_REQUIRED_STATUSES]
+    const normalizedApp = normalizeApplicationStatusValue(curStatus, appCandidates) || curStatus
+    editFormData.value[statusCol] = alignValueToSelectOptions(statusOptions.value, normalizedApp)
+  } else if (isJobOrderEndpoint.value && curStatus) {
+    const raw = String(curStatus).trim().toLowerCase().replace(/[\s_-]+/g, '')
+    if (raw === 'inprogress') {
+      editFormData.value[statusCol] = 'Inprogress'
+    } else if (raw === 'scheduled') {
+      editFormData.value[statusCol] = 'Scheduled'
+    } else if (raw === 'completed') {
+      editFormData.value[statusCol] = 'Completed'
+    } else if (raw === 'activated') {
+      editFormData.value[statusCol] = 'Activated'
+    } else if (raw === 'failed') {
+      editFormData.value[statusCol] = 'Failed'
+    } else if (raw === 'forconfirmation') {
+      editFormData.value[statusCol] = 'For Confirmation'
+    } else if (raw === 'confirmed') {
+      editFormData.value[statusCol] = 'Confirmed'
+    } else if (raw === 'cancelled' || raw === 'canceled') {
+      editFormData.value[statusCol] = 'Cancelled'
+    }
+    editFormData.value[statusCol] = alignValueToSelectOptions(statusOptions.value, editFormData.value[statusCol])
+  } else if (curStatus) {
+    editFormData.value[statusCol] = alignValueToSelectOptions(statusOptions.value, curStatus)
   }
 
   // 7. Normalize and match Coordinates
@@ -19886,6 +20118,7 @@ const openEditDialog = async (record) => {
     // Gene - Nov, 14, 2026: Parse Job Order time fields into local Date objects (or null when blank) for PrimeVue timeOnly DatePicker in edit modal
     } else if (type === 'time') {
       editFormData.value[col] = record[col] ? parseTimeForPicker(record[col]) : null
+    /*
     // Gene - Nov, 14, 2026: Normalize legacy Onsite Status casing/spacing variants after lookup refresh in edit modal
     } else if (type === 'onsitestatus_dropdown' && record[col]) {
       editFormData.value[col] = normalizeOnsiteStatus(record[col])
@@ -19894,6 +20127,28 @@ const openEditDialog = async (record) => {
       editFormData.value[col] = normalizeSupportStatus(record[col])
     } else if (type === 'visitstatus_dropdown' && record[col]) {
       editFormData.value[col] = normalizeVisitStatus(record[col])
+    */
+    // Gene - Nov, 27, 2026: Normalize and align Status-backed dropdowns to active /api/Status Select options after lookup refresh in edit modal
+    } else if (type === 'onsitestatus_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(onsiteStatusOptions.value, normalizeOnsiteStatus(record[col]))
+    } else if (type === 'supportstatus_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(supportStatusOptions.value, normalizeSupportStatus(record[col]))
+    } else if (type === 'visitstatus_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(visitStatusOptions.value, normalizeVisitStatus(record[col]))
+    } else if (type === 'billingstatus_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(billingStatusOptions.value, record[col])
+    } else if (type === 'deliverystatus_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(deliveryStatusOptions.value, record[col])
+    } else if (type === 'invoicestatus_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(invoiceStatusOptions.value, record[col])
+    } else if (type === 'discountstatus_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(discountStatusOptions.value, record[col])
+    } else if (type === 'priority_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(priorityOptions.value, record[col])
+    } else if (type === 'connectiontype_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(connectionTypeOptions.value, record[col])
+    } else if (type === 'renter_dropdown' && record[col]) {
+      editFormData.value[col] = alignValueToSelectOptions(renterOptions.value, record[col])
     /*
     } else if (record[col] === null || record[col] === undefined) {
       if (col !== regCol && col !== cCol && col !== bCol && col !== statusCol && col !== coordCol) {
@@ -22708,6 +22963,7 @@ onMounted(() => {
   fetchData()
   fetchAccessLevelMenus()
   fetchCurrentUserPermissions()
+  /*
   // Gene - Nov, 25, 2026: Preload centralized /api/Status options on status-bearing endpoints
   if (
     isApplicationEndpoint.value ||
@@ -22718,6 +22974,22 @@ onMounted(() => {
     isBillingEndpoint.value ||
     isDiscountEndpoint.value ||
     isInventoryLogEndpoint.value
+  ) {
+    fetchStatusesLookup()
+  }
+  */
+  // Gene - Nov, 27, 2026: Preload centralized /api/Status options on all status-bearing endpoints including Promotions and Status
+  if (
+    isApplicationEndpoint.value ||
+    isJobOrderEndpoint.value ||
+    isServiceOrderEndpoint.value ||
+    isInvoiceEndpoint.value ||
+    isPaymentEndpoint.value ||
+    isBillingEndpoint.value ||
+    isDiscountEndpoint.value ||
+    isInventoryLogEndpoint.value ||
+    isPromotionEndpoint.value ||
+    isStatusEndpoint.value
   ) {
     fetchStatusesLookup()
   }
