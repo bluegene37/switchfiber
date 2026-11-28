@@ -55,10 +55,15 @@ describe('Billing Day day-of-month picker', () => {
   })
 
   test('both the create and the edit dialog render the picker', () => {
+    /*
     const branches = tableSrc.match(/v-else-if="getFieldType\(col\) === 'billingday_dropdown'"/g) || []
+    */
+    // Gene - Nov, 28, 2026: Strip commented-out deprecated HTML blocks before counting active Select branches
+    const activeTemplateSrc = tableSrc.replace(/<!--[\s\S]*?-->/g, '')
+    const branches = activeTemplateSrc.match(/v-else-if="getFieldType\(col\) === 'billingday_dropdown'"/g) || []
     assert.equal(branches.length, 2, 'one Select branch in the create dialog and one in the edit dialog')
     assert.ok(
-      tableSrc.includes(':options="billingDayOptions"'),
+      activeTemplateSrc.includes(':options="billingDayOptions"'),
       'the Select must be bound to billingDayOptions'
     )
   })

@@ -1283,13 +1283,39 @@
           <i class="pi pi-search-minus me-1"></i> No fields match "{{ fieldSearch.create.trim() }}".
           <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" @click="clearFieldSearch('create')">Show all fields</button>
         </div>
+        <!-- Gene - Nov, 28, 2026: Render bottom Archive section as a collapsed-by-default accordion with disabled inputs -->
         <div 
           v-for="sec in formSections" 
           v-show="isSectionShown('create', sec)"
           :key="sec.key" 
           class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
+          :class="{ 'sfa-archived-section-card': isSectionCollapsible(sec) }"
         >
-          <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+          <button
+            v-if="isSectionCollapsible(sec)"
+            type="button"
+            class="sfa-archive-toggle-btn w-100 d-flex align-items-center justify-content-between gap-2 text-start bg-transparent border-0 p-0"
+            :class="{ 'pb-2 mb-3 border-bottom': isSectionBodyExpanded('create', sec) }"
+            :aria-expanded="isSectionBodyExpanded('create', sec)"
+            @click="toggleSectionCollapse('create', sec)"
+          >
+            <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
+              <i :class="['pi', isSectionBodyExpanded('create', sec) ? 'pi-chevron-down' : 'pi-chevron-right', 'text-secondary']" style="font-size: 0.8rem;"></i>
+              <i :class="sec.icon"></i> {{ sec.title }}
+            </h6>
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+              <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+                <i class="pi pi-lock me-1" style="font-size: 0.65rem;"></i>Disabled
+              </span>
+              <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+                {{ sectionFieldCountLabel('create', sec) }}
+              </span>
+              <span class="d-none d-sm-inline small text-muted">
+                {{ isSectionBodyExpanded('create', sec) ? 'Hide' : 'Expand' }}
+              </span>
+            </div>
+          </button>
+          <div v-else class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
             <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
               <i :class="sec.icon"></i> {{ sec.title }}
             </h6>
@@ -1320,7 +1346,15 @@
             </div>
           </div>
 
-          <div class="row g-3">
+          <template v-if="isSectionBodyExpanded('create', sec)">
+            <fieldset :disabled="isSectionCollapsible(sec)" class="border-0 p-0 m-0 w-100" :class="{ 'sfa-archived-fieldset': isSectionCollapsible(sec) }">
+              <div class="row g-3">
+                <div v-if="isSectionCollapsible(sec)" class="col-12">
+                  <div class="sfa-archive-banner d-flex align-items-center gap-2 rounded-3 border px-3 py-2 small text-secondary">
+                    <i class="pi pi-lock flex-shrink-0"></i>
+                    <span>Unused in AppSheet. Archived fields are disabled and excluded from required checks.</span>
+                  </div>
+                </div>
             <!-- Applications store no coordinates: the map pins the address on open and feeds Use Pin Address -->
             <div v-if="showInlineAddressMap(sec)" class="col-12 sfa-form-field sfa-address-map">
               <label :for="`address-pin-create`" class="form-label fw-medium text-body small mb-1">
@@ -1445,6 +1479,8 @@
                 <span v-if="isFieldRequired(col)" class="text-danger ms-1" title="Required">*</span>
                 <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
                 <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                <!-- Gene - Nov, 28, 2026: Show Archived badge on Create form fields unused in AppSheet -->
+                <span v-else-if="isArchivedField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
               </label>
 
               <!-- Pinned stand-in: the editable input lives in Quick Fields at the top.
@@ -1462,6 +1498,7 @@
               </div>
 
               <!-- Combined Barangay 1 & Barangay 2 Column (Stacked) -->
+              <!--
               <div v-else-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
                 <div>
                   <label :for="`create-barangay1`" class="form-label fw-medium text-body small mb-1">
@@ -1488,8 +1525,45 @@
                   />
                 </div>
               </div>
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable stacked Barangay 1 & 2 inputs when archived in Create Dialog -->
+              <div v-else-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`create-barangay1`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 1
+                    <span v-if="isFieldRequired('barangay1')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('barangay1')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
+                  </label>
+                  <InputText 
+                    id="create-barangay1" 
+                    v-model="formData.barangay1" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInCreate('barangay1')"
+                    :readonly="isFieldDisabledInCreate('barangay1')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInCreate('barangay1') }"
+                    placeholder="Enter barangay 1" 
+                  />
+                </div>
+                <div>
+                  <label :for="`create-barangay2`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 2
+                    <span v-if="isFieldRequired('barangay2')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('barangay2')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
+                  </label>
+                  <InputText 
+                    id="create-barangay2" 
+                    v-model="formData.barangay2" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInCreate('barangay2')"
+                    :readonly="isFieldDisabledInCreate('barangay2')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInCreate('barangay2') }"
+                    placeholder="Enter barangay 2" 
+                  />
+                </div>
+              </div>
 
               <!-- Combined Visit With (Other) & User Email Column (Stacked) -->
+              <!--
               <div v-else-if="normalizeColKey(col) === 'visitwithother'" class="d-flex flex-column gap-2">
                 <div>
                   <label :for="`create-visitwithother`" class="form-label fw-medium text-body small mb-1">
@@ -1512,6 +1586,42 @@
                     id="create-useremail" 
                     v-model="formData.userEmail" 
                     class="w-100 p-inputtext-sm" 
+                    placeholder="Enter user email" 
+                  />
+                </div>
+              </div>
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable archived Visit With (Other) / User Email inputs in Create Dialog and hide User Email on Job Orders -->
+              <div v-else-if="normalizeColKey(col) === 'visitwithother'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`create-visitwithother`" class="form-label fw-medium text-body small mb-1">
+                    Visit With (Other)
+                    <span v-if="isFieldRequired('visitWithOther')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('visitWithOther')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
+                  </label>
+                  <InputText 
+                    id="create-visitwithother" 
+                    v-model="formData.visitWithOther" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInCreate('visitWithOther')"
+                    :readonly="isFieldDisabledInCreate('visitWithOther')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInCreate('visitWithOther') }"
+                    placeholder="Enter visit with (other)" 
+                  />
+                </div>
+                <div v-if="!isJobOrderEndpoint">
+                  <label :for="`create-useremail`" class="form-label fw-medium text-body small mb-1">
+                    User Email
+                    <span v-if="isFieldRequired('userEmail')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('userEmail')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
+                  </label>
+                  <InputText 
+                    id="create-useremail" 
+                    v-model="formData.userEmail" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInCreate('userEmail')"
+                    :readonly="isFieldDisabledInCreate('userEmail')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInCreate('userEmail') }"
                     placeholder="Enter user email" 
                   />
                 </div>
@@ -1577,6 +1687,7 @@
               />
 
               <!-- LCNAP Dropdown -->
+              <!--
               <Select
                 v-else-if="getFieldType(col) === 'lcpnap_dropdown'"
                 :id="col"
@@ -1585,6 +1696,32 @@
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
+                placeholder="Select LCNAP"
+                class="w-100 p-inputtext-sm"
+              />
+
+              <Select 
+                v-else-if="getFieldType(col) === 'lcpnapport_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="lcpnapportsList" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select LCNAP Port" 
+                class="w-100 p-inputtext-sm" 
+              />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable LCNAP and LCNAP Port dropdowns when archived in Create Dialog -->
+              <Select
+                v-else-if="getFieldType(col) === 'lcpnap_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="lcpnapsList"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 placeholder="Select LCNAP"
                 class="w-100 p-inputtext-sm"
               />
@@ -1598,6 +1735,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 placeholder="Select LCNAP Port" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -1849,6 +1987,7 @@
               </Select>
 
               <!-- Province Dropdown (the API column is named `region` but stores the province) -->
+              <!--
               <Select
                 v-else-if="getFieldType(col) === 'region_dropdown'"
                 :id="col"
@@ -1857,6 +1996,21 @@
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
+                @change="onRegionChanged(formData)"
+                placeholder="Select Province"
+                class="w-100 p-inputtext-sm"
+              />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Province/Region dropdown when archived in Create Dialog -->
+              <Select
+                v-else-if="getFieldType(col) === 'region_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="createRegionOptions"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 @change="onRegionChanged(formData)"
                 placeholder="Select Province"
                 class="w-100 p-inputtext-sm"
@@ -1880,6 +2034,7 @@
                 />
                 -->
                 <!-- Gene - Oct 23, 2026: Remove virtualScrollerOptions to prevent 0-height empty dropdown container in modal -->
+                <!--
                 <Select
                   :id="col"
                   v-model="formData[col]"
@@ -1906,6 +2061,34 @@
                   <i class="pi pi-exclamation-circle"></i>
                   <span>{{ getAddressStepBlocker(formData, 'city')?.summary }}</span>
                 </div>
+                -->
+                <!-- Gene - Nov, 28, 2026: Disable City dropdown and suppress prerequisite overlay tooltip when archived in Create Dialog -->
+                <Select
+                  :id="col"
+                  v-model="formData[col]"
+                  :options="createCityOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isCityDisabled(formData) || isFieldDisabledInCreate(col)"
+                  @change="onCityChanged(formData)"
+                  :placeholder="getCityPlaceholder(formData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                <div 
+                  v-if="isCityDisabled(formData) || isFieldDisabledInCreate(col)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  :title="isFieldDisabledInCreate(col) ? 'Field is archived and disabled' : 'Please select Province first'"
+                  @click.stop="!isFieldDisabledInCreate(col) && notifyAddressStep(formData, 'city', 'create')"
+                ></div>
+                <div 
+                  v-if="!isFieldDisabledInCreate(col) && shouldShowAddressHint(formData, 'city', 'create')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(formData, 'city')?.summary }}</span>
+                </div>
               </div>
 
               <!-- Barangay Dropdown -->
@@ -1925,6 +2108,7 @@
                 />
                 -->
                 <!-- Gene - Oct 23, 2026: Remove virtualScrollerOptions to prevent 0-height empty dropdown container in modal -->
+                <!--
                 <Select
                   :id="col"
                   v-model="formData[col]"
@@ -1945,6 +2129,33 @@
                 ></div>
                 <div 
                   v-if="shouldShowAddressHint(formData, 'barangay', 'create')" 
+                  class="address-step-hint mt-1 d-flex align-items-center gap-1"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  <span>{{ getAddressStepBlocker(formData, 'barangay')?.summary }}</span>
+                </div>
+                -->
+                <!-- Gene - Nov, 28, 2026: Disable Barangay dropdown and suppress prerequisite overlay tooltip when archived in Create Dialog -->
+                <Select
+                  :id="col"
+                  v-model="formData[col]"
+                  :options="createBarangayOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :filter="true"
+                  :disabled="isBarangayDisabled(formData) || isFieldDisabledInCreate(col)"
+                  :placeholder="getBarangayPlaceholder(formData)"
+                  class="w-100 p-inputtext-sm"
+                />
+                <div 
+                  v-if="isBarangayDisabled(formData) || isFieldDisabledInCreate(col)" 
+                  class="position-absolute top-0 start-0 w-100 h-100" 
+                  style="cursor: pointer; z-index: 2;" 
+                  :title="isFieldDisabledInCreate(col) ? 'Field is archived and disabled' : 'Please select City first'"
+                  @click.stop="!isFieldDisabledInCreate(col) && notifyAddressStep(formData, 'barangay', 'create')"
+                ></div>
+                <div 
+                  v-if="!isFieldDisabledInCreate(col) && shouldShowAddressHint(formData, 'barangay', 'create')" 
                   class="address-step-hint mt-1 d-flex align-items-center gap-1"
                 >
                   <i class="pi pi-exclamation-circle"></i>
@@ -1979,6 +2190,7 @@
               />
 
               <!-- Billing Day Dropdown (day of the month, 1-31) -->
+              <!--
               <Select
                 v-else-if="getFieldType(col) === 'billingday_dropdown'"
                 :id="col"
@@ -1987,6 +2199,34 @@
                 optionLabel="label"
                 optionValue="value"
                 :filter="true"
+                showClear
+                placeholder="Select billing day (1-31)"
+                class="w-100 p-inputtext-sm"
+                :class="{ 'p-invalid': hasFieldError('create', col) }"
+              />
+
+              <Select 
+                v-else-if="getFieldType(col) === 'billingstatus_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="billingStatusOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Billing Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Billing Day and Billing Status dropdowns when archived in Create Dialog -->
+              <Select
+                v-else-if="getFieldType(col) === 'billingday_dropdown'"
+                :id="col"
+                v-model="formData[col]"
+                :options="billingDayOptions"
+                optionLabel="label"
+                optionValue="value"
+                :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 showClear
                 placeholder="Select billing day (1-31)"
                 class="w-100 p-inputtext-sm"
@@ -2002,6 +2242,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 placeholder="Select Billing Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2048,6 +2289,7 @@
               />
 
               <!-- Renter Dropdown -->
+              <!--
               <Select 
                 v-else-if="getFieldType(col) === 'renter_dropdown'" 
                 :id="col" 
@@ -2056,6 +2298,44 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                placeholder="Select Renter Status" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <Select 
+                v-else-if="getFieldType(col) === 'usagetype_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="usageTypeOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Usage Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+
+              <Select 
+                v-else-if="getFieldType(col) === 'priority_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="priorityOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                placeholder="Select Priority Level" 
+                class="w-100 p-inputtext-sm" 
+              />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Renter and Priority dropdowns when archived in Create Dialog -->
+              <Select 
+                v-else-if="getFieldType(col) === 'renter_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="renterOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 placeholder="Select Renter Status" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2082,6 +2362,7 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 placeholder="Select Priority Level" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2171,6 +2452,7 @@
               />
 
               <!-- Applying For Dropdown -->
+              <!--
               <Select 
                 v-else-if="getFieldType(col) === 'applyingfor_dropdown'" 
                 :id="col" 
@@ -2179,6 +2461,20 @@
                 optionLabel="label" 
                 optionValue="value" 
                 :filter="true"
+                placeholder="Select Application Type" 
+                class="w-100 p-inputtext-sm" 
+              />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Applying For dropdown when archived in Create Dialog -->
+              <Select 
+                v-else-if="getFieldType(col) === 'applyingfor_dropdown'" 
+                :id="col" 
+                v-model="formData[col]" 
+                :options="applyingForOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                :filter="true"
+                :disabled="isFieldDisabledInCreate(col)"
                 placeholder="Select Application Type" 
                 class="w-100 p-inputtext-sm" 
               />
@@ -2241,6 +2537,7 @@
               </div>
 
               <!-- Coordinate Picker -->
+              <!--
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
                 <CoordinatePicker v-model="formData[col]" height="280px" />
                 <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
@@ -2290,6 +2587,59 @@
                   <span class="text-truncate">Pin matches: <strong class="text-body">{{ resolvedPinPreview.create }}</strong></span>
                 </div>
               </div>
+              -->
+              <!-- Gene - Nov, 28, 2026: Lock CoordinatePicker and GPS toolbar when coordinates field is archived in Create Dialog -->
+              <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
+                <CoordinatePicker v-model="formData[col]" :readonly="isFieldDisabledInCreate(col)" height="280px" />
+                <div class="lnm-pin-toolbar p-2.5 rounded-3 border bg-body-tertiary d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+                  <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <span class="small text-secondary fw-semibold flex-shrink-0">
+                      <i class="pi pi-compass text-primary me-1"></i>GPS:
+                    </span>
+                    <input
+                      :id="col"
+                      v-model="formData[col]"
+                      type="text"
+                      class="form-control form-control-sm rounded-3 font-monospace coord-input flex-grow-1"
+                      :class="{ 'is-invalid': hasFieldError('create', col), 'bg-light text-muted': isFieldDisabledInCreate(col) }"
+                      :disabled="isFieldDisabledInCreate(col)"
+                      :readonly="isFieldDisabledInCreate(col)"
+                      placeholder="latitude, longitude"
+                      @input="onStoredPinTyped('create')"
+                    />
+                  </div>
+                  <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1.5 px-3"
+                      :disabled="addressPinBusy.create || !canLocateAddress('create') || isFieldDisabledInCreate(col)"
+                      title="Place the pin from the Province, City, Barangay and Street entered in this form"
+                      @click="locateAddress('create', { commit: true })"
+                    >
+                      <i :class="addressPinBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-search'" style="font-size: 0.8rem;"></i>
+                      <span>{{ addressPinBusy.create ? 'Locating...' : 'Locate Address' }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary rounded-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs px-3"
+                      :disabled="pinFillBusy.create || !formData[col] || isFieldDisabledInCreate(col)"
+                      title="Autofill Province, City, Barangay and Street from the pinned location"
+                      @click="applyAddressFromPin('create')"
+                    >
+                      <i :class="pinFillBusy.create ? 'pi pi-spinner pi-spin' : 'pi pi-sparkles'" style="font-size: 0.8rem;"></i>
+                      <span>{{ pinFillBusy.create ? 'Filling Address...' : 'Use Pin Address' }}</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-if="addressPinApprox.create && visiblePin('create')" class="small text-warning-emphasis d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-info-circle" style="font-size: 0.75rem;"></i>
+                  <span>{{ approxPinHint('create') }}</span>
+                </div>
+                <div v-if="resolvedPinPreview.create" class="small text-secondary d-flex align-items-center gap-1.5 px-1">
+                  <i class="pi pi-map-marker text-success" style="font-size: 0.75rem;"></i>
+                  <span class="text-truncate">Pin matches: <strong class="text-body">{{ resolvedPinPreview.create }}</strong></span>
+                </div>
+              </div>
 
               <!-- Image Upload (Dropzone) -->
               <div v-else-if="getFieldType(col) === 'image_upload'" class="w-100">
@@ -2303,11 +2653,24 @@
                 />
                 -->
                 <!-- Gene - Oct 11, 2026: Wire up file-selected and file-removed on ImageDropzone for multipart upload -->
+                <!--
                 <ImageDropzone
                   v-model="formData[col]"
                   :fieldId="col"
                   :label="formatLabel(col)"
                   :required="isFieldRequired(col)"
+                  @exif="onPhotoExif('create', col, $event)"
+                  @file-selected="onFileSelected('create', col, $event)"
+                  @file-removed="onFileRemoved('create', col)"
+                />
+                -->
+                <!-- Gene - Nov, 28, 2026: Disable ImageDropzone when archived in Create Dialog -->
+                <ImageDropzone
+                  v-model="formData[col]"
+                  :fieldId="col"
+                  :label="formatLabel(col)"
+                  :required="isFieldRequired(col)"
+                  :disabled="isFieldDisabledInCreate(col)"
                   @exif="onPhotoExif('create', col, $event)"
                   @file-selected="onFileSelected('create', col, $event)"
                   @file-removed="onFileRemoved('create', col)"
@@ -3064,6 +3427,7 @@
               </div>
 
               <!-- DatePicker for Date Fields -->
+              <!--
               <DatePicker 
                 v-else-if="getFieldType(col) === 'date'" 
                 :id="col" 
@@ -3074,6 +3438,22 @@
                 size="small"
                 dateFormat="yy-mm-dd" 
                 placeholder="Select date" 
+                class="w-100"
+              />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable DatePicker when archived in Create Dialog -->
+              <DatePicker 
+                v-else-if="getFieldType(col) === 'date'" 
+                :id="col" 
+                v-model="formData[col]" 
+                showIcon 
+                iconDisplay="input"
+                fluid
+                size="small"
+                dateFormat="yy-mm-dd" 
+                placeholder="Select date" 
+                :disabled="isFieldDisabledInCreate(col)"
+                :class="{ 'p-disabled bg-light': isFieldDisabledInCreate(col) }"
                 class="w-100"
               />
 
@@ -3095,6 +3475,7 @@
               />
               -->
               <!-- Gene - Nov, 14, 2026: Time-only DatePicker with one-click Now button (inline + popup footer) in Create Modal -->
+              <!--
               <div
                 v-else-if="getFieldType(col) === 'time'"
                 class="d-flex align-items-center gap-2 w-100"
@@ -3152,8 +3533,71 @@
                   <span>Now</span>
                 </Button>
               </div>
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable time-only DatePicker and Now/Clear actions when archived in Create Dialog -->
+              <div
+                v-else-if="getFieldType(col) === 'time'"
+                class="d-flex align-items-center gap-2 w-100"
+              >
+                <div class="flex-grow-1" style="min-width: 0;">
+                  <DatePicker
+                    :id="col"
+                    :ref="timePickerRefSetter('create', col)"
+                    v-model="formData[col]"
+                    timeOnly
+                    hourFormat="12"
+                    showIcon
+                    iconDisplay="input"
+                    icon="pi pi-clock"
+                    fluid
+                    size="small"
+                    placeholder="Select time"
+                    :disabled="isFieldDisabledInCreate(col)"
+                    class="w-100"
+                    :class="{ 'p-disabled bg-light': isFieldDisabledInCreate(col), 'p-invalid': hasFieldError('create', col) }"
+                  >
+                    <template #footer>
+                      <div class="d-flex align-items-center justify-content-between gap-2 pt-2 mt-1 border-top">
+                        <Button
+                          type="button"
+                          label="Now"
+                          icon="pi pi-clock"
+                          size="small"
+                          severity="primary"
+                          text
+                          class="p-button-sm fw-semibold"
+                          :disabled="isFieldDisabledInCreate(col)"
+                          @click="setFieldTimeNow('create', col)"
+                        />
+                        <Button
+                          type="button"
+                          label="Clear"
+                          size="small"
+                          severity="secondary"
+                          text
+                          class="p-button-sm"
+                          :disabled="!formData[col] || isFieldDisabledInCreate(col)"
+                          @click="clearFieldTime('create', col)"
+                        />
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+                <Button
+                  type="button"
+                  size="small"
+                  class="p-button-outlined p-button-secondary p-button-sm flex-shrink-0 px-2.5 fw-semibold d-inline-flex align-items-center gap-1"
+                  :disabled="isFieldDisabledInCreate(col)"
+                  v-tooltip.top="'Set current time'"
+                  @click="setFieldTimeNow('create', col)"
+                >
+                  <i class="pi pi-clock" style="font-size: 0.75rem;"></i>
+                  <span>Now</span>
+                </Button>
+              </div>
 
               <!-- Email Input for Email Fields -->
+              <!--
               <InputText 
                 v-else-if="getFieldType(col) === 'email'" 
                 :id="col" 
@@ -3162,8 +3606,22 @@
                 class="w-100 p-inputtext-sm" 
                 :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
               />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Email input when archived in Create Dialog -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'email'" 
+                :id="col" 
+                type="email"
+                v-model="formData[col]" 
+                class="w-100 p-inputtext-sm" 
+                :disabled="isFieldDisabledInCreate(col)"
+                :readonly="isFieldDisabledInCreate(col)"
+                :class="{ 'bg-light text-muted': isFieldDisabledInCreate(col) }"
+                :placeholder="`Enter ${formatLabel(col).toLowerCase()}`"
+              />
 
               <!-- Phone / Mobile Input -->
+              <!--
               <InputText 
                 v-else-if="getFieldType(col) === 'phone'" 
                 :id="col" 
@@ -3174,8 +3632,23 @@
                 :class="{ 'p-invalid': hasFieldError('create', col) }"
                 placeholder="e.g. 09123456789 or +639123456789" 
               />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Phone input when archived in Create Dialog -->
+              <InputText 
+                v-else-if="getFieldType(col) === 'phone'" 
+                :id="col" 
+                type="tel"
+                v-model="formData[col]" 
+                @blur="formData[col] = normalizePhoneNumber(formData[col])"
+                class="w-100 p-inputtext-sm font-monospace" 
+                :disabled="isFieldDisabledInCreate(col)"
+                :readonly="isFieldDisabledInCreate(col)"
+                :class="{ 'bg-light text-muted': isFieldDisabledInCreate(col), 'p-invalid': hasFieldError('create', col) }"
+                placeholder="e.g. 09123456789 or +639123456789" 
+              />
 
               <!-- InputNumber for Monetary / Currency Fields -->
+              <!--
               <InputNumber 
                 v-else-if="getFieldType(col) === 'currency' || isCurrencyField(col)" 
                 :id="col" 
@@ -3194,8 +3667,29 @@
                 :maxFractionDigits="2"
                 placeholder="₱ 0.00"
               />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Monetary / Currency InputNumber when read-only or archived in Create Dialog -->
+              <InputNumber 
+                v-else-if="getFieldType(col) === 'currency' || isCurrencyField(col)" 
+                :id="col" 
+                :model-value="formData[col] === '' ? null : formData[col]" 
+                @update:model-value="formData[col] = $event" 
+                fluid
+                size="small"
+                class="w-100" 
+                :class="{ 'p-disabled bg-light': isFieldDisabledInCreate(col) }"
+                :disabled="isFieldDisabledInCreate(col)"
+                :readonly="isFieldDisabledInCreate(col)"
+                mode="currency"
+                currency="PHP"
+                locale="en-PH"
+                :minFractionDigits="2"
+                :maxFractionDigits="2"
+                placeholder="₱ 0.00"
+              />
 
               <!-- InputNumber for Numeric Fields -->
+              <!--
               <InputNumber 
                 v-else-if="getFieldType(col) === 'number'" 
                 :id="col" 
@@ -3207,6 +3701,23 @@
                 :class="{ 'p-disabled bg-light': isReadOnlyField(col) }"
                 :disabled="isReadOnlyField(col)"
                 :readonly="isReadOnlyField(col)"
+                :useGrouping="false"
+                :min="0"
+                :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
+              />
+              -->
+              <!-- Gene - Nov, 28, 2026: Disable Numeric InputNumber when read-only or archived in Create Dialog -->
+              <InputNumber 
+                v-else-if="getFieldType(col) === 'number'" 
+                :id="col" 
+                :model-value="formData[col] === '' ? null : formData[col]" 
+                @update:model-value="formData[col] = $event" 
+                fluid
+                size="small"
+                class="w-100" 
+                :class="{ 'p-disabled bg-light': isFieldDisabledInCreate(col) }"
+                :disabled="isFieldDisabledInCreate(col)"
+                :readonly="isFieldDisabledInCreate(col)"
                 :useGrouping="false"
                 :min="0"
                 :placeholder="col.toLowerCase().startsWith('itemquantity') ? 'Qty' : `Enter ${formatLabel(col).toLowerCase()}`"
@@ -3282,6 +3793,7 @@
               -->
               <!-- Gene - Oct 21, 2026: Enclosed Textarea + counter in template v-else-if and InputText + counter in template v-else to restore unbroken v-if chain and eliminate extra duplicate inputs in Create Dialog -->
               <template v-else-if="getFieldType(col) === 'textarea'">
+                <!--
                 <Textarea 
                   :id="col" 
                   v-model="formData[col]" 
@@ -3289,6 +3801,23 @@
                   :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
                   class="w-100 p-inputtext-sm" 
                   :class="{ 'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') }" 
+                  :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
+                  :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
+                />
+                -->
+                <!-- Gene - Nov, 28, 2026: Disable Textarea when archived in Create Dialog -->
+                <Textarea 
+                  :id="col" 
+                  v-model="formData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  :rows="(col.toLowerCase().includes('remark') || col.toLowerCase().includes('installationaddress') || col.toLowerCase().includes('concern')) && (isApplicationEndpoint || isServiceOrderEndpoint) ? 4 : 3" 
+                  class="w-100 p-inputtext-sm" 
+                  :disabled="isFieldDisabledInCreate(col)"
+                  :readonly="isFieldDisabledInCreate(col)"
+                  :class="{ 
+                    'bg-light text-muted': isFieldDisabledInCreate(col),
+                    'flex-grow-1': (isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') 
+                  }" 
                   :style="(isApplicationEndpoint || isServiceOrderEndpoint) && (normalizeColKey(col) === 'remarks' || normalizeColKey(col) === 'installationaddress' || normalizeColKey(col) === 'concern') ? 'min-height: 96px;' : ''" 
                   :placeholder="`Enter ${formatLabel(col).toLowerCase()}`" 
                 />
@@ -3334,6 +3863,7 @@
                 />
                 -->
                 <!-- Gene - Nov 7, 2026: Balanced ternary parentheses in Create modal InputText placeholder expression -->
+                <!--
                 <InputText 
                   :id="col" 
                   v-model="formData[col]" 
@@ -3346,6 +3876,22 @@
                   }" 
                   :disabled="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
                   :readonly="isReadOnlyField(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
+                  :placeholder="isPaymentEndpoint && normalizeColKey(col) === 'transactionid' ? 'Auto-generated upon save' : (isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)))" 
+                />
+                -->
+                <!-- Gene - Nov, 28, 2026: Disable default InputText when archived or read-only in Create Dialog -->
+                <InputText 
+                  :id="col" 
+                  v-model="formData[col]" 
+                  :maxlength="getFieldMaxLength(col)"
+                  class="w-100 p-inputtext-sm" 
+                  :class="{ 
+                    'bg-light text-muted': isFieldDisabledInCreate(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid'),
+                    'font-monospace text-uppercase': col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial'),
+                    'font-monospace': col.toLowerCase() === 'ip' || col.toLowerCase().includes('address')
+                  }" 
+                  :disabled="isFieldDisabledInCreate(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
+                  :readonly="isFieldDisabledInCreate(col) || (isPaymentEndpoint && normalizeColKey(col) === 'transactionid')"
                   :placeholder="isPaymentEndpoint && normalizeColKey(col) === 'transactionid' ? 'Auto-generated upon save' : (isMenuEndpoint && (col.toLowerCase() === 'name' || normalizeColKey(col) === 'name') ? 'e.g. (LCPNAPR) LCP NAP Records or LCP NAP Records' : (col.toLowerCase().startsWith('itemname') ? 'e.g. Fiber Patch Cord, Fast Connector' : (col.toLowerCase().includes('sn') || col.toLowerCase().includes('serial') ? 'e.g. SN123456789' : `Enter ${formatLabel(col).toLowerCase()}`)))" 
                 />
                 <div v-if="getFieldMaxLength(col) && getFieldType(col) !== 'textarea' && getFieldType(col) !== 'promotion_title' && getFieldType(col) !== 'promotion_subtitle' && getFieldType(col) !== 'promotion_media_url'" class="d-flex justify-content-end text-xs text-muted mt-0.5">
@@ -3363,7 +3909,9 @@
                 <span>{{ fieldErrorText('create', col) }}</span>
               </div>
             </div>
-          </div>
+              </div>
+            </fieldset>
+          </template>
         </div>
       </div>
       <template #footer>
@@ -3499,13 +4047,39 @@
           <i class="pi pi-search-minus me-1"></i> No fields match "{{ fieldSearch.view.trim() }}".
           <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" @click="clearFieldSearch('view')">Show all fields</button>
         </div>
+        <!-- Gene - Nov, 28, 2026: Render bottom Archive section in View Details as a collapsed-by-default accordion -->
         <div 
           v-for="sec in viewFormSections" 
           v-show="isSectionShown('view', sec)"
           :key="sec.key" 
           class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
+          :class="{ 'sfa-archived-section-card': isSectionCollapsible(sec) }"
         >
-          <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+          <button
+            v-if="isSectionCollapsible(sec)"
+            type="button"
+            class="sfa-archive-toggle-btn w-100 d-flex align-items-center justify-content-between gap-2 text-start bg-transparent border-0 p-0"
+            :class="{ 'pb-2 mb-3 border-bottom': isSectionBodyExpanded('view', sec) }"
+            :aria-expanded="isSectionBodyExpanded('view', sec)"
+            @click="toggleSectionCollapse('view', sec)"
+          >
+            <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
+              <i :class="['pi', isSectionBodyExpanded('view', sec) ? 'pi-chevron-down' : 'pi-chevron-right', 'text-secondary']" style="font-size: 0.8rem;"></i>
+              <i :class="sec.icon"></i> {{ sec.title }}
+            </h6>
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+              <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+                Unused in AppSheet
+              </span>
+              <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+                {{ sectionFieldCountLabel('view', sec) }}
+              </span>
+              <span class="d-none d-sm-inline small text-muted">
+                {{ isSectionBodyExpanded('view', sec) ? 'Hide' : 'Expand' }}
+              </span>
+            </div>
+          </button>
+          <div v-else class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
             <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
               <i :class="sec.icon"></i> {{ sec.title }}
             </h6>
@@ -3514,7 +4088,8 @@
             </span>
           </div>
 
-          <!-- Specialized Materials & Items Table for View Modal -->
+          <template v-if="isSectionBodyExpanded('view', sec)">
+            <!-- Specialized Materials & Items Table for View Modal -->
           <div v-if="sec.key === 'items'" class="w-100">
             <div v-if="viewMaterialsList.length > 0" class="table-responsive rounded-3 border overflow-hidden">
               <table class="table table-sm table-hover mb-0">
@@ -3631,7 +4206,8 @@
                     class="w-100 p-inputtext-sm bg-light" 
                   />
                 </div>
-                <div>
+                <!-- Gene - Nov, 28, 2026: Hide unused User Email sub-field inside Visit With (Other) on Job Orders in View Details -->
+                <div v-if="!isJobOrderEndpoint">
                   <label :for="`view-useremail`" class="form-label fw-medium text-body small mb-1">
                     User Email
                   </label>
@@ -3991,6 +4567,7 @@
               />
             </div>
           </div>
+          </template>
         </div>
       </div>
       <template #footer>
@@ -4138,13 +4715,39 @@
           <i class="pi pi-search-minus me-1"></i> No fields match "{{ fieldSearch.edit.trim() }}".
           <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" @click="clearFieldSearch('edit')">Show all fields</button>
         </div>
+        <!-- Gene - Nov, 28, 2026: Render bottom Archive section in Edit Dialog as a collapsed-by-default accordion with disabled inputs -->
         <div 
           v-for="sec in formSections" 
           v-show="isSectionShown('edit', sec)"
           :key="sec.key" 
           class="card border rounded-3 p-3 mb-3 bg-body shadow-sm"
+          :class="{ 'sfa-archived-section-card': isSectionCollapsible(sec) }"
         >
-          <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+          <button
+            v-if="isSectionCollapsible(sec)"
+            type="button"
+            class="sfa-archive-toggle-btn w-100 d-flex align-items-center justify-content-between gap-2 text-start bg-transparent border-0 p-0"
+            :class="{ 'pb-2 mb-3 border-bottom': isSectionBodyExpanded('edit', sec) }"
+            :aria-expanded="isSectionBodyExpanded('edit', sec)"
+            @click="toggleSectionCollapse('edit', sec)"
+          >
+            <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
+              <i :class="['pi', isSectionBodyExpanded('edit', sec) ? 'pi-chevron-down' : 'pi-chevron-right', 'text-secondary']" style="font-size: 0.8rem;"></i>
+              <i :class="sec.icon"></i> {{ sec.title }}
+            </h6>
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+              <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+                <i class="pi pi-lock me-1" style="font-size: 0.65rem;"></i>Disabled
+              </span>
+              <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small fw-normal">
+                {{ sectionFieldCountLabel('edit', sec) }}
+              </span>
+              <span class="d-none d-sm-inline small text-muted">
+                {{ isSectionBodyExpanded('edit', sec) ? 'Hide' : 'Expand' }}
+              </span>
+            </div>
+          </button>
+          <div v-else class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
             <h6 class="fw-bold mb-0 text-body d-flex align-items-center gap-2" :class="sec.badgeClass">
               <i :class="sec.icon"></i> {{ sec.title }}
             </h6>
@@ -4175,7 +4778,15 @@
             </div>
           </div>
 
-          <div class="row g-3">
+          <template v-if="isSectionBodyExpanded('edit', sec)">
+            <fieldset :disabled="isSectionCollapsible(sec)" class="border-0 p-0 m-0 w-100" :class="{ 'sfa-archived-fieldset': isSectionCollapsible(sec) }">
+              <div class="row g-3">
+                <div v-if="isSectionCollapsible(sec)" class="col-12">
+                  <div class="sfa-archive-banner d-flex align-items-center gap-2 rounded-3 border px-3 py-2 small text-secondary">
+                    <i class="pi pi-lock flex-shrink-0"></i>
+                    <span>Unused in AppSheet. Archived fields are disabled here, and existing record values are preserved automatically when saving.</span>
+                  </div>
+                </div>
             <!-- Applications store no coordinates: the map pins the address on open and feeds Use Pin Address -->
             <div v-if="showInlineAddressMap(sec)" class="col-12 sfa-form-field sfa-address-map">
               <label :for="`address-pin-edit`" class="form-label fw-medium text-body small mb-1">
@@ -4302,6 +4913,8 @@
                 <span v-if="isFieldRequired(col, 'edit')" class="text-danger ms-1" title="Required">*</span>
                 <span v-else-if="eitherOrHint(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">{{ eitherOrHint(col) }}</span>
                 <span v-else-if="isReadOnlyField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                <!-- Gene - Nov, 28, 2026: Label archived fields distinctly from standard Read Only fields in Edit Dialog -->
+                <span v-else-if="isArchivedField(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
                 <span v-else-if="isFieldDisabledInEdit(col)" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
               </label>
 
@@ -4320,6 +4933,7 @@
               </div>
 
               <!-- Combined Barangay 1 & Barangay 2 Column in Edit Modal (Stacked) -->
+              <!--
               <div v-else-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
                 <div>
                   <label :for="`edit-barangay1`" class="form-label fw-medium text-body small mb-1">
@@ -4354,8 +4968,47 @@
                   />
                 </div>
               </div>
+              -->
+              <!-- Gene - Nov, 28, 2026: Label stacked Barangay 1 & 2 with Archived badge when archived in Edit Dialog -->
+              <div v-else-if="normalizeColKey(col) === 'barangay1'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`edit-barangay1`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 1
+                    <span v-if="isFieldRequired('barangay1', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('barangay1')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
+                    <span v-else-if="isFieldDisabledInEdit('barangay1')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                  </label>
+                  <InputText 
+                    id="edit-barangay1" 
+                    v-model="editFormData.barangay1" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('barangay1')"
+                    :readonly="isFieldDisabledInEdit('barangay1')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('barangay1') }"
+                    placeholder="Enter barangay 1" 
+                  />
+                </div>
+                <div>
+                  <label :for="`edit-barangay2`" class="form-label fw-medium text-body small mb-1">
+                    Barangay 2
+                    <span v-if="isFieldRequired('barangay2', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('barangay2')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
+                    <span v-else-if="isFieldDisabledInEdit('barangay2')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                  </label>
+                  <InputText 
+                    id="edit-barangay2" 
+                    v-model="editFormData.barangay2" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('barangay2')"
+                    :readonly="isFieldDisabledInEdit('barangay2')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('barangay2') }"
+                    placeholder="Enter barangay 2" 
+                  />
+                </div>
+              </div>
 
               <!-- Combined Visit With (Other) & User Email Column in Edit Modal (Stacked) -->
+              <!--
               <div v-else-if="normalizeColKey(col) === 'visitwithother'" class="d-flex flex-column gap-2">
                 <div>
                   <label :for="`edit-visitwithother`" class="form-label fw-medium text-body small mb-1">
@@ -4377,6 +5030,44 @@
                   <label :for="`edit-useremail`" class="form-label fw-medium text-body small mb-1">
                     User Email
                     <span v-if="isFieldRequired('userEmail', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isFieldDisabledInEdit('userEmail')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                  </label>
+                  <InputText 
+                    id="edit-useremail" 
+                    v-model="editFormData.userEmail" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('userEmail')"
+                    :readonly="isFieldDisabledInEdit('userEmail')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('userEmail') }"
+                    placeholder="Enter user email" 
+                  />
+                </div>
+              </div>
+              -->
+              <!-- Gene - Nov, 28, 2026: Label stacked Visit With (Other) & User Email with Archived badge and hide User Email on Job Orders in Edit Dialog -->
+              <div v-else-if="normalizeColKey(col) === 'visitwithother'" class="d-flex flex-column gap-2">
+                <div>
+                  <label :for="`edit-visitwithother`" class="form-label fw-medium text-body small mb-1">
+                    Visit With (Other)
+                    <span v-if="isFieldRequired('visitWithOther', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('visitWithOther')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
+                    <span v-else-if="isFieldDisabledInEdit('visitWithOther')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
+                  </label>
+                  <InputText 
+                    id="edit-visitwithother" 
+                    v-model="editFormData.visitWithOther" 
+                    class="w-100 p-inputtext-sm" 
+                    :disabled="isFieldDisabledInEdit('visitWithOther')"
+                    :readonly="isFieldDisabledInEdit('visitWithOther')"
+                    :class="{ 'bg-light text-muted': isFieldDisabledInEdit('visitWithOther') }"
+                    placeholder="Enter visit with (other)" 
+                  />
+                </div>
+                <div v-if="!isJobOrderEndpoint">
+                  <label :for="`edit-useremail`" class="form-label fw-medium text-body small mb-1">
+                    User Email
+                    <span v-if="isFieldRequired('userEmail', 'edit')" class="text-danger ms-1" title="Required">*</span>
+                    <span v-else-if="isArchivedField('userEmail')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Archived</span>
                     <span v-else-if="isFieldDisabledInEdit('userEmail')" class="badge bg-secondary-subtle text-secondary border rounded-pill ms-1 fw-normal" style="font-size: 0.65rem;">Read Only</span>
                   </label>
                   <InputText 
@@ -5218,8 +5909,17 @@
 
               <!-- Coordinate Picker -->
               <div v-else-if="getFieldType(col) === 'coordinates'" class="d-flex flex-column gap-2 w-100">
+                <!--
                 <CoordinatePicker
                   :model-value="editFormData[col] || addressPin.edit"
+                  height="280px"
+                  @update:model-value="onStoredPinInput('edit', col, $event)"
+                />
+                -->
+                <!-- Gene - Nov, 28, 2026: Lock CoordinatePicker map when coordinates field is archived or disabled in Edit Dialog -->
+                <CoordinatePicker
+                  :model-value="editFormData[col] || addressPin.edit"
+                  :readonly="isFieldDisabledInEdit(col)"
                   height="280px"
                   @update:model-value="onStoredPinInput('edit', col, $event)"
                 />
@@ -6344,7 +7044,9 @@
                 <span>{{ fieldErrorText('edit', col) }}</span>
               </div>
             </div>
-          </div>
+              </div>
+            </fieldset>
+          </template>
         </div>
       </div>
       <template #footer>
@@ -6823,6 +7525,13 @@ import {
   applyQuickStatusLocally,
   buildQuickStatusUpdateRequest
 } from '../utils/tableQuickStatus'
+// Gene - Nov, 28, 2026: Import AppSheet field-alignment archive helpers for Applications, Job Orders, and Service Orders
+import {
+  ARCHIVED_SECTION_KEY,
+  isArchivedFormField,
+  filterNonArchivedColumns,
+  partitionArchivedFormSections
+} from '../utils/formFieldArchive'
 // Gene - Nov, 23, 2026: Import Access Level name-based user filtering helpers for scoped user views (e.g., Tech)
 import {
   matchesAccessLevelTargetNames,
@@ -9935,10 +10644,39 @@ const PAYMENT_EDITABLE_COLUMNS = new Set([
   'processedby'
 ])
 
+/*
 // Determine whether a field should be disabled / read-only in the Edit dialog
 function isFieldDisabledInEdit(col) {
   if (!col) return false
   if (isReadOnlyField(col)) return true
+  // A Job Order belongs to the application it was raised from and to the
+  // subscriber account it opened; re-pointing either on Update would orphan
+  // the original record.
+  if (isJobOrderEndpoint.value && ['applicationid', 'applicationidvalue', 'accountno'].includes(normalizeColKey(col))) return true
+  if (isPaymentEndpoint.value) {
+    const key = normalizeColKey(col)
+    return !PAYMENT_EDITABLE_COLUMNS.has(key)
+  }
+  return false
+}
+*/
+// Gene - Nov, 28, 2026: Mark archived fields (unused in AppSheet) disabled in both Create and Edit dialogs while keeping existing Edit rules intact
+function isArchivedField(col) {
+  return isArchivedFormField(props.endpoint, col)
+}
+
+function isFieldDisabledInCreate(col) {
+  if (!col) return false
+  if (isReadOnlyField(col)) return true
+  if (isArchivedFormField(props.endpoint, col)) return true
+  return false
+}
+
+// Determine whether a field should be disabled / read-only in the Edit dialog
+function isFieldDisabledInEdit(col) {
+  if (!col) return false
+  if (isReadOnlyField(col)) return true
+  if (isArchivedFormField(props.endpoint, col)) return true
   // A Job Order belongs to the application it was raised from and to the
   // subscriber account it opened; re-pointing either on Update would orphan
   // the original record.
@@ -13056,9 +13794,16 @@ const buildInventoryLogSections = (cols, opts) => buildLayoutSections(cols, INVE
 // stored shape is {"<userId>:<table>": [columns]} to make a server move easy.
 const QUICK_SECTION_KEY = 'quick'
 const PINNED_FIELDS_STORAGE_KEY = 'switchfiber_pinned_fields_v1'
+/*
 const DEFAULT_PINNED_FIELDS = {
   joborders: ['status', 'assignedEmail', 'planId', 'installationFee', 'billingDay', 'contactNumber'],
   serviceorders: ['visitStatus', 'assignedEmail', 'supportStatus', 'priorityLevel', 'concern']
+}
+*/
+// Gene - Nov, 28, 2026: Exclude archived fields (installationFee, billingDay, priorityLevel) from default Quick Fields
+const DEFAULT_PINNED_FIELDS = {
+  joborders: ['status', 'onsiteStatus', 'assignedEmail', 'planId', 'contactNumber'],
+  serviceorders: ['visitStatus', 'assignedEmail', 'supportStatus', 'concern']
 }
 const pinnedFields = ref([])
 const pinnedEndpointKey = computed(() => String(props.endpoint || '').toLowerCase().replace(/[^a-z0-9]/g, ''))
@@ -13093,6 +13838,7 @@ watch(pinnedStoreKey, loadPinnedFields, { immediate: true })
 
 // Pinned names resolved against the columns this form actually shows, in pin
 // order. A stored pin for a column the table no longer has is simply skipped.
+/*
 const pinnedFormColumns = computed(() => {
   const cols = formColumns.value || []
   const out = []
@@ -13106,6 +13852,25 @@ const isPinned = (col) => pinnedFormColumns.value.includes(col)
 // The two stacked composites render their own labels and two inputs each, so
 // they cannot be pinned as a unit.
 const canPinField = (col) => {
+  const key = normalizeColKey(col)
+  return key !== 'barangay1' && key !== 'visitwithother'
+}
+*/
+// Gene - Nov, 28, 2026: Skip archived fields in pinnedFormColumns and disallow pinning archived fields into Quick Fields
+const pinnedFormColumns = computed(() => {
+  const cols = formColumns.value || []
+  const out = []
+  pinnedFields.value.forEach(p => {
+    const match = cols.find(c => String(c).toLowerCase() === String(p).toLowerCase())
+    if (match && !isArchivedFormField(props.endpoint, match) && !out.includes(match)) out.push(match)
+  })
+  return out
+})
+const isPinned = (col) => pinnedFormColumns.value.includes(col)
+// The two stacked composites render their own labels and two inputs each, so
+// they cannot be pinned as a unit.
+const canPinField = (col) => {
+  if (isArchivedFormField(props.endpoint, col)) return false
   const key = normalizeColKey(col)
   return key !== 'barangay1' && key !== 'visitwithother'
 }
@@ -13173,6 +13938,28 @@ const formSections = computed(() => {
 // card with nothing left to show. Cleared whenever a dialog opens or closes,
 // and before a failed save scrolls to an invalid field so it is never hidden.
 const fieldSearch = ref({ create: '', edit: '', view: '' })
+
+// Gene - Nov, 28, 2026: Collapsible bottom Archive section state (collapsed by default on open; auto-expands when search matches)
+const archivedSectionExpanded = ref({ create: false, edit: false, view: false })
+
+const resetArchivedSectionState = (scope) => {
+  if (archivedSectionExpanded.value && scope in archivedSectionExpanded.value) {
+    archivedSectionExpanded.value[scope] = false
+  }
+}
+
+const isSectionCollapsible = (sec) => Boolean(sec?.isArchived || sec?.key === ARCHIVED_SECTION_KEY)
+
+const isSectionBodyExpanded = (scope, sec) => {
+  if (!isSectionCollapsible(sec)) return true
+  if (fieldSearchActive(scope) && (fieldSearchResult(scope)?.shownInSection(sec?.key) || 0) > 0) return true
+  return Boolean(archivedSectionExpanded.value?.[scope])
+}
+
+const toggleSectionCollapse = (scope, sec) => {
+  if (!isSectionCollapsible(sec)) return
+  archivedSectionExpanded.value[scope] = !archivedSectionExpanded.value[scope]
+}
 
 // Combined slots: the Barangay 1 wrapper also hosts Barangay 2, and the
 // Visit With (Other) wrapper hosts User Email, so both names must find the slot.
@@ -13253,6 +14040,7 @@ const onFieldSearchEscape = (scope, event) => {
 }
 
 const baseFormSections = computed(() => {
+  /*
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(formColumns.value)
   }
@@ -13267,6 +14055,23 @@ const baseFormSections = computed(() => {
   }
   if (isServiceOrderEndpoint.value) {
     return buildServiceOrderSections(formColumns.value)
+  }
+  */
+  // Gene - Nov, 28, 2026: Move fields unused in AppSheet into a bottom collapsible Archive section for Applications, Job Orders, and Service Orders
+  if (isApplicationEndpoint.value) {
+    return partitionArchivedFormSections(buildApplicationSections(formColumns.value), props.endpoint)
+  }
+  if (isBillingEndpoint.value) {
+    return buildBillingSections(formColumns.value)
+  }
+  if (isJobOrderEndpoint.value) {
+    return partitionArchivedFormSections(buildJobOrderSections(formColumns.value), props.endpoint)
+  }
+  if (isLcpNapEndpoint.value) {
+    return buildLcpNapSections(formColumns.value)
+  }
+  if (isServiceOrderEndpoint.value) {
+    return partitionArchivedFormSections(buildServiceOrderSections(formColumns.value), props.endpoint)
   }
   if (isPlanEndpoint.value) {
     return buildPlanSections(formColumns.value)
@@ -13383,6 +14188,7 @@ const viewFormColumns = computed(() => {
 })
 
 const viewFormSections = computed(() => {
+  /*
   if (isApplicationEndpoint.value) {
     return buildApplicationSections(viewFormColumns.value, { includeAudit: true })
   }
@@ -13401,6 +14207,27 @@ const viewFormSections = computed(() => {
   }
   if (isServiceOrderEndpoint.value) {
     return buildServiceOrderSections(viewFormColumns.value, { includeAudit: true })
+  }
+  */
+  // Gene - Nov, 28, 2026: Mirror AppSheet active vs bottom collapsible Archive sections in View Details modal
+  if (isApplicationEndpoint.value) {
+    return partitionArchivedFormSections(buildApplicationSections(viewFormColumns.value, { includeAudit: true }), props.endpoint)
+  }
+  if (isBillingEndpoint.value) {
+    return buildBillingSections(viewFormColumns.value, { includeAudit: true })
+  }
+  // Gene - Nov, 25, 2026: Organize flattened RadiusUser (Subscribers) records into structured sections in View Details modal
+  if (isRadiusUserEndpoint.value) {
+    return buildRadiusUserSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isJobOrderEndpoint.value) {
+    return partitionArchivedFormSections(buildJobOrderSections(viewFormColumns.value, { includeAudit: true }), props.endpoint)
+  }
+  if (isLcpNapEndpoint.value) {
+    return buildLcpNapSections(viewFormColumns.value, { includeAudit: true })
+  }
+  if (isServiceOrderEndpoint.value) {
+    return partitionArchivedFormSections(buildServiceOrderSections(viewFormColumns.value, { includeAudit: true }), props.endpoint)
   }
   if (isPlanEndpoint.value) {
     return buildPlanSections(viewFormColumns.value, { includeAudit: true })
@@ -15463,6 +16290,7 @@ const requiredColumns = computed(() =>
   new Set(resolveRequiredFields(props.endpoint, formColumns.value, 'create'))
 )
 
+/*
 const isFieldRequired = (col, scope = 'create') => {
   if (scope === 'edit' && isFieldDisabledInEdit(col)) return false
   if (isReadOnlyField(col)) return false
@@ -15476,6 +16304,22 @@ const isFieldRequired = (col, scope = 'create') => {
 // member is individually required (Applications: proofOfBilling OR
 // documentPicture, matching the user website's registration wizard).
 const eitherOrGroups = computed(() => resolveEitherOrGroups(props.endpoint, formColumns.value))
+*/
+// Gene - Nov, 28, 2026: Archived fields are disabled and never required or part of either-or validation groups
+const isFieldRequired = (col, scope = 'create') => {
+  if (scope === 'edit' && isFieldDisabledInEdit(col)) return false
+  if (isReadOnlyField(col)) return false
+  if (isArchivedFormField(props.endpoint, col)) return false
+  if (!requiredColumns.value.has(col)) return false
+  // A toggle always holds a boolean, so it can never be "missing".
+  if (getFieldType(col) === 'toggle') return false
+  return true
+}
+
+// Either-or groups: at least one member of each group must be filled, but no
+// member is individually required (Applications: proofOfBilling OR
+// documentPicture, matching the user website's registration wizard).
+const eitherOrGroups = computed(() => resolveEitherOrGroups(props.endpoint, filterNonArchivedColumns(props.endpoint, formColumns.value)))
 
 const eitherOrGroupFor = (col) => eitherOrGroups.value.find(group => group.includes(col)) || null
 
@@ -15509,6 +16353,7 @@ const closeTimePickerOverlay = (scope, col) => {
   }
 }
 
+/*
 const setFieldTimeNow = (scope, col, nowFactory = () => new Date()) => {
   if (!col) return null
   if (scope === 'edit' && isFieldDisabledInEdit(col)) return null
@@ -15527,6 +16372,34 @@ const setFieldTimeNow = (scope, col, nowFactory = () => new Date()) => {
 const clearFieldTime = (scope, col) => {
   if (!col) return
   if (scope === 'edit' && isFieldDisabledInEdit(col)) return
+  const target = scope === 'edit' ? editFormData.value : formData.value
+  if (target) {
+    target[col] = null
+  }
+  closeTimePickerOverlay(scope, col)
+}
+*/
+// Gene - Nov, 28, 2026: Prevent setFieldTimeNow and clearFieldTime from mutating archived fields in Create mode as well as disabled fields in Edit mode
+const setFieldTimeNow = (scope, col, nowFactory = () => new Date()) => {
+  if (!col) return null
+  if (scope === 'edit' && isFieldDisabledInEdit(col)) return null
+  if (scope === 'create' && typeof isFieldDisabledInCreate === 'function' && isFieldDisabledInCreate(col)) return null
+  const now = nowFactory()
+  const target = scope === 'edit' ? editFormData.value : formData.value
+  if (target) {
+    target[col] = now
+  }
+  if (fieldErrors.value?.[scope]?.[col]) {
+    delete fieldErrors.value[scope][col]
+  }
+  closeTimePickerOverlay(scope, col)
+  return now
+}
+
+const clearFieldTime = (scope, col) => {
+  if (!col) return
+  if (scope === 'edit' && isFieldDisabledInEdit(col)) return
+  if (scope === 'create' && typeof isFieldDisabledInCreate === 'function' && isFieldDisabledInCreate(col)) return
   const target = scope === 'edit' ? editFormData.value : formData.value
   if (target) {
     target[col] = null
@@ -15728,6 +16601,9 @@ const validateRequired = (scope) => {
         return
       }
     }
+
+    // Gene - Nov, 28, 2026: Skip format validation on disabled archived fields so legacy archived values never block saving
+    if (isArchivedFormField(props.endpoint, col)) return
 
     // 2. Phone validation (for required phone fields or optional phone fields if populated)
     if (type === 'phone' && !isBlank(val)) {
@@ -16419,7 +17295,15 @@ const streetColName = computed(() => formColumns.value.find(c => normalizeColKey
 const coordinatesColName = computed(() => formColumns.value.find(c => getFieldType(c) === 'coordinates'))
 const mapPicker = ref({ visible: false, scope: 'create', coords: '', busy: false })
 
+/*
 const showMapPickerButton = (sec) => {
+  if (coordinatesColName.value || !regionColName.value || hasInlineAddressMap.value) return false
+  return (sec?.columns || []).includes(regionColName.value)
+}
+*/
+// Gene - Nov, 28, 2026: Never render Pin on Map button inside the collapsed/disabled Archive section
+const showMapPickerButton = (sec) => {
+  if (sec?.isArchived || sec?.key === ARCHIVED_SECTION_KEY) return false
   if (coordinatesColName.value || !regionColName.value || hasInlineAddressMap.value) return false
   return (sec?.columns || []).includes(regionColName.value)
 }
@@ -16439,7 +17323,11 @@ const addressPinTier = ref({ create: null, edit: null, view: null })
 const addressPinAbort = { create: null, edit: null, view: null }
 
 const hasInlineAddressMap = computed(() => isApplicationEndpoint.value && !coordinatesColName.value && !!regionColName.value)
+/*
 const showInlineAddressMap = (sec) => hasInlineAddressMap.value && (sec?.columns || []).includes(regionColName.value)
+*/
+// Gene - Nov, 28, 2026: Never render inline address map inside the collapsed/disabled Archive section
+const showInlineAddressMap = (sec) => !sec?.isArchived && sec?.key !== ARCHIVED_SECTION_KEY && hasInlineAddressMap.value && (sec?.columns || []).includes(regionColName.value)
 const autoLocateEnabled = computed(() => isJobOrderEndpoint.value || hasInlineAddressMap.value)
 
 const recordForScope = (scope) => (scope === 'view' ? viewFormData.value : formForScope(scope).value)
@@ -17327,6 +18215,8 @@ const openCreateDialog = (prefill = null) => {
     ? prefill
     : null
   clearFieldSearch('create')
+  // Gene - Nov, 28, 2026: Collapse bottom Archive section by default when Create dialog opens
+  resetArchivedSectionState('create')
   resetAddressPin('create')
   fetchAddressData()
   fetchFormLookups()
@@ -19240,6 +20130,8 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
 
 const openViewDialog = (record) => {
   clearFieldSearch('view')
+  // Gene - Nov, 28, 2026: Collapse bottom Archive section by default when View Details dialog opens
+  resetArchivedSectionState('view')
   fetchFormLookups()
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
   viewingRecordId.value = getRecordId(normRecord) || ''
@@ -19273,6 +20165,8 @@ const openViewDialog = (record) => {
 
 const openEditDialog = async (record) => {
   clearFieldSearch('edit')
+  // Gene - Nov, 28, 2026: Collapse bottom Archive section by default when Edit dialog opens
+  resetArchivedSectionState('edit')
   resetTouchedAddressBlockers('edit')
   fieldErrors.value.edit = {}
   photoExifByCol.value.edit = {}
@@ -19707,6 +20601,8 @@ const fetchAndAttachImagesForDialog = async (scope, record) => {
 
 const openViewDialog = (record) => {
   clearFieldSearch('view')
+  // Gene - Nov, 28, 2026: Collapse bottom Archive section by default when View Details dialog opens
+  resetArchivedSectionState('view')
   fetchFormLookups()
   /*
   const normRecord = isServiceOrderEndpoint.value ? normalizeServiceOrder(record) : record
@@ -19790,6 +20686,8 @@ const openViewDialog = (record) => {
 
 const openEditDialog = async (record) => {
   clearFieldSearch('edit')
+  // Gene - Nov, 28, 2026: Collapse bottom Archive section by default when Edit dialog opens
+  resetArchivedSectionState('edit')
   resetTouchedAddressBlockers('edit')
   fieldErrors.value.edit = {}
   photoExifByCol.value.edit = {}
@@ -20548,6 +21446,12 @@ const saveEdit = async () => {
       }
       if (isFieldDisabledInEdit(col) && editBaseSnapshot.value && editBaseSnapshot.value[col] !== undefined) {
         payload[col] = editBaseSnapshot.value[col]
+      }
+    })
+    // Gene - Nov, 28, 2026: Also preserve stacked/paired archived columns (barangay2, userEmail) from original snapshot when disabled
+    ;['barangay2', 'userEmail'].forEach(pairedCol => {
+      if (isArchivedFormField(props.endpoint, pairedCol) && editBaseSnapshot.value && editBaseSnapshot.value[pairedCol] !== undefined) {
+        payload[pairedCol] = editBaseSnapshot.value[pairedCol]
       }
     })
 
@@ -25443,5 +26347,32 @@ defineExpose({
 
 .quick-status-close-btn:hover {
   color: var(--bs-body-color) !important;
+}
+
+/* Gene - Nov, 28, 2026: Bottom collapsible Archive section styling for unused AppSheet fields */
+.sfa-archived-section-card {
+  background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
+  border-style: dashed !important;
+  border-color: var(--bs-border-color, #dee2e6) !important;
+}
+
+.sfa-archive-toggle-btn {
+  cursor: pointer;
+  color: inherit;
+  border-radius: 0.375rem;
+}
+
+.sfa-archive-toggle-btn:focus-visible {
+  outline: 2px solid var(--bs-primary, #e74c5a);
+  outline-offset: 4px;
+}
+
+.sfa-archive-banner {
+  background-color: var(--bs-secondary-bg, rgba(108, 117, 125, 0.08));
+  border-color: var(--bs-border-color, #dee2e6) !important;
+}
+
+.sfa-archived-fieldset {
+  opacity: 0.85;
 }
 </style>

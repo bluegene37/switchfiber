@@ -111,9 +111,17 @@ describe('Blank numeric Job Order fields are demanded up front (regression: 400/
     // no billing day showed "0" and one with no fee showed "₱0.00" — fields
     // that read as filled while the row held nothing. Measured in the running
     // dialog: '' displayed "0", null displayed "".
+    /*
     const bindings = tableSrc.match(/:model-value="(formData|editFormData)\[col\] === '' \? null : \1\[col\]"/g) || []
     assert.equal(bindings.length, 4, 'both dialogs must guard both their currency and number inputs')
     const writeBacks = tableSrc.match(/@update:model-value="(formData|editFormData)\[col\] = \$event"/g) || []
+    assert.equal(writeBacks.length, 4, 'each guarded input must still write the value back')
+    */
+    // Gene - Nov, 28, 2026: Strip commented-out deprecated HTML blocks before counting active InputNumber bindings
+    const activeTemplateSrc = tableSrc.replace(/<!--[\s\S]*?-->/g, '')
+    const bindings = activeTemplateSrc.match(/:model-value="(formData|editFormData)\[col\] === '' \? null : \1\[col\]"/g) || []
+    assert.equal(bindings.length, 4, 'both dialogs must guard both their currency and number inputs')
+    const writeBacks = activeTemplateSrc.match(/@update:model-value="(formData|editFormData)\[col\] = \$event"/g) || []
     assert.equal(writeBacks.length, 4, 'each guarded input must still write the value back')
   })
 
