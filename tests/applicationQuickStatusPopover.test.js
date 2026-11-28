@@ -200,6 +200,8 @@ describe('Applications Quick-Status FormData & Local Update Helpers', () => {
   })
 })
 
+// Gene - Nov, 28, 2026: Updated wiring checks to verify multi-table quick-status popover across all writable endpoints via isQuickStatusCell & buildQuickStatusUpdateRequest
+/*
 describe('DynamicApiTable Quick-Status Popover Wiring (Applications Only)', () => {
   test('status cell makes only Applications non-readOnly status column clickable with @click.stop', () => {
     assert.match(
@@ -234,6 +236,52 @@ describe('DynamicApiTable Quick-Status Popover Wiring (Applications Only)', () =
     assert.match(activeScript, /buildApplicationQuickStatusFormData\(record, nextStatus,/)
     assert.match(activeScript, /await CrudService\.update\(props\.endpoint, recordId, form\)/)
     assert.match(activeScript, /applyApplicationStatusLocally\(data\.value, recordId, col, nextStatus,/)
+    assert.match(activeScript, /fetchData\(\{ silent: true \}\)/)
+  })
+})
+*/
+describe('DynamicApiTable Quick-Status Popover Wiring (Multi-Table via /api/Status)', () => {
+  test('status cell routes editable status columns through isQuickStatusCell(col) with @click.stop and keeps read-only badge fallback', () => {
+    assert.match(
+      activeScript,
+      /const isQuickStatusCell = \(col\) =>\s*isQuickStatusEditableCell\(\{\s*endpoint:\s*props\.endpoint,\s*col,\s*readOnly:\s*props\.readOnly\s*\}\)/
+    )
+    assert.match(
+      activeScript,
+      /const isQuickStatusActiveCell = \(row, col\) =>/
+    )
+    assert.match(
+      activeScript,
+      /const isQuickStatusCellSaving = \(row, col\) =>/
+    )
+    assert.match(
+      activeTemplate,
+      /<button\s+v-if="isQuickStatusCell\(col\)"[\s\S]*?@click\.stop="openQuickStatusPopover\(\$event, slotProps\.data, col\)"/
+    )
+    assert.match(
+      activeTemplate,
+      /v-else-if="slotProps\.data\[col\] !== null && slotProps\.data\[col\] !== undefined && slotProps\.data\[col\] !== ''"[\s\S]*?class="badge rounded-pill sfa-status-badge border"/
+    )
+  })
+
+  test('renders a single shared Popover with quickStatusTitle, quickStatusOptions, Cancel, and Save bound to saveQuickStatus', () => {
+    const popovers = [
+      ...activeTemplate.matchAll(/<Popover\b[^>]*ref="quickStatusPopover"[^>]*>/g)
+    ]
+    assert.equal(popovers.length, 1, 'Expected exactly one shared quickStatusPopover in DynamicApiTable template')
+    assert.match(popovers[0][0], /class="sfa-tracker-table-quick-status-popover"/)
+    assert.match(activeTemplate, /\{\{\s*quickStatusTitle\s*\}\}/)
+    assert.match(activeTemplate, /v-for="opt in quickStatusOptions"/)
+    assert.match(activeTemplate, /@click="selectQuickStatusOption\(opt\.value\)"/)
+    assert.match(activeTemplate, /@click="closeQuickStatusPopover"/)
+    assert.match(activeTemplate, /label="Save"[\s\S]*?:disabled="!canSaveQuickStatus"[\s\S]*?@click="saveQuickStatus"/)
+  })
+
+  test('saveQuickStatus delegates payload building to buildQuickStatusUpdateRequest, sends CrudService.update, patches locally, and refreshes silently', () => {
+    assert.match(activeScript, /const saveQuickStatus = async \(\) => \{/)
+    assert.match(activeScript, /buildQuickStatusUpdateRequest\(\{/)
+    assert.match(activeScript, /await CrudService\.update\(props\.endpoint, recordId, payload, config\)/)
+    assert.match(activeScript, /applyQuickStatusLocally\(data\.value, recordId, col, effectiveStatus,/)
     assert.match(activeScript, /fetchData\(\{ silent: true \}\)/)
   })
 })

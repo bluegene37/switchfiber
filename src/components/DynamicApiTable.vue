@@ -633,6 +633,8 @@
           </div>
           -->
           <div v-else-if="col.toLowerCase().includes('status')" class="d-flex justify-content-center">
+            <!-- Gene - Nov, 28, 2026: Enable inline quick-status popover across all writable status columns backed by /api/Status -->
+            <!--
             <button
               v-if="isApplicationQuickStatusCell(col)"
               type="button"
@@ -649,10 +651,28 @@
               @click.stop="openQuickStatusPopover($event, slotProps.data, col)"
             >
               <i v-if="isQuickStatusRowSaving(slotProps.data)" class="pi pi-spin pi-spinner me-1" style="font-size: 0.7rem;" aria-hidden="true"></i>
-              <!-- <span>{{ getStatusBadgeConfig(slotProps.data[col]).label }}</span> -->
-              <!-- Gene - Nov, 26, 2026: Display Status description label (e.g. 'inprogress' -> 'In Progress') -->
               <span>{{ getStatusDisplayLabel(slotProps.data[col], col) }}</span>
               <i v-if="!isQuickStatusRowSaving(slotProps.data)" class="pi pi-chevron-down sfa-status-quick-caret" aria-hidden="true"></i>
+            </button>
+            -->
+            <button
+              v-if="isQuickStatusCell(col)"
+              type="button"
+              class="badge rounded-pill sfa-status-badge sfa-status-quick-trigger border"
+              :class="[
+                getStatusBadgeConfig(slotProps.data[col]).class,
+                { 'sfa-status-quick-trigger-active': isQuickStatusActiveCell(slotProps.data, col) }
+              ]"
+              v-tooltip.top="`Click to change ${formatLabel(col).toLowerCase()}`"
+              :aria-label="`Change ${formatLabel(col)} (current: ${getStatusDisplayLabel(slotProps.data[col], col) || 'None'})`"
+              aria-haspopup="dialog"
+              :aria-expanded="isQuickStatusActiveCell(slotProps.data, col)"
+              :disabled="quickStatusSaving && !isQuickStatusCellSaving(slotProps.data, col)"
+              @click.stop="openQuickStatusPopover($event, slotProps.data, col)"
+            >
+              <i v-if="isQuickStatusCellSaving(slotProps.data, col)" class="pi pi-spin pi-spinner me-1" style="font-size: 0.7rem;" aria-hidden="true"></i>
+              <span>{{ getStatusDisplayLabel(slotProps.data[col], col) }}</span>
+              <i v-if="!isQuickStatusCellSaving(slotProps.data, col)" class="pi pi-chevron-down sfa-status-quick-caret" aria-hidden="true"></i>
             </button>
             <span 
               v-else-if="slotProps.data[col] !== null && slotProps.data[col] !== undefined && slotProps.data[col] !== ''"
@@ -6596,7 +6616,7 @@
       </div>
     </Dialog>
 
-    <!-- Gene - Nov, 23, 2026: Fast inline Status quick-edit popover for Applications DataTable -->
+    <!-- Gene - Nov, 23, 2026: Fast inline Status quick-edit popover for DataTables -->
     <Popover
       ref="quickStatusPopover"
       class="sfa-tracker-table-quick-status-popover"
@@ -6607,7 +6627,9 @@
       <div class="quick-status-popover-panel p-1" style="width: 265px;">
         <div class="d-flex align-items-start justify-content-between gap-2 pb-2 mb-2 border-bottom">
           <div class="min-w-0">
-            <div class="fw-bold small text-body lh-sm">Update Status</div>
+            <!-- <div class="fw-bold small text-body lh-sm">Update Status</div> -->
+            <!-- Gene - Nov, 28, 2026: Dynamic quick-status header title for any editable status column -->
+            <div class="fw-bold small text-body lh-sm">{{ quickStatusTitle }}</div>
             <div v-if="quickStatusSubtitle" class="text-secondary text-truncate mt-0.5" style="font-size: 0.72rem;" :title="quickStatusSubtitle">
               {{ quickStatusSubtitle }}
             </div>
@@ -6632,7 +6654,7 @@
         <div
           class="quick-status-option-list d-flex flex-column gap-1 mb-2.5 overflow-y-auto"
           role="radiogroup"
-          aria-label="Application status options"
+          :aria-label="`${quickStatusTitle} options`"
           style="max-height: 235px;"
         >
           <button
@@ -6652,7 +6674,8 @@
             >
               <!-- {{ getStatusBadgeConfig(opt.value).label }} -->
               <!-- Gene - Nov, 26, 2026: Show Status description label in Quick Status Popover -->
-              {{ opt.label || getStatusDisplayLabel(opt.value, 'status') }}
+              <!-- {{ opt.label || getStatusDisplayLabel(opt.value, 'status') }} -->
+              {{ opt.label || getStatusDisplayLabel(opt.value, quickStatusCol) }}
             </span>
             <i
               v-if="isQuickStatusOptionSelected(opt.value)"
@@ -6788,6 +6811,18 @@ import {
   applyApplicationStatusLocally,
   formatQuickStatusSubtitle
 } from '../utils/applicationQuickStatus'
+// Gene - Nov, 28, 2026: Import generalized /api/Status quick-edit, tab/filter merge, and per-endpoint PUT payload helpers
+import {
+  JOB_ORDER_PHOTO_FIELDS,
+  resolveStatusTypeCodeForColumn,
+  isQuickStatusEditableCell,
+  normalizeQuickStatusValue,
+  mergeStatusOptionsWithData,
+  formatQuickStatusTitle,
+  formatGenericQuickStatusSubtitle,
+  applyQuickStatusLocally,
+  buildQuickStatusUpdateRequest
+} from '../utils/tableQuickStatus'
 // Gene - Nov, 23, 2026: Import Access Level name-based user filtering helpers for scoped user views (e.g., Tech)
 import {
   matchesAccessLevelTargetNames,
@@ -10609,6 +10644,18 @@ const hasAccessLevelFilter = computed(() => {
   return true
 })
 
+// Gene - Nov, 28, 2026: Resolve primary status filter column and populate top-bar Status filter from /api/Status + live data
+const primaryStatusFilterColumn = computed(() => {
+  if (props.statusField) return props.statusField
+  const cols = columns.value || []
+  return (
+    cols.find(c => Boolean(resolveStatusTypeCodeForColumn(props.endpoint, c))) ||
+    cols.find(c => c.toLowerCase().includes('status')) ||
+    ''
+  )
+})
+
+/*
 const statusFilterOptions = computed(() => {
   if (hasActiveColumn.value) {
     return [
@@ -10627,6 +10674,30 @@ const statusFilterOptions = computed(() => {
     if (rawStatuses.size > 0) {
       return Array.from(rawStatuses).map(s => ({ label: s, value: s }))
     }
+    return statusOptions.value
+  }
+  return []
+})
+*/
+const statusFilterOptions = computed(() => {
+  if (hasActiveColumn.value) {
+    return [
+      { label: 'Active', value: 'active' },
+      { label: 'Inactive', value: 'inactive' }
+    ]
+  }
+  if (hasStatusColumn.value) {
+    const col = primaryStatusFilterColumn.value
+    const typeCode = resolveStatusTypeCodeForColumn(props.endpoint, col)
+    const apiOptions = typeCode ? statusStore.getOptions(typeCode) : []
+    const rawStatuses = new Set()
+    ;(data.value || []).forEach(row => {
+      if (col && row[col] !== null && row[col] !== undefined && row[col] !== '') {
+        rawStatuses.add(String(row[col]))
+      }
+    })
+    const merged = mergeStatusOptionsWithData(apiOptions, Array.from(rawStatuses), typeCode)
+    if (merged.length > 0) return merged
     return statusOptions.value
   }
   return []
@@ -10767,10 +10838,17 @@ const applyFilters = (rows, { applyDateWindow = true } = {}) => {
           if (filterVal === 'inactive') return rowVal === false || rowVal === 'false' || rowVal === 0 || rowVal === null
         }
       }
+      // Gene - Nov, 28, 2026: Match status filter token-insensitively across /api/Status codes and legacy row values
+      // if (hasStatusColumn.value) {
+      //   const statusCol = columns.value.find(c => c.toLowerCase().includes('status'))
+      //   if (statusCol) {
+      //     return String(row[statusCol] || '').toLowerCase() === filterVal
+      //   }
+      // }
       if (hasStatusColumn.value) {
-        const statusCol = columns.value.find(c => c.toLowerCase().includes('status'))
+        const statusCol = primaryStatusFilterColumn.value || columns.value.find(c => c.toLowerCase().includes('status'))
         if (statusCol) {
-          return String(row[statusCol] || '').toLowerCase() === filterVal
+          return normalizeStatusToken(row[statusCol]) === normalizeStatusToken(selectedStatusFilter.value)
         }
       }
       return true
@@ -14145,6 +14223,13 @@ const statusOptions = computed(() => {
   if (typeof isBillingEndpoint !== 'undefined' && isBillingEndpoint.value) {
     return overlayApiStatusOptions(fallbackMapped, 'BILLING')
   }
+  // Gene - Nov, 28, 2026: Overlay live /api/Status options for Invoices and Discounts form status dropdowns
+  if (typeof isInvoiceEndpoint !== 'undefined' && isInvoiceEndpoint.value) {
+    return overlayApiStatusOptions(fallbackMapped, 'INVOICE')
+  }
+  if (typeof isDiscountEndpoint !== 'undefined' && isDiscountEndpoint.value) {
+    return overlayApiStatusOptions(fallbackMapped, 'DISCOUNT')
+  }
   if (typeof isInventoryLogEndpoint !== 'undefined' && isInventoryLogEndpoint.value) {
     return overlayApiStatusOptions(fallbackMapped, 'INVENTORY_LOG')
   }
@@ -16733,22 +16818,25 @@ const getStatusBadgeConfig = (val) => {
 }
 
 // Gene - Nov, 26, 2026: Resolve Status description label for badge rendering (e.g. 'inprogress' -> 'In Progress')
-const resolveActiveStatusTypeCode = (col = '') => {
-  const lower = String(col || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
-  if (lower === 'onsitestatus') return 'JO_ONSITE'
-  if (lower === 'billingstatus') return 'BILLING'
-  if (lower === 'deliverystatus') return 'DELIVERY'
-  if (lower === 'invoicestatus') return 'INVOICE'
-  if (lower === 'supportstatus') return 'SO_SUPPORT'
-  if (lower === 'visitstatus') return 'SO_VISIT'
-  if (lower === 'discountstatus') return 'DISCOUNT'
-  if (typeof isApplicationEndpoint !== 'undefined' && isApplicationEndpoint.value) return 'APPLICATION'
-  if (typeof isJobOrderEndpoint !== 'undefined' && isJobOrderEndpoint.value) return 'JOB_ORDER'
-  if (typeof isBillingEndpoint !== 'undefined' && isBillingEndpoint.value) return 'BILLING'
-  if (typeof isPaymentEndpoint !== 'undefined' && isPaymentEndpoint.value) return 'PAYMENT'
-  if (typeof isInventoryLogEndpoint !== 'undefined' && isInventoryLogEndpoint.value) return 'INVENTORY_LOG'
-  return ''
-}
+// Gene - Nov, 28, 2026: Delegate Status type code resolution to centralized resolveStatusTypeCodeForColumn helper
+// const resolveActiveStatusTypeCode = (col = '') => {
+//   const lower = String(col || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+//   if (lower === 'onsitestatus') return 'JO_ONSITE'
+//   if (lower === 'billingstatus') return 'BILLING'
+//   if (lower === 'deliverystatus') return 'DELIVERY'
+//   if (lower === 'invoicestatus') return 'INVOICE'
+//   if (lower === 'supportstatus') return 'SO_SUPPORT'
+//   if (lower === 'visitstatus') return 'SO_VISIT'
+//   if (lower === 'discountstatus') return 'DISCOUNT'
+//   if (typeof isApplicationEndpoint !== 'undefined' && isApplicationEndpoint.value) return 'APPLICATION'
+//   if (typeof isJobOrderEndpoint !== 'undefined' && isJobOrderEndpoint.value) return 'JOB_ORDER'
+//   if (typeof isBillingEndpoint !== 'undefined' && isBillingEndpoint.value) return 'BILLING'
+//   if (typeof isPaymentEndpoint !== 'undefined' && isPaymentEndpoint.value) return 'PAYMENT'
+//   if (typeof isInventoryLogEndpoint !== 'undefined' && isInventoryLogEndpoint.value) return 'INVENTORY_LOG'
+//   return ''
+// }
+const resolveActiveStatusTypeCode = (col = '') =>
+  resolveStatusTypeCodeForColumn(props.endpoint, col)
 
 const getStatusDisplayLabel = (val, col = '') => {
   if (val === null || val === undefined || val === '') return '-'
@@ -21897,60 +21985,111 @@ const refreshData = async () => {
 }
 
 // Gene - Nov, 23, 2026: Applications DataTable quick-edit status popover state and save handlers
+// Gene - Nov, 28, 2026: Generalized DataTable quick-edit status popover across all writable status columns backed by /api/Status
 const quickStatusPopover = ref(null)
 const quickStatusRecord = ref(null)
 const quickStatusCol = ref('status')
 const quickStatusDraft = ref('')
+const quickStatusInitialValue = ref('')
 const quickStatusSaving = ref(false)
 const quickStatusSavingId = ref(null)
+const quickStatusSavingCol = ref('')
 const quickStatusError = ref(null)
 let isSwitchingQuickStatusTarget = false
 
-const isApplicationQuickStatusCell = (col) =>
-  isApplicationEndpoint.value && !props.readOnly && String(col || '').trim().toLowerCase() === 'status'
+// const isApplicationQuickStatusCell = (col) =>
+//   isApplicationEndpoint.value && !props.readOnly && String(col || '').trim().toLowerCase() === 'status'
+//
+// const isQuickStatusActiveRow = (row) => {
+//   if (!quickStatusRecord.value || !row) return false
+//   const activeId = getRecordId(quickStatusRecord.value)
+//   const rowId = getRecordId(row)
+//   return activeId !== null && activeId !== undefined && rowId !== null && rowId !== undefined && String(activeId) === String(rowId)
+// }
+//
+// const isQuickStatusRowSaving = (row) => {
+//   if (!quickStatusSaving.value || quickStatusSavingId.value === null || !row) return false
+//   const rowId = getRecordId(row)
+//   return rowId !== null && rowId !== undefined && String(rowId) === String(quickStatusSavingId.value)
+// }
 
-const isQuickStatusActiveRow = (row) => {
+const isQuickStatusCell = (col) =>
+  isQuickStatusEditableCell({ endpoint: props.endpoint, col, readOnly: props.readOnly })
+
+const isQuickStatusActiveCell = (row, col) => {
   if (!quickStatusRecord.value || !row) return false
+  if (normalizeColKey(col) !== normalizeColKey(quickStatusCol.value)) return false
   const activeId = getRecordId(quickStatusRecord.value)
   const rowId = getRecordId(row)
   return activeId !== null && activeId !== undefined && rowId !== null && rowId !== undefined && String(activeId) === String(rowId)
 }
 
-const isQuickStatusRowSaving = (row) => {
+const isQuickStatusCellSaving = (row, col) => {
   if (!quickStatusSaving.value || quickStatusSavingId.value === null || !row) return false
+  if (normalizeColKey(col) !== normalizeColKey(quickStatusSavingCol.value)) return false
   const rowId = getRecordId(row)
   return rowId !== null && rowId !== undefined && String(rowId) === String(quickStatusSavingId.value)
 }
 
+// const quickStatusOptions = computed(() => {
+//   const record = quickStatusRecord.value || {}
+//   const statusKey =
+//     Object.keys(record).find(k => k.toLowerCase() === String(quickStatusCol.value || 'status').toLowerCase()) ||
+//     Object.keys(record).find(k => k.toLowerCase() === 'status') ||
+//     (quickStatusCol.value || 'status')
+//   const rawCurrent = record[statusKey]
+//   const normalizedCurrent = normalizeApplicationStatusValue(rawCurrent, statusOptions.value)
+//   return getStableOptionsWithCurrent(statusOptions.value, normalizedCurrent || rawCurrent)
+// })
 const quickStatusOptions = computed(() => {
   const record = quickStatusRecord.value || {}
+  const targetCol = quickStatusCol.value || 'status'
   const statusKey =
-    Object.keys(record).find(k => k.toLowerCase() === String(quickStatusCol.value || 'status').toLowerCase()) ||
-    Object.keys(record).find(k => k.toLowerCase() === 'status') ||
-    (quickStatusCol.value || 'status')
+    Object.keys(record).find(k => normalizeColKey(k) === normalizeColKey(targetCol)) ||
+    targetCol
   const rawCurrent = record[statusKey]
-  const normalizedCurrent = normalizeApplicationStatusValue(rawCurrent, statusOptions.value)
-  return getStableOptionsWithCurrent(statusOptions.value, normalizedCurrent || rawCurrent)
+  const typeCode = resolveStatusTypeCodeForColumn(props.endpoint, statusKey)
+  const baseOptions = typeCode ? statusStore.getOptions(typeCode) : statusOptions.value
+  const normalizedCurrent = normalizeQuickStatusValue(rawCurrent, baseOptions, typeCode)
+  return getStableOptionsWithCurrent(baseOptions, normalizedCurrent || rawCurrent)
 })
 
+const quickStatusTitle = computed(() =>
+  formatQuickStatusTitle(quickStatusCol.value, formatLabel)
+)
+
+// const quickStatusSubtitle = computed(() =>
+//   formatQuickStatusSubtitle(
+//     quickStatusRecord.value,
+//     quickStatusRecord.value ? getRecordId(quickStatusRecord.value) : ''
+//   )
+// )
 const quickStatusSubtitle = computed(() =>
-  formatQuickStatusSubtitle(
+  formatGenericQuickStatusSubtitle(
+    props.endpoint,
     quickStatusRecord.value,
     quickStatusRecord.value ? getRecordId(quickStatusRecord.value) : ''
   )
 )
 
+// const canSaveQuickStatus = computed(() => {
+//   if (!quickStatusRecord.value || quickStatusSaving.value) return false
+//   const next = String(quickStatusDraft.value || '').trim()
+//   if (!next) return false
+//   const current = String(
+//     quickStatusRecord.value?.[quickStatusCol.value] ??
+//     quickStatusRecord.value?.status ??
+//     quickStatusRecord.value?.Status ??
+//     ''
+//   ).trim()
+//   return next !== current
+// })
 const canSaveQuickStatus = computed(() => {
   if (!quickStatusRecord.value || quickStatusSaving.value) return false
   const next = String(quickStatusDraft.value || '').trim()
   if (!next) return false
-  const current = String(
-    quickStatusRecord.value?.[quickStatusCol.value] ??
-    quickStatusRecord.value?.status ??
-    quickStatusRecord.value?.Status ??
-    ''
-  ).trim()
-  return next !== current
+  const initial = String(quickStatusInitialValue.value || '').trim()
+  return next !== initial
 })
 
 const isQuickStatusOptionSelected = (val) =>
@@ -21961,30 +22100,89 @@ const selectQuickStatusOption = (val) => {
   quickStatusError.value = null
 }
 
+// const openQuickStatusPopover = (event, row, col) => {
+//   if (quickStatusSaving.value || !row || !isApplicationQuickStatusCell(col)) return
+//   const targetEl = event?.currentTarget
+//   if (!targetEl) return
+//
+//   const nextId = getRecordId(row)
+//   const prevId = quickStatusRecord.value ? getRecordId(quickStatusRecord.value) : null
+//   const isPopoverOpen = Boolean(quickStatusPopover.value?.visible)
+//
+//   if (isPopoverOpen && prevId !== null && nextId !== null && String(prevId) === String(nextId)) {
+//     quickStatusPopover.value.hide()
+//     return
+//   }
+//
+//   const prepareState = () => {
+//     const statusKey =
+//       Object.keys(row).find(k => k.toLowerCase() === String(col || 'status').toLowerCase()) ||
+//       col ||
+//       'status'
+//     const rawCurrent = row[statusKey] ?? row.status ?? row.Status ?? ''
+//     quickStatusRecord.value = row
+//     quickStatusCol.value = statusKey
+//     quickStatusError.value = null
+//     quickStatusDraft.value = normalizeApplicationStatusValue(rawCurrent, statusOptions.value)
+//   }
+//
+//   if (isPopoverOpen) {
+//     isSwitchingQuickStatusTarget = true
+//     quickStatusPopover.value.hide()
+//     nextTick(() => {
+//       prepareState()
+//       isSwitchingQuickStatusTarget = false
+//       quickStatusPopover.value?.show({ currentTarget: targetEl }, targetEl)
+//       nextTick(() => {
+//         quickStatusPopover.value?.alignOverlay?.()
+//       })
+//     })
+//     return
+//   }
+//
+//   prepareState()
+//   quickStatusPopover.value?.show(event, targetEl)
+// }
 const openQuickStatusPopover = (event, row, col) => {
-  if (quickStatusSaving.value || !row || !isApplicationQuickStatusCell(col)) return
+  if (quickStatusSaving.value || !row || !isQuickStatusCell(col)) return
   const targetEl = event?.currentTarget
   if (!targetEl) return
 
+  if (!statusStore.isLoaded && !statusStore.isLoading) {
+    fetchStatusesLookup()
+  }
+
   const nextId = getRecordId(row)
   const prevId = quickStatusRecord.value ? getRecordId(quickStatusRecord.value) : null
+  const nextColNorm = normalizeColKey(col)
+  const prevColNorm = normalizeColKey(quickStatusCol.value)
   const isPopoverOpen = Boolean(quickStatusPopover.value?.visible)
 
-  if (isPopoverOpen && prevId !== null && nextId !== null && String(prevId) === String(nextId)) {
+  if (
+    isPopoverOpen &&
+    prevId !== null &&
+    nextId !== null &&
+    String(prevId) === String(nextId) &&
+    prevColNorm === nextColNorm
+  ) {
     quickStatusPopover.value.hide()
     return
   }
 
   const prepareState = () => {
     const statusKey =
-      Object.keys(row).find(k => k.toLowerCase() === String(col || 'status').toLowerCase()) ||
+      Object.keys(row).find(k => normalizeColKey(k) === nextColNorm) ||
       col ||
       'status'
-    const rawCurrent = row[statusKey] ?? row.status ?? row.Status ?? ''
+    const rawCurrent = row[statusKey] ?? ''
+    const typeCode = resolveStatusTypeCodeForColumn(props.endpoint, statusKey)
+    const baseOptions = typeCode ? statusStore.getOptions(typeCode) : statusOptions.value
+    const normalizedDraft = normalizeQuickStatusValue(rawCurrent, baseOptions, typeCode)
     quickStatusRecord.value = row
     quickStatusCol.value = statusKey
     quickStatusError.value = null
-    quickStatusDraft.value = normalizeApplicationStatusValue(rawCurrent, statusOptions.value)
+    quickStatusDraft.value = normalizedDraft
+    quickStatusInitialValue.value = normalizedDraft
   }
 
   if (isPopoverOpen) {
@@ -22017,9 +22215,164 @@ const onQuickStatusPopoverHide = () => {
   quickStatusRecord.value = null
   quickStatusCol.value = 'status'
   quickStatusDraft.value = ''
+  quickStatusInitialValue.value = ''
   quickStatusError.value = null
 }
 
+const resolveExistingImagesForQuickStatus = async (record, recordId) => {
+  const existingImages = {}
+  if (!recordId) return existingImages
+  if (isJobOrderEndpoint.value) {
+    let imgData = recordImagesCache.get(`jo:${recordId}`)
+    if (!imgData) {
+      try {
+        const rawRes = await JobOrderService.getJobOrderImage(recordId)
+        imgData = unwrapApiPayload(rawRes)
+        if (imgData) recordImagesCache.set(`jo:${recordId}`, imgData)
+      } catch (err) {
+        console.warn(`[DynamicApiTable] Quick-status GetJobOrderImage error for #${recordId}:`, err)
+      }
+    }
+    if (imgData) {
+      const mapping = {
+        setupImage: imgData.setupImageFile,
+        clientSignature: imgData.clientSignatureFile,
+        signedContractImage: imgData.signedContractImageFile,
+        boxReadingImage: imgData.boxReadingImageFile,
+        routerReadingImage: imgData.routerReadingImageFile,
+        portLabelImage: imgData.portLabelImageFile,
+        houseFront: imgData.houseFrontFile
+      }
+      Object.entries(mapping).forEach(([colKey, fileObj]) => {
+        if (fileObj) {
+          const u = typeof fileObj === 'string' && isRenderableImageUrl(fileObj)
+            ? fileObj
+            : fileResultToDataUrl(fileObj)
+          if (u) existingImages[colKey] = u
+        }
+      })
+    }
+    const persistedJo = getPersistedJobOrderImages(recordId)
+    JOB_ORDER_PHOTO_FIELDS.forEach(([colKey]) => {
+      const norm = normalizeColKey(colKey)
+      if (!existingImages[colKey] && persistedJo[norm] && isRenderableImageUrl(persistedJo[norm])) {
+        existingImages[colKey] = persistedJo[norm]
+      }
+      if (!existingImages[colKey] && typeof record?.[colKey] === 'string' && record[colKey].startsWith('data:image/')) {
+        existingImages[colKey] = record[colKey]
+      }
+    })
+  } else if (isServiceOrderEndpoint.value) {
+    let imgData = recordImagesCache.get(`so:${recordId}`)
+    if (!imgData) {
+      try {
+        const rawRes = await ServiceOrderService.getServiceOrderImage(recordId)
+        imgData = unwrapApiPayload(rawRes)
+        if (imgData) recordImagesCache.set(`so:${recordId}`, imgData)
+      } catch (err) {
+        console.warn(`[DynamicApiTable] Quick-status GetServiceOrderImage error for #${recordId}:`, err)
+      }
+    }
+    if (imgData) {
+      const mapping = {
+        clientSignature: imgData.clientSignatureFile,
+        image1: imgData.image1File,
+        image2: imgData.image2File,
+        image3: imgData.image3File,
+        houseFrontPicture: imgData.houseFrontPictureFile
+      }
+      Object.entries(mapping).forEach(([colKey, fileObj]) => {
+        if (fileObj) {
+          const u = typeof fileObj === 'string' && isRenderableImageUrl(fileObj)
+            ? fileObj
+            : fileResultToDataUrl(fileObj)
+          if (u) existingImages[colKey] = u
+        }
+      })
+    }
+    SERVICE_ORDER_PHOTO_FIELDS.forEach(([colKey]) => {
+      if (!existingImages[colKey] && typeof record?.[colKey] === 'string' && record[colKey].startsWith('data:image/')) {
+        existingImages[colKey] = record[colKey]
+      }
+    })
+  }
+  return existingImages
+}
+
+// const saveQuickStatus = async () => {
+//   if (!canSaveQuickStatus.value || !quickStatusRecord.value) return
+//   const record = quickStatusRecord.value
+//   const recordId = getRecordId(record)
+//   const nextStatus = String(quickStatusDraft.value || '').trim()
+//   const col = quickStatusCol.value || 'status'
+//
+//   if (!recordId) {
+//     quickStatusError.value = 'This record has no identifier and cannot be updated.'
+//     return
+//   }
+//
+//   quickStatusSaving.value = true
+//   quickStatusSavingId.value = recordId
+//   quickStatusError.value = null
+//
+//   try {
+//     const loggedInUserId = String(authStore.user?.id || 1)
+//     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
+//     const nowIso = new Date().toISOString()
+//
+//     const form = buildApplicationQuickStatusFormData(record, nextStatus, {
+//       loggedInUserId,
+//       currentUserEmail,
+//       nowIso,
+//       normalizePhone: normalizePhoneNumber,
+//       normalizeAgreement: normalizeAgreementValue,
+//       capStr
+//     })
+//
+//     await CrudService.update(props.endpoint, recordId, form)
+//
+//     fetchToken += 1
+//     data.value = applyApplicationStatusLocally(data.value, recordId, col, nextStatus, {
+//       modifiedBy: loggedInUserId,
+//       modifiedDate: nowIso,
+//       getRecordId
+//     })
+//
+//     if (selectedRow.value && String(getRecordId(selectedRow.value)) === String(recordId)) {
+//       selectedRow.value = data.value.find(r => String(getRecordId(r)) === String(recordId)) || selectedRow.value
+//     }
+//
+//     if (viewFormData.value && String(viewingRecordId.value) === String(recordId)) {
+//       viewFormData.value[col] = nextStatus
+//     }
+//
+//     const displayId = record.applicationid || record.applicationId || recordId
+//     quickStatusSaving.value = false
+//     quickStatusSavingId.value = null
+//     quickStatusPopover.value?.hide()
+//
+//     toast.add({
+//       severity: 'success',
+//       summary: 'Status updated',
+//       detail: `Application #${displayId} status changed to "${nextStatus}".`,
+//       life: 3000
+//     })
+//
+//     fetchData({ silent: true }).catch(() => {})
+//   } catch (err) {
+//     console.error(`Error quick-updating status for ${props.endpoint} #${recordId}:`, err)
+//     quickStatusError.value = err?.message || 'Failed to update status. Please try again.'
+//     toast.add({
+//       severity: 'error',
+//       summary: 'Status update failed',
+//       detail: quickStatusError.value,
+//       life: 5000
+//     })
+//   } finally {
+//     quickStatusSaving.value = false
+//     quickStatusSavingId.value = null
+//   }
+// }
 const saveQuickStatus = async () => {
   if (!canSaveQuickStatus.value || !quickStatusRecord.value) return
   const record = quickStatusRecord.value
@@ -22034,28 +22387,57 @@ const saveQuickStatus = async () => {
 
   quickStatusSaving.value = true
   quickStatusSavingId.value = recordId
+  quickStatusSavingCol.value = col
   quickStatusError.value = null
 
   try {
+    const numericUserId = Number(authStore.user?.id) || 1
     const loggedInUserId = String(authStore.user?.id || 1)
     const currentUserEmail = authStore.user?.email || 'admin@switchfiber.com'
     const nowIso = new Date().toISOString()
+    const localTimestamp = localAuditTimestamp()
+    const userDisplayName = authStore.user?.fname
+      ? `${authStore.user.fname} ${authStore.user.lname || ''}`.trim()
+      : (authStore.user?.name || authStore.user?.username || currentUserEmail || 'Admin')
 
-    const form = buildApplicationQuickStatusFormData(record, nextStatus, {
-      loggedInUserId,
-      currentUserEmail,
-      nowIso,
-      normalizePhone: normalizePhoneNumber,
-      normalizeAgreement: normalizeAgreementValue,
-      capStr
+    const existingImages = (isJobOrderEndpoint.value || isServiceOrderEndpoint.value)
+      ? await resolveExistingImagesForQuickStatus(record, recordId)
+      : {}
+
+    const { payload, config, effectiveStatus } = buildQuickStatusUpdateRequest({
+      endpoint: props.endpoint,
+      record,
+      recordId,
+      col,
+      nextStatus,
+      context: {
+        loggedInUserId,
+        numericUserId,
+        currentUserEmail,
+        authUserEmail: authStore.user?.email || '',
+        processedBy: getLoggedInProcessedBy() || loggedInUserId,
+        userDisplayName,
+        nowIso,
+        localTimestamp,
+        normalizePhone: normalizePhoneNumber,
+        normalizeAgreement: normalizeAgreementValue,
+        capStr,
+        buildJobOrderPayload,
+        applyJobOrderCreationAudit,
+        buildBillingPayload,
+        existingImages,
+        serializeTime: serializeTimeForPayload,
+        getFieldType,
+        isAuditField
+      }
     })
 
-    await CrudService.update(props.endpoint, recordId, form)
+    await CrudService.update(props.endpoint, recordId, payload, config)
 
     fetchToken += 1
-    data.value = applyApplicationStatusLocally(data.value, recordId, col, nextStatus, {
+    data.value = applyQuickStatusLocally(data.value, recordId, col, effectiveStatus, {
       modifiedBy: loggedInUserId,
-      modifiedDate: nowIso,
+      modifiedDate: isApplicationEndpoint.value || isServiceOrderEndpoint.value ? nowIso : localTimestamp,
       getRecordId
     })
 
@@ -22064,18 +22446,28 @@ const saveQuickStatus = async () => {
     }
 
     if (viewFormData.value && String(viewingRecordId.value) === String(recordId)) {
-      viewFormData.value[col] = nextStatus
+      viewFormData.value[col] = effectiveStatus
     }
 
-    const displayId = record.applicationid || record.applicationId || recordId
+    if (isServiceOrderEndpoint.value) {
+      serviceOrderStore.invalidateListCache()
+    }
+
+    const displayId = isApplicationEndpoint.value
+      ? (record.applicationid || record.applicationId || recordId)
+      : recordId
+    const displayStatus = getStatusDisplayLabel(effectiveStatus, col)
+    const fieldLabel = formatLabel(col).toLowerCase()
+
     quickStatusSaving.value = false
     quickStatusSavingId.value = null
+    quickStatusSavingCol.value = ''
     quickStatusPopover.value?.hide()
 
     toast.add({
       severity: 'success',
       summary: 'Status updated',
-      detail: `Application #${displayId} status changed to "${nextStatus}".`,
+      detail: `${formatLabel(props.endpoint)} #${displayId} ${fieldLabel} changed to "${displayStatus}".`,
       life: 3000
     })
 
@@ -22092,6 +22484,7 @@ const saveQuickStatus = async () => {
   } finally {
     quickStatusSaving.value = false
     quickStatusSavingId.value = null
+    quickStatusSavingCol.value = ''
   }
 }
 

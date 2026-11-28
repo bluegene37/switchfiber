@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, watchEffect, nextTick } from 'vue'
+import { ref, computed, watch, watchEffect, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
@@ -165,10 +165,15 @@ import { createdRecordHiddenBy } from '../utils/createdRecordVisibility'
 // Gene - Nov, 27, 2026: Import shared list date/status filter composable and date formatters (Phase 1 modular refactor)
 import { useListDateFilters, useStatusTabNavigation } from '../composables/useListDateStatusFilters'
 import { formatDateParam, formatLocalYmd } from '../utils/formatters'
+// Gene - Nov, 28, 2026: Import centralized Status store, token normalizer, and tab builder
+import { useStatusStore } from '../stores/statuses'
+import { normalizeStatusToken } from '../services/status'
+import { buildStatusFilterTabs } from '../utils/tableQuickStatus'
 
 const route = useRoute()
 const router = useRouter()
 const apiTableRef = ref(null)
+const statusStore = useStatusStore()
 
 // The create form lives in DynamicApiTable; the filter-bar button is just
 // another way in to the dialog it already exposes.
@@ -203,14 +208,22 @@ const selectedStatus = ref('')
 // so three of the four tabs could never match a row. A dynamic strip cannot
 // drift from the data, and picks up a new status the day the backend starts
 // emitting one.
-const statusTabs = computed(() => [
-  { label: 'All Application', value: '', icon: 'pi-list' },
-  ...(apiTableRef.value?.statusVocabulary || []).map(s => ({
-    label: s.label,
-    value: s.value,
-    icon: ''
-  }))
-])
+// Gene - Nov, 28, 2026: Build Application status filter tabs from centralized /api/Status (APPLICATION) merged with live row statuses
+// const statusTabs = computed(() => [
+//   { label: 'All Application', value: '', icon: 'pi-list' },
+//   ...(apiTableRef.value?.statusVocabulary || []).map(s => ({
+//     label: s.label,
+//     value: s.value,
+//     icon: ''
+//   }))
+// ])
+const statusTabs = computed(() =>
+  buildStatusFilterTabs({
+    allLabel: 'All Application',
+    apiOptions: statusStore.getOptions('APPLICATION'),
+    vocabulary: apiTableRef.value?.statusVocabulary || []
+  })
+)
 
 // The active value may arrive from a route slug in different casing than the
 // data uses ('schedule' vs 'Schedule'), so tabs match case-insensitively.
@@ -288,11 +301,19 @@ const isDedicatedStatusRoute = computed(() => {
   return p.includes('/in-progress') || p.includes('/done') || p.includes('/approved')
 })
 
+// Gene - Nov, 28, 2026: Pass normalizeStatusToken so 'Inprogress' and 'inprogress' match identically
+// const { isActiveTab, setStatusFilter, onSelectStatus } = useStatusTabNavigation({
+//   selectedStatus,
+//   isDedicatedStatusRoute,
+//   router,
+//   basePath: '/application'
+// })
 const { isActiveTab, setStatusFilter, onSelectStatus } = useStatusTabNavigation({
   selectedStatus,
   isDedicatedStatusRoute,
   router,
-  basePath: '/application'
+  basePath: '/application',
+  normalize: normalizeStatusToken
 })
 
 const pageTitle = computed(() => {
@@ -452,6 +473,13 @@ const clearAllFilters = () => {
   // "Cleared" dates mean the default week, never an unbounded range
   resetDateFilters()
 }
+
+// Gene - Nov, 28, 2026: Preload centralized /api/Status options on ApplicationList mount
+onMounted(() => {
+  if (!statusStore.isLoaded) {
+    statusStore.loadStatuses()
+  }
+})
 </script>
 
 <style scoped>

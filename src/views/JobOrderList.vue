@@ -196,7 +196,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, watchEffect, nextTick } from 'vue'
+// Gene - Nov, 28, 2026: Import onMounted, useStatusStore, normalizeStatusToken, and buildStatusFilterTabs for /api/Status filter tabs
+import { ref, computed, watch, watchEffect, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
@@ -206,10 +207,14 @@ import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRan
 // Gene - Nov, 27, 2026: Import shared list date/status filter composable and formatDateParam (Phase 1 modular refactor)
 import { useListDateFilters, useStatusTabNavigation } from '../composables/useListDateStatusFilters'
 import { formatDateParam } from '../utils/formatters'
+import { useStatusStore } from '../stores/statuses'
+import { normalizeStatusToken } from '../services/status'
+import { buildStatusFilterTabs } from '../utils/tableQuickStatus'
 
 const route = useRoute()
 const router = useRouter()
 const apiTableRef = ref(null)
+const statusStore = useStatusStore()
 
 // The create form lives in DynamicApiTable; the filter-bar button is just
 // another way in to the dialog it already exposes.
@@ -265,14 +270,22 @@ const LEGACY_STATUS_VALUES = {
 // only statuses are Activated and Applied, so two of the four tabs could never
 // match a row. A dynamic strip cannot drift from the data, and picks up a new
 // status the day the backend starts emitting one.
-const statusTabs = computed(() => [
-  { label: 'All Job Orders', value: '', icon: 'pi-list' },
-  ...(apiTableRef.value?.statusVocabulary || []).map(s => ({
-    label: s.label,
-    value: s.value,
-    icon: ''
-  }))
-])
+// Gene - Nov, 28, 2026: Build Job Order status filter tabs from centralized /api/Status (JOB_ORDER) merged with live row statuses
+// const statusTabs = computed(() => [
+//   { label: 'All Job Orders', value: '', icon: 'pi-list' },
+//   ...(apiTableRef.value?.statusVocabulary || []).map(s => ({
+//     label: s.label,
+//     value: s.value,
+//     icon: ''
+//   }))
+// ])
+const statusTabs = computed(() =>
+  buildStatusFilterTabs({
+    allLabel: 'All Job Orders',
+    apiOptions: statusStore.getOptions('JOB_ORDER'),
+    vocabulary: apiTableRef.value?.statusVocabulary || []
+  })
+)
 
 // The active value may arrive from a route slug in different casing than the
 // data uses ('activated' vs 'Activated'), so tabs match case-insensitively.
@@ -319,7 +332,15 @@ const {
 
 // Named for the tab in view, so a status route does not claim there were no job
 // orders at all when what it means is none with that status.
-const activeStatusLabel = computed(() => LEGACY_STATUS_LABELS[selectedStatus.value] || selectedStatus.value)
+// Gene - Nov, 28, 2026: Prefer /api/Status human-readable label for active Job Order status before legacy fallback
+// const activeStatusLabel = computed(() => LEGACY_STATUS_LABELS[selectedStatus.value] || selectedStatus.value)
+const activeStatusLabel = computed(() => {
+  const raw = String(selectedStatus.value || '').trim()
+  if (!raw) return ''
+  const resolved = statusStore.getLabel('JOB_ORDER', raw)
+  if (resolved && resolved !== raw) return resolved
+  return LEGACY_STATUS_LABELS[raw.toLowerCase()] || LEGACY_STATUS_LABELS[raw] || raw
+})
 
 const autoWidenSubject = computed(() => {
   const status = String(activeStatusLabel.value || '').trim()
@@ -345,11 +366,19 @@ const isDedicatedStatusRoute = computed(() => {
   return p.includes('/inprogress') || p.includes('/completed') || p.includes('/activated')
 })
 
+// Gene - Nov, 28, 2026: Pass normalizeStatusToken so 'Inprogress' and 'inprogress' match identically
+// const { isActiveTab, setStatusFilter, onSelectStatus } = useStatusTabNavigation({
+//   selectedStatus,
+//   isDedicatedStatusRoute,
+//   router,
+//   basePath: '/job-orders'
+// })
 const { isActiveTab, setStatusFilter, onSelectStatus } = useStatusTabNavigation({
   selectedStatus,
   isDedicatedStatusRoute,
   router,
-  basePath: '/job-orders'
+  basePath: '/job-orders',
+  normalize: normalizeStatusToken
 })
 
 const pageTitle = computed(() => {
@@ -527,6 +556,13 @@ const clearAllFilters = () => {
     router.replace({ path: route.path, query: nextQuery }).catch(() => {})
   }
 }
+
+// Gene - Nov, 28, 2026: Preload centralized /api/Status options on JobOrderList mount
+onMounted(() => {
+  if (!statusStore.isLoaded) {
+    statusStore.loadStatuses()
+  }
+})
 </script>
 
 <style scoped>

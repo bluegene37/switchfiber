@@ -26,7 +26,7 @@
             ]"
             @click="setStatusFilter(tab.value)"
           >
-            <i :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
+            <i v-if="tab.icon" :class="['pi', tab.icon]" style="font-size: 0.85rem;"></i>
             <span>{{ tab.label }}</span>
             <span
               v-if="statusCounts"
@@ -146,7 +146,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+// Gene - Nov, 28, 2026: Import onMounted, useStatusStore, and buildStatusFilterTabs for /api/Status filter tabs
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
@@ -157,10 +158,13 @@ import { DATE_PRESETS, CUSTOM_PRESET, resolveDatePreset } from '../utils/dateRan
 import { useListDateFilters, useStatusTabNavigation } from '../composables/useListDateStatusFilters'
 import { formatDateParam } from '../utils/formatters'
 import { normalizeStatusToken } from '../services/status'
+import { useStatusStore } from '../stores/statuses'
+import { buildStatusFilterTabs } from '../utils/tableQuickStatus'
 
 const route = useRoute()
 const router = useRouter()
 const apiTableRef = ref(null)
+const statusStore = useStatusStore()
 
 // The create form lives in DynamicApiTable; the filter-bar button is just
 // another way in to the dialog it already exposes.
@@ -198,12 +202,32 @@ const clientFilters = computed(() => ({ assignedEmail: selectedAssignedEmail.val
 // ('In Progress' with a space, unlike Job Orders' 'Inprogress'); 'Scheduled' is
 // what the create form writes for a new visit. Matching downstream is
 // case- and space-insensitive.
-const statusTabs = [
-  { id: 'all', label: 'All Service Orders', value: '', routePath: '/service-orders', icon: 'pi-list' },
-  { id: 'inprogress', label: 'In Progress', value: 'In Progress', routePath: '/service-orders/inprogress', icon: 'pi-clock' },
-  { id: 'scheduled', label: 'Scheduled', value: 'Scheduled', routePath: '/service-orders/scheduled', icon: 'pi-calendar' },
-  { id: 'done', label: 'Done', value: 'Done', routePath: '/service-orders/done', icon: 'pi-check-circle' }
-]
+// Gene - Nov, 28, 2026: Build Service Order visitStatus filter tabs from centralized /api/Status (SO_VISIT) merged with live data statuses
+// const statusTabs = [
+//   { id: 'all', label: 'All Service Orders', value: '', routePath: '/service-orders', icon: 'pi-list' },
+//   { id: 'inprogress', label: 'In Progress', value: 'In Progress', routePath: '/service-orders/inprogress', icon: 'pi-clock' },
+//   { id: 'scheduled', label: 'Scheduled', value: 'Scheduled', routePath: '/service-orders/scheduled', icon: 'pi-calendar' },
+//   { id: 'done', label: 'Done', value: 'Done', routePath: '/service-orders/done', icon: 'pi-check-circle' }
+// ]
+const SERVICE_ORDER_TAB_META = {
+  inprogress: { icon: 'pi-clock' },
+  scheduled: { icon: 'pi-calendar' },
+  done: { icon: 'pi-check-circle' },
+  dispatched: { icon: 'pi-send' },
+  completed: { icon: 'pi-check' },
+  reschedule: { icon: 'pi-history' },
+  cancelled: { icon: 'pi-times-circle' },
+  failed: { icon: 'pi-exclamation-triangle' }
+}
+
+const statusTabs = computed(() =>
+  buildStatusFilterTabs({
+    allLabel: 'All Service Orders',
+    apiOptions: statusStore.getOptions('SO_VISIT'),
+    vocabulary: apiTableRef.value?.statusVocabulary || [],
+    tabMetaByToken: SERVICE_ORDER_TAB_META
+  })
+)
 
 // Status per /service-orders/<slug>. The first three have sidebar entries; the
 // rest are legacy routes kept alive for old links, and the empty state explains
@@ -246,9 +270,16 @@ const { isActiveTab, setStatusFilter, onSelectStatus } = useStatusTabNavigation(
   normalize: normStatus
 })
 
+// Gene - Nov, 28, 2026: Resolve human-readable /api/Status description in Service Order pageTitle
+// const pageTitle = computed(() => {
+//   const status = String(selectedStatus.value || '').trim()
+//   return status ? `${status} Service Orders` : 'All Service Orders'
+// })
 const pageTitle = computed(() => {
   const status = String(selectedStatus.value || '').trim()
-  return status ? `${status} Service Orders` : 'All Service Orders'
+  if (!status) return 'All Service Orders'
+  const label = statusStore.getLabel('SO_VISIT', status) || status
+  return `${label} Service Orders`
 })
 
 const STATUS_DESCRIPTIONS = {
@@ -273,7 +304,8 @@ const syncStatusFromRoute = () => {
     return
   }
   const q = String(route.query.status || '').trim()
-  const tab = statusTabs.find(t => t.value && normStatus(t.value) === normStatus(q))
+  // const tab = statusTabs.find(t => t.value && normStatus(t.value) === normStatus(q))
+  const tab = (statusTabs.value || []).find(t => t.value && normStatus(t.value) === normStatus(q))
   selectedStatus.value = tab ? tab.value : q
 }
 
@@ -323,6 +355,13 @@ const clearAllFilters = () => {
   selectedAssignedEmail.value = null
   resetDateFilters()
 }
+
+// Gene - Nov, 28, 2026: Preload centralized /api/Status options on ServiceOrderList mount
+onMounted(() => {
+  if (!statusStore.isLoaded) {
+    statusStore.loadStatuses()
+  }
+})
 </script>
 
 <style scoped>
